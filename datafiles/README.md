@@ -12,9 +12,7 @@ download_era5.sh [year]: run download_era5.py for all the months of the specifie
 era5_loop.sh: run download_era5.sh for several years (specified in the script).
 
 ERA5 data are at 2h frequency and 0.25 degree resolution. The Unet model takes daily averages on the grid given by (lats.npy,lons.npy). To do the regridding and time averaging:
-save_data.py [year]: regrid all the ERA5 files in [year]/ and save them in ERA5resampled/[year]_[month]_[variable]_resampled.nc
-save_data.sh: loop over several years.
-concatenate.py: for each specified year and each variable, combine all of the months from ERA5resampled/ into one file; save as ERA5concatenated/[year][variable].nc. These are now in the format needed to make input files for Unet.
+concatenate.py: regrid all the ERA5 files in data/high_res/emacdonald/[year]/ to the grid specified by (lats.npy,lons.npy), resample to daily averages, and concatenate the entire year for each variables. Save as ERA5concatenated/[year][variable].nc. These are now in the format needed to make input files for Unet (365,56,120). No longer need save_data.py or save_data.sh to do the resampling because concatenate.py now does both steps at the same time to avoid saving intermediate files.
 
 To make the Unet files:
 inputfiles.py: combines data from the above sources. X input files are of size (364,56,120,9), dimensions (time,lat,lon,n_variables). The variables are ordered as follows:

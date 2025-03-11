@@ -1,6 +1,7 @@
 #!/bin/bash
 
-years="2005 2006 2007 2012"
+#run download_era5.sh for several years
+years="2004 2006 2007 2012"
 
 for year in $years
 do

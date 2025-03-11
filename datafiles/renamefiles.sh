@@ -10,9 +10,6 @@ do
     echo $f*nc
     cp $f*nc "${f%/}.nc"
   done 
-  rename -v 'tsk' 'skt' *nc
-  rename -v 'ps' 'sp' *nc
-  rename -v '_srd' '_ssrd' *nc
   cd ..
 done
 
