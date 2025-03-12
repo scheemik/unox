@@ -1,17 +1,15 @@
-## Application of the U-net model for Chinese NOx emission estimates. 
-This repo is prepared for the submission of the ACP paper.
+## Application of the U-net model for North American NOx emission estimates, based on Tailong He's version for Chinese NOx emissions. 
 ![](model_diagram.png)
 ## 1. System prerequisites
 The following software dependencies are required.
 
 Package     | Version
 ---------   | -----------
-Python      | 3.6.3
-TensorFlow  | 2.1.0
-CUDA        | 8.0.44
-cuDNN       | 7.0
-TensorFlow  | 2.1.0
-Keras       | 2.3.1
+Python      | 3.8.13
+TensorFlow  | 2.9.2
+CUDA        | 11.4.4
+cuDNN       | 8.3.0_11.4
+Keras       | 2.9.0
 
 A detailed list of packages installed while while testing and validating the model is provided in `Unet_package_list.txt`.
 
