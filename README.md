@@ -11,7 +11,7 @@ CUDA        | 11.4.4
 cuDNN       | 8.3.0_11.4
 Keras       | 2.9.0
 
-A detailed list of packages installed while while testing and validating the model is provided in `Unet_package_list.txt`.
+A detailed list of packages installed while while testing and validating the model is provided in `packagelist.txt`.
 
 ### 2. Source of data
 * Training stage 1 involves TCR-2 surface NO2 concentrations and NOx emissions. Both could be found from [the JPL TCR-2 website](https://tes.jpl.nasa.gov/tes/chemical-reanalysis/products/monthly-mean). Last access to the link was 12 March 2025. 
