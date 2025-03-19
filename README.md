@@ -1,4 +1,7 @@
-## Application of the U-net model for North American NOx emission estimates, based on Tailong He's version for Chinese NOx emissions[^1]
+## Application of the U-net model for North American NOx emission estimates
+
+This is based on Tailong He's version for Chinese NOx emissions[^1]
+
 ![](model_diagram.png)
 
 ## 1. System prerequisites
