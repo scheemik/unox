@@ -1,4 +1,4 @@
-## Application of the U-net model for North American NOx emission estimates, based on Tailong He's version for Chinese NOx emissions. 
+## Application of the U-net model for North American NOx emission estimates, based on Tailong He's version for Chinese NOx emissions[^1]
 ![](model_diagram.png)
 
 ## 1. System prerequisites
@@ -24,5 +24,5 @@ A detailed list of packages installed while while testing and validating the mod
 Examples of usage of the code are provided in `test_unet.py`, based on the notebook `example_code.ipynb`. A sample script for running on Mist is `test_unet.sh`.
 
 ### Reference for Chinese version
-He, T.-L.; Jones, D. B. A.; Miyazaki, K; Bowman, K. W.; Jiang, Z.; Chen, X; Li, R.; Zhang, Y; Li, K. [Inverse modeling of Chinese NOx emissions using deep learning: Integrating in situ observations with a satellite-based chemical reanalysis](https://acp.copernicus.org/preprints/acp-2022-251/). *Atmospheric Chemistry and Physics*, 2022. 
+[^1]: He, T.-L.; Jones, D. B. A.; Miyazaki, K; Bowman, K. W.; Jiang, Z.; Chen, X; Li, R.; Zhang, Y; Li, K. [Inverse modeling of Chinese NOx emissions using deep learning: Integrating in situ observations with a satellite-based chemical reanalysis](https://acp.copernicus.org/preprints/acp-2022-251/). *Atmospheric Chemistry and Physics*, 2022. 
 Source code is available at https://github.com/tailonghe/Unet_Chinese_NOx.
