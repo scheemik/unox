@@ -14,7 +14,7 @@ import os
 try:
   savedir = sys.argv[1] + '/'
 except:
-  savedir = 'output_test_unet/'  #directory to save output in
+  savedir = 'HPC_runs/test_unet/'  #directory to save output in
 
 try:
   os.mkdir(savedir)
@@ -30,12 +30,18 @@ try:
 except FileExistsError:
   print('stage2_output/ exists')
 
+##################################################################
+# Build and compile the Unet
+
 unet = Unet()
 opt = Adam(lr=1e-5) 
 
 unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
 unet.summary()
 
+##################################################################
+# Stage-1 training
+## Load stage-1 data sets
 
 x_files = sorted(glob.glob('sample_data/stage1/x/X_20*.npy'))
 y_files = sorted(glob.glob('sample_data/stage1/y/Y_20*.npy'))
@@ -55,16 +61,18 @@ print(xtrain.shape)
 xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, 0.9)
 print(xtrain.shape, ytrain.shape, xvalid.shape, yvalid.shape)
 
+# Stage-1 training of the Unet
 
 csv_logger = CSVLogger( savedir+'unet_stage1_log.csv', append=True, separator=';')
 earlystopper = EarlyStopping(patience=15, verbose=1)
 checkpointer = ModelCheckpoint(savedir+'unet_checkpt_{val_loss:.2f}_{r2_keras:.2f}_stage1.h5', verbose=1, save_best_only=True)
 print("begin training stage 1")
-unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), 
-           batch_size=30, epochs=250, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
+unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), batch_size=30, epochs=250, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
+
+# Save stage-1 model weights
 unet.save_model(savedir+'unet_stage1_model.h5')
 
-#Generate predictions for evaluation
+# Generate predictions for evaluation
 ### Load testing data sets
 xtest_files = x_files[14:]
 
@@ -79,6 +87,9 @@ for x in xtest_files:
 #    pred = unet.predict(ynow)
 #    np.save(savedir+'stage1_output/ypred_' + y.split('/')[-1], pred)
 
+##################################################################
+# Stage-2 training
+## Load stage-2 data sets
 
 x_files = sorted(glob.glob('sample_data/stage2/x/X_20*.npy'))
 y_files = sorted(glob.glob('sample_data/stage2/y/Y_20*.npy'))
@@ -94,10 +105,11 @@ ytrain = np.concatenate([ np.load(s) for s in ytrain_files], axis=0)
 xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, 0.9)
 # print(xtrain.shape, ytrain.shape, xvalid.shape, yvalid.shape)
 
+# Load the stage-1 model weights to the U-net model
 unet.load_weights(savedir+'unet_stage1_model.h5')
 
 
-#stage 2 training
+# Stage-2 training of the Unet
 csv_logger = CSVLogger( savedir+'unet_stage2_log.csv', append=True, separator=';')
 earlystopper = EarlyStopping(patience=15, verbose=1)
 checkpointer = ModelCheckpoint(savedir+'unet_checkpt_{val_loss:.2f}_{r2_keras:.2f}_stage2.h5', verbose=1, save_best_only=True)
@@ -105,10 +117,12 @@ checkpointer = ModelCheckpoint(savedir+'unet_checkpt_{val_loss:.2f}_{r2_keras:.2
 print('begin training stage 2')
 unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), 
            batch_size=30, epochs=250, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
+
+# Save stage-2 model weights
 unet.save_model(savedir+'unet_stage2_model.h5')
 
 
-#Generate predictions for evaluation
+# Generate predictions for evaluation
 ### Load testing data sets
 xtest_files = x_files[5:]
 print(xtest_files)
