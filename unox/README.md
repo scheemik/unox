@@ -1,6 +1,6 @@
 # unox
 
-Use machine learning to make NOX predictions
+Use machine learning to make NOx predictions.
 
 ## Installation
 
@@ -10,7 +10,7 @@ $ pip install unox
 
 ## Usage
 
-- TODO
+`unox` makes use of the `tensorflow` package to run a U-net deep learning model to make estimates of NOx emissions.
 
 ## Contributing
 
