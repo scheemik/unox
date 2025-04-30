@@ -12,6 +12,11 @@ matplotlib = ">=3.4.3"
 tensorflow = "2.9.2"
 scipy = ">=1.8.1"
 xarray = ">=2022.11.0"
+proplot = ">=0.9.7"
+cartopy = ">=0.21.1"
+basemap = "^1.4.1"
+netcdf4 = ">=1.6.2"
+pandas = "<2"
 
 
 [tool.poetry.group.dev.dependencies]
