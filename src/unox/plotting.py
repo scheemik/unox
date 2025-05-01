@@ -31,7 +31,9 @@ def plot_lats_lons(lats, lons):
     plt.show()
     return fig
 
-def plot_nox(datafile='../../datafiles/nox_2019_t106_US.nc'):
+def plot_nox(datafile='../datafiles/nox_2019_t106_US.nc',
+             datetime='2019-01-01T00:00:00',
+             cbar_max=1.2e-10,):
     """Plots a map of NOx data.
 
     Creates a map of NOx data on a map using the provided data file.
@@ -40,28 +42,36 @@ def plot_nox(datafile='../../datafiles/nox_2019_t106_US.nc'):
     ----------
     datafile : str
         Path to the data file containing NOx data.
+    datetime : str
+        Date and time to select from the data file.
+    cbar_max : float
+        Maximum value for the colorbar.
+    
+    Returns
+    -------
     """
     import xarray as xr
+    import proplot as pplt
     nox = xr.open_dataset(datafile)  #nox dataset used to make y files
-#     lat_us = nox.lat.data.round(3)  #select lat and lon range where we have nox data
-#     lon_us = nox.lon.data.round(3)
-# 
-#     from unox import load_lats_lons
-#     lats, lons = load_lats_lons()
-# 
-#     #find indices of lats and lons that are in the us nox data
-#     #for some reason the simpler way doesn't work
-#     latmin = np.where(np.abs(lats-np.min(lat_us))<0.1)[0][0]
-#     latmax = np.where(np.abs(lats-np.max(lat_us))<0.1)[0][0] + 1
-#     print(latmin,latmax)
-#     print(lats[latmin:latmax])
-#     print(lat_us)
-# 
-#     lonmin = np.where(np.abs(lons-np.min(lon_us))<0.1)[0][0]
-#     lonmax = np.where(np.abs(lons-np.max(lon_us))<0.1)[0][0] + 1
-#     print(lonmin,lonmax)
-#     print(lons[lonmin:lonmax])
-#     print(lon_us)
-
-    # print(lat_ind)
-    nox.nox[0].plot()
+    # Simplest way to plot the data
+    # nox.nox[0].plot()
+    # A more complex way to plot the data
+    # Select the time to plot
+    nox_sel_time = nox.nox.sel(time=datetime)
+    # Find the min and max lat and lon values
+    lat_min = nox.lat.min().values
+    lat_max = nox.lat.max().values
+    lon_min = nox.lon.min().values
+    lon_max = nox.lon.max().values
+    fig = pplt.figure(refwidth=10)
+    pplt.rc.reso = 'med' # Select medium resolution for features
+    axs = fig.subplots(nrows=1, proj='cyl')
+    this_nox = axs.pcolorfast(nox_sel_time, vmin=0, vmax=cbar_max)
+    axs.format(
+        lonlim=(lon_min, lon_max), latlim=(lat_min, lat_max),
+        suptitle='Figure with single projection',
+        latlines=10, lonlines=10, coast=True,
+        labels=True, gridminor=True
+    )
+    fig.colorbar(this_nox, loc='b', label='NOx emissions (kg/m2/s)')
+    plt.show()
