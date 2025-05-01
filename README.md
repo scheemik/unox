@@ -4,7 +4,8 @@ Use machine learning to make NOx predictions.
 
 This is an application of the U-net deep learning model for North American NOx emission estimates.
 
-![](model_diagram.png)
+![model_diagram](docs/model_diagram.png)
+<!-- In order for sphinx to be able to find images and include them in the Read the Docs page, you need to copy each image to the `docs/_build/html/_images/` directory -->
 
 ## Installation
 
