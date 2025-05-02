@@ -21,12 +21,8 @@ def get_extent(xr_dataset):
     >>> extent = get_extent(nox)
     (24.112, 58.878, -126.0, -59.625)
     """
-    # Verify that xr_dataset is an xarray Dataset or DataArray
-    if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
-        raise TypeError("xr_dataset must be an xarray Dataset.")
-    # Verify that the dataset has lat and lon coordinates
-    if 'lat' not in xr_dataset.coords or 'lon' not in xr_dataset.coords:
-        raise ValueError("xr_dataset must have 'lat' and 'lon' coordinates.")
+    # Verify the xr_dataset
+    verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
     # Use np.unique to ensure that the values are unique and take only the first value
     lat_min = np.unique(xr_dataset.lat.min().values)[0]
@@ -54,3 +50,24 @@ def get_extent(xr_dataset):
         raise ValueError("Longitude values must be in the range [-180, 180], lon_max = {lon_max}.")
     # Return the extent as a tuple
     return (lat_min, lat_max, lon_min, lon_max)
+
+def verify_dataset(xr_dataset):
+    """Verify that the given xarray dataset is valid.
+
+    Checks to make sure the given dataset is of the expected type
+    and contains the expected coordinates.
+
+    Parameters
+    ----------
+    xr_dataset : xarray.Dataset or xarray.DataArray
+        The xarray data to verify.
+    """
+    # Verify that xr_dataset is an xarray Dataset or DataArray
+    if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
+        raise TypeError("xr_dataset must be an xarray Dataset or DataArray.")
+    # Verify that the dataset has lat and lon coordinates
+    if 'lat' not in xr_dataset.coords or 'lon' not in xr_dataset.coords:
+        raise ValueError("xr_dataset must have 'lat' and 'lon' coordinates.")
+    # Verify that the dataset has the time coordinate
+    if 'time' not in xr_dataset.coords:
+        raise ValueError("xr_dataset must have 'time' coordinate.")
