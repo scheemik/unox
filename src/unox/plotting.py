@@ -1,4 +1,8 @@
 import matplotlib.pyplot as plt
+import xarray as xr
+import proplot as pplt
+
+from unox import data as unox_data
 
 def plot_lats_lons(lats, lons):
     """Plot the given latitudes and longitudes.
@@ -50,8 +54,6 @@ def plot_nox(datafile='../datafiles/nox_2019_t106_US.nc',
     Returns
     -------
     """
-    import xarray as xr
-    import proplot as pplt
     nox = xr.open_dataset(datafile)  #nox dataset used to make y files
     # Simplest way to plot the data
     # nox.nox[0].plot()
@@ -59,19 +61,22 @@ def plot_nox(datafile='../datafiles/nox_2019_t106_US.nc',
     # Select the time to plot
     nox_sel_time = nox.nox.sel(time=datetime)
     # Find the min and max lat and lon values
-    lat_min = nox.lat.min().values
-    lat_max = nox.lat.max().values
-    lon_min = nox.lon.min().values
-    lon_max = nox.lon.max().values
+    lat_min, lat_max, lon_min, lon_max = unox_data.get_extent(nox_sel_time)
+    # Create the figure
     fig = pplt.figure(refwidth=10)
-    pplt.rc.reso = 'med' # Select medium resolution for features
     axs = fig.subplots(nrows=1, proj='cyl')
+    # Select medium resolution for features such as coastlines
+    pplt.rc.reso = 'med' 
+    # Plot the data
     this_nox = axs.pcolorfast(nox_sel_time, vmin=0, vmax=cbar_max)
+    # Format the map
     axs.format(
         lonlim=(lon_min, lon_max), latlim=(lat_min, lat_max),
-        suptitle='Figure with single projection',
+        suptitle='NOx emissions on ' + datetime,
         latlines=10, lonlines=10, coast=True,
         labels=True, gridminor=True
     )
+    # Add a colorbar
     fig.colorbar(this_nox, loc='b', label='NOx emissions (kg/m2/s)')
+    # Display the plot
     plt.show()
