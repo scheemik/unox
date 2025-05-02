@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 import xarray as xr
 import proplot as pplt
 
+from unox import unox
 from unox import data as unox_data
 from unox import plot_format as uplt_frmt
 
@@ -148,3 +150,71 @@ def plot_nox(datafile='../datafiles/nox_2019_t106_US.nc',
     fig.colorbar(this_nox, loc='b', label='NOx emissions (kg/m2/s)')
     # Return the figure
     return fig
+
+def plot_comparison(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
+                    pred_data={'stage':1, 'HPC_run':'test_unet_601760', 'year':2019},
+                    hist_params={'bins':100, 'vmax':1000, 'vmin':10}
+                    ):
+    """Plot a comparison of the truth and predicted data.
+
+    Creates a correlation plot of the stage 1 data (truth) and the
+    output of the model (prediction).
+
+    Parameters
+    ----------
+    truth_data : dict
+        Dictionary containing the parameters for the truth data.
+        Must contain 'stage', 'x_or_y', and 'year'.
+    pred_data : dict
+        Dictionary containing the parameters for the predicted data.
+        Must contain 'stage', 'HPC_run', and 'year'.
+    hist_params : dict
+        Dictionary containing the parameters for the histogram.
+        Must contain 'bins', 'vmax', and 'vmin'.
+    
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+    
+    Examples
+    --------
+    >>> fig = plot_comparison(truth_arr, pred_arr)
+    """
+    from scipy.stats import linregress
+    # Load the data
+    truth = np.load(unox.get_sample_data(**truth_data))  #truth (y input file)
+    stage1 = np.load(unox.get_pred_data(**pred_data))  #stage 1 prediction
+    # truth = np.load(unox.get_sample_data(stage=1, x_or_y='y', year=2019))  #truth (y input file)
+    # stage1 = np.load(unox.get_pred_data(stage=1, HPC_run='test_unet_601760', year=2019))  #stage 1 prediction
+    truths = truth.flatten()
+    preds = stage1.flatten()
+    # Create the figure
+    fig = plt.figure()
+    # Select the color map
+    my_cmap = plt.cm.jet
+    my_cmap.set_under('w', 1)
+    # Plot the data
+    this_hist, xedges, yedges, q = plt.hist2d(truths, preds, bins=100, norm=mpl.colors.LogNorm(vmax=hist_params['vmax'], vmin=hist_params['vmin']), cmap=plt.cm.jet)
+    # Count the maximum extent of the histogram where values are larger than vmin
+    counts_0 = np.sum(this_hist > hist_params['vmin'], axis=0)
+    counts_1 = np.sum(this_hist > hist_params['vmin'], axis=1)
+    max_0 = max(np.where(counts_0 > 0, yedges[:-1], 0))
+    max_1 = max(np.where(counts_1 > 0, xedges[:-1], 0))
+    padding = 1.1
+    axis_lim = max(max_0, max_1) * padding
+    # Add line of y=x
+    xx = np.arange(0, axis_lim, 1)
+    plt.plot(xx, xx, 'k--', lw=2, label='y=x')
+    # Limit the x and y axes
+    plt.xlim((0, axis_lim))
+    plt.ylim((0, axis_lim))
+    # Plot the linear regression between the truth and predicted values
+    slope, intercept, r_value, p_value, std_err = linregress(truths, preds)
+    plt.plot(xx, slope*xx+intercept, 'r--', lw=2, label='y=%.2f x + %.2f, R^2=%.2f'%(slope, intercept, r_value**2))
+    # Format the plot
+    plt.colorbar(extend='both', ticks=[0.1, 0] + list(range(0, 1100, 100)) )
+    plt.legend()
+    plt.grid()
+    plt.xlabel("'Truth' surface NO2 (ppb)")
+    plt.ylabel("Stage 1 surface NO2 (ppb)")
