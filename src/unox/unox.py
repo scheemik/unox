@@ -29,7 +29,7 @@ def load_lats_lons(path='../datafiles/'):
         lons = np.load(f)
     return lats, lons
 
-def show_available_data(path='original_sample_data/'):
+def show_available_data(path='original_sample_data/', print=False):
     """Print a list of available data in the given directory.
     
     For the given path, this function will print all the files in the directory.
@@ -59,8 +59,9 @@ def show_available_data(path='original_sample_data/'):
     # Recursively get all files in the directory
     data_files = recursive_paths(path)
     # Print the file paths
-    for data_file in data_files:
-        print(data_file)
+    if print:
+        for data_file in data_files:
+            print(data_file)
     return data_files
 
 def recursive_paths(path):
@@ -97,3 +98,79 @@ def recursive_paths(path):
             # If the entry is a file, add it to the list
             path_list.append(full_path)
     return path_list
+
+def get_sample_data(stage=1, x_or_y='y', year=2019):
+    """Get the path of a sample data file.
+
+    Builds the path to a specific sample data file
+    based on the stage, x_or_y, and year.
+
+    Parameters
+    ----------
+    stage : int
+        Stage of the data (1 or 2).
+    x_or_y : str
+        'x' or 'y' to specify the type of data.
+    year : int
+        Year of the data.
+    
+    Returns
+    -------
+    file_path : str
+        Path to the sample data file.
+    
+    Examples
+    --------
+    >>> file_path = get_sample_data(stage=1, x_or_y='y', year=2019)
+    '../sample_data/stage1/y/Y_2019.npy'
+    """
+    # Verify the stage and x_or_y values
+    if stage not in [1, 2]:
+        raise ValueError("Stage must be 1 or 2.")
+    if x_or_y not in ['x', 'y']:
+        raise ValueError("x_or_y must be 'x' or 'y'.")
+    # Build the file path
+    file_path = f'../sample_data/stage{stage}/{x_or_y}/{x_or_y.upper()}_{year}.npy'
+    # Find the available data files
+    data_files = show_available_data('sample_data/')
+    # Check if the file exists
+    if file_path not in data_files:
+        raise FileNotFoundError(f"File {file_path} not found.")
+    return file_path
+
+def get_pred_data(stage=1, HPC_run='test_unet_601760', year=2019):
+    """Get the path of a prediction data file.
+
+    Builds the path to a specific prediction data file
+    based on the stage, HPC_run ID, and year.
+
+    Parameters
+    ----------
+    stage : int
+        Stage of the data (1 or 2).
+    HPC_run : str
+        ID of the HPC run.
+    year : int
+        Year of the data.
+
+    Returns
+    -------
+    file_path : str
+        Path to the prediction data file.
+
+    Examples
+    --------
+    >>> file_path = get_pred_data(stage=1, HPC_run='test_unet_601760', year=2019)
+    '../HPC_runs/test_unet_601760/stage1_output/pred_X_2019.npy'
+    """
+    # Verify the stage value
+    if stage not in [1, 2]:
+        raise ValueError("Stage must be 1 or 2.")
+    # Build the file path
+    file_path = f'../HPC_runs/{HPC_run}/stage{stage}_output/pred_X_{year}.npy'
+    # Find the available data files
+    data_files = show_available_data('HPC_runs/')
+    # Check if the file exists
+    if file_path not in data_files:
+        raise FileNotFoundError(f"File {file_path} not found.")
+    return file_path
