@@ -1,7 +1,8 @@
 import numpy as np
 import xarray as xr
 
-def get_extent(xr_dataset):
+def get_extent(xr_dataset,
+               shift_lons=False):
     """Get the latitude and longitude extent of the given xarray dataset.
 
     Finds the maximum and minimum latitude and longitude values in the given dataset.
@@ -10,6 +11,8 @@ def get_extent(xr_dataset):
     ----------
     xr_dataset : xarray.Dataset or xarray.DataArray
         The xarray data of which to find the extent.
+    shift_lons : bool, optional
+        If True, shift the longitude values from the range [0, 360] to [-180, 180].
     
     Returns
     -------
@@ -18,6 +21,7 @@ def get_extent(xr_dataset):
     
     Examples
     --------
+    >>> nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
     >>> extent = get_extent(nox)
     (24.112, 58.878, -126.0, -59.625)
     """
@@ -40,14 +44,17 @@ def get_extent(xr_dataset):
         raise ValueError("lon_max is NaN.")
     # Verify that latitude values are in the range [-90, 90]
     if lat_min < -90 or lat_min > 90:
-        raise ValueError("Latitude values must be in the range [-90, 90], lat_min = {lat_min}.")
+        raise ValueError(f"Latitude values must be in the range [-90, 90], lat_min = {lat_min}.")
     if lat_max < -90 or lat_max > 90:
-        raise ValueError("Latitude values must be in the range [-90, 90], lat_max = {lat_max}.")
+        raise ValueError(f"Latitude values must be in the range [-90, 90], lat_max = {lat_max}.")
     # Verify that longitude values are in the range [-180, 180]
+    if shift_lons:
+        lon_min -= 180
+        lon_max -= 180
     if lon_min < -180 or lon_min > 180:
-        raise ValueError("Longitude values must be in the range [-180, 180], lon_min = {lon_min}.")
+        raise ValueError(f"Longitude values must be in the range [-180, 180], lon_min = {lon_min}.\n\t If values are in the range [0, 360], set shift_lons=True.")
     if lon_max < -180 or lon_max > 180:
-        raise ValueError("Longitude values must be in the range [-180, 180], lon_max = {lon_max}.")
+        raise ValueError(f"Longitude values must be in the range [-180, 180], lon_max = {lon_max}.\n\t If values are in the range [0, 360], set shift_lons=True.")
     # Return the extent as a tuple
     return (lat_min, lat_max, lon_min, lon_max)
 
