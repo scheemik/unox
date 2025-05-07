@@ -29,6 +29,40 @@ def load_lats_lons(path='../datafiles/'):
         lons = np.load(f)
     return lats, lons
 
+def verify_path(path):
+    """Verify that the path to the data files is correct.
+
+    Checks if the path to the data files exists and is valid.
+    If not, it raises an error.
+
+    Parameters
+    ----------
+    path : str
+        Relative path to the directory containing data files.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified path does not exist.
+
+    Returns
+    -------
+    path : str
+        The verified path to the data files.
+
+    Examples
+    --------
+    >>> verify_path()
+    """
+    if not os.path.exists(path):
+        path = '../' + path
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Path {path} does not exist.")
+        else:
+            return path
+    else:
+        return path
+
 def show_available_data(path='original_sample_data/', print=False):
     """Print a list of available data in the given directory.
     
@@ -49,13 +83,7 @@ def show_available_data(path='original_sample_data/', print=False):
     >>> data_files = show_available_data('original_sample_data/')
     """
     # Check if the path exists
-    if not os.path.exists(path):
-        try:
-            path = '../' + path
-            os.path.exists(path) == True
-        except:
-            print(f"Path {path} does not exist.")
-            return []
+    path = verify_path(path)
     # Recursively get all files in the directory
     data_files = recursive_paths(path)
     # Print the file paths
@@ -130,7 +158,9 @@ def get_sample_data(stage=1, x_or_y='y', year=2019):
     if x_or_y not in ['x', 'y']:
         raise ValueError("x_or_y must be 'x' or 'y'.")
     # Build the file path
-    file_path = f'../sample_data/stage{stage}/{x_or_y}/{x_or_y.upper()}_{year}.npy'
+    file_path = f'sample_data/stage{stage}/{x_or_y}/{x_or_y.upper()}_{year}.npy'
+    # Verify the path
+    file_path = verify_path(file_path)
     # Find the available data files
     data_files = show_available_data('sample_data/')
     # Check if the file exists
@@ -167,7 +197,9 @@ def get_pred_data(stage=1, HPC_run='test_unet_601760', year=2019):
     if stage not in [1, 2]:
         raise ValueError("Stage must be 1 or 2.")
     # Build the file path
-    file_path = f'../HPC_runs/{HPC_run}/stage{stage}_output/pred_X_{year}.npy'
+    file_path = f'HPC_runs/{HPC_run}/stage{stage}_output/pred_X_{year}.npy'
+    # Verify the path
+    file_path = verify_path(file_path)
     # Find the available data files
     data_files = show_available_data('HPC_runs/')
     # Check if the file exists
