@@ -45,6 +45,41 @@ def get_extent(xr_dataset,
     # Return the extent as a tuple
     return (lat_min, lat_max, lon_min, lon_max)
 
+def get_lats_lons(dataset='../datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc',
+                  shift_lons=False):
+    """Get the latitude and longitude values from the given dataset.
+
+    Loads the latitude and longitude values from the given dataset
+    and returns them as numpy arrays.
+
+    Parameters
+    ----------
+    dataset : str
+        The path to the dataset file.
+
+    Returns
+    -------
+    lats : numpy.ndarray
+        Array of latitude values.
+    lons : numpy.ndarray
+        Array of longitude values.
+
+    Examples
+    --------
+    >>> lats, lons = get_lats_lons()
+    """
+    # Open the dataset using xarray
+    xr_dataset = xr.open_dataset(dataset)
+    # Get the latitude and longitude values
+    lats = xr_dataset.lat.values
+    lons = xr_dataset.lon.values
+    # Verify the latitude and longitude values
+    map(verify_lat, lats)
+    if shift_lons:
+        lons = np.array(list(map(shift_lon, lons)))
+    map(verify_lon, lons)
+    return lats, lons
+
 # def compare_lats_lons((lats1, lons1), (lats2, lons2)):
 
 def verify_dataset(xr_dataset):
