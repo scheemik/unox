@@ -45,7 +45,7 @@ def get_extent(xr_dataset,
     # Return the extent as a tuple
     return (lat_min, lat_max, lon_min, lon_max)
 
-def get_lats_lons(dataset='../datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc',
+def get_lats_lons(xr_dataset=xr.open_dataset('datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc'),
                   shift_lons=False):
     """Get the latitude and longitude values from the given dataset.
 
@@ -54,8 +54,8 @@ def get_lats_lons(dataset='../datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021
 
     Parameters
     ----------
-    dataset : str
-        The path to the dataset file.
+    xr_dataset : xarray.Dataset or xarray.DataArray
+        The xarray data to verify.
 
     Returns
     -------
@@ -68,8 +68,8 @@ def get_lats_lons(dataset='../datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021
     --------
     >>> lats, lons = get_lats_lons()
     """
-    # Open the dataset using xarray
-    xr_dataset = xr.open_dataset(dataset)
+    # Verify the xr_dataset
+    verify_dataset(xr_dataset)
     # Get the latitude and longitude values
     lats = xr_dataset.lat.values
     lons = xr_dataset.lon.values
