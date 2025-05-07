@@ -45,3 +45,23 @@ def test_get_sample_data():
             assert True, f"get_sample_data raised an exception on invalid parameters {params}: {e}"
         else:
             assert False, f"get_sample_data did not raise an exception on invalid parameters {params}"
+
+def test_get_pred_data():
+    """Test the get_pred_data function."""
+    # Test with valid parameters
+    params = {'stage': 1, 'HPC_run': 'test_unet_601760', 'year': 2019}
+    actual = unox.get_pred_data(**params)
+    expected = 'HPC_runs/test_unet_601760/stage1_output/pred_X_2019.npy'
+    assert actual == expected, f"Expected {expected}, but got {actual}"
+    
+    # Test with invalid parameters
+    invalid_params = [{'stage': 3, 'HPC_run': 'test_unet_601760', 'year': 2019},
+                      {'stage': 1, 'HPC_run': '', 'year': 2019},
+                      {'stage': 1, 'HPC_run': 'test_unet_601760', 'year': -1}]
+    for params in invalid_params:
+        try:
+            unox.get_pred_data(**params)
+        except (ValueError, FileNotFoundError) as e:
+            assert True, f"get_pred_data raised an exception on invalid parameters {params}: {e}"
+        else:
+            assert False, f"get_pred_data did not raise an exception on invalid parameters {params}"
