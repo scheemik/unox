@@ -45,7 +45,7 @@ def get_extent(xr_dataset,
     # Return the extent as a tuple
     return (lat_min, lat_max, lon_min, lon_max)
 
-def get_lats_lons(xr_dataset=xr.open_dataset('datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc'),
+def get_lats_lons(xr_dataset,
                   shift_lons=False):
     """Get the latitude and longitude values from the given dataset.
 
