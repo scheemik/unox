@@ -23,6 +23,15 @@ def test_get_extent(xr_dataset=xr.open_dataset('datafiles/nox_2019_t106_US.nc'))
     actual = unox_data.get_extent(minimal_xr)
     assert actual == expected, f"Expected extent {expected} does not match actual extent {actual}"
 
+def test_get_lats_lons(path='datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc'):
+    """Test the get_lats_lons function."""
+    # Load a sample xarray dataset for testing
+    expected_lats = np.load('tests/lats_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy')
+    expected_lons = np.load('tests/lons_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy')
+    actual_lats, actual_lons = unox_data.get_lats_lons(xr_dataset=xr.open_dataset(path))
+    assert np.array_equal(actual_lats, expected_lats), f"Expected lats {expected_lats} do not match actual lats {actual_lats}"
+    assert np.array_equal(actual_lons, expected_lons), f"Expected lons {expected_lons} do not match actual lons {actual_lons}"
+
 def test_verify_dataset(xr_dataset=xr.open_dataset('datafiles/nox_2019_t106_US.nc')):
     """Test the verify_dataset function."""
     # Verify minimal xarray DataArray
