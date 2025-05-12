@@ -138,6 +138,40 @@ def verify_number(value):
     except:
         return False
 
+def clean_num_list(val_list):
+    """Clean the list of values that cannot be converted to a number.
+
+    For each value in the list, if it cannot be converted to a number, 
+    all instances of that value are removed from the list.
+
+    Parameters
+    ----------
+    val_list : list
+        The list of values to clean.
+
+    Returns
+    -------
+    return_list : list
+        The cleaned list of values.
+
+    Examples
+    --------
+    >>> val_list = clean_list([1, 2, 3, "4", 5])
+    [1, 2, 3, 5]
+    >>> val_list = clean_list([1, 2, 3, np.nan, None, np.inf, -np.inf])
+    [1, 2, 3]
+    """
+    # Create an empty list to store cleaned values
+    return_list = []
+    for val in val_list:
+        if verify_number(val):
+            # Add this value to the return list
+            return_list.append(val)
+    # If the list is empty after removing invalid numbers, raise an error
+    if len(return_list) == 0:
+        raise ValueError("No valid numbers in the input list.")
+    return return_list
+
 def verify_lat(lat_val):
     """Verify that the given latitude value is valid.
 
@@ -268,3 +302,33 @@ def get_vminmax(arrays):
         except RuntimeWarning as e:
             raise ValueError(f"{e}. Does input array contain any non-NaN values?")
     return vmin, vmax
+
+def get_max_abs_val(val_list):
+    """Get the maximum absolute value from the given list.
+
+    Removes invalid numbers from the given list of values, then takes the 
+    absolute value of the remaining values, and returns the largest.
+
+    Parameters
+    ----------
+    val_list : list of numbers or numpy.ndarray
+        The list of values to get the maximum absolute value from.
+
+    Returns
+    -------
+    max_abs : float
+        The maximum absolute value of the given values.
+
+    Examples
+    --------
+    >>> max_abs = get_max_abs_val(-11, 6)
+    6
+    >>> vmin, vmax = get_vminmax([np.array([1, 2, -3]), np.array([4, 5, -6])])
+    >>> max_abs = get_max_abs_val(vmin, vmax)
+    5
+    """
+    # Clean the list of values
+    val_list = clean_num_list(val_list)
+    # Convert the input values to a numpy array, if it is not already
+    val_list = np.array(val_list)
+    return np.max(np.abs(val_list))
