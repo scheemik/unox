@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+import warnings
 
 def get_extent(xr_dataset,
                shift_lons=False):
@@ -230,3 +231,40 @@ def shift_lon(lon_value):
     if lon_value < 0 or lon_value > 360:
         raise ValueError(f"Longitude value must be in the range [0, 360], lon_value = {lon_value}.")
     return lon_value - 180
+
+def get_vminmax(arrays):
+    """Get the minimum and maximum values across the given arrays.
+
+    Flattens and concatenates the given arrays and returns the minimum
+    and maximum values, ignoring NaN values.
+
+    Parameters
+    ----------
+    arrays : list of numpy.ndarray
+        The arrays to get the minimum and maximum values from.
+
+    Returns
+    -------
+    vmin : float
+        The minimum value across the arrays.
+    vmax : float
+        The maximum value across the arrays.
+
+    Examples
+    --------
+    >>> arrays = [np.array([1, 2, 3]), np.array([4, 5, 6])]
+    >>> vmin, vmax = get_vminmax(arrays)
+    (1, 6)
+    """
+    # Flatten and concatenate the arrays
+    flat_arrays = np.concatenate([arr.flatten() for arr in arrays])
+    # Get the minimum and maximum values
+    #   Catch warning for all-NaN arrays
+    with warnings.catch_warnings():
+        warnings.filterwarnings('error', category=RuntimeWarning)
+        try:
+            vmin = np.nanmin(flat_arrays)
+            vmax = np.nanmax(flat_arrays)
+        except RuntimeWarning as e:
+            raise ValueError(f"{e}. Does input array contain any non-NaN values?")
+    return vmin, vmax
