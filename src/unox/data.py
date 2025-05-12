@@ -332,3 +332,55 @@ def get_max_abs_val(val_list):
     # Convert the input values to a numpy array, if it is not already
     val_list = np.array(val_list)
     return np.max(np.abs(val_list))
+
+def restrict_domain(arrs_to_restrict, lats, lons, restricting_data):
+    """Restrict the domain of the given arrays
+
+    Restricts the domain of the given arrays to the same extent as that 
+    in the restricting data. The values of lats, lons are the latitude and
+    longitude values of the arrays to restrict.
+
+    Parameters
+    ----------
+    arrs_to_restrict : list of numpy.ndarray
+        The arrays to restrict in latitude and longitude.
+    lats : numpy.ndarray
+        The latitude values of the arrays to restrict.
+    lons : numpy.ndarray
+        The longitude values of the arrays to restrict.
+    restricting_data : xarray.Dataset or xarray.DataArray
+        The dataset to restrict the arrays to.
+    
+    Returns
+    -------
+    arrs_to_return : list of numpy.ndarray
+        The restricted arrays.
+    lat_r : numpy.ndarray
+        The latitude values of the restricting data.
+    lon_r : numpy.ndarray
+        The longitude values of the restricting data.
+    
+    Examples
+    --------
+    >>> stage1 = np.load(get_pred_data(stage=1, 'HPC_run'='test_unet_601760', 'year'=2019))
+    >>> lats, lons = load_lats_lons()
+    >>> nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
+    >>> stage1_restricted = restrict_domain([nox], lats, lons, nox)
+    """
+    # Get the latitude and longitude values from the restricting data
+    lat_r, lon_r = get_lats_lons(restricting_data)
+
+    # I feel like this should work, but I can't figure it out right now
+    this_extent = get_extent(restricting_data)
+
+    # Find indices of lats and lons that are in the restricting data
+    latmin = np.where(np.abs(lats-np.min(lat_r))<0.1)[0][0]
+    latmax = np.where(np.abs(lats-np.max(lat_r))<0.1)[0][0] + 1
+    lonmin = np.where(np.abs(lons-np.min(lon_r))<0.1)[0][0]
+    lonmax = np.where(np.abs(lons-np.max(lon_r))<0.1)[0][0] + 1
+
+    # Narrow the data to just this region
+    arrs_to_return = []
+    for arr in arrs_to_restrict:
+        arrs_to_return.append(arr[:,latmin:latmax,lonmin:lonmax,:])
+    return arrs_to_return, lat_r, lon_r
