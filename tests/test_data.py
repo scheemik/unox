@@ -74,9 +74,24 @@ def test_verify_number():
     for num in valid_numbers:
         assert udata.verify_number(num) == True, f"verify_number failed on valid number {num}"
     # Test invalid number values
-    invalid_numbers = [np.nan, np.inf, -np.inf, '1', None]
+    invalid_numbers = [np.nan, np.inf, -np.inf, '1', 'abc', None]
     for num in invalid_numbers:
         assert udata.verify_number(num) == False, f"verify_number failed on invalid number {num}"
+
+def test_clean_num_list():
+    """Test the clean_num_list function."""
+    # Test a valid list
+    sample_list = [1.0, 2, 3, 4, '5', np.nan, None, 'abc', np.inf, -np.inf]
+    expected_list = [1.0, 2, 3, 4]
+    assert udata.clean_num_list(sample_list) == expected_list, f"clean_num_list failed on valid list {sample_list}"
+    # Test an invalid list
+    invalid_list = ['2', np.nan, None, 'abc', np.inf, -np.inf]
+    try:
+        udata.clean_num_list(invalid_list)
+    except ValueError as e:
+        assert True, f"clean_num_list raised an exception on invalid list {invalid_list}: {e}"
+    else:
+        assert False, f"clean_num_list did not raise an exception on invalid list {invalid_list}"
 
 def test_verify_lat():
     """Test the verify_lat function."""
@@ -136,6 +151,15 @@ def test_get_vminmax():
     # Check if the vmin and vmax values are correct
     assert vmin == 1.0, f"Expected vmin 1.0, but got {vmin}"
     assert vmax == 6.0, f"Expected vmax 6.0, but got {vmax}"
+
+    # Create another sample list of arrays for testing
+    sample_array_list_2 = [np.array([np.nan, -2, 3]), np.array([4, 5, np.nan])]
+    # Get the vmin and vmax values
+    vmin, vmax = udata.get_vminmax(sample_array_list_2)
+    # Check if the vmin and vmax values are correct
+    assert vmin == -2.0, f"Expected vmin -2.0, but got {vmin}"
+    assert vmax == 5.0, f"Expected vmax 5.0, but got {vmax}"
+
     # Create an invalid sample list of arrays for testing
     invalid_array_list = [np.array([np.nan, np.nan, np.nan]), np.array([np.nan, np.nan, np.nan])]
     # Get the vmin and vmax values
@@ -145,6 +169,7 @@ def test_get_vminmax():
         assert True, f"get_vminmax raised an exception on invalid input: {e}"
     else:
         assert False, "get_vminmax did not raise an exception on invalid input"
+    
     # Create a sample xarray dataset for testing
     xr_dataset=xr.open_dataset('datafiles/nox_2019_t106_US.nc')
     ex_lat_min = 24.112
@@ -160,3 +185,36 @@ def test_get_vminmax():
     assert lat_max == ex_lat_max, f"Expected lat_max {ex_lat_max}, but got {lat_max}"
     assert lon_min == ex_lon_min, f"Expected lon_min {ex_lon_min}, but got {lon_min}"
     assert lon_max == ex_lon_max, f"Expected lon_max {ex_lon_max}, but got {lon_max}"
+
+def test_get_max_abs_val():
+    """Test the get_max_abs_val function."""
+    # Create sample data array for testing
+    sample_values = [1, -2, 3, -4, 5, -6]
+    # Get the max absolute value
+    max_abs_val = udata.get_max_abs_val(sample_values)
+    # Check if the max absolute value is correct
+    assert max_abs_val == 6.0, f"Expected max absolute value 6.0, but got {max_abs_val}"
+
+    # Create sample data array for testing
+    sample_values = np.arange(1, 7)
+    # Get the max absolute value
+    max_abs_val = udata.get_max_abs_val(sample_values)
+    # Check if the max absolute value is correct
+    assert max_abs_val == 6.0, f"Expected max absolute value 6.0, but got {max_abs_val}"
+    
+    # Create another sample data array for testing
+    sample_values_2 = [-1, '-2', 3, -4, np.nan, -6]
+    # Get the max absolute value
+    max_abs_val = udata.get_max_abs_val(sample_values_2)
+    # Check if the max absolute value is correct
+    assert max_abs_val == 6.0, f"Expected max absolute value 6.0, but got {max_abs_val}"
+    
+    # Create an invalid sample data array for testing
+    invalid_values = [np.nan, None, '1']
+    # Get the max absolute value
+    try:
+        udata.get_max_abs_val(invalid_values)
+    except ValueError as e:
+        assert True, f"get_max_abs_val raised an exception on invalid input: {e}"
+    else:
+        assert False, f"get_max_abs_val did not raise an exception on invalid input: {invalid_values}"
