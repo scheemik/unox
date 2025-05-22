@@ -63,7 +63,7 @@ def verify_path(path):
     else:
         return path
 
-def show_available_data(path='original_sample_data/', print=False):
+def show_available_data(path='original_sample_data/', verb=False):
     """Print a list of available data in the given directory.
     
     For the given path, this function will print all the files in the directory.
@@ -72,6 +72,8 @@ def show_available_data(path='original_sample_data/', print=False):
     ----------
     path : str
         Relative path to the directory containing data files.
+    verb : bool
+        Verbose mode. If True, print the file paths. Defaults to False.
 
     Returns
     -------
@@ -86,8 +88,8 @@ def show_available_data(path='original_sample_data/', print=False):
     path = verify_path(path)
     # Recursively get all files in the directory
     data_files = recursive_paths(path)
-    # Print the file paths
-    if print:
+    # Print the file paths, if Verbose mode is enabled
+    if verb:
         for data_file in data_files:
             print(data_file)
     return data_files
@@ -121,10 +123,16 @@ def recursive_paths(path):
         if os.path.isdir(full_path):
             # If the entry is a directory, call this function recursively
             for this_path in recursive_paths(full_path):
-                path_list.append(this_path)
+                # Exclude hidden files, that is, where they start with a `.`
+                #   after the last `/` in the path
+                if not this_path.split('/')[-1].startswith('.'):
+                    path_list.append(this_path)
         else:
             # If the entry is a file, add it to the list
-            path_list.append(full_path)
+            # Exclude hidden files, that is, where they start with a `.`
+            #   after the last `/` in the path
+            if not full_path.split('/')[-1].startswith('.'):
+                path_list.append(full_path)
     return path_list
 
 def get_sample_data(stage=1, x_or_y='y', year=2019):
