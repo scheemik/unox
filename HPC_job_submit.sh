@@ -39,4 +39,4 @@ fi
 
 ###############################################################################
 # Submit job to queue
-# sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME
+sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME
