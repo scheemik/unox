@@ -26,6 +26,8 @@ Keras       | 2.9.0
 
 A detailed list of packages installed while while testing and validating the model is provided in `packagelist.txt`.
 
+The dependencies are tracked by `poetry` and can be found in `pyproject.toml`.
+
 ## Usage
 
 `unox` makes use of the `tensorflow` package to run a U-net deep learning model to make estimates of NOx emissions.
