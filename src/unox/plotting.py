@@ -193,9 +193,24 @@ def plot_npy_map(this_fig,
     >>> fig, ax = plt.subplots()
     >>> plot_npy_map(ax, npy_arr, lats, lons, title='NOx emissions')
     """
-    pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=plt.cm.seismic, shading='auto', vmin=-c_halfrange, vmax=c_halfrange)  
+    pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=plt.cm.seismic, shading='auto', levels=100, vmin=-c_halfrange, vmax=c_halfrange)  
     this_ax.set_title(ax_title)
-    this_fig.colorbar(pcm, ax=this_ax)#, label='NOx emissions (kg/m2/s)', extend='both', ticks=[-c_halfrange, 0, c_halfrange] )
+    # Plot the data
+    # pcm = this_ax.pcolorfast(npy_arr, cmap=plt.cm.seismic, vmin=-c_halfrange, vmax=c_halfrange)
+    p_lon_min = lons.min()
+    p_lon_max = lons.max()
+    p_lat_min = lats.min()
+    p_lat_max = lats.max()
+    # Format the map
+    this_ax.format(
+        lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
+        suptitle='NOx emissions on ',# + datetime,
+        latlines=10, lonlines=10, coast=True,
+        labels=True, gridminor=True
+    )
+    # Set ticks for the colorbar
+    tick_spacing = c_halfrange / 5
+    this_fig.colorbar(pcm, ax=this_ax, ticks=tick_spacing)#, label='NOx emissions (kg/m2/s)', extend='both', ticks=[-c_halfrange, 0, c_halfrange] )
 
 def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
                 pred_params={'stage': -1, 'HPC_run': 'test_unet_601760', 'year': 2019},
@@ -248,9 +263,29 @@ def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
     # Get the day of year to plot
     day = datetime.strptime(this_date, '%Y-%m-%dT%H:%M:%S').timetuple().tm_yday
 
+    # Create the figure
+    fig = pplt.figure(refwidth=10)
+    ax = fig.subplots(nrows=2, ncols=3, proj='cyl')
+    # ax = fig.subplots(nrows=1, proj='cyl')
+    # Select medium resolution for features such as coastlines
+    pplt.rc.reso = 'med' 
+    # Plot the data
+    # this_nox = axs.pcolorfast(nox_sel_time, vmin=0, vmax=cbar_max)
+    # # Format the map
+    # axs.format(
+    #     lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
+    #     suptitle='NOx emissions on ' + datetime,
+    #     latlines=10, lonlines=10, coast=True,
+    #     labels=True, gridminor=True
+    # )
+    # # Add a colorbar
+    # fig.colorbar(this_nox, loc='b', label='NOx emissions (kg/m2/s)')
+
     # Make the figure with the subplots
-    fig, ax = plt.subplots(2,3,figsize=(14,8))
+    # fig, ax = plt.subplots(2,3,figsize=(14,8))
     # Add the subplots
+    # plot_npy_map(fig, ax, truth[day,:,:,0], lats, lons, halfrange, ax_title='NOx emissions (truth)')
+
     plot_npy_map(fig, ax[0,0], truth[day,:,:,0], lats, lons, halfrange, ax_title='NOx emissions (truth)')
     plot_npy_map(fig, ax[0,1], truth[day,:,:,0]-stage1[day,:,:,0], lats, lons, halfrange, ax_title='Truth - stage 1 prediction')
     plot_npy_map(fig, ax[0,2], truth[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, ax_title='Truth - stage 2 prediction')
