@@ -4,6 +4,7 @@ import numpy as np
 import xarray as xr
 import proplot as pplt
 from datetime import datetime
+import warnings
 
 from unox import unox
 from unox import data as udata
@@ -161,6 +162,7 @@ def plot_npy_map(this_fig,
                  lats,
                  lons,
                  c_halfrange,
+                 cb_extend='neither',
                  ax_title=''):
     """Plots a map of the given numpy array.
 
@@ -180,12 +182,15 @@ def plot_npy_map(this_fig,
         The longitude coordinates of the data.
     c_halfrange : float
         The half range for the color normalization.
+    cb_extend : str
+        The extension of the colorbar. Can be 'neither', 'both', 'min', or 'max'.
+        Default is 'neither'.
     ax_title : str
         The title of the plot.
 
     Returns
     -------
-    ax : matplotlib.axes.Axes
+    this_ax : matplotlib.axes.Axes
         The axes with the plotted data.
 
     Examples
@@ -193,37 +198,32 @@ def plot_npy_map(this_fig,
     >>> fig, ax = plt.subplots()
     >>> plot_npy_map(ax, npy_arr, lats, lons, title='NOx emissions')
     """
-    pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=plt.cm.seismic, shading='auto', levels=100, vmin=-c_halfrange, vmax=c_halfrange)  
-    this_ax.set_title(ax_title)
     # Plot the data
-    # pcm = this_ax.pcolorfast(npy_arr, cmap=plt.cm.seismic, vmin=-c_halfrange, vmax=c_halfrange)
-    p_lon_min = lons.min()
-    p_lon_max = lons.max()
-    p_lat_min = lats.min()
-    p_lat_max = lats.max()
+    pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=plt.cm.seismic, shading='auto', levels=100, vmin=-c_halfrange, vmax=c_halfrange, extend=cb_extend)  
+    # Get the minimum and maximum latitude and longitude values
+    (p_lat_min, p_lat_max, p_lon_min, p_lon_max) = udata.get_extent(lats=lats, lons=lons)
     # Format the map
     this_ax.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
-        suptitle='NOx emissions on ',# + datetime,
+        title=ax_title,
         latlines=10, lonlines=10, coast=True,
         labels=True, gridminor=True
     )
-    # Set ticks for the colorbar
-    tick_spacing = c_halfrange / 5
-    this_fig.colorbar(pcm, ax=this_ax, ticks=tick_spacing)#, label='NOx emissions (kg/m2/s)', extend='both', ticks=[-c_halfrange, 0, c_halfrange] )
+    return this_ax
 
 def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
                 pred_params={'stage': -1, 'HPC_run': 'test_unet_601760', 'year': 2019},
                 this_date='2019-07-19T00:00:00',
-                restrict_lat_lon_to=None):
+                restrict_lat_lon_to=None,
+                clr_bar_scale=0.5):
     """Plots a set of maps to compare the truth and the two stages of the model.
 
     Creates a set of 6 maps:
     1. Truth
-    2. Difference: Truth - Stage 1
-    3. Difference: Truth - Stage 2
-    4. Stage 1
-    5. Stage 2
+    2. Stage 1
+    3. Stage 2
+    4. Difference: Truth - Stage 1
+    5. Difference: Truth - Stage 2
     6. Difference: Stage 1 - Stage 2
 
     Parameters
@@ -239,6 +239,9 @@ def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
     restrict_lat_lon_to : str
         Path to a netCDF file to restrict the latitude and longitude range.
         If None, the entire dataset is used.
+    clr_bar_scale : float between 0 and 1
+        Scale factor for the color bar. If set to 1, the color bar will be scaled 
+        to the maximum absolute value of the data. Default is 0.5. 
     
     Returns
     -------
@@ -248,7 +251,7 @@ def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
     pred_params.pop('stage', None)
     stage1 = np.load(unox.get_pred_data(stage=1, **pred_params))
     stage2 = np.load(unox.get_pred_data(stage=2, **pred_params))
-
+    # Get the latitude and longitude values
     lats, lons = unox.load_lats_lons()
 
     if not isinstance(restrict_lat_lon_to, type(None)):
@@ -264,35 +267,78 @@ def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
     day = datetime.strptime(this_date, '%Y-%m-%dT%H:%M:%S').timetuple().tm_yday
 
     # Create the figure
-    fig = pplt.figure(refwidth=10)
+    fig = pplt.figure(refwidth=4)
     ax = fig.subplots(nrows=2, ncols=3, proj='cyl')
     # ax = fig.subplots(nrows=1, proj='cyl')
+    # Set the figure title
+    fig.suptitle('NOx emissions on ' + this_date, fontsize=16)
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
-    # Plot the data
-    # this_nox = axs.pcolorfast(nox_sel_time, vmin=0, vmax=cbar_max)
-    # # Format the map
-    # axs.format(
-    #     lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
-    #     suptitle='NOx emissions on ' + datetime,
-    #     latlines=10, lonlines=10, coast=True,
-    #     labels=True, gridminor=True
-    # )
-    # # Add a colorbar
-    # fig.colorbar(this_nox, loc='b', label='NOx emissions (kg/m2/s)')
 
-    # Make the figure with the subplots
-    # fig, ax = plt.subplots(2,3,figsize=(14,8))
+    # Scale the color bar
+    if clr_bar_scale < 0 or clr_bar_scale > 1:
+        warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
+        clr_bar_scale = 0.5
+    if clr_bar_scale != 1:
+        halfrange *= clr_bar_scale
+        cb_extend = 'both'
+    else:
+        cb_extend = 'neither'
+    print('cb_extend:', cb_extend)
+
     # Add the subplots
     # plot_npy_map(fig, ax, truth[day,:,:,0], lats, lons, halfrange, ax_title='NOx emissions (truth)')
+    plot_npy_map(fig, ax[0,0], truth[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='NOx emissions (truth)')
+    plot_npy_map(fig, ax[0,1], stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
+    plot_npy_map(fig, ax[0,2], stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
+    plot_npy_map(fig, ax[1,0], truth[day,:,:,0]-stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
+    plot_npy_map(fig, ax[1,1], truth[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
+    plot_npy_map(fig, ax[1,2], stage1[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
 
-    plot_npy_map(fig, ax[0,0], truth[day,:,:,0], lats, lons, halfrange, ax_title='NOx emissions (truth)')
-    plot_npy_map(fig, ax[0,1], truth[day,:,:,0]-stage1[day,:,:,0], lats, lons, halfrange, ax_title='Truth - stage 1 prediction')
-    plot_npy_map(fig, ax[0,2], truth[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, ax_title='Truth - stage 2 prediction')
-    plot_npy_map(fig, ax[1,0], stage1[day,:,:,0], lats, lons, halfrange, ax_title='Stage 1 prediction')
-    plot_npy_map(fig, ax[1,1], stage2[day,:,:,0], lats, lons, halfrange, ax_title='Stage 2 prediction')
-    plot_npy_map(fig, ax[1,2], stage1[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, ax_title='Stage 1 - stage 2 prediction')
+    # Add one overall colorbar for the entire figure on the right-hand side
+    cbar = make_colorbar(fig, ax[0,0].get_children()[0], 'NOx emissions (kg/m2/s)', num_ticks=9, cb_loc='l', cb_extend=cb_extend)
     return fig
+
+def make_colorbar(fig,
+                  cb_ax,
+                  cb_label,
+                  num_ticks=9,
+                  cb_loc='l',
+                  cb_extend='neither'):
+    """Creates a colorbar for the given figure and axes.
+
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        The figure on which to add the colorbar.
+    cb_ax : matplotlib.axes.Axes
+        The axes on which to add the colorbar.
+    cb_label : str
+        The label for the colorbar.
+    num_ticks : int
+        The number of ticks for the colorbar. Default is 9.
+    cb_loc : str
+        The location of the colorbar. Default is 'l' (left).
+    cb_extend : str
+        The extension of the colorbar. Can be 'neither', 'both', 'min', or 'max'.
+        Default is 'neither'.
+
+    Returns
+    -------
+    cbar : matplotlib.colorbar.Colorbar
+        The created colorbar.
+
+    Examples
+    --------
+    >>> fig, ax = plt.subplots()
+    >>> cbar = make_colorbar(fig, ax, cb_label='NOx emissions (kg/m2/s)')
+    """
+    # Add one overall colorbar for the entire figure on the right-hand side
+    cbar = fig.colorbar(cb_ax, loc=cb_loc, label=cb_label, extend=cb_extend)
+    # Set ticks for the colorbar (use an odd number of ticks to have a zero tick in the middle)
+    cbar.locator = mpl.ticker.LinearLocator(numticks = num_ticks)
+    cbar.update_ticks()
+    return cbar
 
 def plot_comparison(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
                     pred_data={'stage':1, 'HPC_run':'test_unet_601760', 'year':2019},
