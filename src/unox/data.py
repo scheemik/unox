@@ -2,7 +2,9 @@ import numpy as np
 import xarray as xr
 import warnings
 
-def get_extent(xr_dataset,
+def get_extent(xr_dataset=None,
+               lats=None,
+               lons=None,
                shift_lons=False):
     """Get the latitude and longitude extent of the given xarray dataset.
 
@@ -12,6 +14,10 @@ def get_extent(xr_dataset,
     ----------
     xr_dataset : xarray.Dataset or xarray.DataArray
         The xarray data of which to find the extent.
+    lats : numpy.ndarray, optional
+        The latitude values to use instead of those in the dataset.
+    lons : numpy.ndarray, optional
+        The longitude values to use instead of those in the dataset.
     shift_lons : bool, optional
         If True, shift the longitude values from the range [0, 360] to [-180, 180].
     
@@ -25,15 +31,29 @@ def get_extent(xr_dataset,
     >>> nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
     >>> extent = get_extent(nox)
     (24.112, 58.878, -126.0, -59.625)
+    
+    >>> lats, lons= get_lats_lons(nox)
+    >>> extent = get_extent(lats=lats, lons=lons)
+    (24.112, 58.878, -126.0, -59.625)
     """
-    # Verify the xr_dataset
-    verify_dataset(xr_dataset)
-    # Find the min and max lat and lon values
-    # Use np.unique to ensure that the values are unique and take only the first value
-    lat_min = np.unique(xr_dataset.lat.min().values)[0]
-    lat_max = np.unique(xr_dataset.lat.max().values)[0]
-    lon_min = np.unique(xr_dataset.lon.min().values)[0]
-    lon_max = np.unique(xr_dataset.lon.max().values)[0]
+    # If no xarray dataset is provided, use the latitude and longitude values
+    if isinstance(xr_dataset, type(None)):
+        if isinstance(lats, type(None)) or isinstance(lons, type(None)):
+            raise ValueError("Either xr_dataset or both lats and lons must be provided.")
+        # Find the min and max lat and lon values
+        lat_min = np.unique(np.min(lats))[0]
+        lat_max = np.unique(np.max(lats))[0]
+        lon_min = np.unique(np.min(lons))[0]
+        lon_max = np.unique(np.max(lons))[0]
+    else:
+        # Verify the xr_dataset
+        verify_dataset(xr_dataset)
+        # Find the min and max lat and lon values
+        # Use np.unique to ensure that the values are unique and take only the first value
+        lat_min = np.unique(xr_dataset.lat.min().values)[0]
+        lat_max = np.unique(xr_dataset.lat.max().values)[0]
+        lon_min = np.unique(xr_dataset.lon.min().values)[0]
+        lon_max = np.unique(xr_dataset.lon.max().values)[0]
     # Verify that latitude values are in the range [-90, 90]
     lat_max = verify_lat(lat_max)
     lat_min = verify_lat(lat_min)

@@ -22,6 +22,18 @@ def test_get_extent(xr_dataset=xr.open_dataset('datafiles/nox_2019_t106_US.nc'))
     expected = (-90.0, 90.0, -180.0, 180.0)
     actual = udata.get_extent(minimal_xr)
     assert actual == expected, f"Expected extent {expected} does not match actual extent {actual}"
+    # Test with lats and lons
+    lats = np.array([-90, 90])
+    lons = np.array([-180, 180])
+    expected = (-90.0, 90.0, -180.0, 180.0)
+    actual = udata.get_extent(lats=lats, lons=lons)
+    assert actual == expected, f"Expected extent {expected} does not match actual extent {actual}"
+    # Test shifting longitudes
+    lats = np.array([-90, -45, 45, 90])
+    lons = np.array([0, 45.3, 200, 360])
+    expected = (-90.0, 90.0, -180.0, 180.0)
+    actual = udata.get_extent(lats=lats, lons=lons, shift_lons=True)
+    assert actual == expected, f"Expected extent {expected} does not match actual extent {actual}"
 
 def test_get_lats_lons(path='datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc'):
     """Test the get_lats_lons function."""
