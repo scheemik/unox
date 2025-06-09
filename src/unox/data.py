@@ -1,6 +1,7 @@
 import numpy as np
 import xarray as xr
 import warnings
+import os
 
 def get_extent(xr_dataset,
                shift_lons=False):
@@ -384,3 +385,59 @@ def restrict_domain(arrs_to_restrict, lats, lons, restricting_data):
     for arr in arrs_to_restrict:
         arrs_to_return.append(arr[:,latmin:latmax,lonmin:lonmax,:])
     return arrs_to_return, lat_r, lon_r
+
+def verify_npy(array):
+    """Determine if a variable or file holds a valid numpy array.
+
+    If a numpy array or a path to a file containing a numpy array was passed,
+    return True. Otherwise, raise a TypeError or FileNotFoundError.
+
+    Parameters
+    ----------
+    array : numpy.array or string
+        A numpy array or a path to a file containing a numpy array.
+
+    Returns
+    -------
+    is_npy : bool
+        The truth value of whether the value being passed
+        into the function gives us a valid numpy array.
+
+    Examples
+    --------
+    >>> my_array = np.array([1, 2, 3])
+    >>> verify_npy(my_array)
+    True
+    >>> not_array = 5
+    >>> verify_npy(not_array)
+    TypeError : Not a numpy array.
+    # Assume /arrays/array1.npy is a path to a file that contains
+    # a valid numpy array.
+    >>> my_path = "/arrays/array1.npy"
+    >>> verify_npy(my_path)
+    True
+    >>> my_path = "/arrays/array1.txt"
+    >>> verify_npy(my_path)
+    TypeError: File does not contain a numpy array.
+    # Assume /arrays/array2.npy is a path to a file that does not
+    # exist.
+    >>> my_path = "/arrays/array2.npy"
+    >>> verify_npy(my_path)
+    FileNotFoundError : File does not exist.
+    >>> my_path = "/arrays
+    >>> verify_npy(my_path)
+    FileNotFoundError : Path leads to a folder.
+    """
+    is_npy = True
+    if type(array) is str:
+        if os.path.isdir(array):
+            raise FileNotFoundError("Path leads to a folder.")
+        if not os.path.isfile(array):
+            raise FileNotFoundError("File does not exist.")
+        split_file = os.path.splitext(array)
+        if split_file[1] == "npy":
+            return True
+    elif type(array) is numpy.array:
+        return is_npy
+    else:
+        raise TypeError("Not a numpy array.")
