@@ -1,6 +1,7 @@
 from unox import data as udata
 import xarray as xr
 import numpy as np
+import os
 
 minimal_xr = xr.DataArray(
         data=[[[1], [2]], [[3], [4]]],
@@ -233,6 +234,11 @@ def test_get_max_abs_val():
 
 def test_verify_npy():
     """Test the verify_npy function."""
+
+    # Check if other functions work
+    # test = udata.get_max_abs_val([1,2,3])
+    # assert test == 3
+    
     # Create sample numpy array for testing
     my_array = np.array([1, 2, 3])
     verify_npy = udata.verify_npy(my_array)
@@ -242,14 +248,14 @@ def test_verify_npy():
     not_array = 5
     try:
         verify_npy = udata.verify_npy(not_array)
-    except ValueError as e:
+    except TypeError as e:
         assert True, f"verify_npy raised an exception on invalid input: {e}"
     else:
         assert False, f"verify_npy did not raise an exception on invalid input: {not_array}"
 
     # Ensure sample file structure exists. If not create it.
-    os.makedirs("/arrays", exists_ok=True)
-    path = "/arrays/array1.npy"
+    os.makedirs("tests/arrays", exist_ok=True)
+    path = "tests/arrays/array1.npy"
     # Attempt to open file and write nothing to it. If it does not exist a new empty file will be created.
     with open(path, "w") as file:
         file.write("")
@@ -257,7 +263,7 @@ def test_verify_npy():
     assert verify_npy == True, f"Expected True, but got {verify_npy}"
 
     # Ensure non-npy file exists. If not create it.
-    path = "/arrays/array1.txt"
+    path = "tests/arrays/array1.txt"
     with open(path, "w") as file:
         file.write("")
     try:
@@ -268,7 +274,7 @@ def test_verify_npy():
         assert False, f"verify_npy did not raise an exception on invalid input: {path}"
 
     # Ensure non-existant files raise an Error.
-    path = "/arrays/array2.npy"
+    path = "tests/arrays/array2.npy"
     try:
         verify_npy = udata.verify_npy(path)
     except FileNotFoundError as e:
@@ -276,7 +282,7 @@ def test_verify_npy():
     else:
         assert False, f"verify_npy did not raise an exception on invalid input: {path}"
 
-    path = "/arrays"
+    path = "tests/arrays"
     try:
         verify_npy = udata.verify_npy(path)
     except FileNotFoundError as e:
