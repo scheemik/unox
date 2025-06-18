@@ -455,9 +455,11 @@ def verify_npy(array):
         if not os.path.isfile(array):
             raise FileNotFoundError("File does not exist.")
         split_file = os.path.splitext(array)
-        if split_file[1] == "npy":
+        if split_file[1] == ".npy":
             return True
-    elif type(array) is numpy.array:
+        else:
+            raise TypeError("File does not contain a numpy array.")
+    elif type(array) is np.ndarray:
         return is_npy
     else:
         raise TypeError("Not a numpy array.")
