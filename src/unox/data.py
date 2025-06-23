@@ -410,7 +410,7 @@ def verify_npy(array):
     """Determine if a variable or file holds a valid numpy array.
 
     If a numpy array or a path to a file containing a numpy array was passed,
-    return True. Otherwise, raise a TypeError or FileNotFoundError.
+    return True. Otherwise, raise a TypeError, ValueError or FileNotFoundError.
 
     Parameters
     ----------
@@ -419,45 +419,81 @@ def verify_npy(array):
 
     Returns
     -------
-    is_npy : bool
-        The truth value of whether the value being passed
-        into the function gives us a valid numpy array.
+    nparray : np.ndarray
+        The array being passed or pointed to as a
+        np.ndarray.
 
     Examples
     --------
-    >>> my_array = np.array([1, 2, 3])
-    >>> verify_npy(my_array)
+    >>> import numpy as np
+    >>> from tempfile import NamedTemporaryFile
+    >>> arr = np.array([1, 2, 3])
+    >>> verify_npy(arr)
+    array([1, 2, 3])
+
+    >>> with NamedTemporaryFile(suffix=".npy", delete=False) as f:
+    ...     np.save(f.name, arr)
+    ...     verify_npy(f.name)
+    array([1, 2, 3])
+
+    >>> with NamedTemporaryFile(suffix=".txt", mode="w", delete=False) as f:
+    ...     _ = f.write("1,2,3\\n4,5,6")
+    >>> loaded = verify_npy(f.name)
+    >>> isinstance(loaded, np.ndarray)
     True
-    >>> not_array = 5
-    >>> verify_npy(not_array)
-    TypeError : Not a numpy array.
-    # Assume /arrays/array1.npy is a path to a file that contains
-    # a valid numpy array.
-    >>> my_path = "/arrays/array1.npy"
-    >>> verify_npy(my_path)
-    True
-    >>> my_path = "/arrays/array1.txt"
-    >>> verify_npy(my_path)
-    TypeError: File does not contain a numpy array.
-    # Assume /arrays/array2.npy is a path to a file that does not
-    # exist.
-    >>> my_path = "/arrays/array2.npy"
-    >>> verify_npy(my_path)
-    FileNotFoundError : File does not exist.
-    >>> my_path = "/arrays
-    >>> verify_npy(my_path)
-    FileNotFoundError : Path leads to a folder.
+
+    >>> verify_npy(42)
+    Traceback (most recent call last):
+        ...
+    TypeError: Not a numpy array.
+
+    >>> verify_npy("nonexistent/path.npy")
+    Traceback (most recent call last):
+        ...
+    FileNotFoundError: File does not exist.
+
+    >>> import os
+    >>> os.makedirs("some/folder", exist_ok=True)
+    >>> verify_npy("some/folder")
+    Traceback (most recent call last):
+        ...
+    FileNotFoundError: Path leads to a folder.
+
+    >>> with NamedTemporaryFile(suffix=".txt", mode="w", delete=False) as f:
+    ...     pass  # Empty file
+    >>> verify_npy(f.name)
+    Traceback (most recent call last):
+        ...
+    ValueError: File does not contain a readable numpy array.
     """
-    is_npy = True
-    if type(array) is str:
+    if isinstance(array, str):
         if os.path.isdir(array):
             raise FileNotFoundError("Path leads to a folder.")
         if not os.path.isfile(array):
             raise FileNotFoundError("File does not exist.")
-        split_file = os.path.splitext(array)
-        if split_file[1] == "npy":
-            return True
-    elif type(array) is numpy.array:
-        return is_npy
+        ext = os.path.splitext(array)[1].lower()
+        try:
+            if ext == ".npy":
+                return np.load(array, allow_pickle=True)
+            elif ext in [".txt", ".csv"]:
+                try:
+                    nparray =  np.loadtxt(array, delimiter=",")
+                    if len(nparray) == 0:
+                        raise ValueError("File does not contain a readable numpy array.")
+                    return nparray
+                except Exception:
+                    try:
+                        nparray = np.genfromtxt(array, delimiter=",", skip_header=1)
+                        if len(nparray) == 0:
+                            raise ValueError("File does not contain a readable numpy array.")
+                        return nparray
+                    except Exception as e:
+                        raise ValueError("File does not contain a readable numpy array.")
+            else:
+                raise TypeError("File does not contain a readable numpy array.")
+        except Exception:
+            raise ValueError("File does not contain a readable numpy array.")
+    elif isinstance(array, np.ndarray):
+        return array
     else:
         raise TypeError("Not a numpy array.")
