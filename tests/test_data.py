@@ -1,6 +1,7 @@
 from unox import data as udata
 import xarray as xr
 import numpy as np
+import os
 
 minimal_xr = xr.DataArray(
         data=[[[1], [2]], [[3], [4]]],
@@ -230,3 +231,72 @@ def test_get_max_abs_val():
         assert True, f"get_max_abs_val raised an exception on invalid input: {e}"
     else:
         assert False, f"get_max_abs_val did not raise an exception on invalid input: {invalid_values}"
+
+def test_verify_npy():
+    """Test the verify_npy function."""
+    
+    # Create sample numpy array for testing
+    my_array = np.array([1, 2, 3])
+    verify_npy = udata.verify_npy(my_array)
+    assert np.array_equal(verify_npy, my_array) == True, f"Expected {my_array}, but got {verify_npy}"
+
+    # Create non-array varaible for testing
+    not_array = 5
+    try:
+        verify_npy = udata.verify_npy(not_array)
+    except TypeError as e:
+        assert True, f"verify_npy raised an exception on invalid input: {e}"
+    else:
+        assert False, f"verify_npy did not raise an exception on invalid input: {not_array}"
+
+    # Test invalid .npy file
+    # Ensure sample file structure exists. If not create it.
+    os.makedirs("tests/arrays", exist_ok=True)
+    path = "tests/arrays/array1.npy"
+    # Attempt to open file and write nothing to it. If it does not exist a new empty file will be created.
+    with open(path, "w") as file:
+        file.write("")
+    try:
+        verify_npy = udata.verify_npy(path)
+    except ValueError:
+        pass
+
+    # Test valid .npy file
+    np.save(path, my_array)
+    verify_npy = udata.verify_npy(path)
+    assert np.array_equal(verify_npy, my_array) == True, f"Expected True, but got {verify_npy}"
+
+    # Test non-.npy file containing invalid npy array
+    # Ensure non-npy file exists. If not create it.
+    path = "tests/arrays/array1.txt"
+    with open(path, "w") as file:
+        file.write("")
+    try:
+        verify_npy = udata.verify_npy(path)
+    except ValueError as e:
+        assert True, f"verify_npy raised an exception on invalid input: {e}"
+    else:
+        assert False, f"verify_npy did not raise an exception on invalid input: {path}"
+
+    # Test non-.npy file containing valid npy array
+    np.savetxt(path, my_array, fmt="%d")
+    verify_npy = udata.verify_npy(path)
+    assert np.array_equal(verify_npy, my_array) == True, f"Expected True, but got {verify_npy}"
+
+    # Test if non-existant files raise an Error.
+    path = "tests/arrays/array2.npy"
+    try:
+        verify_npy = udata.verify_npy(path)
+    except FileNotFoundError as e:
+        assert True, f"verify_npy raised an exception on invalid input: {e}"
+    else:
+        assert False, f"verify_npy did not raise an exception on invalid input: {path}"
+
+    # Test if folder paths raise an Error
+    path = "tests/arrays"
+    try:
+        verify_npy = udata.verify_npy(path)
+    except FileNotFoundError as e:
+        assert True, f"verify_npy raised an exception on invalid input: {e}"
+    else:
+        assert False, f"verify_npy did not raise an exception on invalid input: {path}"
