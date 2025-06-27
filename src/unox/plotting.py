@@ -10,7 +10,7 @@ from unox import unox
 from unox import data as udata
 from unox import plot_format as uplt_frmt
 
-def plot_extent(xr_dataset=xr.open_dataset('../datafiles/nox_2019_t106_US.nc')):
+def plot_extent(xr_dataset='/datafiles/nox_2019_t106_US.nc'):
     """Plots the extent of the given xarray dataset.
 
     Creates a map with the Robin projection of the entire world
@@ -18,8 +18,8 @@ def plot_extent(xr_dataset=xr.open_dataset('../datafiles/nox_2019_t106_US.nc')):
 
     Parameters
     ----------
-    xr_dataset : xarray.Dataset or xarray.DataArray
-        The xarray data for which to plot the extent.
+    xr_dataset : str or xarray.Dataset or xarray.DataArray
+        The xarray data for which to plot the extent or the file path to the dataset.
     
     Returns
     -------
@@ -30,6 +30,12 @@ def plot_extent(xr_dataset=xr.open_dataset('../datafiles/nox_2019_t106_US.nc')):
     --------
     >>> fig = plot_extent(xr_dataset)
     """
+    # Check if xr_dataset is a file path or an xarray object
+    if isinstance(xr_dataset, str):
+        # If it's a file path, verify the file path
+        xr_dataset = unox.verify_path(xr_dataset)
+        # Now open the dataset
+        xr_dataset = xr.open_dataset(xr_dataset)
     # Verify the xr_dataset
     udata.verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
@@ -52,7 +58,7 @@ def plot_extent(xr_dataset=xr.open_dataset('../datafiles/nox_2019_t106_US.nc')):
     # Return the figure
     return fig
 
-def plot_lats_lons(xr_dataset=xr.open_dataset('../datafiles/nox_2019_t106_US.nc'),
+def plot_lats_lons(xr_dataset='/datafiles/nox_2019_t106_US.nc',
                    padding=0.1):
     """Plot the latitude and longitude values in the given dataset.
 
@@ -61,8 +67,11 @@ def plot_lats_lons(xr_dataset=xr.open_dataset('../datafiles/nox_2019_t106_US.nc'
 
     Parameters
     ----------
-    xr_dataset : xarray.Dataset or xarray.DataArray
-        The xarray data for which to plot the longitude and latitude values.
+    xr_dataset : str or xarray.Dataset or xarray.DataArray
+        The xarray data for which to plot the extent or the file path to the dataset.
+    padding : float
+        The padding (in a fraction of total extent) to add to the extent of the map. 
+        Default is 0.1 degrees.
     
     Returns
     -------
@@ -73,6 +82,12 @@ def plot_lats_lons(xr_dataset=xr.open_dataset('../datafiles/nox_2019_t106_US.nc'
     --------
     >>> fig = plot_lats_lons(xr_dataset)
     """
+    # Check if xr_dataset is a file path or an xarray object
+    if isinstance(xr_dataset, str):
+        # If it's a file path, verify the file path
+        xr_dataset = unox.verify_path(xr_dataset)
+        # Now open the dataset
+        xr_dataset = xr.open_dataset(xr_dataset)
     # Verify the xr_dataset
     udata.verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
@@ -100,8 +115,10 @@ def plot_lats_lons(xr_dataset=xr.open_dataset('../datafiles/nox_2019_t106_US.nc'
     # Return the figure
     return fig
 
-def plot_nc_map(datafile='../datafiles/nox_2019_t106_US.nc',
+def plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc',
                 var='nox',
+                var_string='NOx emissions',
+                var_units='kg/m2/s',
                 datetime='2019-01-01T00:00:00',
                 cbar_max=1.2e-10,
                 padding=0.1):
@@ -111,48 +128,68 @@ def plot_nc_map(datafile='../datafiles/nox_2019_t106_US.nc',
 
     Parameters
     ----------
-    datafile : str
+    xr_dataset : str
         Path to the netCDF data file.
     var : str
         The name of the variable to plot from the netCDF file.
+    var_string : str
+        The string to use for the variable in the plot title and colorbar label.
+    var_units : str
+        The units of the variable to use in the colorbar label.
     datetime : str
         Date and time to select from the data file.
     cbar_max : float
         Maximum value for the colorbar.
+    padding : float
+        The padding (in a fraction of total extent) to add to the extent of the map. 
+        Default is 0.1 degrees.
     
     Returns
     -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+    
+    Examples
+    --------
+    >>> fig = plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc')
     """
-    nox = xr.open_dataset(datafile)  #nox dataset used to make y files
+    # Check if xr_dataset is a file path or an xarray object
+    if isinstance(xr_dataset, str):
+        # If it's a file path, verify the file path
+        xr_dataset = unox.verify_path(xr_dataset)
+        # Now open the dataset
+        xr_dataset = xr.open_dataset(xr_dataset)
+    
     # Simplest way to plot the data
-    # nox.nox[0].plot()
+    # this_var.nox[0].plot()
+
     # Verify the xr_dataset
-    udata.verify_dataset(nox)
+    udata.verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
-    this_extent = udata.get_extent(nox)
+    this_extent = udata.get_extent(xr_dataset)
     # Enlarge the extent of the map by the given padding value
     p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_frmt.pad_extent(this_extent, padding)
-    # A more complex way to plot the data
     # Select the time to plot
-    nox_sel_time = nox.nox.sel(time=datetime)
+    # var_sel_time = xr_dataset.nox.sel(time=datetime)
+    var_sel_time = xr_dataset[var].sel(time=datetime)
     # Find the min and max lat and lon values
-    lat_min, lat_max, lon_min, lon_max = udata.get_extent(nox_sel_time)
+    lat_min, lat_max, lon_min, lon_max = udata.get_extent(var_sel_time)
     # Create the figure
     fig = pplt.figure(refwidth=10)
     axs = fig.subplots(nrows=1, proj='cyl')
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
     # Plot the data
-    this_nox = axs.pcolorfast(nox_sel_time, vmin=0, vmax=cbar_max)
+    this_var = axs.pcolorfast(var_sel_time, vmin=0, vmax=cbar_max)
     # Format the map
     axs.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
-        suptitle='NOx emissions on ' + datetime,
+        suptitle=var_string + ' on ' + datetime,
         latlines=10, lonlines=10, coast=True,
         labels=True, gridminor=True
     )
     # Add a colorbar
-    fig.colorbar(this_nox, loc='b', label='NOx emissions (kg/m2/s)')
+    fig.colorbar(this_var, loc='b', label=var_string + ' (' + var_units + ')')
     # Return the figure
     return fig
 
