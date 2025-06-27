@@ -450,3 +450,61 @@ def plot_comparison(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
     plt.grid()
     plt.xlabel("'Truth' surface NO2 (ppb)")
     plt.ylabel("Stage 1 surface NO2 (ppb)")
+
+def plot_npy_diff(npy_a,
+                  npy_b,
+                  filename='npy_diff.png'
+                  ):
+    """Plots the difference between two numpy arrays.
+
+    Assuming the npy arrays have dimensions (time, lat, lon), creates a heatmap of number of differences for all time across lat vs. lon and the number of differences for all locations across time.
+
+    Parameters
+    ----------
+    npy_a : numpy.ndarray
+        The first numpy array.
+    npy_b : numpy.ndarray
+        The second numpy array.
+    filename : str
+        The filename to save the plot. Default is 'npy_diff.png'.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+
+    Examples
+    --------
+    >>> fig = plot_npy_diff(npy_a, npy_b)
+    """
+    # Verify the numpy arrays
+    npy_a = udata.verify_npy(npy_a)
+    npy_b = udata.verify_npy(npy_b)
+    # Check if the shapes of the numpy arrays match
+    if npy_a.shape != npy_b.shape:
+        raise ValueError("The shapes of the numpy arrays do not match.")
+    # Create an boolean array to tell where the two arrays differ
+    ab_diff = npy_a != npy_b
+    # Find total number of entries
+    total_entries = np.prod(ab_diff.shape)
+    print("Number of differences:", np.sum(ab_diff),'/', total_entries, '(', np.sum(ab_diff)/total_entries*100, '% )')
+
+    # Create the figure
+    # Make the axis so that they don't share x ranges
+    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=False)
+
+    # Plot heatmap showing number of differences for all time across lat vs. lon
+    pcm = ax[0].pcolormesh(np.sum(ab_diff, axis=0), cmap='viridis', shading='auto')
+    ax[0].set_xlabel('Longitude')
+    ax[0].set_ylabel('Latitude')
+    # Add colorbar
+    cbar = plt.colorbar(pcm)
+    # cbar = fig.colorbar(ax[0].get_children()[0], loc='t', label='Number of differences')
+
+    # Plot line plot showing number of differences for all locations across time
+    ax[1].plot(np.sum(ab_diff, axis=(1, 2)), color='red')
+    # Don't share x or y axes with first plot
+    ax[1].set_xlabel('Time')
+    ax[1].set_ylabel('Number of differences')
+
+    return fig
