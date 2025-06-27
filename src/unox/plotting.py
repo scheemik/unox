@@ -451,6 +451,70 @@ def plot_comparison(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
     plt.xlabel("'Truth' surface NO2 (ppb)")
     plt.ylabel("Stage 1 surface NO2 (ppb)")
 
+def plot_npy_hist(npy_arr,
+                  ax=None,
+                  n_bins=100,
+                  xlabel='NOx emissions (kg/m2/s)',
+                  ylabel='Frequency',
+                  title=None,
+                  log_scale=False,
+                  ):
+    """Plots a histogram of the given numpy array.
+
+    Creates a histogram of the given numpy array on the given axis, or
+    creates a new figure and axis if none is provided.
+
+    Parameters
+    ----------
+    npy_arr : numpy.ndarray
+        The numpy array to plot.
+    ax : matplotlib.axes.Axes, optional
+        The axes on which to plot the histogram. If None, a new figure and axes are created.
+    n_bins : int
+        The number of bins to use for the histogram. Default is 100.
+    xlabel : str
+        The label for the x-axis. Default is 'NOx emissions (kg/m2/s)'.
+    ylabel : str
+        The label for the y-axis. Default is 'Frequency'.
+    title : str, optional
+        The title of the plot. If None, no title is set.
+    log_scale : bool
+        If True, the y-axis will be set to a logarithmic scale. Default is False.
+
+    Returns
+    -------
+    fig / ax : matplotlib.figure.Figure or matplotlib.axes.Axes
+        The figure or axes containing the histogram.
+
+    Examples
+    --------
+    >>> fig = plot_npy_hist(npy_arr)
+    >>> ax[0] = plot_npy_hist(npy_arr, ax=ax[0], n_bins=50, title='Histogram of NOx emissions')
+    """
+    # Verify the numpy array
+    npy_arr = udata.verify_npy(npy_arr)
+    # Flatten the numpy array
+    npy_arr_flat = npy_arr.flatten()
+    # Create a new figure and axis if none is provided
+    if ax is None:
+        new_fig = True
+    if new_fig:
+        fig, ax = plt.subplots()
+    # Plot the histogram
+    ax.hist(npy_arr_flat, bins=n_bins, color='blue', alpha=0.7)
+    # Format the plot
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    if title is not None:
+        ax.set_title(title)
+    if log_scale:
+        ax.set_yscale('log')
+    # If new plot, return the figure
+    if new_fig:
+        return fig
+    else:
+        return ax
+
 def plot_npy_diff(npy_a,
                   npy_b,
                   filename='npy_diff.png'
@@ -491,20 +555,19 @@ def plot_npy_diff(npy_a,
 
     # Create the figure
     # Make the axis so that they don't share x ranges
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=False)
-
-    # Plot heatmap showing number of differences for all time across lat vs. lon
-    pcm = ax[0].pcolormesh(np.sum(ab_diff, axis=0), cmap='viridis', shading='auto')
-    ax[0].set_xlabel('Longitude')
-    ax[0].set_ylabel('Latitude')
-    # Add colorbar
-    cbar = plt.colorbar(pcm)
-    # cbar = fig.colorbar(ax[0].get_children()[0], loc='t', label='Number of differences')
+    fig, ax = plt.subplots(nrows=1, ncols=2, sharex=False)
 
     # Plot line plot showing number of differences for all locations across time
-    ax[1].plot(np.sum(ab_diff, axis=(1, 2)), color='red')
+    ax[0].plot(np.sum(ab_diff, axis=(1, 2)), color='red')
     # Don't share x or y axes with first plot
-    ax[1].set_xlabel('Time')
-    ax[1].set_ylabel('Number of differences')
+    ax[0].set_xlabel('Time')
+    ax[0].set_ylabel('Number of differences')
+
+    # Plot heatmap showing number of differences for all time across lat vs. lon
+    pcm = ax[1].pcolormesh(np.sum(ab_diff, axis=0), cmap='viridis', shading='auto')
+    ax[1].set_xlabel('Longitude')
+    ax[1].set_ylabel('Latitude')
+    # Add colorbar
+    cbar = plt.colorbar(pcm)
 
     return fig
