@@ -45,6 +45,21 @@ def test_get_lats_lons(path='datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021.
     assert np.array_equal(actual_lats, expected_lats), f"Expected lats {expected_lats} do not match actual lats {actual_lats}"
     assert np.array_equal(actual_lons, expected_lons), f"Expected lons {expected_lons} do not match actual lons {actual_lons}"
 
+def test_get_latlon_resolution(path='datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc'):
+    """Test the get_latlon_resolution function."""
+    # Load a minimal xarray dataset for testing
+    expected_lat_res = '180'
+    expected_lon_res = '360'
+    actual_lat_res, actual_lon_res = udata.get_latlon_resolution(xr_dataset=minimal_xr)
+    assert actual_lat_res == expected_lat_res, f"Expected latitude resolution {expected_lat_res} does not match actual {actual_lat_res}"
+    assert actual_lon_res == expected_lon_res, f"Expected longitude resolution {expected_lon_res} does not match actual {actual_lon_res}"
+    # Load a sample xarray dataset for testing
+    expected_lat_res = '1.1212830543518066 ± 0.11212115734815598'
+    expected_lon_res = '1.125'
+    actual_lat_res, actual_lon_res = udata.get_latlon_resolution(xr_dataset=xr.open_dataset(path))
+    assert actual_lat_res == expected_lat_res, f"Expected latitude resolution {expected_lat_res} does not match actual {actual_lat_res}"
+    assert actual_lon_res == expected_lon_res, f"Expected longitude resolution {expected_lon_res} does not match actual {actual_lon_res}"
+
 def test_verify_dataset(xr_dataset=xr.open_dataset('datafiles/nox_2019_t106_US.nc')):
     """Test the verify_dataset function."""
     # Verify minimal xarray DataArray
