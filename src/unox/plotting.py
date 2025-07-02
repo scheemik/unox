@@ -458,6 +458,7 @@ def plot_npy_hist(npy_arr,
                   ylabel='Frequency',
                   title=None,
                   log_scale=False,
+                  clr='blue'
                   ):
     """Plots a histogram of the given numpy array.
 
@@ -496,12 +497,14 @@ def plot_npy_hist(npy_arr,
     # Flatten the numpy array
     npy_arr_flat = npy_arr.flatten()
     # Create a new figure and axis if none is provided
-    if ax is None:
+    if isinstance(ax, type(None)):
         new_fig = True
+    else:
+        new_fig = False
     if new_fig:
         fig, ax = plt.subplots()
     # Plot the histogram
-    ax.hist(npy_arr_flat, bins=n_bins, color='blue', alpha=0.7)
+    ax.hist(npy_arr_flat, bins=n_bins, color=clr, alpha=0.5, label='n = '+str(len(npy_arr_flat)))
     # Format the plot
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -509,6 +512,8 @@ def plot_npy_hist(npy_arr,
         ax.set_title(title)
     if log_scale:
         ax.set_yscale('log')
+    # Add legend to show the number of values in the histogram
+    ax.legend()
     # If new plot, return the figure
     if new_fig:
         return fig
@@ -517,6 +522,7 @@ def plot_npy_hist(npy_arr,
 
 def plot_npy_diff(npy_a,
                   npy_b,
+                  title=None,
                   filename='npy_diff.png'
                   ):
     """Plots the difference between two numpy arrays.
@@ -529,6 +535,8 @@ def plot_npy_diff(npy_a,
         The first numpy array.
     npy_b : numpy.ndarray
         The second numpy array.
+    title : str, optional
+        The title of the plot. If None, no title is set.
     filename : str
         The filename to save the plot. Default is 'npy_diff.png'.
 
@@ -554,8 +562,9 @@ def plot_npy_diff(npy_a,
     print("Number of differences:", np.sum(ab_diff),'/', total_entries, '(', np.sum(ab_diff)/total_entries*100, '% )')
 
     # Create the figure
-    # Make the axis so that they don't share x ranges
-    fig, ax = plt.subplots(nrows=1, ncols=2, sharex=False)
+    ## Make the axis so that they don't share x ranges by setting `share=False`
+    ## Setting refwidth makes the figure a reasonable size
+    fig, ax = pplt.subplots(nrows=3, ncols=2, refwidth=3, share=False)
 
     # Plot line plot showing number of differences for all locations across time
     ax[0].plot(np.sum(ab_diff, axis=(1, 2)), color='red')
@@ -567,7 +576,20 @@ def plot_npy_diff(npy_a,
     pcm = ax[1].pcolormesh(np.sum(ab_diff, axis=0), cmap='viridis', shading='auto')
     ax[1].set_xlabel('Longitude')
     ax[1].set_ylabel('Latitude')
-    # Add colorbar
-    cbar = plt.colorbar(pcm)
+    # Add colorbar above the plot
+    cbar = ax[1].colorbar(pcm, loc='t', label='Number of differences')
+    # cbar = plt.colorbar(pcm)
+
+    # Plot a histograms of the both numpy arrays
+    plot_npy_hist(npy_a, ax=ax[2], title='npy_a', log_scale=True, clr='blue')
+    plot_npy_hist(npy_b, ax=ax[3], title='npy_b', log_scale=True, clr='red')
+
+    # Plot a histograms of both arrays, just where they differ
+    plot_npy_hist(npy_a[ab_diff], ax=ax[4], title='npy_a, where they differ', log_scale=True, clr='blue')
+    plot_npy_hist(npy_b[ab_diff], ax=ax[5], title='npy_b, where they differ', log_scale=True, clr='red')
+
+    # Set the title of the figure if provided
+    if title is not None:
+        fig.suptitle(title)
 
     return fig
