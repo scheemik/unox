@@ -102,7 +102,59 @@ def get_lats_lons(xr_dataset,
     map(verify_lon, lons)
     return lats, lons
 
-# def compare_lats_lons((lats1, lons1), (lats2, lons2)):
+def get_latlon_resolution(xr_dataset,
+                          shift_lons=False
+                          ):
+    """Get the latitude and longitude resolution of the given dataset.
+
+    Calculates the resolution of coordinate values in the dataset
+    to find the resolution in latitude and longitude separately.
+
+    Parameters
+    ----------
+    xr_dataset : xarray.Dataset or xarray.DataArray
+        The xarray data for which to find the coordinate resolution
+    shift_lons : bool, optional
+        If True, shift the longitude values from the range [0, 360] to [-180, 180].
+    
+    Returns
+    -------
+    lat_res : str
+        The resolution in latitude.
+    lon_res : str
+        The resolution in longitude.
+
+    Examples
+    --------
+    >>> nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
+    >>> lat_res, lon_res = get_latlon_resolution(nox)
+    (0.25, 0.25)
+    """
+    # Verify the xr_dataset
+    verify_dataset(xr_dataset)
+    # Get the latitude and longitude values
+    lats, lons = get_lats_lons(xr_dataset, shift_lons=shift_lons)
+    # Calculate the resolution in latitude and longitude
+    lat_res = np.unique(np.diff(lats))
+    if len(lat_res) != 1:
+        # Find the average and standard deviation of the latitude resolution
+        lat_res = np.diff(lats)
+        lat_res_mean = np.mean(lat_res)
+        lat_res_std = np.std(lat_res)
+        lat_res = f"{lat_res_mean} ± {lat_res_std}"
+    else:
+        lat_res = str(lat_res[0])
+    lon_res = np.unique(np.diff(lons))
+    if len(lon_res) != 1:
+        # Find the average and standard deviation of the longitude resolution
+        lon_res = np.diff(lons)
+        lon_res_mean = np.mean(lon_res)
+        lon_res_std = np.std(lon_res)
+        lon_res = f"{lon_res_mean} ± {lon_res_std}"
+    else:
+        lon_res = str(lon_res[0])
+    # Return the resolution in latitude and longitude
+    return lat_res, lon_res
 
 def verify_dataset(xr_dataset):
     """Verify that the given xarray dataset is valid.
