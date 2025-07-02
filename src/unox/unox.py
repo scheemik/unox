@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-def load_lats_lons(path='../datafiles/'):
+def load_lats_lons(path='datafiles/'):
     """Load latitude and longitude data from files.
 
     Loads arrays of latitude and longitude values that cover 
@@ -23,9 +23,12 @@ def load_lats_lons(path='../datafiles/'):
     --------
     >>> lats, lons = load_lats_lons()
     """
-    with open(path+'/lats.npy', 'rb') as f:
+    # Verify the paths
+    lat_path = verify_path(path+'lats.npy')
+    lon_path = verify_path(path+'lons.npy')
+    with open(lat_path, 'rb') as f:
         lats = np.load(f)
-    with open(path+'/lons.npy', 'rb') as f:
+    with open(lon_path, 'rb') as f:
         lons = np.load(f)
     return lats, lons
 
