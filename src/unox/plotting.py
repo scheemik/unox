@@ -550,8 +550,8 @@ def plot_npy_diff(npy_a,
     >>> fig = plot_npy_diff(npy_a, npy_b)
     """
     # Verify the numpy arrays
-    npy_a = udata.verify_npy(npy_a)
-    npy_b = udata.verify_npy(npy_b)
+    npy_a = udata.verify_npy(np.squeeze(npy_a))
+    npy_b = udata.verify_npy(np.squeeze(npy_b))
     # Check if the shapes of the numpy arrays match
     if npy_a.shape != npy_b.shape:
         raise ValueError("The shapes of the numpy arrays do not match.")
