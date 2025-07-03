@@ -43,7 +43,8 @@ def make_y_input_file(year,
 
     Returns
     -------
-    None
+    y_data : numpy.ndarray
+        The y input data for the specified year, scaled and processed.
     """
     # Assemble file path
     filepath = os.path.join(datadir, f"{fileprefix}{year}{fileextension}")
@@ -58,15 +59,19 @@ def make_y_input_file(year,
     # Interpolate to the latitude and longitude grid, resample to daily mean, 
     # and fill NaNs with specified value
     y_data = y_data.interp(lat=lats, lon=lons).resample(time='d').mean().fillna(nan_fill)
+    # Add a dimension of size 1 to the end to match the number of dimensions for the x input files
+    y_data = y_data.expand_dims('var',-1)  
     # Skip the first day because of the t-1 thing
     y_data = y_data[var][1::]
     # Save the data as a numpy file
-    output_filepath = os.path.join(outputdir, f"stage1/y/Y_{year}.npy")
-    np.save(output_filepath, y_data)
-    if year > stage_2_cutoff:
-        # Save in stage 2 for years later than specified
-        output_filepath_stage2 = os.path.join(outputdir, f"stage2/y/Y_{year}.npy")
-        np.save(output_filepath_stage2, y_data)
-    # Output message
-    print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
+    if not isinstance(outputdir, type(None)):
+        output_filepath = os.path.join(outputdir, f"stage1/y/Y_{year}.npy")
+        np.save(output_filepath, y_data)
+        if year > stage_2_cutoff:
+            # Save in stage 2 for years later than specified
+            output_filepath_stage2 = os.path.join(outputdir, f"stage2/y/Y_{year}.npy")
+            np.save(output_filepath_stage2, y_data)
+        # Output message
+        print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
+    return np.array(y_data)
 
