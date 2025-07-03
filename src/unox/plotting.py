@@ -198,8 +198,9 @@ def plot_npy_map(this_fig,
                  npy_arr,
                  lats,
                  lons,
-                 c_halfrange,
+                 c_halfrange=None,
                  cb_extend='neither',
+                 cmap=plt.cm.seismic,
                  ax_title=''):
     """Plots a map of the given numpy array.
 
@@ -218,7 +219,7 @@ def plot_npy_map(this_fig,
     lons : numpy.ndarray
         The longitude coordinates of the data.
     c_halfrange : float
-        The half range for the color normalization.
+        The half range for the color normalization on diverging colormaps.
     cb_extend : str
         The extension of the colorbar. Can be 'neither', 'both', 'min', or 'max'.
         Default is 'neither'.
@@ -236,7 +237,10 @@ def plot_npy_map(this_fig,
     >>> plot_npy_map(ax, npy_arr, lats, lons, title='NOx emissions')
     """
     # Plot the data
-    pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=plt.cm.seismic, shading='auto', levels=100, vmin=-c_halfrange, vmax=c_halfrange, extend=cb_extend)  
+    if isinstance(c_halfrange, type(None)):
+        pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=cmap, shading='auto', levels=100)
+    else:
+        pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=cmap, shading='auto', levels=100, vmin=-c_halfrange, vmax=c_halfrange, extend=cb_extend)  
     # Get the minimum and maximum latitude and longitude values
     (p_lat_min, p_lat_max, p_lon_min, p_lon_max) = udata.get_extent(lats=lats, lons=lons)
     # Format the map
@@ -246,7 +250,7 @@ def plot_npy_map(this_fig,
         latlines=10, lonlines=10, coast=True,
         labels=True, gridminor=True
     )
-    return this_ax
+    return this_ax, pcm
 
 def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
                 pred_params={'stage': -1, 'HPC_run': 'test_unet_601760', 'year': 2019},
@@ -481,6 +485,8 @@ def plot_npy_hist(npy_arr,
         The title of the plot. If None, no title is set.
     log_scale : bool
         If True, the y-axis will be set to a logarithmic scale. Default is False.
+    clr : str
+        The color of the histogram bars. Default is 'blue'.
 
     Returns
     -------
@@ -523,7 +529,7 @@ def plot_npy_hist(npy_arr,
 def plot_npy_diff(npy_a,
                   npy_b,
                   title=None,
-                  filename='npy_diff.png'
+                  filename=None
                   ):
     """Plots the difference between two numpy arrays.
 
@@ -538,7 +544,7 @@ def plot_npy_diff(npy_a,
     title : str, optional
         The title of the plot. If None, no title is set.
     filename : str
-        The filename to save the plot. Default is 'npy_diff.png'.
+        The filename to save the plot. Default is None.
 
     Returns
     -------
@@ -564,7 +570,7 @@ def plot_npy_diff(npy_a,
     # Create the figure
     ## Make the axis so that they don't share x ranges by setting `share=False`
     ## Setting refwidth makes the figure a reasonable size
-    fig, ax = pplt.subplots(nrows=3, ncols=2, refwidth=3, share=False)
+    fig, ax = pplt.subplots(nrows=3, ncols=2, proj={2:'cyl'}, refwidth=4, share=False, refaspect=1.8)
 
     # Plot line plot showing number of differences for all locations across time
     ax[0].plot(np.sum(ab_diff, axis=(1, 2)), color='red')
@@ -572,13 +578,17 @@ def plot_npy_diff(npy_a,
     ax[0].set_xlabel('Time')
     ax[0].set_ylabel('Number of differences')
 
-    # Plot heatmap showing number of differences for all time across lat vs. lon
-    pcm = ax[1].pcolormesh(np.sum(ab_diff, axis=0), cmap='viridis', shading='auto')
+    # Plot map showing number of differences for all time
+    lats, lons = unox.load_lats_lons()
+    temp, pcm = plot_npy_map(fig, ax[1], np.sum(ab_diff, axis=0),
+                         lats, lons,
+                         ax_title=None,
+                         cb_extend='max',
+                         cmap='viridis')
     ax[1].set_xlabel('Longitude')
     ax[1].set_ylabel('Latitude')
-    # Add colorbar above the plot
+    # # Add colorbar above the plot
     cbar = ax[1].colorbar(pcm, loc='t', label='Number of differences')
-    # cbar = plt.colorbar(pcm)
 
     # Plot a histograms of the both numpy arrays
     plot_npy_hist(npy_a, ax=ax[2], title='npy_a', log_scale=True, clr='blue')
@@ -592,4 +602,7 @@ def plot_npy_diff(npy_a,
     if title is not None:
         fig.suptitle(title)
 
+    # Save the figure to file
+    if filename is not None:
+        plt.savefig(filename)
     return fig
