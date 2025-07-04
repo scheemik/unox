@@ -473,7 +473,6 @@ def plot_comparison(npy_a,
     ax.grid()
     ax.set_xlabel(label_a)
     ax.set_ylabel(label_b)
-    ax.colorbar(q, loc='r', label='Count per pixel', formatter='sci')
     # If new plot, return the figure
     if new_fig:
         return fig
@@ -641,6 +640,10 @@ def plot_npy_diff(npy_a,
     # Find total number of entries
     total_entries = np.prod(ab_diff.shape)
     print("Number of differences:", np.sum(ab_diff),'/', total_entries, '(', np.sum(ab_diff)/total_entries*100, '% )')
+    if np.sum(ab_diff) == 0:
+        no_diff = True
+    else:
+        no_diff = False
 
     # Create the figure
     ## Make the axis so that they don't share x ranges by setting `share=False`
@@ -657,10 +660,10 @@ def plot_npy_diff(npy_a,
     # Plot map showing number of differences for all time
     lats, lons = unox.load_lats_lons()
     temp, pcm = plot_npy_map(fig, ax[1], np.sum(ab_diff, axis=0),
-                         lats, lons,
-                         ax_title=None,
-                         cb_extend='max',
-                         cmap=pplt.Colormap('viridis'))
+                            lats, lons,
+                            ax_title=None,
+                            cb_extend='max',
+                            cmap=pplt.Colormap('viridis'))
     ax[1].set_xlabel('Longitude')
     ax[1].set_ylabel('Latitude')
     # # Add colorbar above the plot
@@ -671,15 +674,18 @@ def plot_npy_diff(npy_a,
     plot_npy_hist(npy_b, ax=ax[2], title='npy_a and npy_b', log_scale=True, clr='red')
 
     # Plot a histograms of both arrays, just where they differ
-    plot_npy_hist(npy_a[ab_diff], ax=ax[3], title='npy_a and npy_b, where they differ', log_scale=True, clr='blue')
-    plot_npy_hist(npy_b[ab_diff], ax=ax[3], title='npy_a and npy_b, where they differ', log_scale=True, clr='red')
+    if no_diff == False:
+        plot_npy_hist(npy_a[ab_diff], ax=ax[3], title='npy_a and npy_b, where they differ', log_scale=True, clr='blue')
+        plot_npy_hist(npy_b[ab_diff], ax=ax[3], title='npy_a and npy_b, where they differ', log_scale=True, clr='red')
 
     # Plot a histogram of the differences between the two arrays, just where they differ
-    delta_ab_diff = npy_a[ab_diff] - npy_b[ab_diff]
-    plot_npy_hist(delta_ab_diff, ax=ax[4], title='npy_a - npy_b, where they differ', log_scale=True, clr='red')
+    if no_diff == False:
+        delta_ab_diff = npy_a[ab_diff] - npy_b[ab_diff]
+        plot_npy_hist(delta_ab_diff, ax=ax[4], title='npy_a - npy_b, where they differ', log_scale=True, clr='red')
     
     # Make a comparison plot
-    q = plot_comparison(npy_a[ab_diff], npy_b[ab_diff],
+    if no_diff == False:
+        q = plot_comparison(npy_a[ab_diff], npy_b[ab_diff],
                         label_a='npy_a (where they differ)',
                         label_b='npy_b (where they differ)',
                         ax=ax[5],
@@ -687,6 +693,7 @@ def plot_npy_diff(npy_a,
                         cmap=pplt.Colormap('viridis'),
                         log_scale=True,
                         set_under_val=1)
+        ax[5].colorbar(q, loc='r', label='Count per pixel', formatter='sci')
 
     # Set the title of the figure if provided
     if title is not None:
