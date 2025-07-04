@@ -5,6 +5,7 @@ import xarray as xr
 import proplot as pplt
 from datetime import datetime
 import warnings
+from scipy.stats import linregress
 
 from unox import unox
 from unox import data as udata
@@ -200,7 +201,7 @@ def plot_npy_map(this_fig,
                  lons,
                  c_halfrange=None,
                  cb_extend='neither',
-                 cmap=plt.cm.seismic,
+                 cmap=pplt.Colormap('seismic'),
                  ax_title=''):
     """Plots a map of the given numpy array.
 
@@ -233,7 +234,7 @@ def plot_npy_map(this_fig,
 
     Examples
     --------
-    >>> fig, ax = plt.subplots()
+    >>> fig, ax = pplt.subplots()
     >>> plot_npy_map(ax, npy_arr, lats, lons, title='NOx emissions')
     """
     # Plot the data
@@ -371,7 +372,7 @@ def make_colorbar(fig,
 
     Examples
     --------
-    >>> fig, ax = plt.subplots()
+    >>> fig, ax = pplt.subplots()
     >>> cbar = make_colorbar(fig, ax, cb_label='NOx emissions (kg/m2/s)')
     """
     # Add one overall colorbar for the entire figure on the right-hand side
@@ -381,11 +382,109 @@ def make_colorbar(fig,
     cbar.update_ticks()
     return cbar
 
-def plot_comparison(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
-                    pred_data={'stage':1, 'HPC_run':'test_unet_601760', 'year':2019},
+def plot_comparison(npy_a, 
+                    npy_b,
+                    label_a='Array A',
+                    label_b='Array B',
+                    ax=None,
                     hist_params={'bins':100, 'vmax':1000, 'vmin':10},
-                    restrict_lat_lon_to=None
+                    cmap=pplt.Colormap('viridis'),
+                    log_scale=True,
+                    set_under_val=1,
                     ):
+    """
+    Plot a comparison of two numpy arrays.
+
+    Creates a correlation plot between the values of the two given numpy arrays.
+
+    Parameters
+    ----------
+    npy_a : numpy.ndarray
+        The first numpy array to compare.
+    npy_b : numpy.ndarray
+        The second numpy array to compare.
+    label_a : str
+        The label for the first array in the plot.
+    label_b : str
+        The label for the second array in the plot.
+    hist_params : dict
+        Dictionary containing the parameters for the histogram.
+        Must contain 'bins', 'vmax', and 'vmin'.
+    cmap : matplotlib.colors.Colormap
+        The colormap to use for the histogram. Default is pplt.cm.viridis.
+    log_scale : bool
+        If True, use a logarithmic scale for the histogram. Default is True.
+    set_under_val : float
+        The value to set for the underflow in the colormap. Default is 1.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+
+    Examples
+    --------
+    >>> fig = plot_comparison(npy_a, npy_b)
+    """
+    # Verify, flatten, and squeeze the numpy arrays
+    npy_a = udata.verify_npy(np.squeeze(npy_a).flatten())
+    npy_b = udata.verify_npy(np.squeeze(npy_b).flatten())
+    # Create a new figure and axis if none is provided
+    if isinstance(ax, type(None)):
+        new_fig = True
+    else:
+        new_fig = False
+    if new_fig:
+        fig, ax = pplt.subplots()
+    # Set the values under `set_under_val` to white
+    cmap.set_under('w', set_under_val)
+    # Plot the data, depending on the scale
+    if log_scale:
+        these_ticks = [0.1, 1] + list(range(10, 1100, 100))
+        this_hist, xedges, yedges, q = ax.hist2d(npy_a, npy_b, bins=hist_params['bins'], norm='log', cmap=cmap, vmin=hist_params['vmin'], vmax=hist_params['vmax'], extend='both')
+        # cbar_kwargs={'ticks': these_ticks}, 
+    else:
+        these_ticks = None
+        this_hist, xedges, yedges, q = ax.hist2d(npy_a, npy_b, bins=hist_params['bins'], norm='linear', cmap=cmap)
+    # Count the maximum extent of the histogram where values are larger than vmin
+    counts_0 = np.sum(this_hist > hist_params['vmin'], axis=0)
+    counts_1 = np.sum(this_hist > hist_params['vmin'], axis=1)
+    max_0 = max(np.where(counts_0 > 0, yedges[:-1], 0))
+    max_1 = max(np.where(counts_1 > 0, xedges[:-1], 0))
+    padding = 1.1
+    axis_lim = max(max_0, max_1) * padding
+    # Add line of y=x
+    xx = np.arange(0, axis_lim, 1)
+    ax.plot(xx, xx, 'k--', lw=2, label='y=x')
+    # Limit the x and y axes
+    ax.set_xlim((0, axis_lim))
+    ax.set_ylim((0, axis_lim))
+    # Plot the linear regression between the truth and predicted values
+    ## Only if neither array has all the same values
+    if np.all(npy_a == npy_a[0]) or np.all(npy_b == npy_b[0]):
+        warnings.warn("One of the arrays has all the same values. Skipping linear regression.")
+    else:
+        # Perform linear regression
+        slope, intercept, r_value, p_value, std_err = linregress(npy_a, npy_b)
+        ax.plot(xx, slope*xx+intercept, 'r--', lw=2, label='y=%.2f x + %.2f, R^2=%.2f'%(slope, intercept, r_value**2))
+    # Format the plot
+    ax.set_aspect(1)
+    ax.legend()
+    ax.grid()
+    ax.set_xlabel(label_a)
+    ax.set_ylabel(label_b)
+    ax.colorbar(q, loc='r', label='Count per pixel', formatter='sci')
+    # If new plot, return the figure
+    if new_fig:
+        return fig
+    else:
+        return q
+
+def plot_true_pred_comp(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
+                        pred_data={'stage':1, 'HPC_run':'test_unet_601760', 'year':2019},
+                        hist_params={'bins':100, 'vmax':1000, 'vmin':10},
+                        restrict_lat_lon_to=None
+                        ):
     """Plot a comparison of the truth and predicted data.
 
     Creates a correlation plot of the stage 1 data (truth) and the
@@ -415,7 +514,6 @@ def plot_comparison(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
     --------
     >>> fig = plot_comparison(truth_arr, pred_arr)
     """
-    from scipy.stats import linregress
     # Load the data
     truth = np.load(unox.get_sample_data(**truth_data))  #truth (y input file)
     stage1 = np.load(unox.get_pred_data(**pred_data))  #stage 1 prediction
@@ -425,35 +523,10 @@ def plot_comparison(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
         [truth, stage1], lats, lons = udata.restrict_domain([truth, stage1], lats, lons, xr.open_dataset(restrict_lat_lon_to))
     truths = truth.flatten()
     preds = stage1.flatten()
-    # Create the figure
-    fig = plt.figure()
-    # Select the color map
-    my_cmap = plt.cm.jet
-    my_cmap.set_under('w', 1)
-    # Plot the data
-    this_hist, xedges, yedges, q = plt.hist2d(truths, preds, bins=100, norm=mpl.colors.LogNorm(vmax=hist_params['vmax'], vmin=hist_params['vmin']), cmap=plt.cm.jet)
-    # Count the maximum extent of the histogram where values are larger than vmin
-    counts_0 = np.sum(this_hist > hist_params['vmin'], axis=0)
-    counts_1 = np.sum(this_hist > hist_params['vmin'], axis=1)
-    max_0 = max(np.where(counts_0 > 0, yedges[:-1], 0))
-    max_1 = max(np.where(counts_1 > 0, xedges[:-1], 0))
-    padding = 1.1
-    axis_lim = max(max_0, max_1) * padding
-    # Add line of y=x
-    xx = np.arange(0, axis_lim, 1)
-    plt.plot(xx, xx, 'k--', lw=2, label='y=x')
-    # Limit the x and y axes
-    plt.xlim((0, axis_lim))
-    plt.ylim((0, axis_lim))
-    # Plot the linear regression between the truth and predicted values
-    slope, intercept, r_value, p_value, std_err = linregress(truths, preds)
-    plt.plot(xx, slope*xx+intercept, 'r--', lw=2, label='y=%.2f x + %.2f, R^2=%.2f'%(slope, intercept, r_value**2))
-    # Format the plot
-    plt.colorbar(extend='both', ticks=[0.1, 0] + list(range(0, 1100, 100)) )
-    plt.legend()
-    plt.grid()
-    plt.xlabel("'Truth' surface NO2 (ppb)")
-    plt.ylabel("Stage 1 surface NO2 (ppb)")
+    return plot_comparison(truths, preds, 
+                           label_a="'Truth' surface NO2 (ppb)",
+                           label_b="Stage 1 surface NO2 (ppb)",      
+                           hist_params=hist_params)
 
 def plot_npy_hist(npy_arr,
                   ax=None,
@@ -508,7 +581,7 @@ def plot_npy_hist(npy_arr,
     else:
         new_fig = False
     if new_fig:
-        fig, ax = plt.subplots()
+        fig, ax = pplt.subplots()
     # Plot the histogram
     ax.hist(npy_arr_flat, bins=n_bins, color=clr, alpha=0.5, label='n = '+str(len(npy_arr_flat)))
     # Format the plot
@@ -518,6 +591,8 @@ def plot_npy_hist(npy_arr,
         ax.set_title(title)
     if log_scale:
         ax.set_yscale('log')
+        # Set the ticks to scientific notation
+        ax.format(yformatter='sci')
     # Add legend to show the number of values in the histogram
     ax.legend()
     # If new plot, return the figure
@@ -569,7 +644,8 @@ def plot_npy_diff(npy_a,
 
     # Create the figure
     ## Make the axis so that they don't share x ranges by setting `share=False`
-    ## Setting refwidth makes the figure a reasonable size
+    ## Setting `refwidth`` makes the figure a reasonable size
+    ## The value of `refaspect` is the height divided by the width of each subplot
     fig, ax = pplt.subplots(nrows=3, ncols=2, proj={2:'cyl'}, refwidth=4, share=False, refaspect=1.8)
 
     # Plot line plot showing number of differences for all locations across time
@@ -584,25 +660,40 @@ def plot_npy_diff(npy_a,
                          lats, lons,
                          ax_title=None,
                          cb_extend='max',
-                         cmap='viridis')
+                         cmap=pplt.Colormap('viridis'))
     ax[1].set_xlabel('Longitude')
     ax[1].set_ylabel('Latitude')
     # # Add colorbar above the plot
     cbar = ax[1].colorbar(pcm, loc='t', label='Number of differences')
 
     # Plot a histograms of the both numpy arrays
-    plot_npy_hist(npy_a, ax=ax[2], title='npy_a', log_scale=True, clr='blue')
-    plot_npy_hist(npy_b, ax=ax[3], title='npy_b', log_scale=True, clr='red')
+    plot_npy_hist(npy_a, ax=ax[2], title='npy_a and npy_b', log_scale=True, clr='blue')
+    plot_npy_hist(npy_b, ax=ax[2], title='npy_a and npy_b', log_scale=True, clr='red')
 
     # Plot a histograms of both arrays, just where they differ
-    plot_npy_hist(npy_a[ab_diff], ax=ax[4], title='npy_a, where they differ', log_scale=True, clr='blue')
-    plot_npy_hist(npy_b[ab_diff], ax=ax[5], title='npy_b, where they differ', log_scale=True, clr='red')
+    plot_npy_hist(npy_a[ab_diff], ax=ax[3], title='npy_a and npy_b, where they differ', log_scale=True, clr='blue')
+    plot_npy_hist(npy_b[ab_diff], ax=ax[3], title='npy_a and npy_b, where they differ', log_scale=True, clr='red')
+
+    # Plot a histogram of the differences between the two arrays, just where they differ
+    delta_ab_diff = npy_a[ab_diff] - npy_b[ab_diff]
+    plot_npy_hist(delta_ab_diff, ax=ax[4], title='npy_a - npy_b, where they differ', log_scale=True, clr='red')
+    
+    # Make a comparison plot
+    q = plot_comparison(npy_a[ab_diff], npy_b[ab_diff],
+                        label_a='npy_a (where they differ)',
+                        label_b='npy_b (where they differ)',
+                        ax=ax[5],
+                        hist_params={'bins':100, 'vmax':1000, 'vmin':10},
+                        cmap=pplt.Colormap('viridis'),
+                        log_scale=True,
+                        set_under_val=1)
 
     # Set the title of the figure if provided
     if title is not None:
         fig.suptitle(title)
+    fig.format()
 
     # Save the figure to file
     if filename is not None:
-        plt.savefig(filename)
+        fig.savefig(filename)
     return fig
