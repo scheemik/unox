@@ -8,19 +8,24 @@ import pandas as pd
 import unox.unox as unox
 import unox.data as udata
 
+# emiss = Emissions (TCR-2 t106)
+# chemra = Chemical Reanalysis (TROPESS TCR-2)
+# insitu = Insitu data (EPA)
+# era5 = ERA5 reanalysis data
+
 def make_y_input_file(year,
                       var='nox',
-                      datadir='/data/high_res/emacdonald/unet/datafiles/t106',
-                      fileprefix='nox_',
-                      fileextension='_t106_US.nc',
+                      emiss_dir='/data/high_res/emacdonald/unet/datafiles/t106',
+                      emiss_pre='nox_',
+                      emiss_post='_t106_US.nc',
                       scale_factor=1e12,
                       nan_fill=0,
                       stage_2_cutoff=2013,
-                      outputdir='inputfiles/'):
+                      output_dir='inputfiles/'):
     """
     Create a y input file for the Unet model for the given year.
 
-    The array in the file will have these dimensions:
+    The array in the generated file will have these dimensions:
     - time: 364 (or 365 for leap years)
         - One day less than usual to allow for t-1 variable
     - lat: length depends on the latitude grid
@@ -33,12 +38,12 @@ def make_y_input_file(year,
         The year for which to create the y input file (between 2005 and 2021).
     var : str, optional
         The variable to extract from the dataset. Default is 'nox'.
-    datadir : str, optional
-        Directory where the NOx data are stored. 
+    emiss_dir : str, optional
+        Directory where the emissions data are stored. 
         Default is '/data/high_res/emacdonald/unet/datafiles/t106'.
-    fileprefix : str, optional
-        Prefix for the input file name. Default is 'nox_'.
-    fileextension : str, optional
+    emiss_pre : str, optional
+        Prefix for the emissions input file name. Default is 'nox_'.
+    emiss_post : str, optional
         Extension for the input file name. Default is '_t106_US.nc'.
     scale_factor : float, optional
         Factor by which to scale the data. Default is 1e12.
@@ -46,7 +51,7 @@ def make_y_input_file(year,
         Value to fill NaNs in the dataset. Default is 0.
     stage_2_cutoff : int, optional
         Year after which the data will also be saved in stage 2.
-    outputdir : str, optional
+    output_dir : str, optional
         Directory where the output y input file will be saved.
         Default is 'inputfiles/'.
 
@@ -56,7 +61,7 @@ def make_y_input_file(year,
         The y input data for the specified year, scaled and processed.
     """
     # Assemble file path
-    filepath = os.path.join(datadir, f"{fileprefix}{year}{fileextension}")
+    filepath = os.path.join(data_dir, f"{emiss_pre}{year}{emiss_post}")
     # Verify the path
     filepath = unox.verify_path(filepath)
     # Load data for the specified year
@@ -73,13 +78,13 @@ def make_y_input_file(year,
     # Skip the first day because of the t-1 thing
     y_data = y_data[var][1::]
     # Save the data as a numpy file
-    if not isinstance(outputdir, type(None)):
+    if not isinstance(output_dir, type(None)):
         # Assemble the file path
-        output_filepath = os.path.join(outputdir, f"stage1/y/Y_{year}.npy")
+        output_filepath = os.path.join(output_dir, f"stage1/y/Y_{year}.npy")
         np.save(output_filepath, y_data)
         if year > stage_2_cutoff:
             # Save in stage 2 for years later than specified
-            output_filepath_stage2 = os.path.join(outputdir, f"stage2/y/Y_{year}.npy")
+            output_filepath_stage2 = os.path.join(output_dir, f"stage2/y/Y_{year}.npy")
             np.save(output_filepath_stage2, y_data)
         # Output message
         print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
@@ -87,9 +92,12 @@ def make_y_input_file(year,
 
 def make_x_input_file(year,
                       stage,
-                      datadir='/data/high_res/emacdonald/unet/datafiles/',
+                      data_dir='/data/high_res/emacdonald/unet/datafiles/',
+                      chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
+                      insitu_path='US_EPA/daily_42602_',
+                      era5_path='ERA5concatenated/',
                       scale_factor=1000,
-                      outputdir='inputfiles/'):
+                      output_dir='inputfiles/'):
     """
     Create an x input file for the Unet model for the given year and stage.
 
@@ -106,77 +114,83 @@ def make_x_input_file(year,
         The year for which to create the x input file.
     stage : int
         The stage of the model (1 or 2) this will be input for.
-    datadir : str, optional
-        Directory where the NOx data are stored. Default is '/data/high_res/emacdonald/unet/datafiles/t106'.
-    outputdir : str, optional
-        Directory where the output x input file will be saved. Default is 'inputfiles/'.
+    data_dir : str, optional
+        Directory where the NOx data are stored. 
+        Default is '/data/high_res/emacdonald/unet/datafiles/t106'.
+    chemra_path : str, optional
+        Path to the chemical reanalysis data files. 
+        Default is 'TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
+    insitu_path : str, optional
+        Path to the insitu data files. Default is 'US_EPA/daily_42602_'.
+    era5_path : str, optional
+        Path to the ERA5 reanalysis data files. Default is 'ERA5concatenated/'.
+    output_dir : str, optional
+        Directory where the output x input file will be saved. 
+        Default is 'inputfiles/'.
 
     Returns
     -------
     x_data : xarray.Dataset
         The x input data for the specified year and stage.
     """
-    # Assemble the file path for the TCR-2 NO2 data
-    tcr2_filepath = os.path.join(datadir, f'TROPESS/TROPESS_reanalysis_2hr_no2_sfc_{year}.nc')
+    # Assemble the file path for the chemical reanalysis data
+    chemra_filepath = os.path.join(data_dir, f'{chemra_path}{year}.nc')
     # Verify the path
-    tcr2_filepath = unox.verify_path(tcr2_filepath)
-    # Load TCR-2 NO2 data
-    tcr2 = xr.load_dataset(tcr2_filepath)
+    chemra_filepath = unox.verify_path(chemra_filepath)
+    # Load chemical reanalysis data
+    chemra = xr.load_dataset(chemra_filepath)
     # Change longitude coordinate convention to match other data
-    tcr2.coords['lon'] = (tcr2.coords['lon'] + 180) % 360 - 180  
-    # tcr2.coords['lon'] = udata.shift_lon(tcr2.coords['lon'])  
+    chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180  
+    # chemra.coords['lon'] = udata.shift_lon(chemra.coords['lon'])  
     # Resample and rescale
-    tcr2 = tcr2.resample(time='d').mean() / scale_factor
+    chemra = chemra.resample(time='d').mean() / scale_factor
     # Find the number of days in the year
-    ndays = len(tcr2.coords['time'])
+    ndays = len(chemra.coords['time'])
     # Fix the time coordinate to match the year
-    ## For an unexplained reason, the year in all TCR-2 files is always 2005.
-    tcr2.coords['time'] = pd.date_range(f"{year}-01-01", periods=ndays)
+    if chemra_path=='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
+        # For an unexplained reason, the year in all TCR-2 files is always 2005.
+        chemra.coords['time'] = pd.date_range(f"{year}-01-01", periods=ndays)
     
-    # Combine EPA and TCR-2 data for stage 2
+    # Combine chemical reanalysis and insitu data for stage 2
     if stage == 2:
-        # Assemble the file path for the EPA NO2 data
-        epa_filepath = os.path.join(datadir, f'US_EPA/daily_42602_{year}.csv')
+        # Assemble the file path for the insitu data
+        epa_filepath = os.path.join(data_dir, f'{insitu_path}{year}.csv')
         # Verify the path
         epa_filepath = unox.verify_path(epa_filepath)
-        # Combine EPA data with TCR-2 data
-        tcr2 = make_2d_input(epa_filepath, tcr2)
+        # Combine chemical reanalysis and insitu data
+        chemra = fill_w_insitu(chemra, epa_filepath)
     
     # Interpolate to latitude and longitude grid
     lats, lons = unox.load_lats_lons()
-    tcr2 = tcr2.interp(lat=lats, lon=lons)
-    
-    # Plotting (optional)
-    # plt.figure()
-    # tcr2.sortby(['lat', 'lon']).no2[0].plot()
+    chemra = chemra.interp(lat=lats, lon=lons)
     
     # Start a list to hold datasets
     datasets = []
-    # Add the TCR-2 NO2 data for day t (starting from the second day)
-    datasets.append(tcr2.no2[1::])
+    # Add the chemical reanalysis data for day t (starting from the second day)
+    datasets.append(chemra.no2[1::])
 
     # Get the time-shifted variable (day t-1)
-    previousday = tcr2.copy()
+    previousday = chemra.copy()
     # Fix rounding
     previousday.coords['time'] = (previousday.coords['time'] + 1).dt.ceil('D')
     # Rename t-1 variable
     previousday = previousday.rename({'no2': 'no2_tm1'})
-    # Add the TCR-2 NO2 data for the previous day (t-1)
+    # Add the chemical reanalysis data for the previous day (t-1)
     datasets.append(previousday.no2_tm1[:-1])  # day t-1
 
     # Add the other variables from the ERA5 dataset
     for variable in ['u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']:
         # Assemble the file path for the ERA5 variable
-        era5_var_filepath = os.path.join(datadir, f'ERA5concatenated/{year}{variable}.nc')
+        era5_var_filepath = os.path.join(data_dir, f'{era5_path}{year}{variable}.nc')
         # Verify the path
         era5_var_filepath = unox.verify_path(era5_var_filepath)
         # Load the ERA5 variable dataset
         # Note: The variable name in the dataset is assumed to be the same as `variable`
-        newvar = xr.load_dataset(era5_var_filepath)
+        era5_var = xr.load_dataset(era5_var_filepath)
         # Rename coordinates to match the other datasets
-        newvar = newvar.rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
+        era5_var = era5_var.rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
         # Add the variable data to the datasets list, skipping the first day
-        datasets.append(getattr(newvar, variable)[1:])
+        datasets.append(getattr(era5_var, variable)[1:])
     
     # Merge all datasets into a single xarray Dataset
     x_data = xr.merge(datasets)
@@ -200,10 +214,73 @@ def make_x_input_file(year,
         xnp[:, :, :, i] = x_data[datavars[i]]  # Put it in the numpy array
 
     ## Save the data as a numpy file
-    if not isinstance(outputdir, type(None)):
+    if not isinstance(output_dir, type(None)):
         # Assemble the file path
-        output_filepath = os.path.join(outputdir, f'stage{stage}/x/X_{year}.npy')
+        output_filepath = os.path.join(output_dir, f'stage{stage}/x/X_{year}.npy')
         np.save(output_filepath, xnp)
         # Output message
         print(f"Created X input file for stage {stage} in {year}, saved to {output_filepath}")
     return xnp
+
+def fill_w_insitu(xr_dataset,
+                  insitu_filepath, 
+                  var='no2',
+                  ):
+    """
+    Replace the variable in an xarray Dataset with available insitu data.
+
+    Given an xarray Dataset of reanalysis data, replace those values of the specified 
+    variable when there is available insitu data in the provided filepath.
+
+    Parameters
+    ----------
+    xr_dataset : xarray.Dataset
+        The dataset containing reanalysis data.
+    insitu_filepath : str
+        Path to the CSV file containing insitu data.
+    var : str, optional
+        The variable to replace in the dataset. Default is 'no2'.
+
+    Returns
+    -------
+    xarray.Dataset
+        The updated dataset with insitu data replacing the specified variable.
+    """
+    # Verify the dataset
+    udata.verify_dataset(xr_dataset)
+    # Verify the insitu file path
+    insitu_filepath = unox.verify_path(insitu_filepath)
+    # Load the insitu data
+    ## Specific to the EPA csv format
+    insitu_data = pd.read_csv(insitu_filepath, parse_dates={'Date':['Date Local']}, index_col=['Date'], usecols=['Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'])
+    # One group for each day of data in the insitu data file
+    insitu_groups = insitu_data.groupby(['Date'])
+    # Get the keys (dates) from the groups
+    insitu_keys = [key for key in insitu_groups.groups.keys()]
+    # Narrow the domain to the selected latitude and longitude grid
+    lats, lons = unox.load_lats_lons()
+    in1 = xr_dataset[var].where((xr_dataset.lat >= np.min(lats)), drop=True)
+    in2 = in1.where((in1.lon <= np.max(lons)), drop=True)
+
+    # Loop through each day in the insitu data
+    for i in range(len(insitu_keys)):
+        # Get the group for the ith day
+        new_group = insitu_groups.get_group((insitu_keys[i]),)
+        # Convert the group to a numpy array
+        group_array = new_group.to_numpy()
+        # Swap axes to get the shape (lat, lon, no2) for this day
+        group_array = group_array.swapaxes(0, 1)
+        # Get the latitude, longitude, and var values of the group
+        lt = group_array[0]
+        ln = group_array[1]
+        values = group_array[2]
+        # Select the day in the chemical reanalysis dataset
+        day = in2.sel(indexers={'time': insitu_keys[i]})
+        # Loop through each latitude in the group
+        for j in range(len(lt)):
+            # Find the nearest point in the chemical reanalysis dataset
+            ## Tolerance is set to the grid cell size (1.125 degrees)
+            pt = day.sel({'lat': lt[j], 'lon': ln[j]}, method='nearest', tolerance=1.125)
+            # Replace the chemical reanalysis value with the insitu value
+            xr_dataset[var].loc[{'time': insitu_keys[i], 'lon': pt.lon, 'lat': pt.lat}] = values[j]
+    return xr_dataset
