@@ -96,7 +96,10 @@ def make_x_input_file(year,
                       chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
                       insitu_path='US_EPA/daily_42602_',
                       era5_path='ERA5concatenated/',
-                      scale_factor=1000,
+                      scale_factors={'chemra': 1000,
+                                     'sp': 100000,
+                                     'ssrd': 1000000,
+                                     'blh': 1000},
                       output_dir='inputfiles/'):
     """
     Create an x input file for the Unet model for the given year and stage.
@@ -143,7 +146,7 @@ def make_x_input_file(year,
     chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180  
     # chemra.coords['lon'] = udata.shift_lon(chemra.coords['lon'])  
     # Resample and rescale
-    chemra = chemra.resample(time='d').mean() / scale_factor
+    chemra = chemra.resample(time='d').mean() / scale_factors['chemra']
     # Find the number of days in the year
     ndays = len(chemra.coords['time'])
     # Fix the time coordinate to match the year
@@ -198,9 +201,9 @@ def make_x_input_file(year,
     x_data = x_data.convert_calendar('noleap')
 
     # Scale some variables to make orders of magnitude more similar
-    x_data['sp'] = x_data['sp'] / 100000  # Scale surface pressure
-    x_data['ssrd'] = x_data['ssrd'] / 1000000  # Scale surface solar radiation
-    x_data['blh'] = x_data['blh'] / 1000  # Scale boundary layer height
+    x_data['sp'] = x_data['sp'] / scale_factors['sp']        # Surface pressure
+    x_data['ssrd'] = x_data['ssrd'] / scale_factors['ssrd']  # Surface solar radiation
+    x_data['blh'] = x_data['blh'] / scale_factors['blh']     # Boundary layer height
     # Reorder dimensions to match the expected format
     x_data = x_data[['time', 'lat', 'lon', *list(x_data.data_vars)]]
 
