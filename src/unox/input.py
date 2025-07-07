@@ -287,3 +287,220 @@ def fill_w_insitu(xr_dataset,
             # Replace the chemical reanalysis value with the insitu value
             xr_dataset[var].loc[{'time': insitu_keys[i], 'lon': pt.lon, 'lat': pt.lat}] = values[j]
     return xr_dataset
+
+def make_all_y_input_files(
+    years=range(2005, 2022),
+    var='nox',
+    emiss_dir='/data/high_res/emacdonald/unet/datafiles/t106',
+    emiss_pre='nox_',
+    emiss_post='_t106_US.nc',
+    scale_factor=1e12,
+    nan_fill=0,
+    stage_2_cutoff=2013,
+    output_dir='inputfiles/'
+    ):
+    """
+    Create y input files for multiple years.
+
+    Runs the `make_y_input_file` function for each year in the specified range.
+
+    Parameters
+    ----------
+    years : iterable, optional
+        Years for which to create y input files. Default is range(2005, 2022).
+    var : str, optional
+        Variable to extract from the dataset. Default is 'nox'.
+    emiss_dir : str, optional
+        Directory where the emissions data are stored. 
+        Default is '/data/high_res/emacdonald/unet/datafiles/t106'.
+    emiss_pre : str, optional
+        Prefix for the emissions input file name. Default is 'nox_'.
+    emiss_post : str, optional
+        Extension for the input file name. Default is '_t106_US.nc'.
+    scale_factor : float, optional
+        Factor by which to scale the data. Default is 1e12.
+    nan_fill : float, optional
+        Value to fill NaNs in the dataset. Default is 0.
+    stage_2_cutoff : int, optional
+        Year after which the data will also be saved in stage 2. Default is 2013.
+    output_dir : str, optional
+        Directory where the output y input files will be saved. 
+        Default is 'inputfiles/'.
+
+    Returns
+    -------
+    y_data_array : list of numpy.ndarray
+        List of y input data arrays for the specified years.
+    """
+    y_data_array = []
+    for year in years:
+        print(f"Creating y input file for {var} in {year}...")
+        y_data = make_y_input_file(
+            year=year, 
+            var=var,
+            emiss_dir=emiss_dir,
+            emiss_pre=emiss_pre,
+            emiss_post=emiss_post,
+            scale_factor=scale_factor,
+            nan_fill=nan_fill,
+            stage_2_cutoff=stage_2_cutoff,
+            output_dir=output_dir
+        )
+        y_data_array.append(y_data)
+    return y_data_array
+
+def make_all_x_input_files(
+    years=range(2005, 2022),
+    stages=1,
+    data_dir='/data/high_res/emacdonald/unet/datafiles/',
+    chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
+    insitu_path='US_EPA/daily_42602_',
+    era5_path='ERA5concatenated/',
+    scale_factors={'chemra': 1000,
+                   'sp': 100000,
+                   'ssrd': 1000000,
+                   'blh': 1000},
+    output_dir='inputfiles/'
+    ):
+    """
+    Create x input files for multiple years and stages.
+
+    Runs the `make_x_input_file` function for each year and stage in the specified ranges.
+
+    Parameters
+    ----------
+    years : iterable, optional
+        Years for which to create x input files. Default is range(2005, 2022).
+    stage : int, optional
+        Stage of the model (1 or 2) for which to create x input files. 
+        Default is 1.
+    data_dir : str, optional
+        Directory where the NOx data are stored. 
+        Default is '/data/high_res/emacdonald/unet/datafiles/'.
+    chemra_path : str, optional
+        Path to the chemical reanalysis data files. 
+        Default is 'TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
+    insitu_path : str, optional
+        Path to the insitu data files. Default is 'US_EPA/daily_42602_'.
+    era5_path : str, optional
+        Path to the ERA5 reanalysis data files. Default is 'ERA5concatenated/'.
+    output_dir : str, optional
+        Directory where the output x input files will be saved. 
+        Default is 'inputfiles/'.
+
+    Returns
+    -------
+    x_data_array : list of xarray.Dataset
+        List of x input data arrays for the specified years and stages.
+    """
+    x_data_array = []
+    for year in years:
+        print(f"Creating x input file for stage {stage} in {year}...")
+        x_data = make_x_input_file(
+            year=year,
+            stage=stage,
+            data_dir=data_dir,
+            chemra_path=chemra_path,
+            insitu_path=insitu_path,
+            era5_path=era5_path,
+            scale_factors=scale_factors,
+            output_dir=output_dir
+        )
+        x_data_array.append(x_data)
+    return x_data_array
+
+def make_all_input_files(
+    years=range(2005, 2022),
+    stages=[1, 2],
+    var='nox',
+    emiss_dir='/data/high_res/emacdonald/unet/datafiles/t106',
+    emiss_pre='nox_',
+    emiss_post='_t106_US.nc',
+    data_dir='/data/high_res/emacdonald/unet/datafiles/',
+    chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
+    insitu_path='US_EPA/daily_42602_',
+    era5_path='ERA5concatenated/',
+    scale_factors={
+        'y': 1e12,
+        'chemra': 1000,
+        'sp': 100000,
+        'ssrd': 1000000,
+        'blh': 1000},
+    nan_fill=0,
+    stage_2_cutoff=2013,
+    output_dir='inputfiles/'
+    ):
+    """
+    Create all input files for the Unet model.
+
+    This function combines the creation of y input files and x input files 
+    for both stages.
+
+    Parameters
+    ----------
+    years : iterable, optional
+        Years for which to create input files. Default is range(2005, 2022).
+    stages : iterable, optional
+        Stages of the model for which to create x input files. 
+        Default is [1, 2].
+    var : str, optional
+        Variable to extract from the dataset for y input files. Default is 'nox'.
+    emiss_dir : str, optional
+        Directory where the emissions data are stored. 
+        Default is '/data/high_res/emacdonald/unet/datafiles/t106'.
+    emiss_pre : str, optional
+        Prefix for the emissions input file name. Default is 'nox_'.
+    emiss_post : str, optional
+        Extension for the input file name. Default is '_t106_US.nc'.
+    data_dir : str, optional
+        Directory where the NOx data are stored. 
+        Default is '/data/high_res/emacdonald/unet/datafiles/'.
+    chemra_path : str, optional
+        Path to the chemical reanalysis data files. 
+        Default is 'TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
+    insitu_path : str, optional
+        Path to the insitu data files. Default is 'US_EPA/daily_42602_'.
+    era5_path : str, optional
+        Path to the ERA5 reanalysis data files. Default is 'ERA5concatenated/'.
+    scale_factors : dict, optional
+        Scaling factors for the variables. Default is a dictionary with 
+        scaling factors for 'y', 'chemra', 'sp', 'ssrd', and 'blh'.
+    nan_fill : float, optional
+        Value to fill NaNs in the dataset. Default is 0.
+    stage_2_cutoff : int, optional
+        Year after which the data will also be saved in stage 2. Default is 2013.
+    output_dir : str, optional
+        Directory where the output input files will be saved. 
+        Default is 'inputfiles/'.
+
+    Returns
+    -------
+    None
+    """
+    # Create y input files
+    print("Creating y input files...")
+    make_all_y_input_files(
+        years=years,
+        var=var,
+        emiss_dir=emiss_dir,
+        emiss_pre=emiss_pre,
+        emiss_post=emiss_post,
+        scale_factor=scale_factors['y'],
+        nan_fill=nan_fill,
+        stage_2_cutoff=stage_2_cutoff,
+        output_dir=output_dir
+    )
+    # Create x input files for each stage
+    for stage in stages:
+        print(f"Creating x input files for stage {stage}...")
+        make_all_x_input_files(
+            years=years,
+            stage=stage,
+            data_dir=data_dir,
+            chemra_path=chemra_path,
+            insitu_path=insitu_path,
+            era5_path=era5_path,
+            scale_factors=scale_factors,
+            output_dir=output_dir
+        )
+    print("Completed making all input files.")
