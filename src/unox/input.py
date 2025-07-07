@@ -100,6 +100,7 @@ def make_x_input_file(year,
                                      'sp': 100000,
                                      'ssrd': 1000000,
                                      'blh': 1000},
+                      stage_2_cutoff=2013,
                       output_dir='inputfiles/'):
     """
     Create an x input file for the Unet model for the given year and stage.
@@ -127,6 +128,11 @@ def make_x_input_file(year,
         Path to the insitu data files. Default is 'US_EPA/daily_42602_'.
     era5_path : str, optional
         Path to the ERA5 reanalysis data files. Default is 'ERA5concatenated/'.
+    scale_factors : dict, optional
+        Scaling factors for the variables. Default is a dictionary with
+        scaling factors for 'chemra', 'sp', 'ssrd', and 'blh'.
+    stage_2_cutoff : int, optional
+        Year after which input files will also be generated for stage 2. Default is 2013.
     output_dir : str, optional
         Directory where the output x input file will be saved. 
         Default is 'inputfiles/'.
@@ -155,7 +161,7 @@ def make_x_input_file(year,
         chemra.coords['time'] = pd.date_range(f"{year}-01-01", periods=ndays)
     
     # Combine chemical reanalysis and insitu data for stage 2
-    if stage == 2:
+    if stage == 2 and year > stage_2_cutoff:
         # Assemble the file path for the insitu data
         epa_filepath = os.path.join(data_dir, f'{insitu_path}{year}.csv')
         # Verify the path
@@ -289,7 +295,7 @@ def fill_w_insitu(xr_dataset,
     return xr_dataset
 
 def make_all_y_input_files(
-    years=range(2005, 2022),
+    years=range(2005, 2021),
     var='nox',
     emiss_dir='/data/high_res/emacdonald/unet/datafiles/t106',
     emiss_pre='nox_',
@@ -307,7 +313,7 @@ def make_all_y_input_files(
     Parameters
     ----------
     years : iterable, optional
-        Years for which to create y input files. Default is range(2005, 2022).
+        Years for which to create y input files. Default is range(2005, 2021).
     var : str, optional
         Variable to extract from the dataset. Default is 'nox'.
     emiss_dir : str, optional
@@ -332,6 +338,11 @@ def make_all_y_input_files(
     y_data_array : list of numpy.ndarray
         List of y input data arrays for the specified years.
     """
+    # Make sure the output directory exists
+    if not os.path.exists(output_dir+'fstage1/y'):
+        os.makedirs(output_dir+'stage1/y')
+    if not os.path.exists(output_dir+'stage2/y'):
+        os.makedirs(output_dir+'stage2/y')
     y_data_array = []
     for year in years:
         print(f"Creating y input file for {var} in {year}...")
@@ -350,8 +361,8 @@ def make_all_y_input_files(
     return y_data_array
 
 def make_all_x_input_files(
-    years=range(2005, 2022),
-    stages=1,
+    years=range(2005, 2021),
+    stage=1,
     data_dir='/data/high_res/emacdonald/unet/datafiles/',
     chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
     insitu_path='US_EPA/daily_42602_',
@@ -360,6 +371,7 @@ def make_all_x_input_files(
                    'sp': 100000,
                    'ssrd': 1000000,
                    'blh': 1000},
+    stage_2_cutoff=2013,
     output_dir='inputfiles/'
     ):
     """
@@ -370,7 +382,7 @@ def make_all_x_input_files(
     Parameters
     ----------
     years : iterable, optional
-        Years for which to create x input files. Default is range(2005, 2022).
+        Years for which to create x input files. Default is range(2005, 2021).
     stage : int, optional
         Stage of the model (1 or 2) for which to create x input files. 
         Default is 1.
@@ -384,6 +396,11 @@ def make_all_x_input_files(
         Path to the insitu data files. Default is 'US_EPA/daily_42602_'.
     era5_path : str, optional
         Path to the ERA5 reanalysis data files. Default is 'ERA5concatenated/'.
+    scale_factors : dict, optional
+        Scaling factors for the variables. Default is a dictionary with
+        scaling factors for 'chemra', 'sp', 'ssrd', and 'blh'.
+    stage_2_cutoff : int, optional
+        Year after which the data will also be saved in stage 2. Default is 2013.
     output_dir : str, optional
         Directory where the output x input files will be saved. 
         Default is 'inputfiles/'.
@@ -393,8 +410,14 @@ def make_all_x_input_files(
     x_data_array : list of xarray.Dataset
         List of x input data arrays for the specified years and stages.
     """
+    # Make sure the output directory exists
+    if not os.path.exists(output_dir+f'stage{stage}/x'):
+        os.makedirs(output_dir+f'stage{stage}/x')
     x_data_array = []
     for year in years:
+        if stage == 2 and year <= stage_2_cutoff:
+            # Skip stage 2 for years before the cutoff
+            continue
         print(f"Creating x input file for stage {stage} in {year}...")
         x_data = make_x_input_file(
             year=year,
@@ -404,13 +427,14 @@ def make_all_x_input_files(
             insitu_path=insitu_path,
             era5_path=era5_path,
             scale_factors=scale_factors,
+            stage_2_cutoff=stage_2_cutoff,
             output_dir=output_dir
         )
         x_data_array.append(x_data)
     return x_data_array
 
 def make_all_input_files(
-    years=range(2005, 2022),
+    years=range(2005, 2021),
     stages=[1, 2],
     var='nox',
     emiss_dir='/data/high_res/emacdonald/unet/datafiles/t106',
@@ -439,7 +463,7 @@ def make_all_input_files(
     Parameters
     ----------
     years : iterable, optional
-        Years for which to create input files. Default is range(2005, 2022).
+        Years for which to create input files. Default is range(2005, 2021).
     stages : iterable, optional
         Stages of the model for which to create x input files. 
         Default is [1, 2].
@@ -477,6 +501,15 @@ def make_all_input_files(
     -------
     None
     """
+    print("It may take around 3 hours to generate all input files.")
+    # Make sure the output directory exists
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    # Make sure the directories for the stages exist
+    for stage in stages:
+        stage_dir = os.path.join(output_dir, f'stage{stage}')
+        if not os.path.exists(stage_dir):
+            os.makedirs(stage_dir)
     # Create y input files
     print("Creating y input files...")
     make_all_y_input_files(
@@ -501,6 +534,7 @@ def make_all_input_files(
             insitu_path=insitu_path,
             era5_path=era5_path,
             scale_factors=scale_factors,
+            stage_2_cutoff=stage_2_cutoff,
             output_dir=output_dir
         )
     print("Completed making all input files.")
