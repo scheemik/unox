@@ -475,6 +475,7 @@ def plot_comparison(npy_a,
     ax.set_ylabel(label_b)
     # If new plot, return the figure
     if new_fig:
+        ax.colorbar(q, loc='r', label='Count per pixel', formatter='sci')
         return fig
     else:
         return q
@@ -522,10 +523,11 @@ def plot_true_pred_comp(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
         [truth, stage1], lats, lons = udata.restrict_domain([truth, stage1], lats, lons, xr.open_dataset(restrict_lat_lon_to))
     truths = truth.flatten()
     preds = stage1.flatten()
-    return plot_comparison(truths, preds, 
+    fig = plot_comparison(truths, preds, 
                            label_a="'Truth' surface NO2 (ppb)",
                            label_b="Stage 1 surface NO2 (ppb)",      
                            hist_params=hist_params)
+    return fig
 
 def plot_npy_hist(npy_arr,
                   ax=None,
