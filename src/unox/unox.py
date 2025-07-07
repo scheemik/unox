@@ -58,9 +58,13 @@ def verify_path(path):
     >>> verify_path()
     """
     if not os.path.exists(path):
-        path = '../' + path
+        path = '..' + path
         if not os.path.exists(path):
-            raise FileNotFoundError(f"Path {path} does not exist.")
+            path = '../' + path[3:]
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"Path {path} does not exist.")
+            else:
+                return path
         else:
             return path
     else:
