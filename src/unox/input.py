@@ -61,7 +61,7 @@ def make_y_input_file(year,
         The y input data for the specified year, scaled and processed.
     """
     # Assemble file path
-    filepath = os.path.join(data_dir, f"{emiss_pre}{year}{emiss_post}")
+    filepath = os.path.join(emiss_dir, f"{emiss_pre}{year}{emiss_post}")
     # Verify the path
     filepath = unox.verify_path(filepath)
     # Load data for the specified year
