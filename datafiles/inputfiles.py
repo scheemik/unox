@@ -10,8 +10,8 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import scipy
 
-lons = np.load('lons.npy')  #lon and lat grid for Unet
-lats = np.load('lats.npy')
+lons = np.load('datafiles/lons.npy')  #lon and lat grid for Unet
+lats = np.load('datafiles/lats.npy')
 
 def make2d(csvfile,tcr2):
     """
@@ -41,7 +41,7 @@ def make2d(csvfile,tcr2):
     return tcr2    
 
 
-def yinput(year, datadir='t106'):
+def yinput(year, datadir='/data/high_res/emacdonald/unet/datafiles/t106'):
     """
     Create a y input file for Unet. Stage 1 and 2 are the same but for different years.
     year: between 2005 and 2021
@@ -55,7 +55,9 @@ def yinput(year, datadir='t106'):
     if year > 2013:   #also save in stage 2 for later years
         np.save('inputfiles/stage2/y/Y_'+str(year),exp.nox[1::])  #skip the first day because of the t-1 thing
 
-# yinput(2005)
+# for year in range(2005,2021):  #create y input files for all years
+#     print(year)
+#     yinput(year)
 
 def xinput(year,stage):  
     datasets = []
@@ -103,7 +105,7 @@ def xinput(year,stage):
 
     return xnp
 
-xnp = xinput(2015,2)
+# xnp = xinput(2015,2)
 # print(xnp.shape)
 
 
