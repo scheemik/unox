@@ -60,7 +60,7 @@ def verify_path(path):
     if not os.path.exists(path):
         path = '..' + path
         if not os.path.exists(path):
-            path = '../' + path[3:]
+            path = '../' + path[2:]
             if not os.path.exists(path):
                 raise FileNotFoundError(f"Path {path} does not exist.")
             else:
