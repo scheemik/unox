@@ -704,3 +704,65 @@ def plot_npy_diff(npy_a,
     if filename is not None:
         fig.savefig(filename)
     return fig
+
+def compare_input_files(
+    year=2019,
+    stage=1,
+    x_or_y='y',
+    x_var='no2',
+    old_dir='sample_data',
+    new_dir='inputfiles',
+    abs_tolerance=2e-5
+    ):
+    """
+    Compares new and old input files for the given year and stage.
+
+    Parameters
+    ----------
+    year : int
+        The year for which to compare the input files.
+    stage : int
+        The stage of the input files to compare.
+    x_or_y : str
+        The type of input file to compare ('x' or 'y').
+    x_var : str
+        The variable to pull out if the input file is an x input file. Default is 'no2'. 
+        Choose from ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
+    old_dir : str
+        The directory containing the old input files.
+    new_dir : str
+        The directory containing the new input files.
+    abs_tolerance : float
+        The absolute tolerance for comparing the input files. Default is 2e-5.
+    """
+    # Assemble the paths to the old and new input files
+    old_filepath = f'{old_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
+    new_filepath = f'{new_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
+    # Verify the file paths
+    old_filepath = unox.verify_path(old_filepath)
+    new_filepath = unox.verify_path(new_filepath)
+    # Load the old and new input files
+    old_input = np.load(old_filepath)
+    new_input = np.load(new_filepath)
+    # Pull out a variable if it is an x input file
+    if x_or_y == 'x':
+        x_vars = ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
+        # Find the index of the chosen variable
+        x_var_index = x_vars.index(x_var)
+        # Pull out just that variable from both arrays
+        old_input = old_input[..., x_var_index]
+        new_input = new_input[..., x_var_index]
+    # Output the shapes
+    print(f"Shape of {old_filepath}: \n\t{old_input.shape}")
+    print(f"Shape of {new_filepath}: \n\t{new_input.shape}")
+    # Are the arrays different?
+    if np.array_equal(old_input, new_input):
+        print("The input files are the same.")
+        return None
+    else:
+        if np.allclose(old_input, new_input, atol=abs_tolerance):
+            print("The input files are similar within the absolute tolerance of", abs_tolerance)
+        else:
+            print("The input files more different than the tolerance of",abs_tolerance)
+        # Plot the differences
+        return plot_npy_diff(old_input, new_input, title=str(x_or_y).capitalize()+f'_{year} old vs '+ str(x_or_y).capitalize()+f'_{year} new')
