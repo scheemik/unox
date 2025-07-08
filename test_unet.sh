@@ -4,7 +4,7 @@
 #SBATCH --time=3:00:00
 #SBATCH --mail-user=mikhail.schee@mail.utoronto.ca
 #SBATCH --mail-type=ALL
-#SBATCH --output=HPC_runs/%x_%j.txt						# %x = job_name, %j = job_number
+#SBATCH --output=HPC_runs/%x/%x_%j.txt					# %x = job_name, %j = job_number
 
 # Submit this script to a HPC with `sbatch`
 # Takes in optional arguments:
@@ -33,7 +33,7 @@ module load anaconda3/2021.05
 source activate unetmist
 module load cuda/11.4.4 
 
-SAVEDIR="HPC_runs/${JOBNAME}_${SLURM_JOB_ID}"
+SAVEDIR="HPC_runs/${JOBNAME}" #_${SLURM_JOB_ID}"
 mkdir $SAVEDIR
  
 python test_unet.py $SAVEDIR
