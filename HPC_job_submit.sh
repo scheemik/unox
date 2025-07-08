@@ -37,6 +37,26 @@ else
 	exit 1
 fi
 
+# Check to see whether a directory exists for the job
+if [ ! -d "HPC_runs/$JOBNAME" ]
+then
+	echo "Creating directory for job $JOBNAME"
+	mkdir HPC_runs/$JOBNAME
+else
+	echo "Directory for job HPC_runs/$JOBNAME already exists"
+	echo "Would you like to overwrite it? (y/n)"
+	read -r answer
+	if [[ "$answer" == "y" || "$answer" == "Y" ]]
+	then
+		echo "Overwriting directory HPC_runs/$JOBNAME"
+		rm -rf HPC_runs/$JOBNAME
+		mkdir HPC_runs/$JOBNAME
+	else
+		echo "Exiting without overwriting directory"
+		exit 1
+	fi
+fi
+
 ###############################################################################
 # Submit job to queue
 sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME
