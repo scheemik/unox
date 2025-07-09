@@ -5,7 +5,7 @@
 # Run this script to copy a file or directory from Mist to Animus.
 # Takes in the following arguments:
 #	$ bash HPC_mist_to_animus.sh -f <filename>      Ex: test_unet_601760
-#                                -j <HPC_job>       Look for HPC job
+#                                -j <HPC_job>       Look for HPC job based on filename
 #
 # Note: Each file in list must be preceded by the -f flag. Ex:
 #	$ bash HPC_mist_to_animus.sh -f test_file1 -f test_file2
@@ -52,13 +52,15 @@ IDENTITY_FILE="~/.ssh/id_ed25519"
 # `stage2_output`. Also copy the `.txt` file with the same name
 if [ "$HPC_JOB" = j ]; then
     # Copy job directories from Mist to Animus
-    FILES=""
     for FILE in "${FILENAMES[@]}"; do
-        # Copy the output `.txt` file
-        scp -r -i $IDENTITY_FILE $USERNAME@$REMOTE_SERVER:"$PROJECT_DIR$DIR_PREFIX/$FILE.txt" .$DIR_PREFIX
-        # Make a corresponding dirctory on Animus
-        mkdir -p .$DIR_PREFIX/$FILE
-        # Copy just the files in `stage1_output` and `stage2_output`
+        FILES=""
+        # Check whether the corresponding directory exists on Animus
+        if [ ! -d ".$DIR_PREFIX/$FILE" ]; then
+            echo "Directory .$DIR_PREFIX/$FILE does not exist, creating it."
+            mkdir -p .$DIR_PREFIX/$FILE
+        fi
+        # Copy just the log (.txt) file and the files in `stage1_output` and `stage2_output`
+        FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/*.txt "
         FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/stage1_output/ "
         FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/stage2_output/ "
         # Copy the files over
@@ -68,7 +70,7 @@ else
     # Copy files or directories from Mist to Animus
     FILES=""
     for FILE in "${FILENAMES[@]}"; do
-        FILES+=" $PROJECT_DIR$DIR_PREFIX/$FILE"
+        FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE "
     done
     echo $FILES
     scp -r -i $IDENTITY_FILE $USERNAME@$REMOTE_SERVER:"$FILES" .$DIR_PREFIX
