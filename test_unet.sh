@@ -4,7 +4,7 @@
 #SBATCH --time=3:00:00
 #SBATCH --mail-user=mikhail.schee@mail.utoronto.ca
 #SBATCH --mail-type=ALL
-#SBATCH --output=HPC_runs/%x/%x_%j.txt					# %x = job_name, %j = job_number
+#SBATCH --output=HPC_runs/%x/log_%x_%j.txt				# %x = job_name, %j = job_number
 
 # Submit this script to a HPC with `sbatch`
 # Takes in optional arguments:
@@ -32,8 +32,16 @@ module load MistEnv/2021a
 module load anaconda3/2021.05 
 source activate unetmist
 module load cuda/11.4.4 
+# module load anaconda3/2021.05 cuda/11.4.4 gcc/10.3.0 openblas/0.3.15 openmpi/4.1.1+ucx-1.10.0 hdf5/1.10.7
 
 SAVEDIR="HPC_runs/${JOBNAME}" #_${SLURM_JOB_ID}"
-mkdir $SAVEDIR
+# Check whether a directory exists for the job
+if [ ! -d "$SAVEDIR" ]
+then
+	echo "Creating directory for job $JOBNAME"
+	mkdir -p $SAVEDIR
+else
+	echo "Directory for job $SAVEDIR already exists"
+fi
  
 python test_unet.py $SAVEDIR
