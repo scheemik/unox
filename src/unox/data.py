@@ -2,6 +2,7 @@ import numpy as np
 import xarray as xr
 import warnings
 import os
+import re
 
 def get_extent(xr_dataset=None,
                lats=None,
@@ -549,3 +550,35 @@ def verify_npy(array):
         return array
     else:
         raise TypeError("Not a numpy array.")
+
+def get_num_from_string(str):
+    """Extract numbers from a string.
+
+    If the string contains numbers, return those numbers in a list.
+    Otherwise, raise a ValueError.
+
+    Parameters
+    ----------
+    str : str
+        The string to extract the number from.
+
+    Returns
+    -------
+    nums : list of int or float
+        A list of numbers extracted from the string.
+
+    Examples
+    --------
+    >>> num = get_num_from_string("There are 42.0 apples and 3 oranges.")
+    [42, 3]
+    >>> num = get_num_from_string("No number here")
+    ValueError: No number found in the string.
+    """
+    # Verify that the input is a string
+    if not isinstance(str, type('')):
+        raise TypeError("Input must be a string.")
+    # Find all numbers in the string using regular expressions
+    nums = re.findall(r"[-+]?\d*\.\d+|\d+", str)
+    # Convert the numbers to integers or floats
+    nums = [float(num) if '.' in num else int(num) for num in nums]
+    return nums
