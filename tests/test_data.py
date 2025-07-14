@@ -410,3 +410,77 @@ def test_get_YMD_from_date():
         assert True, f"get_YMD_from_date raised an exception on invalid input: {e}"
     else:
         assert False, f"get_YMD_from_date did not raise an exception on invalid input: {invalid_date}"
+
+def test_add_amount_to_date():
+    """Test the add_amount_to_date function."""
+    
+    # Test valid inputs
+    this_date = np.datetime64('1999-12-30')
+    add_this = np.timedelta64(2, 'D')  # Add 2 days
+    expected_date = np.datetime64('2000-01-01')
+    actual_date = udata.add_amount_to_date(this_date, add_this)
+    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
+    this_date = '1999-12-30'
+    add_this = '3D'  # Add 3 days
+    expected_date = '2000-01-02'
+    actual_date = udata.add_amount_to_date(this_date, add_this)
+    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
+    this_date = np.datetime64('2004-02-28')
+    add_this = np.timedelta64(4, 'D')  # Add 4 days
+    expected_date = np.datetime64('2004-03-03')
+    actual_date = udata.add_amount_to_date(this_date, add_this)
+    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
+    this_date = '2004-02-28'
+    add_this = '5D'  # Add 5 days
+    expected_date = '2004-03-04'
+    actual_date = udata.add_amount_to_date(this_date, add_this)
+    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
+    this_date = np.datetime64('2004-02-20')
+    add_this = np.timedelta64(6, 'M')  # Add 6 months
+    expected_date = np.datetime64('2004-08-20')
+    actual_date = udata.add_amount_to_date(this_date, add_this)
+    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
+    this_date = '2004-07-20'
+    add_this = '7M' # Add 7 months
+    expected_date = '2005-02-20'
+    actual_date = udata.add_amount_to_date(this_date, add_this)
+    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
+    this_date = np.datetime64('2004-01-31')
+    add_this = np.timedelta64(8, 'Y')  # Add 8 years
+    expected_date = np.datetime64('2012-01-31')
+    actual_date = udata.add_amount_to_date(this_date, add_this)
+    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
+    this_date = '2004-01-31'
+    add_this = '9Y'  # Add 9 years
+    expected_date = '2013-01-31'
+    actual_date = udata.add_amount_to_date(this_date, add_this)
+    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
+    # Test invalid inputs
+    invalid_date = 'not_a_date'
+    try:
+        udata.add_amount_to_date(invalid_date, add_this)
+    except ValueError as e:
+        assert True, f"add_amount_to_date raised an exception on invalid date: {e}"
+    else:
+        assert False, f"add_amount_to_date did not raise an exception on invalid date: {invalid_date}"
+    invalid_date = 1999
+    try:
+        udata.add_amount_to_date(invalid_date, add_this)
+    except TypeError as e:
+        assert True, f"add_amount_to_date raised an exception on invalid date: {e}"
+    else:
+        assert False, f"add_amount_to_date did not raise an exception on invalid date: {invalid_date}"
+    invalid_increment = 'not_a_timedelta'
+    try:
+        udata.add_amount_to_date(this_date, invalid_increment)
+    except ValueError as e:
+        assert True, f"add_amount_to_date raised an exception on invalid increment: {e}"
+    else:
+        assert False, f"add_amount_to_date did not raise an exception on invalid increment: {invalid_increment}"
+    invalid_increment = 12345
+    try:
+        udata.add_amount_to_date(this_date, invalid_increment)
+    except TypeError as e:
+        assert True, f"add_amount_to_date raised an exception on invalid increment: {e}"
+    else:
+        assert False, f"add_amount_to_date did not raise an exception on invalid increment: {invalid_increment}"
