@@ -375,3 +375,38 @@ def test_increment_month():
         assert True, f"increment_month raised an exception on invalid increment: {e}"
     else:
         assert False, f"increment_month did not raise an exception on invalid increment: {invalid_increment}"
+
+def test_get_YMD_from_date():
+    """Test the get_YMD_from_date function."""
+    
+    # Test valid inputs
+    this_date = np.datetime64('1999-12-30')
+    expected_tuple = (1999, 12, 30)
+    actual_date = udata.get_YMD_from_date(this_date)
+    assert actual_date == expected_tuple, f"Expected {expected_tuple}, but got {actual_date}"
+    
+    this_date = '2004-02-29'
+    expected_tuple = (2004, 2, 29)
+    actual_date = udata.get_YMD_from_date(this_date)
+    assert actual_date == expected_tuple, f"Expected {expected_tuple}, but got {actual_date}"
+    
+    this_date = '2021-01-01'
+    expected_tuple = (2021, 1, 1)
+    actual_date = udata.get_YMD_from_date(this_date)
+    assert actual_date == expected_tuple, f"Expected {expected_tuple}, but got {actual_date}"
+    
+    # Test invalid inputs
+    invalid_date = 'not_a_date'
+    try:
+        udata.get_YMD_from_date(invalid_date)
+    except ValueError as e:
+        assert True, f"get_YMD_from_date raised an exception on invalid input: {e}"
+    else:
+        assert False, f"get_YMD_from_date did not raise an exception on invalid input: {invalid_date}"
+    invalid_date = 1999
+    try:
+        udata.get_YMD_from_date(invalid_date)
+    except TypeError as e:
+        assert True, f"get_YMD_from_date raised an exception on invalid input: {e}"
+    else:
+        assert False, f"get_YMD_from_date did not raise an exception on invalid input: {invalid_date}"
