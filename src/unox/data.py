@@ -582,3 +582,59 @@ def get_num_from_string(str):
     # Convert the numbers to integers or floats
     nums = [float(num) if '.' in num else int(num) for num in nums]
     return nums
+
+def increment_month(month, increment):
+    """Increment the month by a given number of months.
+
+    Increments the month by the given number of months, wrapping around
+    if the increment goes beyond December (12).
+
+    Parameters
+    ----------
+    month : int or str
+        The month to increment (1 for January, 2 for February, ..., 12 for December).
+    increment : int or str
+        The number of months to increment by.
+
+    Returns
+    -------
+    new_month : int or str
+        The new month after incrementing. The type will match the type of `month`.
+
+    Examples
+    --------
+    >>> increment_month(1, 2)
+    3
+    >>> increment_month(11, 3)
+    2
+    >>> increment_month('5', '7')
+    '12'
+    """
+    # Note return type
+    return_type = type(month)
+    # Ensure month is valid
+    if isinstance(month, str):
+        try:
+            month = int(month)
+        except:
+            raise TypeError("Month must be an integer between 1 and 12.")
+    if not isinstance(month, int) or month < 1 or month > 12:
+        raise ValueError("Month must be an integer between 1 and 12.")
+    
+    # Ensure increment is an integer
+    if isinstance(increment, str):
+        try:
+            increment = int(increment)
+        except:
+            raise TypeError("Increment must be an integer.")
+    if not isinstance(increment, int):
+        raise TypeError("Increment must be an integer.")
+    
+    # Calculate the new month
+    new_month = (month - 1 + increment) % 12 + 1
+    
+    # Return the new month in the same type as the input
+    if return_type == str:
+        return str(new_month)
+    else:
+        return new_month
