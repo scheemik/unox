@@ -336,3 +336,42 @@ def test_get_num_from_string():
         assert True, f"get_num_from_string raised an exception on invalid input: {e}"
     else:
         assert False, f"get_num_from_string did not raise an exception on invalid input: {invalid_input}"
+
+def test_increment_month():
+    """Test the increment_month function."""
+    
+    # Test valid inputs
+    this_month = 7
+    expected_month = 8
+    actual_month = udata.increment_month(this_month, 1)
+    assert actual_month == expected_month, f"Expected {expected_month}, but got {actual_month}"
+    this_month = 11
+    expected_month = 2
+    actual_month = udata.increment_month(this_month, 3)
+    assert actual_month == expected_month, f"Expected {expected_month}, but got {actual_month}"
+    this_month = '12'
+    expected_month = '1'
+    actual_month = udata.increment_month(this_month, '1')
+    assert actual_month == expected_month, f"Expected {expected_month}, but got {actual_month}"
+    # Test invalid inputs
+    invalid_month = 13
+    try:
+        udata.increment_month(invalid_month, 1)
+    except ValueError as e:
+        assert True, f"increment_month raised an exception on invalid input: {e}"
+    else:
+        assert False, f"increment_month did not raise an exception on invalid input: {invalid_month}"
+    invalid_month = 'abc'
+    try:
+        udata.increment_month(invalid_month, 1)
+    except TypeError as e:
+        assert True, f"increment_month raised an exception on invalid input: {e}"
+    else:
+        assert False, f"increment_month did not raise an exception on invalid input: {invalid_month}"
+    invalid_increment = 'xyz'
+    try:
+        udata.increment_month(5, invalid_increment)
+    except TypeError as e:
+        assert True, f"increment_month raised an exception on invalid increment: {e}"
+    else:
+        assert False, f"increment_month did not raise an exception on invalid increment: {invalid_increment}"
