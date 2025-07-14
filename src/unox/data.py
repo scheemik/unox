@@ -646,3 +646,47 @@ def increment_month(month, increment):
         return str(new_month), increment_year
     else:
         return new_month, increment_year
+
+def get_YMD_from_date(this_date):
+    """Get the year, month, and day from a date.
+
+    Extracts the year, month, and day from a given date
+    and returns them as integers.
+
+    Parameters
+    ----------
+    this_date : np.datetime64 or str
+        The date to extract the year, month, and day from.
+
+    Returns
+    -------
+    year : int
+        The year of the date.
+    month : int
+        The month of the date.
+    day : int
+        The day of the date.
+
+    Examples
+    --------
+    >>> get_YMD_from_date('2019-12-20')
+    (2019, 12, 20)
+    >>> get_YMD_from_date(np.datetime64('2020-01-01'))
+    (2020, 1, 1)
+    """
+    # Ensure that the input is a valid date type
+    if isinstance(this_date, str):
+        try:
+            this_date = np.datetime64(this_date)
+        except ValueError:
+            raise ValueError(f"Invalid date string: {this_date}. Must be in 'YYYY-MM-DD' format.")
+    
+    if not isinstance(this_date, np.datetime64):
+        raise TypeError("this_date must be a np.datetime64 or str.")
+    
+    # Extract the year, month, and day from the date
+    year = this_date.astype(object).year
+    month = this_date.astype(object).month
+    day = this_date.astype(object).day
+    
+    return year, month, day
