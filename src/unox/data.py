@@ -690,3 +690,117 @@ def get_YMD_from_date(this_date):
     day = this_date.astype(object).day
     
     return year, month, day
+
+def add_amount_to_date(
+    this_date,
+    increment
+    ):
+    """Add an amount of time to a date.
+
+    Adds the given amount of time to the given date and 
+    returns the new date.
+
+    Parameters
+    ----------
+    this_date : np.datetime64 or str
+        The date to add the time to.
+    increment : np.timedelta64 or str
+        The amount of time to add to the date.
+        If a string, it should be in the format 'XD', 'XM', or 'XY'
+        where X is an integer and D, M, or Y are the units for days, 
+        months, or years respectively.
+
+    Returns
+    -------
+    new_date : np.datetime64 or str
+        The new date after adding the time.
+    
+    Examples
+    --------
+    >>> add_time_to_date('2019-12-20', '20D')
+    '2020-01-09'
+    >>> add_time_to_date(np.datetime64('2019-12-25'), np.timedelta64(20, 'D'))
+    np.datetime64('2020-01-14')
+    """
+    # Make sure the inputs are of the correct type
+    if not isinstance(this_date, (np.datetime64, str)):
+        raise TypeError("this_date must be a np.datetime64 or str.")
+    if not isinstance(increment, (np.timedelta64, str)):
+        raise TypeError("increment must be a np.timedelta64 or str.")
+    # If the date is a string, convert it to a np.datetime64
+    if isinstance(this_date, str):
+        this_date = np.datetime64(this_date)
+        return_type = str
+    else:
+        return_type = np.datetime64
+    # Determine whether to add days, months, or years
+    if isinstance(increment, np.timedelta64):
+        # Find whether to add days, or months / years
+        if increment.dtype == 'timedelta64[D]':
+            add_days = True
+        elif increment.dtype == 'timedelta64[M]':
+            add_days = False
+            value = increment.astype('timedelta64[M]').astype(int)
+            unit = 'M'
+        elif increment.dtype == 'timedelta64[Y]':
+            add_days = False
+            value = increment.astype('timedelta64[Y]').astype(int)
+            unit = 'Y'
+        else:
+            raise ValueError("Unsupported timedelta64 type. Use days, months, or years.")
+    elif isinstance(increment, str):
+        # If the amount is a string, convert it to np.timedelta64
+        match = re.match(r'(\d+)([DMY])', increment)
+        if not match:
+            raise ValueError(f"Invalid increment format: {increment}. Use 'XD', 'XM', or 'XY' where X is an integer and D, M, or Y are the units for days, months, or years respectively.")
+        value, unit = match.groups()
+        # Find whether to add days, or months / years
+        if unit == 'D':
+            add_days = True
+        else:
+            add_days = False
+    else:
+        raise TypeError("increment must be a np.timedelta64 or str.")
+    # If adding days
+    if add_days:
+        if isinstance(increment, str):
+            increment = np.timedelta64(int(value), unit)
+        # Add the time to the date
+        new_date = this_date + increment
+    else:
+        # Get the Y, M, D from the date
+        this_year, this_month, this_day = get_YMD_from_date(this_date)
+        if isinstance(increment, str):
+            if unit == 'M':
+                # If adding months, increment the month
+                new_month, increment_year = increment_month(this_month, int(value))
+                if increment_year:
+                    # If the increment caused a year change, increment the year
+                    this_year += 1
+                # Create the new date with the incremented month and year
+                new_date = np.datetime64(f"{this_year}-{new_month:02d}-{this_day:02d}")
+            elif unit == 'Y':
+                # If adding years, increment the year
+                this_year += int(value)
+                # Create the new date with the incremented year
+                new_date = np.datetime64(f"{this_year}-{this_month:02d}-{this_day:02d}")
+        else:
+            if unit == 'M':
+                # If adding months, increment the month
+                new_month, increment_year = increment_month(this_month, int(value))
+                if increment_year:
+                    # If the increment caused a year change, increment the year
+                    this_year += 1
+                # Create the new date with the incremented month and year
+                new_date = np.datetime64(f"{this_year}-{new_month:02d}-{this_day:02d}")
+            elif unit == 'Y':
+                # If adding years, increment the year
+                this_year += value
+                # Create the new date with the incremented year
+                new_date = np.datetime64(f"{this_year}-{this_month:02d}-{this_day:02d}")
+
+    # If the return type is a string, convert the date back to a string
+    if return_type == str:
+        new_date = str(new_date)
+    # Return the new date
+    return new_date
