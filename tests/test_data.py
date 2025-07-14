@@ -411,6 +411,42 @@ def test_get_YMD_from_date():
     else:
         assert False, f"get_YMD_from_date did not raise an exception on invalid input: {invalid_date}"
 
+def test_get_increment_info():
+    """Test the get_increment_info function."""
+    
+    # Test valid inputs
+    this_increment = np.timedelta64(2, 'D')  # 2 days
+    expected_tuple = (2, 'D')
+    actual_increment = udata.get_increment_info(this_increment)
+    assert actual_increment == expected_tuple, f"Expected {expected_tuple}, but got {actual_increment}"
+    
+    this_increment = '3M'  # 3 months
+    expected_tuple = (3, 'M')
+    actual_increment = udata.get_increment_info(this_increment)
+    assert actual_increment == expected_tuple, f"Expected {expected_tuple}, but got {actual_increment}"
+    
+    this_increment = '4Y'  # 4 years
+    expected_tuple = (4, 'Y')
+    actual_increment = udata.get_increment_info(this_increment)
+    assert actual_increment == expected_tuple, f"Expected {expected_tuple}, but got {actual_increment}"
+    
+    # Test invalid inputs
+    invalid_increment = 'not_a_timedelta'
+    try:
+        udata.get_increment_info(invalid_increment)
+    except ValueError as e:
+        assert True, f"get_increment_info raised an exception on invalid input: {e}"
+    else:
+        assert False, f"get_increment_info did not raise an exception on invalid input: {invalid_increment}"
+    
+    invalid_increment = 12345
+    try:
+        udata.get_increment_info(invalid_increment)
+    except TypeError as e:
+        assert True, f"get_increment_info raised an exception on invalid input: {e}"
+    else:
+        assert False, f"get_increment_info did not raise an exception on invalid input: {invalid_increment}"
+
 def test_add_amount_to_date():
     """Test the add_amount_to_date function."""
     
