@@ -600,15 +600,18 @@ def increment_month(month, increment):
     -------
     new_month : int or str
         The new month after incrementing. The type will match the type of `month`.
+    increment_year : bool
+        Whether the increment caused a year change.
+        True if the month is December and increment > 0.
 
     Examples
     --------
     >>> increment_month(1, 2)
-    3
+    3, False
     >>> increment_month(11, 3)
-    2
+    2, True
     >>> increment_month('5', '7')
-    '12'
+    '12', False
     """
     # Note return type
     return_type = type(month)
@@ -632,9 +635,14 @@ def increment_month(month, increment):
     
     # Calculate the new month
     new_month = (month - 1 + increment) % 12 + 1
+    # Determine if the increment caused a year change
+    if month + increment > 12:
+        increment_year = True
+    else:
+        increment_year = False
     
     # Return the new month in the same type as the input
     if return_type == str:
-        return str(new_month)
+        return str(new_month), increment_year
     else:
-        return new_month
+        return new_month, increment_year
