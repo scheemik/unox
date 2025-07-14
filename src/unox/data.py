@@ -7,7 +7,8 @@ import re
 def get_extent(xr_dataset=None,
                lats=None,
                lons=None,
-               shift_lons=False):
+               shift_lons=False,
+               check_time=True):
     """Get the latitude and longitude extent of the given xarray dataset.
 
     Finds the maximum and minimum latitude and longitude values in the given dataset.
@@ -22,6 +23,8 @@ def get_extent(xr_dataset=None,
         The longitude values to use instead of those in the dataset.
     shift_lons : bool, optional
         If True, shift the longitude values from the range [0, 360] to [-180, 180].
+    check_time : bool, optional
+        If True, verify that the dataset has a 'time' coordinate.
     
     Returns
     -------
@@ -49,7 +52,7 @@ def get_extent(xr_dataset=None,
         lon_max = np.unique(np.max(lons))[0]
     else:
         # Verify the xr_dataset
-        verify_dataset(xr_dataset)
+        verify_dataset(xr_dataset, check_time=check_time)
         # Find the min and max lat and lon values
         # Use np.unique to ensure that the values are unique and take only the first value
         lat_min = np.unique(xr_dataset.lat.min().values)[0]
@@ -157,7 +160,10 @@ def get_latlon_resolution(xr_dataset,
     # Return the resolution in latitude and longitude
     return lat_res, lon_res
 
-def verify_dataset(xr_dataset):
+def verify_dataset(
+    xr_dataset,
+    check_time=True
+    ):
     """Verify that the given xarray dataset is valid.
 
     Checks to make sure the given dataset is of the expected type
@@ -167,6 +173,8 @@ def verify_dataset(xr_dataset):
     ----------
     xr_dataset : xarray.Dataset or xarray.DataArray
         The xarray data to verify.
+    check_time : bool, optional
+        If True, verify that the dataset has a 'time' coordinate.
     """
     # Verify that xr_dataset is an xarray Dataset or DataArray
     if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
@@ -175,8 +183,9 @@ def verify_dataset(xr_dataset):
     if 'lat' not in xr_dataset.coords or 'lon' not in xr_dataset.coords:
         raise ValueError("xr_dataset must have 'lat' and 'lon' coordinates.")
     # Verify that the dataset has the time coordinate
-    if 'time' not in xr_dataset.coords:
-        raise ValueError("xr_dataset must have 'time' coordinate.")
+    if check_time:
+        if 'time' not in xr_dataset.coords:
+            raise ValueError("xr_dataset must have 'time' coordinate.")
 
 def verify_number(value):
     """Verify that the given value is a number.
@@ -690,6 +699,71 @@ def get_YMD_from_date(this_date):
     day = this_date.astype(object).day
     
     return year, month, day
+
+def get_increment_info(increment):
+    """Get the increment value and unit from a string.
+
+    Parses a string that represents an increment in the format 'XD', 'XM', or 'XY',
+    where X is an integer and D, M, or Y are the units for days, months, or years respectively.
+    
+    Parameters
+    ----------
+    increment : np.timedelta64 or str
+        The amount of time to add to the date.
+        If a string, it should be in the format 'XD', 'XM', or 'XY'
+        where X is an integer and D, M, or Y are the units for days, 
+        months, or years respectively.
+
+    Returns
+    -------
+    value : int
+        The numeric value of the increment.
+    unit : str
+        The unit of the increment ('D', 'M', or 'Y').
+
+    Raises
+    ------
+    ValueError
+        If the increment string is not in the expected format.
+    TypeError
+        If the increment is not a np.timedelta64 or str.
+    
+    Examples
+    --------
+    >>> value, unit = get_increment_info('20D')
+    (20, 'D')
+    >>> value, unit = get_increment_info(np.timedelta64(20, 'D'))
+    (20, 'D')
+    >>> value, unit = get_increment_info('3M')
+    (3, 'M')
+    >>> value, unit = get_increment_info(np.timedelta64(2, 'Y'))
+    (2, 'Y')
+    """
+    # Check if the increment is a np.timedelta64
+    if isinstance(increment, np.timedelta64):
+        # Determine the unit and value based on the dtype
+        if increment.dtype == 'timedelta64[D]':
+            value = increment.astype('timedelta64[D]').astype(int)
+            unit = 'D'
+        elif increment.dtype == 'timedelta64[M]':
+            value = increment.astype('timedelta64[M]').astype(int)
+            unit = 'M'
+        elif increment.dtype == 'timedelta64[Y]':
+            value = increment.astype('timedelta64[Y]').astype(int)
+            unit = 'Y'
+        else:
+            raise ValueError("Unsupported timedelta64 type. Use days, months, or years.")
+    elif isinstance(increment, str):
+        # Match the string format using regex
+        match = re.match(r'(\d+)([DMY])', increment)
+        if not match:
+            raise ValueError(f"Invalid increment format: {increment}. Use 'XD', 'XM', or 'XY' where X is an integer and D, M, or Y are the units for days, months, or years respectively.")
+        value, unit = match.groups()
+        value = int(value)  # Convert to integer
+    else:
+        raise TypeError("increment must be a np.timedelta64 or str.")
+    
+    return value, unit
 
 def add_amount_to_date(
     this_date,
