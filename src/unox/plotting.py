@@ -121,6 +121,7 @@ def plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc',
                 var_string='NOx emissions',
                 var_units='kg/m2/s',
                 datetime='2019-01-01T00:00:00',
+                avg_over=None,
                 cbar_max=1.2e-10,
                 padding=0.1):
     """Plots a map of the 'var' data in a netCDF.
@@ -139,6 +140,9 @@ def plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc',
         The units of the variable to use in the colorbar label.
     datetime : str
         Date and time to select from the data file.
+    avg_over : str, numpy.timedelta64, or None
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
     cbar_max : float
         Maximum value for the colorbar.
     padding : float
@@ -171,10 +175,26 @@ def plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc',
     # Enlarge the extent of the map by the given padding value
     p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_frmt.pad_extent(this_extent, padding)
     # Select the time to plot
-    # var_sel_time = xr_dataset.nox.sel(time=datetime)
-    var_sel_time = xr_dataset[var].sel(time=datetime)
+    if isinstance(avg_over, type(None)):
+        # Take just that time slice
+        var_sel_time = xr_dataset[var].sel(time=datetime)
+        # Format a string for the title
+        overall_title = var_string + ' on ' + datetime.split('T')[0]
+    else:
+        # Add the increment over which to average to the datetime
+        try:
+            end_date = udata.add_amount_to_date(datetime, avg_over)
+        except:
+            raise ValueError(f'Invalid avg_over value: {avg_over}')
+        # Average over the specified amount of time
+        var_sel_time = xr_dataset[var].sel(time=slice(datetime, end_date)).mean(dim='time')
+        # Get the value and unit of the averaging
+        avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
+        # Format a string for the title
+        overall_title = var_string + ' averaged over ' + str(avg_over_num) + ' ' + avg_over_unit + ' from ' + datetime.split('T')[0]
+
     # Find the min and max lat and lon values
-    lat_min, lat_max, lon_min, lon_max = udata.get_extent(var_sel_time)
+    lat_min, lat_max, lon_min, lon_max = udata.get_extent(var_sel_time, check_time=False)
     # Create the figure
     fig = pplt.figure(refwidth=10)
     axs = fig.subplots(nrows=1, proj='cyl')
@@ -185,7 +205,7 @@ def plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc',
     # Format the map
     axs.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
-        suptitle=var_string + ' on ' + datetime,
+        suptitle=overall_title,
         latlines=10, lonlines=10, coast=True,
         labels=True, gridminor=True
     )
