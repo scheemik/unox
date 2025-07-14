@@ -342,17 +342,17 @@ def test_increment_month():
     
     # Test valid inputs
     this_month = 7
-    expected_month = 8
+    expected_tuple = (8, False)
     actual_month = udata.increment_month(this_month, 1)
-    assert actual_month == expected_month, f"Expected {expected_month}, but got {actual_month}"
+    assert actual_month == expected_tuple, f"Expected {expected_tuple}, but got {actual_month}"
     this_month = 11
-    expected_month = 2
+    expected_tuple = (2, True)
     actual_month = udata.increment_month(this_month, 3)
-    assert actual_month == expected_month, f"Expected {expected_month}, but got {actual_month}"
+    assert actual_month == expected_tuple, f"Expected {expected_tuple}, but got {actual_month}"
     this_month = '12'
-    expected_month = '1'
+    expected_tuple = ('1', True)
     actual_month = udata.increment_month(this_month, '1')
-    assert actual_month == expected_month, f"Expected {expected_month}, but got {actual_month}"
+    assert actual_month == expected_tuple, f"Expected {expected_tuple}, but got {actual_month}"
     # Test invalid inputs
     invalid_month = 13
     try:
