@@ -315,3 +315,24 @@ def test_verify_npy():
         assert True, f"verify_npy raised an exception on invalid input: {e}"
     else:
         assert False, f"verify_npy did not raise an exception on invalid input: {path}"
+
+def test_get_num_from_string():
+    """Test the get_num_from_string function."""
+    
+    # Test valid strings
+    valid_string = 'The air will be -5.5 degrees this morning and rise by 10 this afternoon. It will then drop by 3.2 degrees in the evening.'
+    expected_numbers = [-5.5, 10, 3.2]
+    actual_numbers = udata.get_num_from_string(valid_string)
+    assert actual_numbers == expected_numbers, f"Expected {expected_numbers}, but got {actual_numbers}"
+    # Test invalid strings
+    invalid_string = 'The air will be cold this morning and warm up this afternoon. It will then drop slightly in the evening.'
+    actual_numbers = udata.get_num_from_string(invalid_string)
+    assert actual_numbers == [], f"Expected [], but got {actual_numbers}"
+    # Test invalid input
+    invalid_input = 12345
+    try:
+        udata.get_num_from_string(invalid_input)
+    except TypeError as e:
+        assert True, f"get_num_from_string raised an exception on invalid input: {e}"
+    else:
+        assert False, f"get_num_from_string did not raise an exception on invalid input: {invalid_input}"
