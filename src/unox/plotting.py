@@ -298,6 +298,7 @@ def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
         Must contain 'stage', 'HPC_run', and 'year', as designated in unox.data.get_pred_data().
     this_date : str
         Date and time to select from the data file.
+        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
     restrict_lat_lon_to : str
         Path to a netCDF file to restrict the latitude and longitude range.
         If None, the entire dataset is used.
@@ -326,7 +327,13 @@ def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
     halfrange = udata.get_max_abs_val([vmin, vmax])
 
     # Get the day of year to plot
-    day = datetime.strptime(this_date, '%Y-%m-%dT%H:%M:%S').timetuple().tm_yday
+    try:
+        day = datetime.strptime(this_date, '%Y-%m-%dT%H:%M:%S').timetuple().tm_yday
+    except:
+        try:
+            day = datetime.strptime(this_date, '%Y-%m-%d').timetuple().tm_yday
+        except:
+            raise ValueError(f"Invalid date format: {this_date}. Expected 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM:SS'.")
 
     # Create the figure
     fig = pplt.figure(refwidth=4)
