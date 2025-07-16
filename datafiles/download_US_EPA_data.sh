@@ -1,4 +1,6 @@
 #!/bin/bash
+# Author: Mikhail Schee
+# Date: 2025-07-15
 # This script will download, sort, and unzip US EPA data for the specified years and species.
 
 # Usage: ./download_US_EPA_data.sh <species> <start_year> <end_year>
