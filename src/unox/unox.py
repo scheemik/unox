@@ -73,6 +73,40 @@ def verify_path(path):
     else:
         return path
 
+def make_file_path(path):
+    """Create a file path.
+
+    If the given path doesn't exist, create the specified directory structure.
+
+    Parameters
+    ----------
+    path : str
+        Relative path to make.
+
+    Returns
+    -------
+    path : str
+        The verified path to the data files.
+
+    Examples
+    --------
+    >>> make_file_path('datafiles/some/more/data/a_file.txt')
+    'datafiles/some/more/data/'
+    """
+    # Verify the path
+    try:
+        path = verify_path(os.path.dirname(path))
+    except FileNotFoundError:
+        # If the path doesn't exist, create it
+        pass
+    if not os.path.exists(os.path.dirname(path)):
+        # Use the `exist_ok=True` argument to avoid raising an error 
+        # if the path (or some of the path) already exists
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+    # Verify the path
+    path = verify_path(os.path.dirname(path))
+    return path
+
 def remove_non_empty_directory(base_dir):
     """Remove a non-empty directory and all its contents.
 
