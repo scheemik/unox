@@ -25,6 +25,31 @@ def test_verify_path():
     else:
         assert False, f"verify_path did not raise an exception on invalid path {invalid_path}"
 
+def test_remove_non_empty_directory():
+    """Test the remove_non_empty_directory function."""
+    # Create a temporary directory with some files and subdirectories
+    temp_dir = 'test_remove_non_empty_directory'
+    os.makedirs(temp_dir, exist_ok=True)
+    with open(os.path.join(temp_dir, 'file1.txt'), 'w') as f:
+        f.write('This is a test file.')
+    os.makedirs(os.path.join(temp_dir, 'subdir'), exist_ok=True)
+    with open(os.path.join(temp_dir, 'subdir', 'file2.txt'), 'w') as f:
+        f.write('This is another test file.')
+    
+    # Remove the non-empty directory
+    unox.remove_non_empty_directory(temp_dir)
+    
+    # Check if the directory has been removed
+    assert not os.path.exists(temp_dir), f"Directory {temp_dir} was not removed."
+    
+    # Test with a non-directory path
+    try:
+        unox.remove_non_empty_directory('file1.txt')
+    except FileNotFoundError as e:
+        assert True, f"remove_non_empty_directory raised an exception on non-directory path: {e}"
+    else:
+        assert False, "remove_non_empty_directory did not raise an exception on non-directory path."
+
 def test_show_available_data():
     """Test the show_available_data function and,
     as a result, also test the recursive_paths function."""
