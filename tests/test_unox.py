@@ -25,6 +25,35 @@ def test_verify_path():
     else:
         assert False, f"verify_path did not raise an exception on invalid path {invalid_path}"
 
+def test_make_file_path():
+    """Test the make_file_path function."""
+    # Test with valid input
+    valid_path = 'test_make_file_path/path/to/file.txt'
+    actual = unox.make_file_path(valid_path)
+    expected = 'test_make_file_path/path/to'
+    assert actual == expected, f"Expected {expected}, but got {actual}"
+    # Delete the created directory for cleanup
+    base_dir = valid_path.split('/')[0]
+    unox.remove_non_empty_directory(base_dir)
+    # Test with valid input that already exists
+    # Remove everything after the second to last `/` in the valid path
+    partial_path = '/'.join(valid_path.split('/')[:-2])
+    print(f"Partial path: {partial_path}")
+    print(f"Valid path: {valid_path}")
+    os.makedirs(partial_path)
+    actual = unox.make_file_path(valid_path)
+    assert actual == expected, f"Expected {expected}, but got {actual}"
+    # Delete the created directory for cleanup
+    unox.remove_non_empty_directory(base_dir)
+    # Test with invalid input
+    invalid_path = 12345
+    try:
+        unox.make_file_path(invalid_path)
+    except (TypeError) as e:
+        assert True, f"make_file_path raised an exception on invalid input: {e}"
+    else:
+        assert False, f"make_file_path did not raise an exception on invalid input {invalid_path}"
+
 def test_remove_non_empty_directory():
     """Test the remove_non_empty_directory function."""
     # Create a temporary directory with some files and subdirectories
