@@ -81,10 +81,14 @@ def make_y_input_file(year,
     if not isinstance(output_dir, type(None)):
         # Assemble the file path
         output_filepath = os.path.join(output_dir, f"stage1/y/Y_{year}.npy")
+        # Make sure the output directory exists
+        unox.make_file_path(output_filepath)
         np.save(output_filepath, y_data)
         if year > stage_2_cutoff:
             # Save in stage 2 for years later than specified
             output_filepath_stage2 = os.path.join(output_dir, f"stage2/y/Y_{year}.npy")
+            # Make sure the output directory exists
+            unox.make_file_path(output_filepath)
             np.save(output_filepath_stage2, y_data)
         # Output message
         print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
@@ -226,6 +230,8 @@ def make_x_input_file(year,
     if not isinstance(output_dir, type(None)):
         # Assemble the file path
         output_filepath = os.path.join(output_dir, f'stage{stage}/x/X_{year}.npy')
+        # Make sure the output directory exists
+        unox.make_file_path(output_filepath)
         np.save(output_filepath, xnp)
         # Output message
         print(f"Created X input file for stage {stage} in {year}, saved to {output_filepath}")
