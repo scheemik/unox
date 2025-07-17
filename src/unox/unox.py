@@ -57,6 +57,9 @@ def verify_path(path):
     --------
     >>> verify_path()
     """
+    # Check if the path is a string
+    if not isinstance(path, str):
+        raise TypeError("Path must be a string.")
     if not os.path.exists(path):
         path = '..' + path
         if not os.path.exists(path):
