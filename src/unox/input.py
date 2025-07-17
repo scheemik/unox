@@ -339,7 +339,7 @@ def make_all_y_input_files(
         List of y input data arrays for the specified years.
     """
     # Make sure the output directory exists
-    if not os.path.exists(output_dir+'fstage1/y'):
+    if not os.path.exists(output_dir+'stage1/y'):
         os.makedirs(output_dir+'stage1/y')
     if not os.path.exists(output_dir+'stage2/y'):
         os.makedirs(output_dir+'stage2/y')
