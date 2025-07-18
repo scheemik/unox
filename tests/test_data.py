@@ -158,7 +158,7 @@ def test_shift_lon():
     # Create a sample array of longitude values to shift
     input = np.array([0, 45.3, 200, 360])
     expected = np.array([-180, -134.7, 20, 180])
-    actual = np.array(list(map(udata.shift_lon, input)))
+    actual = np.array(udata.shift_lon_arr(input))
     assert np.array_equal(actual, expected), f"Expected {expected}, but shift_lon gave {actual}"
     # Test with invalid values
     invalid_values = [np.nan, '45', None]
