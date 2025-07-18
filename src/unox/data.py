@@ -102,7 +102,7 @@ def get_lats_lons(xr_dataset,
     # Verify the latitude and longitude values
     map(verify_lat, lats)
     if shift_lons:
-        lons = np.array(list(map(shift_lon, lons)))
+        lons = np.array(shift_lon_arr(lons))
     map(verify_lon, lons)
     return lats, lons
 
@@ -348,6 +348,37 @@ def shift_lon(lon_value):
     if lon_value < 0 or lon_value > 360:
         raise ValueError(f"Longitude value must be in the range [0, 360], lon_value = {lon_value}.")
     return lon_value - 180
+
+def shift_lon_arr(lon_array):
+    """
+    Shift the given array of longitude values from the range [0, 360] to [-180, 180].
+
+    Map the `shift_lon` function to shift each value in the array.
+
+    Parameters
+    ----------
+    lon_array : numpy.ndarray or xarray.DataArray
+        The array of longitude values to shift.
+
+    Returns
+    -------
+    numpy.ndarray or xarray.DataArray
+        The shifted longitude values in the range [-180, 180].
+
+    Examples
+    --------
+    >>> lon_array = np.array([0, 90, 180, 270, 360])
+    >>> shifted_lon = shift_lon_arr(lon_array)
+    array([-180,  -90,    0,   90,  180])
+    """
+    # Ensure the input is a numpy array or xarray DataArray
+    if not isinstance(lon_array, (np.ndarray, xr.DataArray)):
+        raise TypeError("Input must be a numpy.ndarray or xarray.DataArray.")
+    
+    # Map the shift_lon function to each element in the array
+    shifted_lon = np.vectorize(shift_lon)(lon_array)
+    
+    return shifted_lon
 
 def get_vminmax(arrays):
     """Get the minimum and maximum values across the given arrays.
