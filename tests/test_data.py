@@ -2,6 +2,7 @@ from unox import data as udata
 import xarray as xr
 import numpy as np
 import os
+import pytest
 
 minimal_xr = xr.DataArray(
         data=[[[1], [2]], [[3], [4]]],
@@ -265,6 +266,7 @@ def test_get_max_abs_val():
     else:
         assert False, f"get_max_abs_val did not raise an exception on invalid input: {invalid_values}"
 
+@pytest.mark.filterwarnings("ignore:loadtxt", "ignore:genfromtxt")
 def test_verify_npy():
     """Test the verify_npy function."""
     
@@ -333,6 +335,14 @@ def test_verify_npy():
         assert True, f"verify_npy raised an exception on invalid input: {e}"
     else:
         assert False, f"verify_npy did not raise an exception on invalid input: {path}"
+    
+    # Clean up the test directory
+    if os.path.exists("tests/arrays"):
+        for file in os.listdir("tests/arrays"):
+            file_path = os.path.join("tests/arrays", file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        os.rmdir("tests/arrays")
 
 def test_get_num_from_string():
     """Test the get_num_from_string function."""
