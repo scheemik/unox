@@ -48,6 +48,9 @@ def get_extent(xr_dataset=None,
         # Find the min and max lat and lon values
         lat_min = np.unique(np.min(lats))[0]
         lat_max = np.unique(np.max(lats))[0]
+        # Shift the longitude values if specified
+        if shift_lons:
+            lons = shift_lon_arr(lons)
         lon_min = np.unique(np.min(lons))[0]
         lon_max = np.unique(np.max(lons))[0]
     else:
@@ -57,15 +60,16 @@ def get_extent(xr_dataset=None,
         # Use np.unique to ensure that the values are unique and take only the first value
         lat_min = np.unique(xr_dataset.lat.min().values)[0]
         lat_max = np.unique(xr_dataset.lat.max().values)[0]
-        lon_min = np.unique(xr_dataset.lon.min().values)[0]
-        lon_max = np.unique(xr_dataset.lon.max().values)[0]
+        # Shift the longitude values if specified
+        if shift_lons:
+            lons = shift_lon_arr(xr_dataset.lon.values)
+        else:
+            lons = xr_dataset.lon.values
+        lon_min = np.unique(lons.min())[0]
+        lon_max = np.unique(lons.max())[0]
     # Verify that latitude values are in the range [-90, 90]
     lat_max = verify_lat(lat_max)
     lat_min = verify_lat(lat_min)
-    # Verify that longitude values are in the range [-180, 180]
-    if shift_lons:
-        lon_min = shift_lon(lon_min)
-        lon_max = shift_lon(lon_max)
     lon_max = verify_lon(lon_max)
     lon_min = verify_lon(lon_min)
     # Return the extent as a tuple
@@ -317,17 +321,26 @@ def verify_lon(lon_val):
         raise ValueError(f"Longitude value must be in the range [-180, 180], lon_val = {lon_val}.")
     return lon_val
 
-def shift_lon(lon_value):
-    """Shift the given longitude value from the range [0, 360] to [-180, 180].
+def shift_lon(
+    lon_value,
+    PM_centered=True
+    ):
+    """Shift the given longitude value between ranges [0, 360] and [-180, 180].
 
-    If the given longitude value is within the range [0, 360],
-    return that value shifted to the range [-180, 180].
-    Otherwise, raise a ValueError.
+    If the Prime Meridian is centered and the longitude value is in the range [0, 360],
+    shift it to the range [-180, 180]. If the Prime Meridian is not centered (i.e. the
+    International Date Line is centered) and the longitude value is in the range 
+    [-180, 180], shift it to the range [0, 360]. Otherwise, return the same value.
+    If the longitude value is not a number or is NaN, or is outside the relevant range
+    for the specified PM_centered, raise a ValueError.
 
     Parameters
     ----------
     lon_value : float
         The longitude value to shift.
+    PM_centered : bool, optional
+        If True, shift the longitude value from the range [0, 360] to [-180, 180].
+        If False, shift from [-180, 180] to [0, 360]. Defaults to True.
 
     Returns
     -------
@@ -336,49 +349,33 @@ def shift_lon(lon_value):
 
     Examples
     --------
-    >>> lon_value = shift_lon(45.0)
-    -315.0
-    >>> lon_value = shift_lon(-200.0)
-    ValueError: Longitude value must be in the range [0, 360].
+    >>> lon_value = shift_lon(45.0, PM_centered=True)
+    45.0
+    >>> lon_value = shift_lon(270.0, PM_centered=True)
+    -90.0
+    >>> lon_value = shift_lon(-70.0, PM_centered=False)
+    290.0
+    >>> lon_value = shift_lon(200.0, PM_centered=False)
+    200.0
     """
     if not verify_number(lon_value):
         raise ValueError("Longitude value must be a number.")
     if np.isnan(lon_value):
         raise ValueError("Longitude value must not be NaN.")
-    if lon_value < 0 or lon_value > 360:
-        raise ValueError(f"Longitude value must be in the range [0, 360], lon_value = {lon_value}.")
-    return lon_value - 180
-
-def shift_lon_arr(lon_array):
-    """
-    Shift the given array of longitude values from the range [0, 360] to [-180, 180].
-
-    Map the `shift_lon` function to shift each value in the array.
-
-    Parameters
-    ----------
-    lon_array : numpy.ndarray or xarray.DataArray
-        The array of longitude values to shift.
-
-    Returns
-    -------
-    numpy.ndarray or xarray.DataArray
-        The shifted longitude values in the range [-180, 180].
-
-    Examples
-    --------
-    >>> lon_array = np.array([0, 90, 180, 270, 360])
-    >>> shifted_lon = shift_lon_arr(lon_array)
-    array([-180,  -90,    0,   90,  180])
-    """
-    # Ensure the input is a numpy array or xarray DataArray
-    if not isinstance(lon_array, (np.ndarray, xr.DataArray)):
-        raise TypeError("Input must be a numpy.ndarray or xarray.DataArray.")
-    
-    # Map the shift_lon function to each element in the array
-    shifted_lon = np.vectorize(shift_lon)(lon_array)
-    
-    return shifted_lon
+    # If using PM-centered convention
+    if PM_centered==True:
+        # Check if the value is in the range [0, 360]
+        if lon_value >= 0 and lon_value <= 360:
+            # Shift to [-180, 180]
+            return (lon_value + 180) % 360 - 180
+    # If using IDL-centered convention
+    elif PM_centered==False:
+        # Check if the value is in the range [-180, 180]
+        if lon_value >= -180 and lon_value <= 180:
+            # Shift to [0, 360]
+            return (lon_value + 360) % 360
+    else:
+        raise ValueError("PM_centered must be True or False.")
 
 def get_vminmax(arrays):
     """Get the minimum and maximum values across the given arrays.
