@@ -377,6 +377,43 @@ def shift_lon(
     else:
         raise ValueError("PM_centered must be True or False.")
 
+def shift_lon_arr(
+    lon_array,
+    PM_centered=True
+    ):
+    """
+    Shift the given array of longitude values between ranges [0, 360] and [-180, 180].
+
+    Map the `shift_lon` function to shift each value in the array.
+
+    Parameters
+    ----------
+    lon_array : numpy.ndarray or xarray.DataArray
+        The array of longitude values to shift.
+    PM_centered : bool, optional
+        If True, shift the longitude value from the range [0, 360] to [-180, 180].
+        If False, shift from [-180, 180] to [0, 360]. Defaults to True.
+
+    Returns
+    -------
+    numpy.ndarray or xarray.DataArray
+        The shifted longitude values in the range [-180, 180].
+
+    Examples
+    --------
+    >>> lon_array = np.array([0, 90, 180, 270, 360])
+    >>> shifted_lon = shift_lon_arr(lon_array)
+    array([0, 90, 180, -90, 0])
+    """
+    # Ensure the input is a numpy array or xarray DataArray
+    if not isinstance(lon_array, (np.ndarray, xr.DataArray)):
+        raise TypeError("Input must be a numpy.ndarray or xarray.DataArray.")
+    
+    # Map the shift_lon function to each element in the array
+    shifted_lon = np.vectorize(shift_lon, excluded={1})(lon_array, PM_centered)
+    
+    return shifted_lon
+
 def get_vminmax(arrays):
     """Get the minimum and maximum values across the given arrays.
 
