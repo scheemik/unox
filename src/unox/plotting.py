@@ -130,7 +130,7 @@ def plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc',
 
     Parameters
     ----------
-    xr_dataset : str
+    xr_dataset : str or xarray.Dataset or xarray.DataArray
         Path to the netCDF data file.
     var : str
         The name of the variable to plot from the netCDF file.
@@ -156,7 +156,9 @@ def plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc',
     
     Examples
     --------
-    >>> fig = plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc')
+    >>> import xarray as xr
+    >>> this_dataset = xr.open_dataset('../datafiles/nox_2019_t106_US.nc')
+    >>> fig = plot_nc_map(xr_dataset=this_dataset)
     """
     # Check if xr_dataset is a file path or an xarray object
     if isinstance(xr_dataset, str):
