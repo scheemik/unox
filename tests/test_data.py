@@ -29,12 +29,14 @@ def test_get_extent(xr_dataset=xr.open_dataset('datafiles/nox_2019_t106_US.nc'))
     expected = (-90.0, 90.0, -180.0, 180.0)
     actual = udata.get_extent(lats=lats, lons=lons)
     assert actual == expected, f"Expected extent {expected} does not match actual extent {actual}"
+    # Select a tolerance for comparisons
+    selected_tol = 1e-15
     # Test shifting longitudes
     lats = np.array([-90, -45, 45, 90])
-    lons = np.array([0, 45.3, 200, 360])
-    expected = (-90.0, 90.0, -180.0, 180.0)
+    lons = np.array([0, 179, 180, 360])
+    expected = (-90.0, 90.0, -180.0, 179.0)
     actual = udata.get_extent(lats=lats, lons=lons, shift_lons=True)
-    assert actual == expected, f"Expected extent {expected} does not match actual extent {actual}"
+    assert np.allclose(expected, actual, atol=selected_tol, rtol=selected_tol), f"Expected extent {expected} does not match actual extent {actual}"
 
 def test_get_lats_lons(path='datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc'):
     """Test the get_lats_lons function."""
@@ -155,12 +157,21 @@ def test_verify_lon():
 
 def test_shift_lon():
     """Test the shift_lon function."""
+    # Select a tolerance for comparisons
+    selected_tol = 1e-15
+    # Test the Prime Meridian centered shift
     # Create a sample array of longitude values to shift
-    input = np.array([0, 45.3, 200, 360])
-    expected = np.array([-180, -134.7, 20, 180])
-    actual = np.array(udata.shift_lon_arr(input))
-    assert np.array_equal(actual, expected), f"Expected {expected}, but shift_lon gave {actual}"
-    # Test with invalid values
+    input = np.array([0, 45.3, 200, 359])
+    expected = np.array([0, 45.3, -160.0, -1.0])
+    actual = udata.shift_lon_arr(input, PM_centered=True)
+    assert np.allclose(actual, expected, atol=selected_tol, rtol=selected_tol), f"Expected {expected}, but shift_lon gave {actual}"
+    # Test the International Date Line centered shift
+    # Create a sample array of longitude values to shift
+    input = np.array([0, 45.3, -57.5, -179])
+    expected = np.array([0, 45.3, 302.5, 181.0])
+    actual = np.array(udata.shift_lon_arr(input, PM_centered=False))
+    assert np.allclose(actual, expected, atol=selected_tol, rtol=selected_tol), f"Expected {expected}, but shift_lon gave {actual}"
+    # Test with invalid longitudes
     invalid_values = [np.nan, '45', None]
     for val in invalid_values:
         try:
@@ -169,6 +180,13 @@ def test_shift_lon():
             assert True, f"shift_lon raised an exception on invalid value {val}: {e}"
         else:
             assert False, f"shift_lon did not raise an exception on invalid value {val}"
+    # Test with invalid PM_centered argument
+    try:
+        udata.shift_lon_arr(input, PM_centered='invalid')
+    except ValueError as e:
+        assert True, f"shift_lon raised an exception on invalid PM_centered argument: {e}"
+    else:
+        assert False, "shift_lon did not raise an exception on invalid PM_centered argument"
 
 def test_get_vminmax():
     """Test the get_vminmax function."""
