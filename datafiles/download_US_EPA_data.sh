@@ -148,11 +148,9 @@ download_US_EPA_data() {
 if [ "$SPECIES" == "all" ]; then
     # If downloading both daily and hourly data
     if [ "$FREQUENCY" == "both" ]; then
-        for FREQUENCY in "daily" "hourly"; do
-            for SPECIES in "${VALID_SPECIES[@]}"; do
-                download_US_EPA_data "$SPECIES" "$START_YEAR" "$END_YEAR" "daily"
-                download_US_EPA_data "$SPECIES" "$START_YEAR" "$END_YEAR" "hourly"
-            done
+        for SPECIES in "${VALID_SPECIES[@]}"; do
+            download_US_EPA_data "$SPECIES" "$START_YEAR" "$END_YEAR" "daily"
+            download_US_EPA_data "$SPECIES" "$START_YEAR" "$END_YEAR" "hourly"
         done
     else
         for SPECIES in "${VALID_SPECIES[@]}"; do
@@ -164,7 +162,8 @@ else
     if [ "$FREQUENCY" == "both" ]; then
         download_US_EPA_data "$SPECIES" "$START_YEAR" "$END_YEAR" "daily"
         download_US_EPA_data "$SPECIES" "$START_YEAR" "$END_YEAR" "hourly"
+    else
+        # Otherwise, just download for the specified species
+        download_US_EPA_data "$SPECIES" "$START_YEAR" "$END_YEAR" "$FREQUENCY"
     fi
-    # Otherwise, just download for the specified species
-    download_US_EPA_data "$SPECIES" "$START_YEAR" "$END_YEAR" "$FREQUENCY"
 fi
