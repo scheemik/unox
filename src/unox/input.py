@@ -124,7 +124,7 @@ def make_x_input_file(year,
         The stage of the model (1 or 2) this will be input for.
     data_dir : str, optional
         Directory where the NOx data are stored. 
-        Default is '/data/high_res/emacdonald/unet/datafiles/t106'.
+        Default is '/data/high_res/emacdonald/unet/datafiles/'.
     chemra_path : str, optional
         Path to the chemical reanalysis data files. 
         Default is 'TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
@@ -151,10 +151,11 @@ def make_x_input_file(year,
     # Verify the path
     chemra_filepath = unox.verify_path(chemra_filepath)
     # Load chemical reanalysis data
-    chemra = xr.load_dataset(chemra_filepath)
+    # chemra = xr.load_dataset(chemra_filepath)
+    chemra = xr.open_dataset(chemra_filepath)
     # Change longitude coordinate convention to match other data
-    chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180  
-    # chemra.coords['lon'] = udata.shift_lon(chemra.coords['lon'])  
+    # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
+    chemra.coords['lon'] = udata.shift_lon_arr(chemra.coords['lon'])
     # Resample and rescale
     chemra = chemra.resample(time='d').mean() / scale_factors['chemra']
     # Find the number of days in the year
@@ -175,7 +176,7 @@ def make_x_input_file(year,
     
     # Interpolate to latitude and longitude grid
     lats, lons = unox.load_lats_lons()
-    chemra = chemra.interp(lat=lats, lon=lons)
+    chemra = chemra.interp(lat=lats, lon=lons, method='slinear')
     
     # Start a list to hold datasets
     datasets = []
