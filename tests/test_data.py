@@ -365,6 +365,35 @@ def test_get_num_from_string():
     else:
         assert False, f"get_num_from_string did not raise an exception on invalid input: {invalid_input}"
 
+def test_get_DOY():
+    """Test the get_DOY function."""
+    # Test valid inputs
+    valid_dates_and_expected = [
+        (np.datetime64('1999-12-30'), 364),
+        ('2004-02-29', 60),
+        ('2021-01-01', 1),
+        ('2020-12-31', 366),  # Leap year
+        (np.datetime64('1984-02-29T05:39:10'), 60),  # Leap year with time
+        ('2016-07-04T12:07:03', 186),  # Regular year with time
+    ]
+    for this_date, expected_doy in valid_dates_and_expected:
+        actual_doy = udata.get_DOY(this_date)
+        assert actual_doy == expected_doy, f"Expected {expected_doy}, but got {actual_doy}"
+    
+    # Test invalid inputs
+    invalid_dates = [
+        'not_a_date',
+        1999,
+        35.6
+    ]
+    for invalid_date in invalid_dates:
+        try:
+            udata.get_DOY(invalid_date)
+        except (ValueError, TypeError) as e:
+            assert True, f"get_DOY raised an exception on invalid input: {e}"
+        else:
+            assert False, f"get_DOY did not raise an exception on invalid input: {invalid_date}"
+
 def test_increment_month():
     """Test the increment_month function."""
     
