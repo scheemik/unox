@@ -3,6 +3,7 @@ import xarray as xr
 import warnings
 import os
 import re
+from datetime import datetime
 
 def get_extent(xr_dataset=None,
                lats=None,
@@ -656,6 +657,45 @@ def get_num_from_string(str):
     # Convert the numbers to integers or floats
     nums = [float(num) if '.' in num else int(num) for num in nums]
     return nums
+
+def get_DOY(date):
+    """Get the day of the year from a date.
+
+    Extracts the day of the year from a given date
+    and returns it as an integer.
+
+    Parameters
+    ----------
+    date : np.datetime64 or str
+        The date to extract the day of the year from.
+
+    Returns
+    -------
+    doy : int
+        The day of the year of the date.
+
+    Examples
+    --------
+    >>> get_DOY('2019-12-20')
+    354
+    >>> get_DOY(np.datetime64('2020-01-01'))
+    1
+    """
+    # If date is a string, try to parse it as a date using a couple different formats
+    if isinstance(date, str):
+        try:
+            doy = datetime.strptime(date, '%Y-%m-%dT%H:%M:%S').timetuple().tm_yday
+        except:
+            try:
+                doy = datetime.strptime(date, '%Y-%m-%d').timetuple().tm_yday
+            except:
+                raise ValueError(f"Invalid date format: {date}. Expected 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM:SS'.")
+    # If date is a numpy datetime64, convert it to a date and get the day of the year
+    elif isinstance(date, np.datetime64):
+        doy = date.astype('datetime64[D]').astype(object).timetuple().tm_yday
+    else:
+        raise TypeError("date must be a np.datetime64 or str.")
+    return int(doy)
 
 def increment_month(month, increment):
     """Increment the month by a given number of months.

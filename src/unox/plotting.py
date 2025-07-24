@@ -331,13 +331,7 @@ def plot_stage_comp_maps(
     halfrange = udata.get_max_abs_val([vmin, vmax])
 
     # Get the day of year to plot
-    try:
-        day = datetime.strptime(this_date, '%Y-%m-%dT%H:%M:%S').timetuple().tm_yday
-    except:
-        try:
-            day = datetime.strptime(this_date, '%Y-%m-%d').timetuple().tm_yday
-        except:
-            raise ValueError(f"Invalid date format: {this_date}. Expected 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM:SS'.")
+    day = udata.get_DOY(this_date)
 
     # Create the figure
     fig = pplt.figure(refwidth=4)
