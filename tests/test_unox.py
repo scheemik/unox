@@ -89,25 +89,28 @@ def test_show_available_data():
     actual = unox.show_available_data('original_sample_data/')
     assert actual == expected, f"Expected file list (length {len(expected)}) does not match actual file list (length {len(actual)})"
 
-def test_get_sample_data():
-    """Test the get_sample_data function."""
+def test_get_input_data():
+    """Test the get_input_data function."""
     # Test with valid parameters
-    params = {'stage': 1, 'x_or_y': 'y', 'year': 2019}
-    actual = unox.get_sample_data(**params)
+    params = {'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path': 'sample_data'}
+    actual = unox.get_input_data(**params)
     expected = 'sample_data/stage1/y/Y_2019.npy'
     assert actual == expected, f"Expected {expected}, but got {actual}"
     
     # Test with invalid parameters
-    invalid_params = [{'stage': 3, 'x_or_y': 'y', 'year': 2019},
-                      {'stage': 1, 'x_or_y': 'z', 'year': 2019},
-                      {'stage': 1, 'x_or_y': 'y', 'year': -1}]
+    invalid_params = [
+        {'stage': 3, 'x_or_y': 'y', 'year': 2019, 'input_path': 'sample_data'},
+        {'stage': 1, 'x_or_y': 'z', 'year': 2019, 'input_path': 'sample_data'},
+        {'stage': 1, 'x_or_y': 'y', 'year': -1, 'input_path': 'sample_data'},
+        {'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path': 'not_a_valid_path'}
+        ]
     for params in invalid_params:
         try:
-            unox.get_sample_data(**params)
+            unox.get_input_data(**params)
         except (ValueError, FileNotFoundError) as e:
-            assert True, f"get_sample_data raised an exception on invalid parameters {params}: {e}"
+            assert True, f"get_input_data raised an exception on invalid parameters {params}: {e}"
         else:
-            assert False, f"get_sample_data did not raise an exception on invalid parameters {params}"
+            assert False, f"get_input_data did not raise an exception on invalid parameters {params}"
 
 def test_get_pred_data():
     """Test the get_pred_data function."""
