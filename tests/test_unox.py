@@ -92,10 +92,17 @@ def test_show_available_data():
 def test_get_input_data():
     """Test the get_input_data function."""
     # Test with valid parameters
-    params = {'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path': 'sample_data'}
-    actual = unox.get_input_data(**params)
     expected = 'sample_data/stage1/y/Y_2019.npy'
-    assert actual == expected, f"Expected {expected}, but got {actual}"
+    valid_params = [
+        {'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path': 'sample_data'},
+        {'stage': 1, 'x_or_y': 'y', 'year': 2019},
+        {'stage': 1, 'x_or_y': 'y', 'input_path': 'sample_data'},
+        {'stage': 1, 'year': 2019, 'input_path': 'sample_data'},
+        {'x_or_y': 'y', 'year': 2019, 'input_path': 'sample_data'}
+        ]
+    for params in valid_params:
+        actual = unox.get_input_data(**params)
+        assert actual == expected, f"Expected {expected}, but got {actual} with params {params}"
     
     # Test with invalid parameters
     invalid_params = [
