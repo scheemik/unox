@@ -205,10 +205,15 @@ def recursive_paths(path):
                 path_list.append(full_path)
     return path_list
 
-def get_sample_data(stage=1, x_or_y='y', year=2019):
-    """Get the path of a sample data file.
+def get_input_data(
+    stage=1, 
+    x_or_y='y', 
+    year=2019,
+    input_path='sample_data'
+    ):
+    """Get the path of a input data file.
 
-    Builds the path to a specific sample data file
+    Builds the path to a specific input data file
     based on the stage, x_or_y, and year.
 
     Parameters
@@ -219,15 +224,17 @@ def get_sample_data(stage=1, x_or_y='y', year=2019):
         'x' or 'y' to specify the type of data.
     year : int
         Year of the data.
+    input_path : str
+        Relative path to the directory containing data files.
     
     Returns
     -------
     file_path : str
-        Path to the sample data file.
+        Path to the input data file.
     
     Examples
     --------
-    >>> file_path = get_sample_data(stage=1, x_or_y='y', year=2019)
+    >>> file_path = get_input_data(stage=1, x_or_y='y', year=2019)
     '../sample_data/stage1/y/Y_2019.npy'
     """
     # Verify the stage and x_or_y values
@@ -236,11 +243,11 @@ def get_sample_data(stage=1, x_or_y='y', year=2019):
     if x_or_y not in ['x', 'y']:
         raise ValueError("x_or_y must be 'x' or 'y'.")
     # Build the file path
-    file_path = f'sample_data/stage{stage}/{x_or_y}/{x_or_y.upper()}_{year}.npy'
+    file_path = f'{input_path}/stage{stage}/{x_or_y}/{x_or_y.upper()}_{year}.npy'
     # Verify the path
     file_path = verify_path(file_path)
     # Find the available data files
-    data_files = show_available_data('sample_data/')
+    data_files = show_available_data(f'{input_path}/')
     # Check if the file exists
     if file_path not in data_files:
         raise FileNotFoundError(f"File {file_path} not found.")
