@@ -275,11 +275,13 @@ def plot_npy_map(this_fig,
     )
     return this_ax, pcm
 
-def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
-                pred_params={'stage': -1, 'HPC_run': 'test_unet_601760', 'year': 2019},
-                this_date='2019-07-19T00:00:00',
-                restrict_lat_lon_to=None,
-                clr_bar_scale=0.5):
+def plot_stage_comp_maps(
+    truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
+    pred_params={'stage': -1, 'HPC_run': 'test_unet_601760', 'year': 2019},
+    this_date='2019-07-19T00:00:00',
+    restrict_lat_lon_to=None,
+    clr_bar_scale=0.5
+    ):
     """Plots a set of maps to compare the truth and the two stages of the model.
 
     Creates a set of 6 maps:
@@ -294,7 +296,7 @@ def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
     ----------
     truth_params : dict
         Dictionary containing the parameters for the truth data.
-        Must contain 'stage', 'x_or_y', and 'year', as designated in unox.data.get_sample_data().
+        Must contain 'stage', 'x_or_y', and 'year', as designated in unox.data.get_input_data().
     pred_params : dict
         Dictionary containing the parameters for the predicted data.
         Must contain 'stage', 'HPC_run', and 'year', as designated in unox.data.get_pred_data().
@@ -311,7 +313,7 @@ def plot_stage_comp_maps(truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
     Returns
     -------
     """
-    truth = np.load(unox.get_sample_data(**truth_params))
+    truth = np.load(unox.get_input_data(**truth_params))
     # Remove `stage` from pred_params, if present
     pred_params.pop('stage', None)
     stage1 = np.load(unox.get_pred_data(stage=1, **pred_params))
@@ -544,7 +546,7 @@ def plot_true_pred_comp(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
     >>> fig = plot_comparison(truth_arr, pred_arr)
     """
     # Load the data
-    truth = np.load(unox.get_sample_data(**truth_data))  #truth (y input file)
+    truth = np.load(unox.get_input_data(**truth_data))  #truth (y input file)
     stage1 = np.load(unox.get_pred_data(**pred_data))  #stage 1 prediction
     if not isinstance(restrict_lat_lon_to, type(None)):
         # Restrict range
