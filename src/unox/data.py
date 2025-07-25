@@ -872,7 +872,8 @@ def get_increment_info(increment):
 
 def add_amount_to_date(
     this_date,
-    increment
+    increment,
+    keep_within_year=False
     ):
     """Add an amount of time to a date.
 
@@ -888,6 +889,8 @@ def add_amount_to_date(
         If a string, it should be in the format 'XD', 'XM', or 'XY'
         where X is an integer and D, M, or Y are the units for days, 
         months, or years respectively.
+    keep_within_year : bool, optional
+        If True, the new date will be kept within the same year as `this_date`.
 
     Returns
     -------
@@ -977,6 +980,16 @@ def add_amount_to_date(
                 this_year += value
                 # Create the new date with the incremented year
                 new_date = np.datetime64(f"{this_year}-{this_month:02d}-{this_day:02d}")
+    # If keep_within_year is True, ensure the new date is within the same year
+    if keep_within_year:
+        # Get the year from the original date
+        original_year = this_date.astype(object).year
+        # Set the new date to the last day of the same year if it exceeds it
+        if new_date.astype(object).year > original_year:
+            new_date = np.datetime64(f"{original_year}-12-31")
+        # Or, to the first day of the same year if it is before it
+        elif new_date.astype(object).year < original_year:
+            new_date = np.datetime64(f"{original_year}-01-01")
 
     # If the return type is a string, convert the date back to a string
     if return_type == str:
