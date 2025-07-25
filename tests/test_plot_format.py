@@ -33,3 +33,29 @@ def test_pad_extent():
             assert True, f"pad_extent raised an exception on invalid input {extent} with padding {pad}: {e}"
         else:
             assert False, f"pad_extent did not raise an exception on invalid input {extent} with padding {pad}"
+
+def test_get_var_label_and_units():
+    """Test the get_var_label_and_units function."""
+    # Define valid inputs and expected outputs
+    inputs_expected = {
+        'blh': ('Boundary layer height', 'm'),
+        'sp':  ('Surface pressure', 'Pa'),
+        'skt': ('Skin temperature', 'K'),
+    }
+    for var, (label, units) in inputs_expected.items():
+        actual_label, actual_units = uplt_fmt.get_var_label_and_units(var)
+        assert actual_label == label, f"Expected label '{label}', but got '{actual_label}' for variable '{var}'"
+        assert actual_units == units, f"Expected units '{units}', but got '{actual_units}' for variable '{var}'"
+    
+    # Test with invalid variables
+    invalid_vars = [
+        'invalid_var',
+        1999
+    ]
+    for invalid_var in invalid_vars:
+        try:
+            label, units = uplt_fmt.get_var_label_and_units(invalid_var)
+        except ValueError as e:
+            assert True, f"get_var_label_and_units raised an exception on invalid input {invalid_var}: {e}"
+        else:
+            assert False, f"get_var_label_and_units did not raise an exception for invalid variable {invalid_var}."
