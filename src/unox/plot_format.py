@@ -55,3 +55,50 @@ def pad_extent(extent, padding=0.1):
         p_lon_max = 180
     # Return the padded extent as a tuple
     return (p_lat_min, p_lat_max, p_lon_min, p_lon_max)
+
+def get_var_label_and_units(var):
+    """Get the label and units for a variable.
+
+    Returns the label and units for a variable based on its name.
+
+    Parameters
+    ----------
+    var : str
+        The name of the variable.
+
+    Returns
+    -------
+    label : str
+        The label for the variable.
+    units : str
+        The units for the variable.
+
+    Examples
+    --------
+    >>> label, units = get_var_label_and_units('temperature')
+    ('Temperature', '°C')
+    """
+    var_labels_and_units = {
+        'lat': ('Latitude', r'$^\circ$N'),
+        'lon': ('Longitude', r'$^\circ$E'),
+        # t106 variables
+        'nox': (r'Surface NO$_x$ emissions', r'kg N m$^{-2}$ s$^{-1}$'),
+        # TROPESS variables
+        'no2': (r'NO$_2$', 'ppt'), 
+        'no2_tm1': (r'NO$_2$ at $t-1$', 'ppt'),
+        # ERA5 variables
+        'u10': ('10 metre U wind component', r'm s$^{-1}$'),
+        'v10': ('10 metre V wind component', r'm s$^{-1}$'),
+        'blh': ('Boundary layer height', 'm'),
+        'sp':  ('Surface pressure', 'Pa'),
+        'skt': ('Skin temperature', 'K'),
+        'ssrd': ('Surface short-wave (solar) radiation downwards', r'J m$^{-2}$'),
+        't2m': ('2 metre temperature', 'K'),
+    }
+
+    if var not in var_labels_and_units.keys():
+        raise ValueError(f"Variable '{var}' not recognized. Available variables: {list(var_labels_and_units.keys())}")
+    else:
+        label, units = var_labels_and_units[var]
+    
+    return label, units
