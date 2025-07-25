@@ -506,74 +506,45 @@ def test_get_increment_info():
 
 def test_add_amount_to_date():
     """Test the add_amount_to_date function."""
-    
     # Test valid inputs
-    this_date = np.datetime64('1999-12-30')
-    add_this = np.timedelta64(2, 'D')  # Add 2 days
-    expected_date = np.datetime64('2000-01-01')
-    actual_date = udata.add_amount_to_date(this_date, add_this)
-    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
-    this_date = '1999-12-30'
-    add_this = '3D'  # Add 3 days
-    expected_date = '2000-01-02'
-    actual_date = udata.add_amount_to_date(this_date, add_this)
-    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
-    this_date = np.datetime64('2004-02-28')
-    add_this = np.timedelta64(4, 'D')  # Add 4 days
-    expected_date = np.datetime64('2004-03-03')
-    actual_date = udata.add_amount_to_date(this_date, add_this)
-    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
-    this_date = '2004-02-28'
-    add_this = '5D'  # Add 5 days
-    expected_date = '2004-03-04'
-    actual_date = udata.add_amount_to_date(this_date, add_this)
-    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
-    this_date = np.datetime64('2004-02-20')
-    add_this = np.timedelta64(6, 'M')  # Add 6 months
-    expected_date = np.datetime64('2004-08-20')
-    actual_date = udata.add_amount_to_date(this_date, add_this)
-    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
-    this_date = '2004-07-20'
-    add_this = '7M' # Add 7 months
-    expected_date = '2005-02-20'
-    actual_date = udata.add_amount_to_date(this_date, add_this)
-    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
-    this_date = np.datetime64('2004-01-31')
-    add_this = np.timedelta64(8, 'Y')  # Add 8 years
-    expected_date = np.datetime64('2012-01-31')
-    actual_date = udata.add_amount_to_date(this_date, add_this)
-    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
-    this_date = '2004-01-31'
-    add_this = '9Y'  # Add 9 years
-    expected_date = '2013-01-31'
-    actual_date = udata.add_amount_to_date(this_date, add_this)
-    assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
+    date_increment_expected = [
+        (np.datetime64('1999-12-30'), np.timedelta64(2, 'D'), np.datetime64('2000-01-01')),
+        ('1999-12-30', '3D', '2000-01-02'),
+        (np.datetime64('2004-02-28'), np.timedelta64(4, 'D'), np.datetime64('2004-03-03')),
+        ('2004-02-28', '5D', '2004-03-04'),
+        (np.datetime64('2004-02-20'), np.timedelta64(6, 'M'), np.datetime64('2004-08-20')),
+        ('2004-07-20', '7M', '2005-02-20'),
+        (np.datetime64('2004-01-31'), np.timedelta64(8, 'Y'), np.datetime64('2012-01-31')),
+        ('2004-01-31', '9Y', '2013-01-31')
+    ]
+    for this_date, add_this, expected_date in date_increment_expected:
+        actual_date = udata.add_amount_to_date(this_date, add_this)
+        assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
+    # Test valid inputs with keep_within_year=True
+    date_increment_expected = [
+        (np.datetime64('1999-12-30'), np.timedelta64(2, 'D'), np.datetime64('1999-12-31')),
+        ('1999-12-30', '3D', '1999-12-31'),
+        (np.datetime64('2004-02-28'), np.timedelta64(4, 'D'), np.datetime64('2004-03-03')),
+        ('2004-02-28', '5D', '2004-03-04'),
+        (np.datetime64('2004-02-20'), np.timedelta64(6, 'M'), np.datetime64('2004-08-20')),
+        ('2004-07-20', '7M', '2004-12-31'),
+        (np.datetime64('2004-01-31'), np.timedelta64(8, 'Y'), np.datetime64('2004-12-31')),
+        ('2004-01-31', '9Y', '2004-12-31')
+    ]
+    for this_date, add_this, expected_date in date_increment_expected:
+        actual_date = udata.add_amount_to_date(this_date, add_this, keep_within_year=True)
+        assert actual_date == expected_date, f"Expected {expected_date}, but got {actual_date}"
     # Test invalid inputs
-    invalid_date = 'not_a_date'
-    try:
-        udata.add_amount_to_date(invalid_date, add_this)
-    except ValueError as e:
-        assert True, f"add_amount_to_date raised an exception on invalid date: {e}"
-    else:
-        assert False, f"add_amount_to_date did not raise an exception on invalid date: {invalid_date}"
-    invalid_date = 1999
-    try:
-        udata.add_amount_to_date(invalid_date, add_this)
-    except TypeError as e:
-        assert True, f"add_amount_to_date raised an exception on invalid date: {e}"
-    else:
-        assert False, f"add_amount_to_date did not raise an exception on invalid date: {invalid_date}"
-    invalid_increment = 'not_a_timedelta'
-    try:
-        udata.add_amount_to_date(this_date, invalid_increment)
-    except ValueError as e:
-        assert True, f"add_amount_to_date raised an exception on invalid increment: {e}"
-    else:
-        assert False, f"add_amount_to_date did not raise an exception on invalid increment: {invalid_increment}"
-    invalid_increment = 12345
-    try:
-        udata.add_amount_to_date(this_date, invalid_increment)
-    except TypeError as e:
-        assert True, f"add_amount_to_date raised an exception on invalid increment: {e}"
-    else:
-        assert False, f"add_amount_to_date did not raise an exception on invalid increment: {invalid_increment}"
+    invalid_date_increment = [
+        ('not_a_date', np.timedelta64(2, 'D')),
+        (1999, np.timedelta64(2, 'D')),
+        (np.datetime64('1999-12-30'), 'not_a_timedelta'),
+        (np.datetime64('1999-12-30'), 12345)
+    ]
+    for this_date, add_this in invalid_date_increment:
+        try:
+            udata.add_amount_to_date(this_date, add_this)
+        except (ValueError, TypeError) as e:
+            assert True, f"add_amount_to_date raised an exception on invalid input: {e}"
+        else:
+            assert False, f"add_amount_to_date did not raise an exception on invalid input: {this_date}, {add_this}"
