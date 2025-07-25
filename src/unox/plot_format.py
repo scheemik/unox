@@ -1,3 +1,5 @@
+from unox import data as udata
+
 def pad_extent(extent, padding=0.1):
     """Pads the given extent.
 
@@ -18,12 +20,24 @@ def pad_extent(extent, padding=0.1):
 
     Examples
     --------
-    >>> extent = unox.data.get_extent(24.112, 58.878, -126.0, -59.625)
+    >>> nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
+    >>> extent = unox.data.get_extent(nox)
     >>> padded_extent = pad_extent(extent, padding=0.1)
     (20.635399999999997, 62.3546, -132.6375, -52.9875)
     """
+    # Verify the tuple is the right shape
+    if not isinstance(extent, tuple) or len(extent) != 4:
+        raise ValueError("Extent must be a tuple of the form (lat_min, lat_max, lon_min, lon_max)")
+    # Verify the padding is a number
+    if not udata.verify_number(padding):
+        raise TypeError("Padding must be a number, got: " + str(type(padding)) + ". Padding value: " + str(padding))
     # Unpack the extent tuple
     lat_min, lat_max, lon_min, lon_max = extent
+    # Verify these values
+    lat_min = udata.verify_lat(lat_min)
+    lat_max = udata.verify_lat(lat_max)
+    lon_min = udata.verify_lon(lon_min)
+    lon_max = udata.verify_lon(lon_max)
     # Enlarge the extent of the map by the given padding value
     p_lat_min = lat_min - padding*abs(lat_max - lat_min)
     p_lat_max = lat_max + padding*abs(lat_max - lat_min)
@@ -36,8 +50,8 @@ def pad_extent(extent, padding=0.1):
         p_lat_max = 90
     # Verify the longitude values are in the range [-180, 180]
     if p_lon_min < -180:
-        p_lon_min += 360
+        p_lon_min = -180
     if p_lon_max > 180:
-        p_lon_max -= 360
+        p_lon_max = 180
     # Return the padded extent as a tuple
     return (p_lat_min, p_lat_max, p_lon_min, p_lon_max)
