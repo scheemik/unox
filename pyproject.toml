@@ -16,6 +16,7 @@ xarray = ">=2022.11.0"
 scipy = ">=1.8.1"
 matplotlib = ">=3.4.3"
 netcdf4 = ">=1.6.2"
+numpy = "<2"
 
 
 [tool.poetry.group.dev.dependencies]
