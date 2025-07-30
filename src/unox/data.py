@@ -185,11 +185,14 @@ def verify_dataset(
     if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
         raise TypeError("xr_dataset must be an xarray Dataset or DataArray.")
     # Verify that the dataset has lat and lon coordinates
-    if 'lat' not in xr_dataset.coords or 'lon' not in xr_dataset.coords:
-        raise ValueError("xr_dataset must have 'lat' and 'lon' coordinates.")
+    coordinate_list = list(xr_dataset.coords)
+    if 'lat' not in coordinate_list and 'latitude' not in coordinate_list:
+        raise ValueError(f"xr_dataset must have 'lat' or 'latitude' as a coordinate. Available coordinates are: {coordinate_list}")
+    if 'lon' not in coordinate_list and 'longitude' not in coordinate_list:
+        raise ValueError(f"xr_dataset must have 'lon' or 'longitude' as a coordinate.. Available coordinates are: {coordinate_list}")
     # Verify that the dataset has the time coordinate
     if check_time:
-        if 'time' not in xr_dataset.coords:
+        if 'time' not in coordinate_list:
             raise ValueError("xr_dataset must have 'time' coordinate.")
 
 def verify_number(value):
