@@ -9,7 +9,7 @@ from scipy.stats import linregress
 
 from unox import unox
 from unox import data as udata
-from unox import plot_format as uplt_frmt
+from unox import plot_format as uplt_fmt
 
 def plot_extent(xr_dataset='/datafiles/nox_2019_t106_US.nc'):
     """Plots the extent of the given xarray dataset.
@@ -94,7 +94,7 @@ def plot_lats_lons(xr_dataset='/datafiles/nox_2019_t106_US.nc',
     # Find the min and max lat and lon values
     this_extent = udata.get_extent(xr_dataset)
     # Enlarge the extent of the map by the given padding value
-    p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_frmt.pad_extent(this_extent, padding)
+    p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_fmt.pad_extent(this_extent, padding)
     # Make a meshgrid of the lat and lon values
     longrid, latgrid = np.meshgrid(xr_dataset.lon.values, xr_dataset.lat.values)
     # Create the figure
@@ -175,7 +175,7 @@ def plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc',
     # Find the min and max lat and lon values
     this_extent = udata.get_extent(xr_dataset)
     # Enlarge the extent of the map by the given padding value
-    p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_frmt.pad_extent(this_extent, padding)
+    p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_fmt.pad_extent(this_extent, padding)
     # Select the time to plot
     if isinstance(avg_over, type(None)):
         # Take just that time slice
@@ -279,6 +279,8 @@ def plot_stage_comp_maps(
     truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
     pred_params={'stage': -1, 'HPC_run': 'test_unet_601760', 'year': 2019},
     this_date='2019-07-19T00:00:00',
+    var='nox',
+    avg_over=None,
     restrict_lat_lon_to=None,
     clr_bar_scale=0.5
     ):
@@ -303,6 +305,11 @@ def plot_stage_comp_maps(
     this_date : str
         Date and time to select from the data file.
         Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+    var : str
+        The variable being plotted. Default is 'nox'.
+    avg_over : str, numpy.timedelta64, or None
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
     restrict_lat_lon_to : str
         Path to a netCDF file to restrict the latitude and longitude range.
         If None, the entire dataset is used.
@@ -312,6 +319,8 @@ def plot_stage_comp_maps(
     
     Returns
     -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plots.
     """
     truth = np.load(unox.get_input_data(**truth_params))
     # Remove `stage` from pred_params, if present
@@ -330,15 +339,66 @@ def plot_stage_comp_maps(
     # Get the halfrange for use with a diverging color map
     halfrange = udata.get_max_abs_val([vmin, vmax])
 
+    # Get the variable label and units
+    var_label, var_units = uplt_fmt.get_var_label_and_units(var)
+
     # Get the day of year to plot
-    day = udata.get_DOY(this_date)
+    DOY = udata.get_DOY(this_date)
+    if isinstance(avg_over, type(None)):
+        # Get just that day from the numpy arrays
+        truth = truth[DOY, :, :, :]
+        stage1 = stage1[DOY, :, :, :]
+        stage2 = stage2[DOY, :, :, :]
+        # Get the differences
+        t_m_st1 = truth - stage1
+        t_m_st2 = truth - stage2
+        st1_m_st2 = stage1 - stage2
+        # Format a string for the title
+        overall_title = var_label + ' on ' + this_date
+    # If averaging over a time period, get the end date
+    else:
+        # Add the increment to the date
+        end_date = udata.add_amount_to_date(this_date, avg_over, keep_within_year=True)
+        # Get the day of year for the end date
+        DOY_end = udata.get_DOY(end_date)
+        # Account for the fact that they only have 364 days
+        if DOY_end > 364:
+            DOY_end = 364
+        print('start DOY:', DOY, 'end DOY:', DOY_end)
+        # Get just the data between those two days
+        truth = truth[DOY:DOY_end, :, :, :]
+        stage1 = stage1[DOY:DOY_end, :, :, :]
+        stage2 = stage2[DOY:DOY_end, :, :, :]
+        # Get the differences
+        t_m_st1 = truth - stage1
+        t_m_st2 = truth - stage2
+        st1_m_st2 = stage1 - stage2
+        # Take the average over the time period for all
+        truth = truth.mean(axis=0)
+        stage1 = stage1.mean(axis=0)
+        stage2 = stage2.mean(axis=0)
+        t_m_st1 = t_m_st1.mean(axis=0)
+        t_m_st2 = t_m_st2.mean(axis=0)
+        st1_m_st2 = st1_m_st2.mean(axis=0)
+        # Get the value and unit of the averaging
+        avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
+        # Format a string for the title
+        overall_title = var_label + ' averaged over ' + str(avg_over_num) + ' ' + avg_over_unit + ' from ' + this_date
+    # Set the arrays to plot
+    ## They only have one channel, so just select index 0
+    plt_truth  = truth[:,:,0]
+    plt_stage1 = stage1[:,:,0]
+    plt_stage2 = stage2[:,:,0]
+    plt_t_m_st1 = t_m_st1[:,:,0]
+    plt_t_m_st2 = t_m_st2[:,:,0]
+    plt_st1_m_st2 = st1_m_st2[:,:,0]
 
     # Create the figure
     fig = pplt.figure(refwidth=4)
     ax = fig.subplots(nrows=2, ncols=3, proj='cyl')
     # ax = fig.subplots(nrows=1, proj='cyl')
     # Set the figure title
-    fig.suptitle('NOx emissions on ' + this_date, fontsize=16)
+    fig.suptitle(overall_title, fontsize=16)
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
 
@@ -354,16 +414,16 @@ def plot_stage_comp_maps(
     print('cb_extend:', cb_extend)
 
     # Add the subplots
-    # plot_npy_map(fig, ax, truth[day,:,:,0], lats, lons, halfrange, ax_title='NOx emissions (truth)')
-    plot_npy_map(fig, ax[0,0], truth[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='NOx emissions (truth)')
-    plot_npy_map(fig, ax[0,1], stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
-    plot_npy_map(fig, ax[0,2], stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
-    plot_npy_map(fig, ax[1,0], truth[day,:,:,0]-stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
-    plot_npy_map(fig, ax[1,1], truth[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
-    plot_npy_map(fig, ax[1,2], stage1[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
+    # plot_npy_map(fig, ax, plt_truth, lats, lons, halfrange, ax_title='NOx emissions (truth)')
+    plot_npy_map(fig, ax[0,0], plt_truth, lats, lons, halfrange, cb_extend, ax_title='NOx emissions (truth)')
+    plot_npy_map(fig, ax[0,1], plt_stage1, lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
+    plot_npy_map(fig, ax[0,2], plt_stage2, lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
+    plot_npy_map(fig, ax[1,0], plt_t_m_st1, lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
+    plot_npy_map(fig, ax[1,1], plt_t_m_st2, lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
+    plot_npy_map(fig, ax[1,2], plt_st1_m_st2, lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
 
     # Add one overall colorbar for the entire figure on the right-hand side
-    cbar = make_colorbar(fig, ax[0,0].get_children()[0], 'NOx emissions (kg/m2/s)', num_ticks=9, cb_loc='l', cb_extend=cb_extend)
+    cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='l', cb_extend=cb_extend)
     return fig
 
 def make_colorbar(fig,
