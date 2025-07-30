@@ -302,7 +302,7 @@ def plot_stage_comp_maps(
     pred_params : dict
         Dictionary containing the parameters for the predicted data.
         Must contain 'stage', 'HPC_run', and 'year', as designated in unox.data.get_pred_data().
-    this_date : str
+    this_date : np.datetime64 or str
         Date and time to select from the data file.
         Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
     var : str
@@ -342,56 +342,13 @@ def plot_stage_comp_maps(
     # Get the variable label and units
     var_label, var_units = uplt_fmt.get_var_label_and_units(var)
 
-    # Get the day of year to plot
-    DOY = udata.get_DOY(this_date)
-    if isinstance(avg_over, type(None)):
-        # Get just that day from the numpy arrays
-        truth = truth[DOY, :, :, :]
-        stage1 = stage1[DOY, :, :, :]
-        stage2 = stage2[DOY, :, :, :]
-        # Get the differences
-        t_m_st1 = truth - stage1
-        t_m_st2 = truth - stage2
-        st1_m_st2 = stage1 - stage2
-        # Format a string for the title
-        overall_title = var_label + ' on ' + this_date
-    # If averaging over a time period, get the end date
-    else:
-        # Add the increment to the date
-        end_date = udata.add_amount_to_date(this_date, avg_over, keep_within_year=True)
-        # Get the day of year for the end date
-        DOY_end = udata.get_DOY(end_date)
-        # Account for the fact that they only have 364 days
-        if DOY_end > 364:
-            DOY_end = 364
-        print('start DOY:', DOY, 'end DOY:', DOY_end)
-        # Get just the data between those two days
-        truth = truth[DOY:DOY_end, :, :, :]
-        stage1 = stage1[DOY:DOY_end, :, :, :]
-        stage2 = stage2[DOY:DOY_end, :, :, :]
-        # Get the differences
-        t_m_st1 = truth - stage1
-        t_m_st2 = truth - stage2
-        st1_m_st2 = stage1 - stage2
-        # Take the average over the time period for all
-        truth = truth.mean(axis=0)
-        stage1 = stage1.mean(axis=0)
-        stage2 = stage2.mean(axis=0)
-        t_m_st1 = t_m_st1.mean(axis=0)
-        t_m_st2 = t_m_st2.mean(axis=0)
-        st1_m_st2 = st1_m_st2.mean(axis=0)
-        # Get the value and unit of the averaging
-        avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
-        # Format a string for the title
-        overall_title = var_label + ' averaged over ' + str(avg_over_num) + ' ' + avg_over_unit + ' from ' + this_date
-    # Set the arrays to plot
-    ## They only have one channel, so just select index 0
-    plt_truth  = truth[:,:,0]
-    plt_stage1 = stage1[:,:,0]
-    plt_stage2 = stage2[:,:,0]
-    plt_t_m_st1 = t_m_st1[:,:,0]
-    plt_t_m_st2 = t_m_st2[:,:,0]
-    plt_st1_m_st2 = st1_m_st2[:,:,0]
+    # Create the output arrays for the stage comparison
+    out_arrs, overall_title = uplt_fmt.make_stage_comp_arrs(
+        in_arrs = {'truth': truth, 'stage1': stage1, 'stage2': stage2},
+        this_date = this_date,
+        var = var,
+        avg_over = avg_over
+    )
 
     # Create the figure
     fig = pplt.figure(refwidth=4)
@@ -414,13 +371,13 @@ def plot_stage_comp_maps(
     print('cb_extend:', cb_extend)
 
     # Add the subplots
-    # plot_npy_map(fig, ax, plt_truth, lats, lons, halfrange, ax_title='NOx emissions (truth)')
-    plot_npy_map(fig, ax[0,0], plt_truth, lats, lons, halfrange, cb_extend, ax_title='NOx emissions (truth)')
-    plot_npy_map(fig, ax[0,1], plt_stage1, lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
-    plot_npy_map(fig, ax[0,2], plt_stage2, lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
-    plot_npy_map(fig, ax[1,0], plt_t_m_st1, lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
-    plot_npy_map(fig, ax[1,1], plt_t_m_st2, lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
-    plot_npy_map(fig, ax[1,2], plt_st1_m_st2, lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
+    # plot_npy_map(fig, ax, out_arrs['truth'], lats, lons, halfrange, ax_title='NOx emissions (truth)')
+    plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, halfrange, cb_extend, ax_title='NOx emissions (truth)')
+    plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
+    plot_npy_map(fig, ax[0,2], out_arrs['stage2'], lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
+    plot_npy_map(fig, ax[1,0], out_arrs['t_m_st1'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
+    plot_npy_map(fig, ax[1,1], out_arrs['t_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
+    plot_npy_map(fig, ax[1,2], out_arrs['st1_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
 
     # Add one overall colorbar for the entire figure on the right-hand side
     cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='l', cb_extend=cb_extend)
