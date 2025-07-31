@@ -5,14 +5,14 @@ import os
 import pytest
 
 minimal_xr = xr.DataArray(
-        data=[[[1], [2]], [[3], [4]]],
-        coords={
-            "lat": [-90, 90],
-            "lon": [-180, 180],
-            "time": [np.datetime64("2019-01-01")],
-        },
-        dims=["lat", "lon", "time"]
-    )
+    data=[[[1], [2]], [[3], [4]]],
+    coords={
+        "lat": [-90, 90],
+        "lon": [-180, 180],
+        "time": [np.datetime64("2019-01-01")],
+    },
+    dims=["lat", "lon", "time"]
+)
 
 def test_get_extent():
     """Test the get_extent function."""
