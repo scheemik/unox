@@ -66,6 +66,10 @@ def make_y_input_file(year,
     filepath = unox.verify_path(filepath)
     # Load data for the specified year
     y_data = xr.load_dataset(filepath)
+    # If level dimension present, sum across levels
+    if "lev" in list(y_data.coords):
+        print("level dimension detected")
+        y_data = y_data.sum("lev")
     # Scale data
     y_data = y_data * scale_factor
     # Load lats and lons
@@ -98,6 +102,7 @@ def make_x_input_file(year,
                       stage,
                       data_dir='/data/high_res/emacdonald/unet/datafiles/',
                       chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
+                      chemra_var='no2',
                       insitu_path='US_EPA/daily_42602_',
                       era5_path='ERA5concatenated/',
                       scale_factors={'chemra': 1000,
@@ -128,6 +133,8 @@ def make_x_input_file(year,
     chemra_path : str, optional
         Path to the chemical reanalysis data files. 
         Default is 'TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
+    chemra_var : str, optional
+        The variable to extract from the dataset. Default is 'no2'
     insitu_path : str, optional
         Path to the insitu data files. Default is 'US_EPA/daily_42602_'.
     era5_path : str, optional
@@ -153,9 +160,14 @@ def make_x_input_file(year,
     # Load chemical reanalysis data
     # chemra = xr.load_dataset(chemra_filepath)
     chemra = xr.open_dataset(chemra_filepath)
+    # If level dimension present, sum across levels
+    if "lev" in list(chemra.coords):
+        print("level dimension detected")
+        chemra = chemra.sum("lev")
     # Change longitude coordinate convention to match other data
     # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
-    chemra.coords['lon'] = udata.shift_lon_arr(chemra.coords['lon'])
+    if chemra_path=='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
+        chemra.coords['lon'] = udata.shift_lon_arr(chemra.coords['lon'])
     # Resample and rescale
     chemra = chemra.resample(time='d').mean() / scale_factors['chemra']
     # Find the number of days in the year
@@ -181,16 +193,17 @@ def make_x_input_file(year,
     # Start a list to hold datasets
     datasets = []
     # Add the chemical reanalysis data for day t (starting from the second day)
-    datasets.append(chemra.no2[1::])
+    datasets.append(chemra[chemra_var][1::])
 
     # Get the time-shifted variable (day t-1)
     previousday = chemra.copy()
     # Fix rounding
     previousday.coords['time'] = (previousday.coords['time'] + 1).dt.ceil('D')
     # Rename t-1 variable
-    previousday = previousday.rename({'no2': 'no2_tm1'})
+    chemra_var_tm1 = chemra_var+'_tm1'
+    previousday = previousday.rename({chemra_var: chemra_var_tm1})
     # Add the chemical reanalysis data for the previous day (t-1)
-    datasets.append(previousday.no2_tm1[:-1])  # day t-1
+    datasets.append(previousday[chemra_var_tm1][:-1])  # day t-1
 
     # Add the other variables from the ERA5 dataset
     for variable in ['u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']:
@@ -372,6 +385,7 @@ def make_all_x_input_files(
     stage=1,
     data_dir='/data/high_res/emacdonald/unet/datafiles/',
     chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
+    chemra_var='no2',
     insitu_path='US_EPA/daily_42602_',
     era5_path='ERA5concatenated/',
     scale_factors={'chemra': 1000,
@@ -431,6 +445,7 @@ def make_all_x_input_files(
             stage=stage,
             data_dir=data_dir,
             chemra_path=chemra_path,
+            chemra_var=chemra_var,
             insitu_path=insitu_path,
             era5_path=era5_path,
             scale_factors=scale_factors,
@@ -449,6 +464,7 @@ def make_all_input_files(
     emiss_post='_t106_US.nc',
     data_dir='/data/high_res/emacdonald/unet/datafiles/',
     chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
+    chemra_var='no2',
     insitu_path='US_EPA/daily_42602_',
     era5_path='ERA5concatenated/',
     scale_factors={
@@ -489,6 +505,9 @@ def make_all_input_files(
     chemra_path : str, optional
         Path to the chemical reanalysis data files. 
         Default is 'TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
+    chemra_var : str, optional
+        The variable to extract from the chemical reanalysis data files.
+        Default is 'no2'
     insitu_path : str, optional
         Path to the insitu data files. Default is 'US_EPA/daily_42602_'.
     era5_path : str, optional
@@ -538,6 +557,7 @@ def make_all_input_files(
             stage=stage,
             data_dir=data_dir,
             chemra_path=chemra_path,
+            chemra_var=chemra_var,
             insitu_path=insitu_path,
             era5_path=era5_path,
             scale_factors=scale_factors,
