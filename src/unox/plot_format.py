@@ -1,6 +1,9 @@
 from unox import data as udata
 
-def pad_extent(extent, padding=0.1):
+def pad_extent(
+    extent, 
+    padding=0.1,
+    ):
     """Pads the given extent.
 
     Pads the latitude and longitude extent of a dataset by enlarging
@@ -56,7 +59,9 @@ def pad_extent(extent, padding=0.1):
     # Return the padded extent as a tuple
     return (p_lat_min, p_lat_max, p_lon_min, p_lon_max)
 
-def get_var_label_and_units(var):
+def get_var_label_and_units(
+    var,
+    ):
     """Get the label and units for a variable.
 
     Returns the label and units for a variable based on its name.
@@ -108,7 +113,7 @@ def make_stage_comp_arrs(
     this_date,
     var,
     avg_over=None,
-):
+    ):
     """Create arrays for stage comparison plots.
 
     Creates a dictionary of arrays for stage comparison, where each key is a stage

@@ -13,15 +13,17 @@ import unox.data as udata
 # insitu = Insitu data (EPA)
 # era5 = ERA5 reanalysis data
 
-def make_y_input_file(year,
-                      var='nox',
-                      emiss_dir='/data/high_res/emacdonald/unet/datafiles/t106',
-                      emiss_pre='nox_',
-                      emiss_post='_t106_US.nc',
-                      scale_factor=1e12,
-                      nan_fill=0,
-                      stage_2_cutoff=2013,
-                      output_dir='inputfiles/'):
+def make_y_input_file(
+    year,
+    var='nox',
+    emiss_dir='/data/high_res/emacdonald/unet/datafiles/t106',
+    emiss_pre='nox_',
+    emiss_post='_t106_US.nc',
+    scale_factor=1e12,
+    nan_fill=0,
+    stage_2_cutoff=2013,
+    output_dir='inputfiles/',
+    ):
     """
     Create a y input file for the Unet model for the given year.
 
@@ -94,18 +96,20 @@ def make_y_input_file(year,
         print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
     return np.array(y_data)
 
-def make_x_input_file(year,
-                      stage,
-                      data_dir='/data/high_res/emacdonald/unet/datafiles/',
-                      chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
-                      insitu_path='US_EPA/daily_42602_',
-                      era5_path='ERA5concatenated/',
-                      scale_factors={'chemra': 1000,
-                                     'sp': 100000,
-                                     'ssrd': 1000000,
-                                     'blh': 1000},
-                      stage_2_cutoff=2013,
-                      output_dir='inputfiles/'):
+def make_x_input_file(
+    year,
+    stage,
+    data_dir='/data/high_res/emacdonald/unet/datafiles/',
+    chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
+    insitu_path='US_EPA/daily_42602_',
+    era5_path='ERA5concatenated/',
+    scale_factors={'chemra': 1000,
+                    'sp': 100000,
+                    'ssrd': 1000000,
+                    'blh': 1000},
+    stage_2_cutoff=2013,
+    output_dir='inputfiles/',
+    ):
     """
     Create an x input file for the Unet model for the given year and stage.
 
@@ -238,10 +242,11 @@ def make_x_input_file(year,
         print(f"Created X input file for stage {stage} in {year}, saved to {output_filepath}")
     return xnp
 
-def fill_w_insitu(xr_dataset,
-                  insitu_filepath, 
-                  var='no2',
-                  ):
+def fill_w_insitu(
+    xr_dataset,
+    insitu_filepath, 
+    var='no2',
+    ):
     """
     Replace the variable in an xarray Dataset with available insitu data.
 
@@ -310,7 +315,7 @@ def make_all_y_input_files(
     scale_factor=1e12,
     nan_fill=0,
     stage_2_cutoff=2013,
-    output_dir='inputfiles/'
+    output_dir='inputfiles/',
     ):
     """
     Create y input files for multiple years.
@@ -379,7 +384,7 @@ def make_all_x_input_files(
                    'ssrd': 1000000,
                    'blh': 1000},
     stage_2_cutoff=2013,
-    output_dir='inputfiles/'
+    output_dir='inputfiles/',
     ):
     """
     Create x input files for multiple years and stages.
@@ -459,7 +464,7 @@ def make_all_input_files(
         'blh': 1000},
     nan_fill=0,
     stage_2_cutoff=2013,
-    output_dir='inputfiles/'
+    output_dir='inputfiles/',
     ):
     """
     Create all input files for the Unet model.

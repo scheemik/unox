@@ -1,7 +1,9 @@
 import numpy as np
 import os
 
-def load_lats_lons(path='datafiles/'):
+def load_lats_lons(
+    path='datafiles/',
+    ):
     """Load latitude and longitude data from files.
 
     Loads arrays of latitude and longitude values that cover 
@@ -32,7 +34,9 @@ def load_lats_lons(path='datafiles/'):
         lons = np.load(f)
     return lats, lons
 
-def verify_path(path):
+def verify_path(
+    path,
+    ):
     """Verify that the path to the data files is correct.
 
     Checks if the path to the data files exists and is valid.
@@ -73,7 +77,9 @@ def verify_path(path):
     else:
         return path
 
-def make_file_path(path):
+def make_file_path(
+    path,
+    ):
     """Create a file path.
 
     If the given path doesn't exist, create the specified directory structure.
@@ -107,7 +113,9 @@ def make_file_path(path):
     path = verify_path(os.path.dirname(path))
     return path
 
-def remove_non_empty_directory(base_dir):
+def remove_non_empty_directory(
+    base_dir,
+    ):
     """Remove a non-empty directory and all its contents.
 
     This function will recursively delete all files and directories in the given path.
@@ -133,7 +141,10 @@ def remove_non_empty_directory(base_dir):
     # Finally remove the top directory itself
     os.rmdir(top)  
 
-def show_available_data(path='original_sample_data/', verb=False):
+def show_available_data(
+    path='original_sample_data/', 
+    verb=False,
+    ):
     """Print a list of available data in the given directory.
     
     For the given path, this function will print all the files in the directory.
@@ -164,7 +175,9 @@ def show_available_data(path='original_sample_data/', verb=False):
             print(data_file)
     return data_files
 
-def recursive_paths(path):
+def recursive_paths(
+    path,
+    ):
     """Create list recursively of all files in the given path.
 
     Calls itself recursively to get all files in the given path.
@@ -209,7 +222,7 @@ def get_input_data(
     stage=1, 
     x_or_y='y', 
     year=2019,
-    input_path='sample_data'
+    input_path='sample_data',
     ):
     """Get the path of a input data file.
 
@@ -253,7 +266,11 @@ def get_input_data(
         raise FileNotFoundError(f"File {file_path} not found.")
     return file_path
 
-def get_pred_data(stage=1, HPC_run='test_unet_601760', year=2019):
+def get_pred_data(
+    stage=1, 
+    HPC_run='test_unet_601760', 
+    year=2019,
+    ):
     """Get the path of a prediction data file.
 
     Builds the path to a specific prediction data file
