@@ -105,7 +105,6 @@ def get_var_label_and_units(
         raise ValueError(f"Variable '{var}' not recognized. Available variables: {list(var_labels_and_units.keys())}")
     else:
         label, units = var_labels_and_units[var]
-    
     return label, units
 
 def make_stage_comp_arrs(
