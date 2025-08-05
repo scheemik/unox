@@ -1185,3 +1185,58 @@ def csv_to_xr(
         xr_dataset = xr_dataset.set_coords(['Latitude', 'Longitude'])
         xr_dataset = verify_dataset(xr_dataset)
     return xr_dataset
+
+def get_US_EPA_species_name(
+    ID
+    ):
+    """Get the US EPA species name from the ID.
+
+    Maps the US EPA species ID to the corresponding species name.
+
+    Parameters
+    ----------
+    ID : str
+        The US EPA species ID to map.
+
+    Returns
+    -------
+    species_name : str
+        The corresponding US EPA species name.
+
+    Examples
+    --------
+    >>> species_name = get_US_EPA_species_name('42602')
+    'no2'
+    >>> species_name = get_US_EPA_species_name('42101')
+    'co'
+    """
+    # Define a mapping of US EPA species IDs to species names
+    species_mapping = {
+        # Criteria gases
+        '44201': 'o3',
+        '42401': 'so2',
+        '42101': 'co',
+        '42602': 'no2',
+        # Particulate matter
+        '88101': 'pm25',
+        '88502': 'pm25n',
+        '81102': 'pm10',
+        '86101': 'pmc',
+        'SPEC': 'pm25spec',
+        'PM10SPEC': 'pm10spec',
+        # Meteorological
+        'WIND': 'wind',
+        'TEMP': 'temp',
+        'PRESS': 'press',
+        'RH_DP': 'rh_and_dp',
+        # Toxics, Precursors, and Lead
+        'HAPS': 'haps',
+        'VOCS': 'vocs',
+        'NONOxNOy': 'nonoxnoy',
+        'LEAD': 'lead',
+    }
+    # Check if the ID is in the mapping
+    if ID in species_mapping:
+        return species_mapping[ID]
+    else:
+        raise ValueError(f"Invalid US EPA species ID: {ID}.")
