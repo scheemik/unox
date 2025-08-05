@@ -1148,3 +1148,40 @@ def csv_to_pd(
         except Exception as e:
             raise ValueError(f"Error loading CSV file: {e}.")
     return df
+
+def csv_to_xr(
+    csv_filepath,
+    is_US_EPA=True,
+    ):
+    """Load a CSV file into an xarray Dataset.
+
+    Loads a CSV file into an xarray Dataset, ensuring that the
+    required columns are present if the file is from the US EPA.
+
+    Parameters
+    ----------
+    csv_filepath : str
+        The path to the CSV file to load.
+    is_US_EPA : bool, optional
+        If True, verify that the CSV file has the required columns
+        for US EPA data. Defaults to True.
+
+    Returns
+    -------
+    xr_dataset : xarray.Dataset
+        The loaded Dataset.
+
+    Examples
+    --------
+    >>> xr_dataset = csv_to_xr('datafiles/US_EPA/daily_42602_2019.csv')
+    >>> xr_dataset
+    """
+    # Load the CSV into a pandas DataFrame
+    df = csv_to_pd(csv_filepath, is_US_EPA)
+    # Convert the DataFrame to an xarray Dataset
+    xr_dataset = df.to_xarray()
+    # If it is from the US EPA, set the coordinates
+    if is_US_EPA:
+        xr_dataset = xr_dataset.set_coords(['Latitude', 'Longitude'])
+        xr_dataset = verify_dataset(xr_dataset)
+    return xr_dataset
