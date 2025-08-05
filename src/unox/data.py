@@ -1,9 +1,11 @@
 import numpy as np
 import xarray as xr
+import pandas as pd
 import warnings
 import os
 import re
 from datetime import datetime
+
 from unox import unox
 
 def get_extent(
@@ -201,7 +203,6 @@ def verify_dataset(
         elif std_coord == 'time':
             xr_dataset = xr_dataset.rename({coord: 'time'})
     coordinate_list = list(xr_dataset.coords)
-    print('coordinate_list:', coordinate_list)
     # Verify that the dataset has lat and lon coordinates
     if 'lat' not in coordinate_list:# and 'latitude' not in coordinate_list and 'Latitude' not in coordinate_list:
         raise ValueError(f"xr_dataset must have 'lat' or 'latitude' as a coordinate. Available coordinates are: {coordinate_list}")
@@ -1095,3 +1096,55 @@ def fuzzy_coord_match(
     else:
         # If not found, raise an error
         raise ValueError(f"Coordinate '{coord}' does not match any standard coordinate names. Expected 'lat', 'lon', or 'time'.")
+
+def csv_to_pd(
+    csv_filepath,
+    is_US_EPA=True,
+    ):
+    """Load a CSV file into a pandas DataFrame.
+
+    Loads a CSV file into a pandas DataFrame, ensuring that the
+    required columns are present if the file is from the US EPA.
+
+    Parameters
+    ----------
+    csv_filepath : str
+        The path to the CSV file to load.
+    is_US_EPA : bool, optional
+        If True, verify that the CSV file has the required columns
+        for US EPA data. Defaults to True.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        The loaded DataFrame.
+
+    Examples
+    --------
+    >>> df = csv_to_pd('datafiles/US_EPA/daily_42602_2019.csv')
+    >>> df.head()   
+                Latitude	Longitude	Arithmetic Mean
+    Date			
+    2019-01-01	33.553056	-86.815	    4.314286
+    2019-01-08	33.553056	-86.815	    6.263636
+    2019-01-09	33.553056	-86.815	    4.957143
+    2019-01-10	33.553056	-86.815	    5.891667
+    2019-01-11	33.553056	-86.815	    14.500000
+    """
+    # Verify the filepath
+    csv_filepath = unox.verify_path(csv_filepath)
+    # Verify the file is a CSV
+    if not csv_filepath.lower().endswith('.csv'):
+        raise ValueError("File must be a CSV.")
+    # If it is from the US EPA
+    if is_US_EPA:
+        try:
+            df = pd.read_csv(csv_filepath, parse_dates={'Date':['Date Local']}, index_col=['Date'], usecols=['Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'])
+        except Exception as e:
+            raise ValueError(f"Error loading US EPA CSV file: {e}. Ensure the file has the required columns: 'Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'.")
+    else:
+        try:
+            df = pd.read_csv(csv_filepath)
+        except Exception as e:
+            raise ValueError(f"Error loading CSV file: {e}.")
+    return df
