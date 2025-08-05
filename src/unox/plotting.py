@@ -40,7 +40,7 @@ def plot_extent(
         # Now open the dataset
         xr_dataset = xr.open_dataset(xr_dataset)
     # Verify the xr_dataset
-    udata.verify_dataset(xr_dataset)
+    xr_dataset = udata.verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
     lat_min, lat_max, lon_min, lon_max = udata.get_extent(xr_dataset)
     # Find the midpoint of the longitude values to center the map
@@ -94,7 +94,7 @@ def plot_lats_lons(
         # Now open the dataset
         xr_dataset = xr.open_dataset(xr_dataset)
     # Verify the xr_dataset
-    udata.verify_dataset(xr_dataset)
+    xr_dataset = udata.verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
     this_extent = udata.get_extent(xr_dataset)
     # Enlarge the extent of the map by the given padding value
@@ -177,7 +177,7 @@ def plot_nc_map(
     # this_var.nox[0].plot()
 
     # Verify the xr_dataset
-    udata.verify_dataset(xr_dataset)
+    xr_dataset = udata.verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
     this_extent = udata.get_extent(xr_dataset)
     # Enlarge the extent of the map by the given padding value

@@ -4,6 +4,7 @@ import warnings
 import os
 import re
 from datetime import datetime
+from unox import unox
 
 def get_extent(
     xr_dataset=None,
@@ -58,7 +59,7 @@ def get_extent(
         lon_max = np.unique(np.max(lons))[0]
     else:
         # Verify the xr_dataset
-        verify_dataset(xr_dataset, check_time=check_time)
+        xr_dataset = verify_dataset(xr_dataset, check_time=check_time)
         # Find the min and max lat and lon values
         # Use np.unique to ensure that the values are unique and take only the first value
         lat_min = np.unique(xr_dataset.lat.min().values)[0]
@@ -104,7 +105,7 @@ def get_lats_lons(
     >>> lats, lons = get_lats_lons()
     """
     # Verify the xr_dataset
-    verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # Get the latitude and longitude values
     lats = xr_dataset.lat.values
     lons = xr_dataset.lon.values
@@ -145,7 +146,7 @@ def get_latlon_resolution(
     (0.25, 0.25)
     """
     # Verify the xr_dataset
-    verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # Get the latitude and longitude values
     lats, lons = get_lats_lons(xr_dataset, shift_lons=shift_lons)
     # Calculate the resolution in latitude and longitude
@@ -189,16 +190,28 @@ def verify_dataset(
     # Verify that xr_dataset is an xarray Dataset or DataArray
     if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
         raise TypeError("xr_dataset must be an xarray Dataset or DataArray.")
-    # Verify that the dataset has lat and lon coordinates
+    # Standardize the coordinate names
+    xr_coords = list(xr_dataset.coords)
+    for coord in xr_coords:
+        std_coord = fuzzy_coord_match(coord)
+        if std_coord == 'lat':
+            xr_dataset = xr_dataset.rename({coord: 'lat'})
+        elif std_coord == 'lon':
+            xr_dataset = xr_dataset.rename({coord: 'lon'})
+        elif std_coord == 'time':
+            xr_dataset = xr_dataset.rename({coord: 'time'})
     coordinate_list = list(xr_dataset.coords)
-    if 'lat' not in coordinate_list and 'latitude' not in coordinate_list:
+    print('coordinate_list:', coordinate_list)
+    # Verify that the dataset has lat and lon coordinates
+    if 'lat' not in coordinate_list:# and 'latitude' not in coordinate_list and 'Latitude' not in coordinate_list:
         raise ValueError(f"xr_dataset must have 'lat' or 'latitude' as a coordinate. Available coordinates are: {coordinate_list}")
-    if 'lon' not in coordinate_list and 'longitude' not in coordinate_list:
+    if 'lon' not in coordinate_list:# and 'longitude' not in coordinate_list and 'Longitude' not in coordinate_list:
         raise ValueError(f"xr_dataset must have 'lon' or 'longitude' as a coordinate.. Available coordinates are: {coordinate_list}")
     # Verify that the dataset has the time coordinate
     if check_time:
-        if 'time' not in coordinate_list:
+        if 'time' not in coordinate_list:# and 'Date' not in coordinate_list:
             raise ValueError("xr_dataset must have 'time' coordinate.")
+    return xr_dataset
 
 def verify_number(
     value,
