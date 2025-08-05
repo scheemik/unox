@@ -5,11 +5,13 @@ import os
 import re
 from datetime import datetime
 
-def get_extent(xr_dataset=None,
-               lats=None,
-               lons=None,
-               shift_lons=False,
-               check_time=True):
+def get_extent(
+    xr_dataset=None,
+    lats=None,
+    lons=None,
+    shift_lons=False,
+    check_time=True,
+    ):
     """Get the latitude and longitude extent of the given xarray dataset.
 
     Finds the maximum and minimum latitude and longitude values in the given dataset.
@@ -76,8 +78,10 @@ def get_extent(xr_dataset=None,
     # Return the extent as a tuple
     return (lat_min, lat_max, lon_min, lon_max)
 
-def get_lats_lons(xr_dataset,
-                  shift_lons=False):
+def get_lats_lons(
+    xr_dataset,
+    shift_lons=False,
+    ):
     """Get the latitude and longitude values from the given dataset.
 
     Loads the latitude and longitude values from the given dataset
@@ -111,9 +115,10 @@ def get_lats_lons(xr_dataset,
     map(verify_lon, lons)
     return lats, lons
 
-def get_latlon_resolution(xr_dataset,
-                          shift_lons=False
-                          ):
+def get_latlon_resolution(
+    xr_dataset,
+    shift_lons=False,
+    ):
     """Get the latitude and longitude resolution of the given dataset.
 
     Calculates the resolution of coordinate values in the dataset
@@ -167,7 +172,7 @@ def get_latlon_resolution(xr_dataset,
 
 def verify_dataset(
     xr_dataset,
-    check_time=True
+    check_time=True,
     ):
     """Verify that the given xarray dataset is valid.
 
@@ -185,14 +190,19 @@ def verify_dataset(
     if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
         raise TypeError("xr_dataset must be an xarray Dataset or DataArray.")
     # Verify that the dataset has lat and lon coordinates
-    if 'lat' not in xr_dataset.coords or 'lon' not in xr_dataset.coords:
-        raise ValueError("xr_dataset must have 'lat' and 'lon' coordinates.")
+    coordinate_list = list(xr_dataset.coords)
+    if 'lat' not in coordinate_list and 'latitude' not in coordinate_list:
+        raise ValueError(f"xr_dataset must have 'lat' or 'latitude' as a coordinate. Available coordinates are: {coordinate_list}")
+    if 'lon' not in coordinate_list and 'longitude' not in coordinate_list:
+        raise ValueError(f"xr_dataset must have 'lon' or 'longitude' as a coordinate.. Available coordinates are: {coordinate_list}")
     # Verify that the dataset has the time coordinate
     if check_time:
-        if 'time' not in xr_dataset.coords:
+        if 'time' not in coordinate_list:
             raise ValueError("xr_dataset must have 'time' coordinate.")
 
-def verify_number(value):
+def verify_number(
+    value,
+    ):
     """Verify that the given value is a number.
 
     If the given value is a number that can be converted to
@@ -226,7 +236,9 @@ def verify_number(value):
     except:
         return False
 
-def clean_num_list(val_list):
+def clean_num_list(
+    val_list,
+    ):
     """Clean the list of values that cannot be converted to a number.
 
     For each value in the list, if it cannot be converted to a number, 
@@ -260,7 +272,9 @@ def clean_num_list(val_list):
         raise ValueError("No valid numbers in the input list.")
     return return_list
 
-def verify_lat(lat_val):
+def verify_lat(
+    lat_val,
+    ):
     """Verify that the given latitude value is valid.
 
     If the given latitude value is within the range [-90, 90],
@@ -291,7 +305,9 @@ def verify_lat(lat_val):
         raise ValueError(f"Latitude value must be in the range [-90, 90], lat_val = {lat_val}.")
     return lat_val
 
-def verify_lon(lon_val):
+def verify_lon(
+    lon_val,
+    ):
     """Verify that the given longitude value is valid.
 
     If the given longitude value is within the range [-180, 180],
@@ -324,7 +340,7 @@ def verify_lon(lon_val):
 
 def shift_lon(
     lon_value,
-    PM_centered=True
+    PM_centered=True,
     ):
     """Shift the given longitude value between ranges [0, 360] and [-180, 180].
 
@@ -380,7 +396,7 @@ def shift_lon(
 
 def shift_lon_arr(
     lon_array,
-    PM_centered=True
+    PM_centered=True,
     ):
     """
     Shift the given array of longitude values between ranges [0, 360] and [-180, 180].
@@ -415,7 +431,9 @@ def shift_lon_arr(
     
     return shifted_lon
 
-def get_vminmax(arrays):
+def get_vminmax(
+    arrays,
+    ):
     """Get the minimum and maximum values across the given arrays.
 
     Flattens and concatenates the given arrays and returns the minimum
@@ -452,7 +470,9 @@ def get_vminmax(arrays):
             raise ValueError(f"{e}. Does input array contain any non-NaN values?")
     return vmin, vmax
 
-def get_max_abs_val(val_list):
+def get_max_abs_val(
+    val_list,
+    ):
     """Get the maximum absolute value from the given list.
 
     Removes invalid numbers from the given list of values, then takes the 
@@ -482,7 +502,12 @@ def get_max_abs_val(val_list):
     val_list = np.array(val_list)
     return np.max(np.abs(val_list))
 
-def restrict_domain(arrs_to_restrict, lats, lons, restricting_data):
+def restrict_domain(
+    arrs_to_restrict, 
+    lats, 
+    lons, 
+    restricting_data,
+    ):
     """Restrict the domain of the given arrays
 
     Restricts the domain of the given arrays to the same extent as that 
@@ -534,7 +559,9 @@ def restrict_domain(arrs_to_restrict, lats, lons, restricting_data):
         arrs_to_return.append(arr[:,latmin:latmax,lonmin:lonmax,:])
     return arrs_to_return, lat_r, lon_r
 
-def verify_npy(array):
+def verify_npy(
+    array,
+    ):
     """Determine if a variable or file holds a valid numpy array.
 
     If a numpy array or a path to a file containing a numpy array was passed,
@@ -626,7 +653,9 @@ def verify_npy(array):
     else:
         raise TypeError("Not a numpy array.")
 
-def get_num_from_string(str):
+def get_num_from_string(
+    str,
+    ):
     """Extract numbers from a string.
 
     If the string contains numbers, return those numbers in a list.
@@ -658,7 +687,9 @@ def get_num_from_string(str):
     nums = [float(num) if '.' in num else int(num) for num in nums]
     return nums
 
-def get_DOY(date):
+def get_DOY(
+    date,
+    ):
     """Get the day of the year from a date.
 
     Extracts the day of the year from a given date
@@ -697,7 +728,10 @@ def get_DOY(date):
         raise TypeError("date must be a np.datetime64 or str.")
     return int(doy)
 
-def increment_month(month, increment):
+def increment_month(
+    month, 
+    increment,
+    ):
     """Increment the month by a given number of months.
 
     Increments the month by the given number of months, wrapping around
@@ -761,7 +795,9 @@ def increment_month(month, increment):
     else:
         return new_month, increment_year
 
-def get_YMD_from_date(this_date):
+def get_YMD_from_date(
+    this_date,
+    ):
     """Get the year, month, and day from a date.
 
     Extracts the year, month, and day from a given date
@@ -805,7 +841,9 @@ def get_YMD_from_date(this_date):
     
     return year, month, day
 
-def get_increment_info(increment):
+def get_increment_info(
+    increment,
+    ):
     """Get the increment value and unit from a string.
 
     Parses a string that represents an increment in the format 'XD', 'XM', or 'XY',
@@ -873,7 +911,7 @@ def get_increment_info(increment):
 def add_amount_to_date(
     this_date,
     increment,
-    keep_within_year=False
+    keep_within_year=False,
     ):
     """Add an amount of time to a date.
 
