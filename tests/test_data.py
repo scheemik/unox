@@ -4,7 +4,7 @@ import numpy as np
 import os
 import pytest
 
-minimal_xr = xr.DataArray(
+minimal_xr0 = xr.DataArray(
     data=[[[1], [2]], [[3], [4]]],
     coords={
         "lat": [-90, 90],
@@ -12,6 +12,16 @@ minimal_xr = xr.DataArray(
         "time": [np.datetime64("2019-01-01")],
     },
     dims=["lat", "lon", "time"]
+)
+
+minimal_xr1 = xr.DataArray(
+    data=[[[2], [4]], [[6], [8]]],
+    coords={
+        "Latitude": [-60, 60],
+        "Longitude": [-100, 100],
+        "Datetime": [np.datetime64("2009-05-01")],
+    },
+    dims=["Latitude", "Longitude", "Datetime"]
 )
 
 def test_get_extent():
@@ -23,7 +33,7 @@ def test_get_extent():
     assert actual == expected, f"Expected extent {expected} does not match actual extent {actual}"
     # Test with minimal xarray DataArray
     expected = (-90.0, 90.0, -180.0, 180.0)
-    actual = udata.get_extent(minimal_xr)
+    actual = udata.get_extent(minimal_xr0)
     assert actual == expected, f"Expected extent {expected} does not match actual extent {actual}"
     # Test with lats and lons
     lats = np.array([-90, 90])
@@ -54,7 +64,7 @@ def test_get_latlon_resolution(path='datafiles/TROPESS_reanalysis_mon_emi_nox_an
     # Load a minimal xarray dataset for testing
     expected_lat_res = '180'
     expected_lon_res = '360'
-    actual_lat_res, actual_lon_res = udata.get_latlon_resolution(xr_dataset=minimal_xr)
+    actual_lat_res, actual_lon_res = udata.get_latlon_resolution(xr_dataset=minimal_xr0)
     assert actual_lat_res == expected_lat_res, f"Expected latitude resolution {expected_lat_res} does not match actual {actual_lat_res}"
     assert actual_lon_res == expected_lon_res, f"Expected longitude resolution {expected_lon_res} does not match actual {actual_lon_res}"
     # Load a sample xarray dataset for testing
@@ -66,17 +76,18 @@ def test_get_latlon_resolution(path='datafiles/TROPESS_reanalysis_mon_emi_nox_an
 
 def test_verify_dataset():
     """Test the verify_dataset function."""
-    # Verify minimal xarray DataArray
-    try:
-        udata.verify_dataset(minimal_xr, check_time=True)
-    except Exception as e:
-        assert False, f"verify_dataset raised an exception on minimal example: {e}"
+    # Verify minimal xarray DataArrays
+    for minimal_xr in [minimal_xr0, minimal_xr1]:
+        try:
+            udata.verify_dataset(minimal_xr0, check_time=True)
+        except Exception as e:
+            assert False, f"verify_dataset raised an exception on minimal example: {e}"
     # Try to verify minimal xarray DataArray with each coordinate missing
     for coord in ['lat', 'lon', 'time']:
-        minimal_xr_missing_coord = minimal_xr.copy()
-        minimal_xr_missing_coord = minimal_xr_missing_coord.drop_vars(coord)
+        minimal_xr0_missing_coord = minimal_xr0.copy()
+        minimal_xr0_missing_coord = minimal_xr0_missing_coord.drop_vars(coord)
         try:
-            udata.verify_dataset(minimal_xr_missing_coord, check_time=True)
+            udata.verify_dataset(minimal_xr0_missing_coord, check_time=True)
         except ValueError as e:
             assert True, f"verify_dataset raised an exception on minimal example with missing {coord} coordinate: {e}"
         else:
@@ -84,7 +95,7 @@ def test_verify_dataset():
     # Verify minimal xarray DataArray without time coordinate
     # Assumes that 'time' was the last coordinate tested in above for-loop
     try:
-        udata.verify_dataset(minimal_xr_missing_coord, check_time=False)
+        udata.verify_dataset(minimal_xr0_missing_coord, check_time=False)
     except Exception as e:
         assert False, f"verify_dataset raised an exception on minimal example with check_time=False: {e}"
     # Load a sample xarray dataset for testing
@@ -93,6 +104,20 @@ def test_verify_dataset():
         udata.verify_dataset(xr_dataset, check_time=True)
     except Exception as e:
         assert False, f"verify_dataset raised an exception on nox_2019_t106_US.nc: {e}"
+    # Test with invalid input
+    invalid_datasets = [
+        "invalid_string",
+        12345,
+        None,
+    ]
+    for invalid_dataset in invalid_datasets:
+        try:
+            udata.verify_dataset(invalid_dataset, check_time=False)
+        except (TypeError, ValueError) as e:
+            assert True, f"verify_dataset raised an exception on invalid dataset: {e}"
+        else:
+            assert False, "verify_dataset did not raise an exception on invalid dataset"
+
 
 def test_verify_dataset_invalid():
     """Test the verify_dataset function with invalid datasets."""
