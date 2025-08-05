@@ -627,3 +627,22 @@ def test_csv_to_pd():
         assert True, f"csv_to_pd raised an exception on non-CSV file: {e}"
     else:
         assert False, f"csv_to_pd did not raise an exception on non-CSV file: {non_csv_file}"
+    
+def test_get_US_EPA_species_name():
+    """Test the get_US_EPA_species_name function."""
+    
+    # Test valid species IDs
+    valid_ids = ['44201', '42401', '88101', '42602']
+    expected_names = ['o3', 'so2', 'pm25', 'no2']
+    for id, expected_name in zip(valid_ids, expected_names):
+        actual_name = udata.get_US_EPA_species_name(id)
+        assert actual_name == expected_name, f"Expected {expected_name}, but got {actual_name}"
+    
+    # Test invalid species name
+    invalid_species = 'not_a_species'
+    try:
+        udata.get_US_EPA_species_name(invalid_species)
+    except ValueError as e:
+        assert True, f"get_US_EPA_species_name raised an exception on invalid input: {e}"
+    else:
+        assert False, f"get_US_EPA_species_name did not raise an exception on invalid input: {invalid_species}"
