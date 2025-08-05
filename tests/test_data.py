@@ -1,6 +1,7 @@
 from unox import data as udata
 import xarray as xr
 import numpy as np
+import pandas as pd
 import os
 import pytest
 
@@ -590,3 +591,39 @@ def test_add_amount_to_date():
             assert True, f"add_amount_to_date raised an exception on invalid input: {e}"
         else:
             assert False, f"add_amount_to_date did not raise an exception on invalid input: {this_date}, {add_this}"
+
+def test_csv_to_pd():
+    """Test the csv_to_pd function."""
+    
+    # Test valid CSV file
+    csv_file = 'tests/data_for_tests/sample.csv'
+    expected_df = pd.DataFrame({
+        'col1': [1, 2, 3],
+        'col2': ['a', 'b', 'c']
+    })
+    actual_df = udata.csv_to_pd(csv_file, is_US_EPA=False)
+    pd.testing.assert_frame_equal(actual_df, expected_df, check_dtype=True)
+
+    # Test US EPA csv file
+    epa_csv_file = '/data/high_res/emacdonald/unet/datafiles/US_EPA/daily_42602_2019.csv'
+    expected_cols = ['Latitude', 'Longitude', 'Arithmetic Mean']
+    actual_cols = udata.csv_to_pd(epa_csv_file, is_US_EPA=True).columns
+    assert list(actual_cols) == expected_cols, f"Expected columns {expected_cols}, but got {list(actual_cols)}"
+
+    # Test invalid CSV file
+    invalid_csv_file = 'tests/data_for_tests/invalid.csv'
+    try:
+        udata.csv_to_pd(invalid_csv_file)
+    except FileNotFoundError as e:
+        assert True, f"csv_to_pd raised an exception on invalid input: {e}"
+    else:
+        assert False, f"csv_to_pd did not raise an exception on invalid input: {invalid_csv_file}"
+
+    # Test non-CSV file
+    non_csv_file = 12345
+    try:
+        udata.csv_to_pd(non_csv_file)
+    except TypeError as e:
+        assert True, f"csv_to_pd raised an exception on non-CSV file: {e}"
+    else:
+        assert False, f"csv_to_pd did not raise an exception on non-CSV file: {non_csv_file}"
