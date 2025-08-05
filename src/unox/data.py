@@ -1140,6 +1140,13 @@ def csv_to_pd(
     if is_US_EPA:
         try:
             df = pd.read_csv(csv_filepath, parse_dates={'Date':['Date Local']}, index_col=['Date'], usecols=['Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'])
+            # Rename 'Arithmetic Mean' to match the US EPA species ID name
+            ## Get the ID from the file path
+            species_id = os.path.basename(csv_filepath).split('_')[1]
+            ## Get the species name
+            species_name = get_US_EPA_species_name(species_id)
+            ## Rename the 'Arithmetic Mean' column
+            df.rename(columns={'Arithmetic Mean': species_name}, inplace=True)
         except Exception as e:
             raise ValueError(f"Error loading US EPA CSV file: {e}. Ensure the file has the required columns: 'Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'.")
     else:
