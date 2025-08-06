@@ -651,7 +651,7 @@ def test_csv_to_pd():
 
     # Test US EPA csv file
     epa_csv_file = '/data/high_res/emacdonald/unet/datafiles/US_EPA/daily_42602_2019.csv'
-    expected_cols = ['Latitude', 'Longitude', 'Arithmetic Mean']
+    expected_cols = ['Latitude', 'Longitude', 'no2']
     actual_cols = udata.csv_to_pd(epa_csv_file, is_US_EPA=True).columns
     assert list(actual_cols) == expected_cols, f"Expected columns {expected_cols}, but got {list(actual_cols)}"
 
