@@ -27,8 +27,9 @@ def get_extent(
         The latitude values to use instead of those in the dataset.
     lons : numpy.ndarray, optional
         The longitude values to use instead of those in the dataset.
-    shift_lons : bool, optional
+    shift_lons : bool or string, optional
         If True, shift the longitude values from the range [0, 360] to [-180, 180].
+        If 'ID_centered', shift from [-180, 180] to [0, 360].
     check_time : bool, optional
         If True, verify that the dataset has a 'time' coordinate.
     
@@ -55,20 +56,24 @@ def get_extent(
         lat_min = np.unique(np.min(lats))[0]
         lat_max = np.unique(np.max(lats))[0]
         # Shift the longitude values if specified
-        if shift_lons:
-            lons = shift_lon_arr(lons)
+        if shift_lons == 'ID_centered':
+            lons = shift_lon_arr(lons, PM_centered=False)
+        elif shift_lons:
+            lons = shift_lon_arr(lons, PM_centered=True)
         lon_min = np.unique(np.min(lons))[0]
         lon_max = np.unique(np.max(lons))[0]
     else:
         # Verify the xr_dataset
-        xr_dataset = verify_dataset(xr_dataset, check_time=check_time)
+        xr_dataset = verify_dataset(xr_dataset, check_time=check_time, shift_lons=shift_lons)
         # Find the min and max lat and lon values
         # Use np.unique to ensure that the values are unique and take only the first value
         lat_min = np.unique(xr_dataset.lat.min().values)[0]
         lat_max = np.unique(xr_dataset.lat.max().values)[0]
         # Shift the longitude values if specified
-        if shift_lons:
-            lons = shift_lon_arr(xr_dataset.lon.values)
+        if shift_lons == 'ID_centered':
+            lons = shift_lon_arr(xr_dataset.lon.values, PM_centered=False)
+        elif shift_lons:
+            lons = shift_lon_arr(xr_dataset.lon.values, PM_centered=True)
         else:
             lons = xr_dataset.lon.values
         lon_min = np.unique(lons.min())[0]
@@ -107,7 +112,7 @@ def get_lats_lons(
     >>> lats, lons = get_lats_lons()
     """
     # Verify the xr_dataset
-    xr_dataset = verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset, shift_lons=shift_lons)
     # Get the latitude and longitude values
     lats = xr_dataset.lat.values
     lons = xr_dataset.lon.values
@@ -148,7 +153,7 @@ def get_latlon_resolution(
     (0.25, 0.25)
     """
     # Verify the xr_dataset
-    xr_dataset = verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset, shift_lons=shift_lons)
     # Get the latitude and longitude values
     lats, lons = get_lats_lons(xr_dataset, shift_lons=shift_lons)
     # Calculate the resolution in latitude and longitude
@@ -176,6 +181,7 @@ def get_latlon_resolution(
 def verify_dataset(
     xr_dataset,
     check_time=True,
+    shift_lons=False,
     ):
     """Verify that the given xarray dataset is valid.
 
@@ -188,6 +194,9 @@ def verify_dataset(
         The xarray data to verify.
     check_time : bool, optional
         If True, verify that the dataset has a 'time' coordinate.
+    shift_lons : bool or string, optional
+        If True, shift the longitude values from the range [0, 360] to [-180, 180].
+        If 'ID_centered', shift from [-180, 180] to [0, 360].
     """
     # Verify that xr_dataset is an xarray Dataset or DataArray
     if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
@@ -212,6 +221,11 @@ def verify_dataset(
     if check_time:
         if 'time' not in coordinate_list:# and 'Date' not in coordinate_list:
             raise ValueError("xr_dataset must have 'time' coordinate.")
+    # Shift longitude values if specified
+    if shift_lons == 'ID_centered':
+        xr_dataset['lon'] = shift_lon_arr(xr_dataset['lon'], PM_centered=False)
+    elif shift_lons:
+        xr_dataset['lon'] = shift_lon_arr(xr_dataset['lon'], PM_centered=True)
     return xr_dataset
 
 def verify_number(
@@ -1194,7 +1208,7 @@ def csv_to_xr(
     # If it is from the US EPA, set the coordinates
     if is_US_EPA:
         xr_dataset = xr_dataset.set_coords(['Latitude', 'Longitude'])
-        xr_dataset = verify_dataset(xr_dataset)
+        xr_dataset = verify_dataset(xr_dataset, shift_lons=False)
     return xr_dataset
 
 def get_US_EPA_species_name(
