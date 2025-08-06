@@ -1,4 +1,5 @@
 from unox import data as udata
+from unox import unox as unox
 import xarray as xr
 import numpy as np
 import pandas as pd
@@ -74,6 +75,45 @@ def test_get_latlon_resolution(path='datafiles/TROPESS_reanalysis_mon_emi_nox_an
     actual_lat_res, actual_lon_res = udata.get_latlon_resolution(xr_dataset=xr.open_dataset(path))
     assert actual_lat_res == expected_lat_res, f"Expected latitude resolution {expected_lat_res} does not match actual {actual_lat_res}"
     assert actual_lon_res == expected_lon_res, f"Expected longitude resolution {expected_lon_res} does not match actual {actual_lon_res}"
+
+def test_print_latlon_info():
+    """Test the print_latlon_info function."""
+    # Capture the printed output
+    from io import StringIO
+    import sys
+    captured_output = StringIO()
+    sys.stdout = captured_output
+    # Use sample netCDF file for testing
+    udata.print_latlon_info(xr_dataset='datafiles/nox_2019_t106_US.nc')
+    sys.stdout = sys.__stdout__
+    output = captured_output.getvalue()
+    # Check if the output contains expected strings
+    expected_strings = [
+        'For datafiles/nox_2019_t106_US.nc: ',
+	    'Latitude extent: 24.112 to 58.878',
+	    'Longitude extent: -126.0 to -59.625',
+	    'Latitude resolution: 1.121483870967742 ± 0.0004997397866077013',
+        'Longitude resolution: 1.125'
+    ]
+    for expected in expected_strings:
+        assert expected in output, f"Expected string '{expected}' not found in output"
+    # Use sample lat lon arrays for testing
+    captured_output = StringIO()
+    sys.stdout = captured_output
+    lats, lons = unox.load_lats_lons()
+    udata.print_latlon_info(lats=lats, lons=lons)
+    sys.stdout = sys.__stdout__
+    output = captured_output.getvalue()
+    # Check if the output contains expected strings
+    expected_strings = [
+        'For provided lat/lon arrays: ',
+	    'Latitude extent: 11.776000022888184 to 73.45700073242188',
+	    'Longitude extent: -174.375 to -40.5',
+	    'Latitude resolution: 1.121472716331482 ± 0.0004995913477614522',
+	    'Longitude resolution: 1.125',
+    ]
+    for expected in expected_strings:
+        assert expected in output, f"Expected string '{expected}' not found in output"
 
 def test_verify_dataset():
     """Test the verify_dataset function."""
