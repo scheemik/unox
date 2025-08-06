@@ -393,20 +393,24 @@ def shift_lon(
         raise ValueError("Longitude value must be a number.")
     if np.isnan(lon_value):
         raise ValueError("Longitude value must not be NaN.")
+    # Check overall range
+    if lon_value < -180 or lon_value > 360:
+        raise ValueError(f"Longitude value must be in the range [-180, 360], lon_value = {lon_value}.")
     # If using PM-centered convention
     if PM_centered==True:
-        # Check if the value is in the range [0, 360]
-        if lon_value >= 0 and lon_value <= 360:
+        # Check if the value is in the range [180, 360]
+        if lon_value > 180 and lon_value <= 360:
             # Shift to [-180, 180]
             return (lon_value + 180) % 360 - 180
     # If using IDL-centered convention
     elif PM_centered==False:
-        # Check if the value is in the range [-180, 180]
-        if lon_value >= -180 and lon_value <= 180:
+        # Check if the value is in the range [-180, 0]
+        if lon_value >= -180 and lon_value <= 0:
             # Shift to [0, 360]
             return (lon_value + 360) % 360
     else:
-        raise ValueError("PM_centered must be True or False.")
+        raise ValueError(f"PM_centered must be True or False. Got {PM_centered}.")
+    return lon_value
 
 def shift_lon_arr(
     lon_array,
