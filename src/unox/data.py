@@ -21,7 +21,7 @@ def get_extent(
 
     Parameters
     ----------
-    xr_dataset : xarray.Dataset or xarray.DataArray
+    xr_dataset : xarray.Dataset or xarray.DataArray, optional
         The xarray data of which to find the extent.
     lats : numpy.ndarray, optional
         The latitude values to use instead of those in the dataset.
@@ -124,7 +124,9 @@ def get_lats_lons(
     return lats, lons
 
 def get_latlon_resolution(
-    xr_dataset,
+    xr_dataset=None,
+    lats=None,
+    lons=None,
     shift_lons=False,
     ):
     """Get the latitude and longitude resolution of the given dataset.
@@ -134,10 +136,15 @@ def get_latlon_resolution(
 
     Parameters
     ----------
-    xr_dataset : xarray.Dataset or xarray.DataArray
-        The xarray data for which to find the coordinate resolution
-    shift_lons : bool, optional
+    xr_dataset : xarray.Dataset or xarray.DataArray, optional
+        The xarray data of which to find the extent.
+    lats : numpy.ndarray, optional
+        The latitude values to use instead of those in the dataset.
+    lons : numpy.ndarray, optional
+        The longitude values to use instead of those in the dataset.
+    shift_lons : bool or string, optional
         If True, shift the longitude values from the range [0, 360] to [-180, 180].
+        If 'ID_centered', shift from [-180, 180] to [0, 360].
     
     Returns
     -------
@@ -152,10 +159,12 @@ def get_latlon_resolution(
     >>> lat_res, lon_res = get_latlon_resolution(nox)
     (0.25, 0.25)
     """
-    # Verify the xr_dataset
-    xr_dataset = verify_dataset(xr_dataset, shift_lons=shift_lons)
-    # Get the latitude and longitude values
-    lats, lons = get_lats_lons(xr_dataset, shift_lons=shift_lons)
+    # If given an xarray dataset
+    if not isinstance(xr_dataset, type(None)):
+        # Verify the xr_dataset
+        xr_dataset = verify_dataset(xr_dataset, shift_lons=shift_lons)
+        # Get the latitude and longitude values
+        lats, lons = get_lats_lons(xr_dataset, shift_lons=shift_lons)
     # Calculate the resolution in latitude and longitude
     lat_res = np.unique(np.diff(lats))
     if len(lat_res) != 1:
@@ -177,6 +186,55 @@ def get_latlon_resolution(
         lon_res = str(lon_res[0])
     # Return the resolution in latitude and longitude
     return lat_res, lon_res
+
+def print_latlon_info(
+    xr_dataset=None,
+    lats=None,
+    lons=None,
+    shift_lons=False,
+    ):
+    """Print information about the latitude and longitude values.
+
+    Prints the extent and resolution of the latitude and longitude
+    values in the given dataset or arrays.
+
+    Parameters
+    ----------
+    xr_dataset : str or xarray.Dataset or xarray.DataArray, optional
+        The filepath to, or the xarray data for which to print the 
+        latitude and longitude information.
+    lats : numpy.ndarray, optional
+        The latitude values to use instead of those in the dataset.
+    lons : numpy.ndarray, optional
+        The longitude values to use instead of those in the dataset.
+    shift_lons : bool, optional
+        If True, shift the longitude values from the range [0, 360] to [-180, 180].
+    """
+    # Initialize a variable to hold the name of the output
+    output_name = 'provided lat/lon arrays'
+    # If a filepath is provided, verify the path and load the dataset
+    if isinstance(xr_dataset, str):
+        output_name = str(xr_dataset)
+        xr_dataset = unox.verify_path(xr_dataset)
+        # If it is a csv, use custom function to load
+        if xr_dataset.endswith('.csv'):
+            xr_dataset = csv_to_xr(xr_dataset)
+        else:
+            xr_dataset = xr.open_dataset(xr_dataset)
+    if not isinstance(xr_dataset, type(None)):
+        # Verify the xarray dataset
+        xr_dataset = verify_dataset(xr_dataset, shift_lons=shift_lons)
+        # Change output name to the dataset name
+        if output_name == 'provided lat/lon arrays':
+            output_name = 'provided xarray dataset'
+    # Print the extent and the resolution of the latitude and longitude values
+    extent = get_extent(xr_dataset=xr_dataset, lats=lats, lons=lons, shift_lons=shift_lons)
+    lat_res, lon_res = get_latlon_resolution(xr_dataset=xr_dataset, lats=lats, lons=lons, shift_lons=shift_lons)
+    print(f"For {output_name}: ")
+    print(f"\tLatitude extent: {extent[0]} to {extent[1]}")
+    print(f"\tLongitude extent: {extent[2]} to {extent[3]}")
+    print(f"\tLatitude resolution: {lat_res}")
+    print(f"\tLongitude resolution: {lon_res}")
 
 def verify_dataset(
     xr_dataset,
