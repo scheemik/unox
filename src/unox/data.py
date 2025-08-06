@@ -1075,7 +1075,7 @@ def fuzzy_coord_match(
     Takes in a coordinate name which may be a variation of standard
     coordinate names (e.g., 'lat', 'latitude', 'Latitude') and returns the
     standard coordinate name ('lat', 'lon', 'time') for latitude, longitude,
-    and time. 
+    and time. Also returns the dummy 'number' coordinate from ERA5 data.
 
     Parameters
     ----------
@@ -1105,8 +1105,10 @@ def fuzzy_coord_match(
         'lon': 'lon',
         'longitude': 'lon',
         'time': 'time',
+        'valid_time': 'time',
         'datetime': 'time',
         'date': 'time',
+        'number': 'number',  # Dummy coordinate for ERA5 data
     }
     # Check if the coordinate is in the mapping
     if coord in coord_mapping:
