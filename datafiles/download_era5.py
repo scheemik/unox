@@ -11,6 +11,8 @@ key: [your API token from your CDS profile]
 import cdsapi
 import sys
 
+from unox import data as udata
+
 #year and month are command line arguments
 #files are huge so it's easier to do one month of one variable per file
 year = sys.argv[1]
@@ -62,7 +64,8 @@ for v in variable_names:
         ],
         "data_format": "netcdf",
         "download_format": "zip",    #changing this to "unarchived" might make things easier, but then have to change savename above
-        "area": [75, -175, 11, -39]  #[north, west, south, east]
+        # "area": [75, -175, 11, -39]  #[north, west, south, east]
+        "area": udata.DEFAULT_EXTENT  #[north, west, south, east]
     }
 
 

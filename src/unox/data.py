@@ -8,6 +8,13 @@ from datetime import datetime
 
 from unox import unox
 
+# Define the default latitude and longitude extents for this project
+DEFAULT_LAT_MIN = 11
+DEFAULT_LAT_MAX = 75
+DEFAULT_LON_MIN = -175
+DEFAULT_LON_MAX = -39
+DEFAULT_EXTENT = [DEFAULT_LAT_MIN, DEFAULT_LAT_MAX, DEFAULT_LON_MIN, DEFAULT_LON_MAX]
+
 def get_extent(
     xr_dataset=None,
     lats=None,
