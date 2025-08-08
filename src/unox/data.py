@@ -247,6 +247,38 @@ def print_latlon_info(
     print(f"\tLatitude resolution: {lat_res}")
     print(f"\tLongitude resolution: {lon_res}")
 
+def load_dataset(
+    file_path,
+    **kwargs,
+    ):
+    """Load the data from the given filepath into an xarray dataset.
+
+    Verifies the given filepath, ensures the file contains an applicable format,
+    and loads the data into an xarray dataset.
+
+    Parameters
+    ----------
+    file_path : str
+        The filepath to the data file to load.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `csv_to_xr()` and `verify_dataset()`.
+
+    Returns
+    -------
+    xr_dataset : xarray.Dataset or xarray.DataArray
+        The loaded xarray dataset.
+    """
+    # Verify the filepath
+    file_path = unox.verify_path(file_path)
+    # If it is a csv, use custom function to load
+    if file_path.endswith('.csv'):
+        xr_dataset = csv_to_xr(file_path, **kwargs)
+    else:
+        xr_dataset = xr.open_dataset(file_path)
+    # Verify the dataset
+    xr_dataset = verify_dataset(xr_dataset, **kwargs)
+    return xr_dataset
+
 def verify_dataset(
     xr_dataset,
     check_time=True,
