@@ -39,6 +39,29 @@ invalid_datasets = [
     None,
 ]
 
+def test_generate_lats_lons():
+    """Test the generate_lats_lons function."""
+    # Test with the ERA5 sample data file
+    sample_filepath = 'datafiles/sample_data/2019u10.nc'
+    output_dir = 'tests/data_for_tests/'
+    expected_lats = np.load('datafiles/lats.npy')
+    expected_lons = np.load('datafiles/lons.npy')
+    # Generate lats and lons with file path input
+    actual_lats, actual_lons = udata.generate_lats_lons(dataset=sample_filepath, output_dir=output_dir)
+    assert np.array_equal(actual_lats, expected_lats), f"Expected lats {expected_lats} do not match actual lats {actual_lats}"
+    assert np.array_equal(actual_lons, expected_lons), f"Expected lons {expected_lons} do not match actual lons {actual_lons}"
+    # Clean up generated files
+    os.remove(os.path.join(output_dir, 'lats.npy'))
+    os.remove(os.path.join(output_dir, 'lons.npy'))
+    # Generate lats and lons with xarray dataset input
+    xr_dataset = xr.open_dataset(sample_filepath)
+    actual_lats, actual_lons = udata.generate_lats_lons(dataset=xr_dataset, output_dir=output_dir)
+    assert np.array_equal(actual_lats, expected_lats), f"Expected lats {expected_lats} do not match actual lats {actual_lats}"
+    assert np.array_equal(actual_lons, expected_lons), f"Expected lons {expected_lons} do not match actual lons {actual_lons}"
+    # Clean up generated files
+    os.remove(os.path.join(output_dir, 'lats.npy'))
+    os.remove(os.path.join(output_dir, 'lons.npy'))
+
 def test_get_extent():
     """Test the get_extent function."""
     # Test with sample data files
