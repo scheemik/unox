@@ -404,6 +404,7 @@ def verify_lat(
 
 def verify_lon(
     lon_val,
+    PM_centered=None,
     ):
     """Verify that the given longitude value is valid.
 
@@ -414,6 +415,10 @@ def verify_lon(
     ----------
     lon_val : float
         The longitude value to verify.
+    PM_centered : bool, optional
+        If None, verify that the longitude value is in the range [-180, 360].
+        If True, verify that the longitude value is in the range [-180, 180].
+        If False, verify that the longitude value is in the range [0, 360].
 
     Returns
     -------
@@ -431,8 +436,15 @@ def verify_lon(
         raise ValueError("Longitude value must be a number.")
     if np.isnan(lon_val):
         raise ValueError("Longitude value must not be NaN.")
-    if lon_val < -180 or lon_val > 180:
-        raise ValueError(f"Longitude value must be in the range [-180, 180], lon_val = {lon_val}.")
+    if isinstance(PM_centered, type(None)):
+        if lon_val < -180 or lon_val > 360:
+            raise ValueError(f"Longitude value must be in the range [-180, 360], lon_val = {lon_val}.")
+    elif PM_centered:
+        if lon_val < -180 or lon_val > 180:
+            raise ValueError(f"Longitude value must be in the range [-180, 180], lon_val = {lon_val}.")
+    else:
+        if lon_val < 0 or lon_val > 360:
+            raise ValueError(f"Longitude value must be in the range [0, 360], lon_val = {lon_val}.")
     return lon_val
 
 def shift_lon(
