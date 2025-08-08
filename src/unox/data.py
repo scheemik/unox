@@ -173,19 +173,23 @@ def get_latlon_resolution(
         # Get the latitude and longitude values
         lats, lons = get_lats_lons(xr_dataset, shift_lons=shift_lons)
     # Calculate the resolution in latitude and longitude
-    lat_res = np.unique(np.diff(lats))
+    ## Make sure to sort the values first 
+    lat_res = np.unique(np.diff(np.sort(lats)))
     if len(lat_res) != 1:
         # Find the average and standard deviation of the latitude resolution
-        lat_res = np.diff(lats)
+        ## Make sure to sort the values first 
+        lat_res = np.diff(np.sort(lats))
         lat_res_mean = np.mean(lat_res)
         lat_res_std = np.std(lat_res)
         lat_res = f"{lat_res_mean} ± {lat_res_std}"
     else:
         lat_res = str(lat_res[0])
-    lon_res = np.unique(np.diff(lons))
+    ## Make sure to sort the values first 
+    lon_res = np.unique(np.diff(np.sort(lons)))
     if len(lon_res) != 1:
         # Find the average and standard deviation of the longitude resolution
-        lon_res = np.diff(lons)
+        ## Make sure to sort the values first 
+        lon_res = np.diff(np.sort(lons))
         lon_res_mean = np.mean(lon_res)
         lon_res_std = np.std(lon_res)
         lon_res = f"{lon_res_mean} ± {lon_res_std}"
