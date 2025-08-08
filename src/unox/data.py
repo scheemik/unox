@@ -15,6 +15,41 @@ DEFAULT_LON_MIN = -175
 DEFAULT_LON_MAX = -39
 DEFAULT_EXTENT = [DEFAULT_LAT_MIN, DEFAULT_LAT_MAX, DEFAULT_LON_MIN, DEFAULT_LON_MAX]
 
+def generate_lats_lons(
+    dataset='datafiles/sample_data/2019u10.nc',
+    output_dir='datafiles/',
+    ):
+    """Generate latitude and longitude arrays from the given dataset.
+
+    Creates the `lats.npy` and `lons.npy` files from the latitude and 
+    longitude values in the given dataset. They were originally generated 
+    from the ERA5 concatenated data files created by the `download_era5`
+    and `concatenate` scripts in the `datafiles` directory.
+
+    Parameters
+    ----------
+    dataset : str or xarray.Dataset, optional
+        The filepath to the dataset or an xarray Dataset object from which to extract latitude and longitude values.
+
+    Returns
+    -------
+    lats : numpy.ndarray
+        The latitude values extracted from the dataset.
+    lons : numpy.ndarray
+        The longitude values extracted from the dataset.
+    """
+    # Load or verify the dataset
+    if isinstance(dataset, str):
+        xr_dataset = load_dataset(dataset)
+    else:
+        xr_dataset = verify_dataset(dataset)
+    # Get the latitude and longitude values
+    lats, lons = get_lats_lons(xr_dataset)
+    # Save the latitude and longitude values as numpy arrays
+    np.save(output_dir+'lats.npy', lats)
+    np.save(output_dir+'lons.npy', lons)
+    return lats, lons
+
 def get_extent(
     xr_dataset=None,
     lats=None,
