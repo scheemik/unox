@@ -293,19 +293,35 @@ def test_verify_lat():
 
 def test_verify_lon():
     """Test the verify_lon function."""
-    # Test valid longitude values
-    valid_lons = [0, 45, -45, 180, -180]
-    for lon in valid_lons:
-        assert udata.verify_lon(lon) == lon, f"verify_lon failed on valid longitude {lon}"
-    # Test invalid longitude values
-    invalid_lons = [181, -181, 360, -360, 400, -400, np.nan, '45']
-    for lon in invalid_lons:
-        try:
-            udata.verify_lon(lon)
-        except ValueError as e:
-            assert True, f"verify_lon raised an exception on invalid longitude {lon}: {e}"
-        else:
-            assert False, f"verify_lon did not raise an exception on invalid longitude {lon}"
+    # Create test arrays of longitude values
+    too_negative = [-181, -360, -400, -500, -1000, -180.1, -200.1, -360.1]
+    negative = [-180, -179.9, -90, -45, -0.1, -0.0001]
+    positive = [0.1, 0.0001, 45, 90, 179.9, 180]
+    more_positive = [180.1, 180.0001, 225, 270, 359.9, 360]
+    too_positive = [360.1, 361, 400, 500, 1000, ]
+    # Test valid combinations of longitude values and PM_centered
+    valid_lons = {
+        None: [negative, positive, more_positive],
+        True: [negative, positive],
+        False: [positive, more_positive],
+    }
+    invalid_lons = {
+        None: [too_negative, too_positive],
+        True: [too_negative, more_positive, too_positive],
+        False: [too_negative, negative, too_positive],
+    }
+    for test_PM_centered in [None, True, False]:
+        for lons_arr in valid_lons[test_PM_centered]:
+            for lon in lons_arr:
+                assert udata.verify_lon(lon, PM_centered=test_PM_centered) == lon, f"verify_lon failed on valid longitude {lon} with PM_centered={test_PM_centered}"
+        for lons_arr in invalid_lons[test_PM_centered]:
+            for lon in lons_arr:
+                try:
+                    udata.verify_lon(lon, PM_centered=test_PM_centered)
+                except ValueError as e:
+                    assert True, f"verify_lon raised an exception on invalid longitude {lon} with PM_centered={test_PM_centered}: {e}"
+                else:
+                    assert False, f"verify_lon did not raise an exception on invalid longitude {lon} with PM_centered={test_PM_centered}"
 
 def test_shift_lon():
     """Test the shift_lon and shift_lon_arr functions."""
