@@ -196,6 +196,32 @@ def test_print_latlon_info():
         else:
             assert False, f"print_latlon_info did not raise an exception on invalid input: {invalid_input}"
 
+def test_load_dataset():
+    """Test the load_dataset function."""
+    # Test with sample data files
+    for datafile in sample_datafiles:
+        xr_dataset = udata.load_dataset(datafile)
+        assert isinstance(xr_dataset, xr.Dataset), f"load_dataset did not return an xarray Dataset from '{datafile}'"
+        # Check if the dataset contains expected variables
+        expected_vars = ['lat', 'lon', 'time']
+        for var in expected_vars:
+            assert var in xr_dataset.variables, f"Variable '{var}' not found in loaded dataset from '{datafile}'"
+    # Test with invalid file paths
+    invalid_inputs = [
+        'datafiles/sample_data/non_existent_file.nc',
+        'tests/data_for_tests/sample.csv',
+        'tests/data_for_tests/lats_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy',
+        'tests/data_for_tests/lons_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy',
+    ]
+    # Concatenate with invalid_datasets list
+    invalid_inputs.extend(invalid_datasets)
+    for invalid_path in invalid_inputs:
+        try:
+            xr_dataset = udata.load_dataset(invalid_path)
+        except Exception as e:
+            assert True, f"load_dataset raised an exception on invalid file path: {e}"
+        else:
+            assert False, f"load_dataset did not raise an exception on invalid file path: {invalid_path}"
 
 def test_verify_dataset():
     """Test the verify_dataset function."""
