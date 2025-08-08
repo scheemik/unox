@@ -20,7 +20,7 @@ def get_extent(
     lats=None,
     lons=None,
     shift_lons=False,
-    check_time=True,
+    **kwargs,
     ):
     """Get the latitude and longitude extent of the given xarray dataset.
 
@@ -34,11 +34,10 @@ def get_extent(
         The latitude values to use instead of those in the dataset.
     lons : numpy.ndarray, optional
         The longitude values to use instead of those in the dataset.
-    shift_lons : bool or string, optional
-        If True, shift the longitude values from the range [0, 360] to [-180, 180].
-        If 'ID_centered', shift from [-180, 180] to [0, 360].
-    check_time : bool, optional
-        If True, verify that the dataset has a 'time' coordinate.
+    shift_lons : bool, optional
+        If True, shift the longitude values based on the PM_centered kwarg.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `verify_dataset()` and `shift_lon_arr()`.
     
     Returns
     -------
@@ -63,24 +62,20 @@ def get_extent(
         lat_min = np.unique(np.min(lats))[0]
         lat_max = np.unique(np.max(lats))[0]
         # Shift the longitude values if specified
-        if shift_lons == 'ID_centered':
-            lons = shift_lon_arr(lons, PM_centered=False)
-        elif shift_lons:
-            lons = shift_lon_arr(lons, PM_centered=True)
+        if shift_lons:
+            lons = shift_lon_arr(lons, **kwargs)
         lon_min = np.unique(np.min(lons))[0]
         lon_max = np.unique(np.max(lons))[0]
     else:
         # Verify the xr_dataset
-        xr_dataset = verify_dataset(xr_dataset, check_time=check_time, shift_lons=shift_lons)
+        xr_dataset = verify_dataset(xr_dataset, **kwargs)
         # Find the min and max lat and lon values
         # Use np.unique to ensure that the values are unique and take only the first value
         lat_min = np.unique(xr_dataset.lat.min().values)[0]
         lat_max = np.unique(xr_dataset.lat.max().values)[0]
         # Shift the longitude values if specified
-        if shift_lons == 'ID_centered':
-            lons = shift_lon_arr(xr_dataset.lon.values, PM_centered=False)
-        elif shift_lons:
-            lons = shift_lon_arr(xr_dataset.lon.values, PM_centered=True)
+        if shift_lons:
+            lons = shift_lon_arr(xr_dataset.lon.values, **kwargs)
         else:
             lons = xr_dataset.lon.values
         lon_min = np.unique(lons.min())[0]
@@ -95,7 +90,7 @@ def get_extent(
 
 def get_lats_lons(
     xr_dataset,
-    shift_lons=False,
+    **kwargs,
     ):
     """Get the latitude and longitude values from the given dataset.
 
@@ -106,6 +101,8 @@ def get_lats_lons(
     ----------
     xr_dataset : xarray.Dataset or xarray.DataArray
         The xarray data to verify.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `verify_dataset()`.
 
     Returns
     -------
@@ -119,14 +116,12 @@ def get_lats_lons(
     >>> lats, lons = get_lats_lons()
     """
     # Verify the xr_dataset
-    xr_dataset = verify_dataset(xr_dataset, shift_lons=shift_lons)
+    xr_dataset = verify_dataset(xr_dataset, **kwargs)
     # Get the latitude and longitude values
     lats = xr_dataset.lat.values
     lons = xr_dataset.lon.values
     # Verify the latitude and longitude values
     map(verify_lat, lats)
-    if shift_lons:
-        lons = np.array(shift_lon_arr(lons))
     map(verify_lon, lons)
     return lats, lons
 
@@ -134,7 +129,7 @@ def get_latlon_resolution(
     xr_dataset=None,
     lats=None,
     lons=None,
-    shift_lons=False,
+    **kwargs,
     ):
     """Get the latitude and longitude resolution of the given dataset.
 
@@ -149,9 +144,8 @@ def get_latlon_resolution(
         The latitude values to use instead of those in the dataset.
     lons : numpy.ndarray, optional
         The longitude values to use instead of those in the dataset.
-    shift_lons : bool or string, optional
-        If True, shift the longitude values from the range [0, 360] to [-180, 180].
-        If 'ID_centered', shift from [-180, 180] to [0, 360].
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `verify_dataset()` and `get_lats_lons()`.
     
     Returns
     -------
@@ -169,9 +163,9 @@ def get_latlon_resolution(
     # If given an xarray dataset
     if not isinstance(xr_dataset, type(None)):
         # Verify the xr_dataset
-        xr_dataset = verify_dataset(xr_dataset, shift_lons=shift_lons)
+        xr_dataset = verify_dataset(xr_dataset, **kwargs)
         # Get the latitude and longitude values
-        lats, lons = get_lats_lons(xr_dataset, shift_lons=shift_lons)
+        lats, lons = get_lats_lons(xr_dataset, **kwargs)
     # Calculate the resolution in latitude and longitude
     ## Make sure to sort the values first 
     lat_res = np.unique(np.diff(np.sort(lats)))
@@ -202,7 +196,7 @@ def print_latlon_info(
     xr_dataset=None,
     lats=None,
     lons=None,
-    shift_lons=False,
+    **kwargs,
     ):
     """Print information about the latitude and longitude values.
 
@@ -218,8 +212,9 @@ def print_latlon_info(
         The latitude values to use instead of those in the dataset.
     lons : numpy.ndarray, optional
         The longitude values to use instead of those in the dataset.
-    shift_lons : bool, optional
-        If True, shift the longitude values from the range [0, 360] to [-180, 180].
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `verify_dataset()`, 
+        `get_extent()` and `get_latlon_resolution()`.
     """
     # Initialize a variable to hold the name of the output
     output_name = 'provided lat/lon arrays'
@@ -234,13 +229,13 @@ def print_latlon_info(
             xr_dataset = xr.open_dataset(xr_dataset)
     if not isinstance(xr_dataset, type(None)):
         # Verify the xarray dataset
-        xr_dataset = verify_dataset(xr_dataset, shift_lons=shift_lons)
+        xr_dataset = verify_dataset(xr_dataset, **kwargs)
         # Change output name to the dataset name
         if output_name == 'provided lat/lon arrays':
             output_name = 'provided xarray dataset'
     # Print the extent and the resolution of the latitude and longitude values
-    extent = get_extent(xr_dataset=xr_dataset, lats=lats, lons=lons, shift_lons=shift_lons)
-    lat_res, lon_res = get_latlon_resolution(xr_dataset=xr_dataset, lats=lats, lons=lons, shift_lons=shift_lons)
+    extent = get_extent(xr_dataset=xr_dataset, lats=lats, lons=lons, **kwargs)
+    lat_res, lon_res = get_latlon_resolution(xr_dataset=xr_dataset, lats=lats, lons=lons, **kwargs)
     print(f"For {output_name}: ")
     print(f"\tLatitude extent: {extent[0]} to {extent[1]}")
     print(f"\tLongitude extent: {extent[2]} to {extent[3]}")
@@ -283,6 +278,7 @@ def verify_dataset(
     xr_dataset,
     check_time=True,
     shift_lons=False,
+    **kwargs,
     ):
     """Verify that the given xarray dataset is valid.
 
@@ -296,8 +292,9 @@ def verify_dataset(
     check_time : bool, optional
         If True, verify that the dataset has a 'time' coordinate.
     shift_lons : bool or string, optional
-        If True, shift the longitude values from the range [0, 360] to [-180, 180].
-        If 'ID_centered', shift from [-180, 180] to [0, 360].
+        If True, shift the longitude values based on the PM_centered kwarg.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `shift_lon_arr()`.
     """
     # Verify that xr_dataset is an xarray Dataset or DataArray
     if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
@@ -323,10 +320,8 @@ def verify_dataset(
         if 'time' not in coordinate_list:# and 'Date' not in coordinate_list:
             raise ValueError("xr_dataset must have 'time' coordinate.")
     # Shift longitude values if specified
-    if shift_lons == 'ID_centered':
-        xr_dataset['lon'] = shift_lon_arr(xr_dataset['lon'], PM_centered=False)
-    elif shift_lons:
-        xr_dataset['lon'] = shift_lon_arr(xr_dataset['lon'], PM_centered=True)
+    if shift_lons:
+        xr_dataset['lon'] = shift_lon_arr(xr_dataset['lon'], **kwargs)
     return xr_dataset
 
 def verify_number(
@@ -541,7 +536,7 @@ def shift_lon(
 
 def shift_lon_arr(
     lon_array,
-    PM_centered=True,
+    **kwargs,
     ):
     """
     Shift the given array of longitude values between ranges [0, 360] and [-180, 180].
@@ -552,9 +547,8 @@ def shift_lon_arr(
     ----------
     lon_array : numpy.ndarray or xarray.DataArray
         The array of longitude values to shift.
-    PM_centered : bool, optional
-        If True, shift the longitude value from the range [0, 360] to [-180, 180].
-        If False, shift from [-180, 180] to [0, 360]. Defaults to True.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `shift_lon()`.
 
     Returns
     -------
@@ -570,10 +564,8 @@ def shift_lon_arr(
     # Ensure the input is a numpy array or xarray DataArray
     if not isinstance(lon_array, (np.ndarray, xr.DataArray)):
         raise TypeError("Input must be a numpy.ndarray or xarray.DataArray.")
-    
     # Map the shift_lon function to each element in the array
-    shifted_lon = np.vectorize(shift_lon, excluded={1})(lon_array, PM_centered)
-    
+    shifted_lon = np.vectorize(shift_lon, excluded={1})(lon_array, **kwargs)
     return shifted_lon
 
 def get_vminmax(
