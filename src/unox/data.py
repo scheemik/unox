@@ -1,16 +1,61 @@
 import numpy as np
 import xarray as xr
+import pandas as pd
 import warnings
 import os
 import re
 from datetime import datetime
+
+from unox import unox
+
+# Define the default latitude and longitude extents for this project
+DEFAULT_LAT_MIN = 11
+DEFAULT_LAT_MAX = 75
+DEFAULT_LON_MIN = -175
+DEFAULT_LON_MAX = -39
+DEFAULT_EXTENT = [DEFAULT_LAT_MIN, DEFAULT_LAT_MAX, DEFAULT_LON_MIN, DEFAULT_LON_MAX]
+
+def generate_lats_lons(
+    dataset='datafiles/sample_data/2019u10.nc',
+    output_dir='datafiles/',
+    ):
+    """Generate latitude and longitude arrays from the given dataset.
+
+    Creates the `lats.npy` and `lons.npy` files from the latitude and 
+    longitude values in the given dataset. They were originally generated 
+    from the ERA5 concatenated data files created by the `download_era5`
+    and `concatenate` scripts in the `datafiles` directory.
+
+    Parameters
+    ----------
+    dataset : str or xarray.Dataset, optional
+        The filepath to the dataset or an xarray Dataset object from which to extract latitude and longitude values.
+
+    Returns
+    -------
+    lats : numpy.ndarray
+        The latitude values extracted from the dataset.
+    lons : numpy.ndarray
+        The longitude values extracted from the dataset.
+    """
+    # Load or verify the dataset
+    if isinstance(dataset, str):
+        xr_dataset = load_dataset(dataset)
+    else:
+        xr_dataset = verify_dataset(dataset)
+    # Get the latitude and longitude values
+    lats, lons = get_lats_lons(xr_dataset)
+    # Save the latitude and longitude values as numpy arrays
+    np.save(output_dir+'lats.npy', lats)
+    np.save(output_dir+'lons.npy', lons)
+    return lats, lons
 
 def get_extent(
     xr_dataset=None,
     lats=None,
     lons=None,
     shift_lons=False,
-    check_time=True,
+    **kwargs,
     ):
     """Get the latitude and longitude extent of the given xarray dataset.
 
@@ -18,16 +63,16 @@ def get_extent(
 
     Parameters
     ----------
-    xr_dataset : xarray.Dataset or xarray.DataArray
+    xr_dataset : xarray.Dataset or xarray.DataArray, optional
         The xarray data of which to find the extent.
     lats : numpy.ndarray, optional
         The latitude values to use instead of those in the dataset.
     lons : numpy.ndarray, optional
         The longitude values to use instead of those in the dataset.
     shift_lons : bool, optional
-        If True, shift the longitude values from the range [0, 360] to [-180, 180].
-    check_time : bool, optional
-        If True, verify that the dataset has a 'time' coordinate.
+        If True, shift the longitude values based on the PM_centered kwarg.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `verify_dataset()` and `shift_lon_arr()`.
     
     Returns
     -------
@@ -53,19 +98,19 @@ def get_extent(
         lat_max = np.unique(np.max(lats))[0]
         # Shift the longitude values if specified
         if shift_lons:
-            lons = shift_lon_arr(lons)
+            lons = shift_lon_arr(lons, **kwargs)
         lon_min = np.unique(np.min(lons))[0]
         lon_max = np.unique(np.max(lons))[0]
     else:
         # Verify the xr_dataset
-        verify_dataset(xr_dataset, check_time=check_time)
+        xr_dataset = verify_dataset(xr_dataset, **kwargs)
         # Find the min and max lat and lon values
         # Use np.unique to ensure that the values are unique and take only the first value
         lat_min = np.unique(xr_dataset.lat.min().values)[0]
         lat_max = np.unique(xr_dataset.lat.max().values)[0]
         # Shift the longitude values if specified
         if shift_lons:
-            lons = shift_lon_arr(xr_dataset.lon.values)
+            lons = shift_lon_arr(xr_dataset.lon.values, **kwargs)
         else:
             lons = xr_dataset.lon.values
         lon_min = np.unique(lons.min())[0]
@@ -80,7 +125,7 @@ def get_extent(
 
 def get_lats_lons(
     xr_dataset,
-    shift_lons=False,
+    **kwargs,
     ):
     """Get the latitude and longitude values from the given dataset.
 
@@ -91,6 +136,8 @@ def get_lats_lons(
     ----------
     xr_dataset : xarray.Dataset or xarray.DataArray
         The xarray data to verify.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `verify_dataset()`.
 
     Returns
     -------
@@ -104,20 +151,20 @@ def get_lats_lons(
     >>> lats, lons = get_lats_lons()
     """
     # Verify the xr_dataset
-    verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset, **kwargs)
     # Get the latitude and longitude values
     lats = xr_dataset.lat.values
     lons = xr_dataset.lon.values
     # Verify the latitude and longitude values
     map(verify_lat, lats)
-    if shift_lons:
-        lons = np.array(shift_lon_arr(lons))
     map(verify_lon, lons)
     return lats, lons
 
 def get_latlon_resolution(
-    xr_dataset,
-    shift_lons=False,
+    xr_dataset=None,
+    lats=None,
+    lons=None,
+    **kwargs,
     ):
     """Get the latitude and longitude resolution of the given dataset.
 
@@ -126,10 +173,14 @@ def get_latlon_resolution(
 
     Parameters
     ----------
-    xr_dataset : xarray.Dataset or xarray.DataArray
-        The xarray data for which to find the coordinate resolution
-    shift_lons : bool, optional
-        If True, shift the longitude values from the range [0, 360] to [-180, 180].
+    xr_dataset : xarray.Dataset or xarray.DataArray, optional
+        The xarray data of which to find the extent.
+    lats : numpy.ndarray, optional
+        The latitude values to use instead of those in the dataset.
+    lons : numpy.ndarray, optional
+        The longitude values to use instead of those in the dataset.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `verify_dataset()` and `get_lats_lons()`.
     
     Returns
     -------
@@ -144,24 +195,30 @@ def get_latlon_resolution(
     >>> lat_res, lon_res = get_latlon_resolution(nox)
     (0.25, 0.25)
     """
-    # Verify the xr_dataset
-    verify_dataset(xr_dataset)
-    # Get the latitude and longitude values
-    lats, lons = get_lats_lons(xr_dataset, shift_lons=shift_lons)
+    # If given an xarray dataset
+    if not isinstance(xr_dataset, type(None)):
+        # Verify the xr_dataset
+        xr_dataset = verify_dataset(xr_dataset, **kwargs)
+        # Get the latitude and longitude values
+        lats, lons = get_lats_lons(xr_dataset, **kwargs)
     # Calculate the resolution in latitude and longitude
-    lat_res = np.unique(np.diff(lats))
+    ## Make sure to sort the values first 
+    lat_res = np.unique(np.diff(np.sort(lats)))
     if len(lat_res) != 1:
         # Find the average and standard deviation of the latitude resolution
-        lat_res = np.diff(lats)
+        ## Make sure to sort the values first 
+        lat_res = np.diff(np.sort(lats))
         lat_res_mean = np.mean(lat_res)
         lat_res_std = np.std(lat_res)
         lat_res = f"{lat_res_mean} ± {lat_res_std}"
     else:
         lat_res = str(lat_res[0])
-    lon_res = np.unique(np.diff(lons))
+    ## Make sure to sort the values first 
+    lon_res = np.unique(np.diff(np.sort(lons)))
     if len(lon_res) != 1:
         # Find the average and standard deviation of the longitude resolution
-        lon_res = np.diff(lons)
+        ## Make sure to sort the values first 
+        lon_res = np.diff(np.sort(lons))
         lon_res_mean = np.mean(lon_res)
         lon_res_std = np.std(lon_res)
         lon_res = f"{lon_res_mean} ± {lon_res_std}"
@@ -170,9 +227,93 @@ def get_latlon_resolution(
     # Return the resolution in latitude and longitude
     return lat_res, lon_res
 
+def print_latlon_info(
+    xr_dataset=None,
+    lats=None,
+    lons=None,
+    **kwargs,
+    ):
+    """Print information about the latitude and longitude values.
+
+    Prints the extent and resolution of the latitude and longitude
+    values in the given dataset or arrays.
+
+    Parameters
+    ----------
+    xr_dataset : str or xarray.Dataset or xarray.DataArray, optional
+        The filepath to, or the xarray data for which to print the 
+        latitude and longitude information.
+    lats : numpy.ndarray, optional
+        The latitude values to use instead of those in the dataset.
+    lons : numpy.ndarray, optional
+        The longitude values to use instead of those in the dataset.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `verify_dataset()`, 
+        `get_extent()` and `get_latlon_resolution()`.
+    """
+    # Initialize a variable to hold the name of the output
+    output_name = 'provided lat/lon arrays'
+    # If a filepath is provided, verify the path and load the dataset
+    if isinstance(xr_dataset, str):
+        output_name = str(xr_dataset)
+        xr_dataset = unox.verify_path(xr_dataset)
+        # If it is a csv, use custom function to load
+        if xr_dataset.endswith('.csv'):
+            xr_dataset = csv_to_xr(xr_dataset)
+        else:
+            xr_dataset = xr.open_dataset(xr_dataset)
+    if not isinstance(xr_dataset, type(None)):
+        # Verify the xarray dataset
+        xr_dataset = verify_dataset(xr_dataset, **kwargs)
+        # Change output name to the dataset name
+        if output_name == 'provided lat/lon arrays':
+            output_name = 'provided xarray dataset'
+    # Print the extent and the resolution of the latitude and longitude values
+    extent = get_extent(xr_dataset=xr_dataset, lats=lats, lons=lons, **kwargs)
+    lat_res, lon_res = get_latlon_resolution(xr_dataset=xr_dataset, lats=lats, lons=lons, **kwargs)
+    print(f"For {output_name}: ")
+    print(f"\tLatitude extent: {extent[0]} to {extent[1]}")
+    print(f"\tLongitude extent: {extent[2]} to {extent[3]}")
+    print(f"\tLatitude resolution: {lat_res}")
+    print(f"\tLongitude resolution: {lon_res}")
+
+def load_dataset(
+    file_path,
+    **kwargs,
+    ):
+    """Load the data from the given filepath into an xarray dataset.
+
+    Verifies the given filepath, ensures the file contains an applicable format,
+    and loads the data into an xarray dataset.
+
+    Parameters
+    ----------
+    file_path : str
+        The filepath to the data file to load.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `csv_to_xr()` and `verify_dataset()`.
+
+    Returns
+    -------
+    xr_dataset : xarray.Dataset or xarray.DataArray
+        The loaded xarray dataset.
+    """
+    # Verify the filepath
+    file_path = unox.verify_path(file_path)
+    # If it is a csv, use custom function to load
+    if file_path.endswith('.csv'):
+        xr_dataset = csv_to_xr(file_path, **kwargs)
+    else:
+        xr_dataset = xr.open_dataset(file_path)
+    # Verify the dataset
+    xr_dataset = verify_dataset(xr_dataset, **kwargs)
+    return xr_dataset
+
 def verify_dataset(
     xr_dataset,
     check_time=True,
+    shift_lons=False,
+    **kwargs,
     ):
     """Verify that the given xarray dataset is valid.
 
@@ -185,20 +326,38 @@ def verify_dataset(
         The xarray data to verify.
     check_time : bool, optional
         If True, verify that the dataset has a 'time' coordinate.
+    shift_lons : bool or string, optional
+        If True, shift the longitude values based on the PM_centered kwarg.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `shift_lon_arr()`.
     """
     # Verify that xr_dataset is an xarray Dataset or DataArray
     if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
         raise TypeError("xr_dataset must be an xarray Dataset or DataArray.")
-    # Verify that the dataset has lat and lon coordinates
+    # Standardize the coordinate names
+    xr_coords = list(xr_dataset.coords)
+    for coord in xr_coords:
+        std_coord = fuzzy_coord_match(coord)
+        if std_coord == 'lat':
+            xr_dataset = xr_dataset.rename({coord: 'lat'})
+        elif std_coord == 'lon':
+            xr_dataset = xr_dataset.rename({coord: 'lon'})
+        elif std_coord == 'time':
+            xr_dataset = xr_dataset.rename({coord: 'time'})
     coordinate_list = list(xr_dataset.coords)
-    if 'lat' not in coordinate_list and 'latitude' not in coordinate_list:
+    # Verify that the dataset has lat and lon coordinates
+    if 'lat' not in coordinate_list:# and 'latitude' not in coordinate_list and 'Latitude' not in coordinate_list:
         raise ValueError(f"xr_dataset must have 'lat' or 'latitude' as a coordinate. Available coordinates are: {coordinate_list}")
-    if 'lon' not in coordinate_list and 'longitude' not in coordinate_list:
+    if 'lon' not in coordinate_list:# and 'longitude' not in coordinate_list and 'Longitude' not in coordinate_list:
         raise ValueError(f"xr_dataset must have 'lon' or 'longitude' as a coordinate.. Available coordinates are: {coordinate_list}")
     # Verify that the dataset has the time coordinate
     if check_time:
-        if 'time' not in coordinate_list:
+        if 'time' not in coordinate_list:# and 'Date' not in coordinate_list:
             raise ValueError("xr_dataset must have 'time' coordinate.")
+    # Shift longitude values if specified
+    if shift_lons:
+        xr_dataset['lon'] = shift_lon_arr(xr_dataset['lon'], **kwargs)
+    return xr_dataset
 
 def verify_number(
     value,
@@ -307,6 +466,7 @@ def verify_lat(
 
 def verify_lon(
     lon_val,
+    PM_centered=None,
     ):
     """Verify that the given longitude value is valid.
 
@@ -317,6 +477,10 @@ def verify_lon(
     ----------
     lon_val : float
         The longitude value to verify.
+    PM_centered : bool, optional
+        If None, verify that the longitude value is in the range [-180, 360].
+        If True, verify that the longitude value is in the range [-180, 180].
+        If False, verify that the longitude value is in the range [0, 360].
 
     Returns
     -------
@@ -334,8 +498,15 @@ def verify_lon(
         raise ValueError("Longitude value must be a number.")
     if np.isnan(lon_val):
         raise ValueError("Longitude value must not be NaN.")
-    if lon_val < -180 or lon_val > 180:
-        raise ValueError(f"Longitude value must be in the range [-180, 180], lon_val = {lon_val}.")
+    if isinstance(PM_centered, type(None)):
+        if lon_val < -180 or lon_val > 360:
+            raise ValueError(f"Longitude value must be in the range [-180, 360], lon_val = {lon_val}.")
+    elif PM_centered:
+        if lon_val < -180 or lon_val > 180:
+            raise ValueError(f"Longitude value must be in the range [-180, 180], lon_val = {lon_val}.")
+    else:
+        if lon_val < 0 or lon_val > 360:
+            raise ValueError(f"Longitude value must be in the range [0, 360], lon_val = {lon_val}.")
     return lon_val
 
 def shift_lon(
@@ -379,24 +550,28 @@ def shift_lon(
         raise ValueError("Longitude value must be a number.")
     if np.isnan(lon_value):
         raise ValueError("Longitude value must not be NaN.")
+    # Check overall range
+    if lon_value < -180 or lon_value > 360:
+        raise ValueError(f"Longitude value must be in the range [-180, 360], lon_value = {lon_value}.")
     # If using PM-centered convention
     if PM_centered==True:
-        # Check if the value is in the range [0, 360]
-        if lon_value >= 0 and lon_value <= 360:
+        # Check if the value is in the range [180, 360]
+        if lon_value > 180 and lon_value <= 360:
             # Shift to [-180, 180]
             return (lon_value + 180) % 360 - 180
     # If using IDL-centered convention
     elif PM_centered==False:
-        # Check if the value is in the range [-180, 180]
-        if lon_value >= -180 and lon_value <= 180:
+        # Check if the value is in the range [-180, 0]
+        if lon_value >= -180 and lon_value <= 0:
             # Shift to [0, 360]
             return (lon_value + 360) % 360
     else:
-        raise ValueError("PM_centered must be True or False.")
+        raise ValueError(f"PM_centered must be True or False. Got {PM_centered}.")
+    return lon_value
 
 def shift_lon_arr(
     lon_array,
-    PM_centered=True,
+    **kwargs,
     ):
     """
     Shift the given array of longitude values between ranges [0, 360] and [-180, 180].
@@ -407,9 +582,8 @@ def shift_lon_arr(
     ----------
     lon_array : numpy.ndarray or xarray.DataArray
         The array of longitude values to shift.
-    PM_centered : bool, optional
-        If True, shift the longitude value from the range [0, 360] to [-180, 180].
-        If False, shift from [-180, 180] to [0, 360]. Defaults to True.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `shift_lon()`.
 
     Returns
     -------
@@ -425,10 +599,8 @@ def shift_lon_arr(
     # Ensure the input is a numpy array or xarray DataArray
     if not isinstance(lon_array, (np.ndarray, xr.DataArray)):
         raise TypeError("Input must be a numpy.ndarray or xarray.DataArray.")
-    
     # Map the shift_lon function to each element in the array
-    shifted_lon = np.vectorize(shift_lon, excluded={1})(lon_array, PM_centered)
-    
+    shifted_lon = np.vectorize(shift_lon, excluded={1})(lon_array, **kwargs)
     return shifted_lon
 
 def get_vminmax(
@@ -1034,3 +1206,204 @@ def add_amount_to_date(
         new_date = str(new_date)
     # Return the new date
     return new_date
+
+def fuzzy_coord_match(
+    coord
+    ):
+    """Returns standard coordinate name for given fuzzy match.
+
+    Takes in a coordinate name which may be a variation of standard
+    coordinate names (e.g., 'lat', 'latitude', 'Latitude') and returns the
+    standard coordinate name ('lat', 'lon', 'time') for latitude, longitude,
+    and time. Also returns the dummy 'number' coordinate from ERA5 data.
+
+    Parameters
+    ----------
+    coord : str
+        The coordinate name to match.
+
+    Returns
+    -------
+    matched_coord : str
+        The standard coordinate name that matches the input coordinate.
+
+    Examples
+    --------
+    >>> fuzzy_coord_match('lat')
+    'lat' 
+    >>> fuzzy_coord_match('latitude')
+    'lat'
+    >>> fuzzy_coord_match('Latitude')
+    'lat'
+    """
+    # Convert the coordinate to lowercase for matching
+    coord = coord.lower()
+    # Define a mapping of fuzzy matches to standard coordinates
+    coord_mapping = {
+        'lat': 'lat',
+        'latitude': 'lat',
+        'lon': 'lon',
+        'longitude': 'lon',
+        'time': 'time',
+        'valid_time': 'time',
+        'datetime': 'time',
+        'date': 'time',
+        'number': 'number',  # Dummy coordinate for ERA5 data
+    }
+    # Check if the coordinate is in the mapping
+    if coord in coord_mapping:
+        return coord_mapping[coord]
+    else:
+        # If not found, raise an error
+        raise ValueError(f"Coordinate '{coord}' does not match any standard coordinate names. Expected 'lat', 'lon', or 'time'.")
+
+def csv_to_pd(
+    csv_filepath,
+    is_US_EPA=True,
+    ):
+    """Load a CSV file into a pandas DataFrame.
+
+    Loads a CSV file into a pandas DataFrame, ensuring that the
+    required columns are present if the file is from the US EPA.
+
+    Parameters
+    ----------
+    csv_filepath : str
+        The path to the CSV file to load.
+    is_US_EPA : bool, optional
+        If True, verify that the CSV file has the required columns
+        for US EPA data. Defaults to True.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        The loaded DataFrame.
+
+    Examples
+    --------
+    >>> df = csv_to_pd('datafiles/US_EPA/daily_42602_2019.csv')
+    >>> df.head()   
+                Latitude	Longitude	Arithmetic Mean
+    Date			
+    2019-01-01	33.553056	-86.815	    4.314286
+    2019-01-08	33.553056	-86.815	    6.263636
+    2019-01-09	33.553056	-86.815	    4.957143
+    2019-01-10	33.553056	-86.815	    5.891667
+    2019-01-11	33.553056	-86.815	    14.500000
+    """
+    # Verify the filepath
+    csv_filepath = unox.verify_path(csv_filepath)
+    # Verify the file is a CSV
+    if not csv_filepath.lower().endswith('.csv'):
+        raise ValueError("File must be a CSV.")
+    # If it is from the US EPA
+    if is_US_EPA:
+        try:
+            df = pd.read_csv(csv_filepath, parse_dates={'Date':['Date Local']}, index_col=['Date'], usecols=['Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'])
+            # Rename 'Arithmetic Mean' to match the US EPA species ID name
+            ## Get the ID from the file path
+            species_id = os.path.basename(csv_filepath).split('_')[1]
+            ## Get the species name
+            species_name = get_US_EPA_species_name(species_id)
+            ## Rename the 'Arithmetic Mean' column
+            df.rename(columns={'Arithmetic Mean': species_name}, inplace=True)
+        except Exception as e:
+            raise ValueError(f"Error loading US EPA CSV file: {e}. Ensure the file has the required columns: 'Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'.")
+    else:
+        try:
+            df = pd.read_csv(csv_filepath)
+        except Exception as e:
+            raise ValueError(f"Error loading CSV file: {e}.")
+    return df
+
+def csv_to_xr(
+    csv_filepath,
+    is_US_EPA=True,
+    ):
+    """Load a CSV file into an xarray Dataset.
+
+    Loads a CSV file into an xarray Dataset, ensuring that the
+    required columns are present if the file is from the US EPA.
+
+    Parameters
+    ----------
+    csv_filepath : str
+        The path to the CSV file to load.
+    is_US_EPA : bool, optional
+        If True, verify that the CSV file has the required columns
+        for US EPA data. Defaults to True.
+
+    Returns
+    -------
+    xr_dataset : xarray.Dataset
+        The loaded Dataset.
+
+    Examples
+    --------
+    >>> xr_dataset = csv_to_xr('datafiles/US_EPA/daily_42602_2019.csv')
+    >>> xr_dataset
+    """
+    # Load the CSV into a pandas DataFrame
+    df = csv_to_pd(csv_filepath, is_US_EPA)
+    # Convert the DataFrame to an xarray Dataset
+    xr_dataset = df.to_xarray()
+    # If it is from the US EPA, set the coordinates
+    if is_US_EPA:
+        xr_dataset = xr_dataset.set_coords(['Latitude', 'Longitude'])
+        xr_dataset = verify_dataset(xr_dataset, shift_lons=False)
+    return xr_dataset
+
+def get_US_EPA_species_name(
+    ID
+    ):
+    """Get the US EPA species name from the ID.
+
+    Maps the US EPA species ID to the corresponding species name.
+
+    Parameters
+    ----------
+    ID : str
+        The US EPA species ID to map.
+
+    Returns
+    -------
+    species_name : str
+        The corresponding US EPA species name.
+
+    Examples
+    --------
+    >>> species_name = get_US_EPA_species_name('42602')
+    'no2'
+    >>> species_name = get_US_EPA_species_name('42101')
+    'co'
+    """
+    # Define a mapping of US EPA species IDs to species names
+    species_mapping = {
+        # Criteria gases
+        '44201': 'o3',
+        '42401': 'so2',
+        '42101': 'co',
+        '42602': 'no2',
+        # Particulate matter
+        '88101': 'pm25',
+        '88502': 'pm25n',
+        '81102': 'pm10',
+        '86101': 'pmc',
+        'SPEC': 'pm25spec',
+        'PM10SPEC': 'pm10spec',
+        # Meteorological
+        'WIND': 'wind',
+        'TEMP': 'temp',
+        'PRESS': 'press',
+        'RH_DP': 'rh_and_dp',
+        # Toxics, Precursors, and Lead
+        'HAPS': 'haps',
+        'VOCS': 'vocs',
+        'NONOxNOy': 'nonoxnoy',
+        'LEAD': 'lead',
+    }
+    # Check if the ID is in the mapping
+    if ID in species_mapping:
+        return species_mapping[ID]
+    else:
+        raise ValueError(f"Invalid US EPA species ID: {ID}.")

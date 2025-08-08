@@ -1,10 +1,12 @@
 from unox import data as udata
+from unox import unox as unox
 import xarray as xr
 import numpy as np
+import pandas as pd
 import os
 import pytest
 
-minimal_xr = xr.DataArray(
+minimal_xr0 = xr.DataArray(
     data=[[[1], [2]], [[3], [4]]],
     coords={
         "lat": [-90, 90],
@@ -14,16 +16,80 @@ minimal_xr = xr.DataArray(
     dims=["lat", "lon", "time"]
 )
 
+minimal_xr1 = xr.DataArray(
+    data=[[[2], [4]], [[6], [8]]],
+    coords={
+        "Latitude": [-60, 60],
+        "Longitude": [-100, 100],
+        "Datetime": [np.datetime64("2009-05-01")],
+    },
+    dims=["Latitude", "Longitude", "Datetime"]
+)
+
+sample_datafiles = [
+    'datafiles/sample_data/2019u10.nc',
+    'datafiles/sample_data/daily_42602_2019.csv',
+    'datafiles/sample_data/nox_2019_t106_US.nc',
+    'datafiles/sample_data/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc',
+]
+
+invalid_datasets = [
+    "invalid_string",
+    12345,
+    None,
+]
+
+def test_generate_lats_lons():
+    """Test the generate_lats_lons function."""
+    # Test with the ERA5 sample data file
+    sample_filepath = 'datafiles/sample_data/2019u10.nc'
+    output_dir = 'tests/data_for_tests/'
+    expected_lats = np.load('datafiles/lats.npy')
+    expected_lons = np.load('datafiles/lons.npy')
+    # Generate lats and lons with file path input
+    actual_lats, actual_lons = udata.generate_lats_lons(dataset=sample_filepath, output_dir=output_dir)
+    assert np.array_equal(actual_lats, expected_lats), f"Expected lats {expected_lats} do not match actual lats {actual_lats}"
+    assert np.array_equal(actual_lons, expected_lons), f"Expected lons {expected_lons} do not match actual lons {actual_lons}"
+    # Clean up generated files
+    os.remove(os.path.join(output_dir, 'lats.npy'))
+    os.remove(os.path.join(output_dir, 'lons.npy'))
+    # Generate lats and lons with xarray dataset input
+    xr_dataset = xr.open_dataset(sample_filepath)
+    actual_lats, actual_lons = udata.generate_lats_lons(dataset=xr_dataset, output_dir=output_dir)
+    assert np.array_equal(actual_lats, expected_lats), f"Expected lats {expected_lats} do not match actual lats {actual_lats}"
+    assert np.array_equal(actual_lons, expected_lons), f"Expected lons {expected_lons} do not match actual lons {actual_lons}"
+    # Clean up generated files
+    os.remove(os.path.join(output_dir, 'lats.npy'))
+    os.remove(os.path.join(output_dir, 'lons.npy'))
+
 def test_get_extent():
     """Test the get_extent function."""
-    # Load a sample xarray dataset for testing
-    xr_dataset=xr.open_dataset('datafiles/nox_2019_t106_US.nc')
-    expected = (24.112, 58.878, -126.0, -59.625)
-    actual = udata.get_extent(xr_dataset)
-    assert actual == expected, f"Expected extent {expected} does not match actual extent {actual}"
+    # Test with sample data files
+    expected_extents = [
+        (11.776000022888184, 73.45700073242188, -174.375, -40.5),   # For 2019u10.nc
+        (18.198712, 64.84569, -159.36624, -66.052237),              # For daily_42602_2019.csv
+        (24.112, 58.878, -126.0, -59.625),                          # For nox_2019_t106_US.nc
+        (-89.14199829101562, 89.14199829101562, 0 , 358.875),       # For TROPESS_reanalysis_mon_emi_nox_anth_2021.nc
+    ]
+    for i, datafile in enumerate(sample_datafiles):
+        xr_dataset = udata.load_dataset(datafile)
+        actual_extent = udata.get_extent(xr_dataset)
+        assert list(actual_extent) == list(expected_extents[i]), f"Expected extent {expected_extents[i]} does not match actual extent {actual_extent} for {datafile}"
+    # Test shifting longitudes in sample data files
+    expected_extents = [
+        (11.776000022888184, 73.45700073242188, 185.625, 319.5),    # For 2019u10.nc
+        (18.198712, 64.84569, 200.63376, 293.947763),               # For daily_42602_2019.csv
+        (24.112, 58.878, 234.0, 300.375),                           # For nox_2019_t106_US.nc
+        (-89.14199829101562, 89.14199829101562, -178.875, 180),     # For TROPESS_reanalysis_mon_emi_nox_anth_2021.nc
+    ]
+    PM_centereds = [False, False, False, True]
+    for i, datafile in enumerate(sample_datafiles):
+        xr_dataset = udata.load_dataset(datafile)
+        actual_extent = udata.get_extent(xr_dataset, shift_lons=True, PM_centered=PM_centereds[i])
+        assert list(actual_extent) == list(expected_extents[i]), f"Expected extent {expected_extents[i]} does not match actual extent {actual_extent} for {datafile}"
     # Test with minimal xarray DataArray
     expected = (-90.0, 90.0, -180.0, 180.0)
-    actual = udata.get_extent(minimal_xr)
+    actual = udata.get_extent(minimal_xr0)
     assert actual == expected, f"Expected extent {expected} does not match actual extent {actual}"
     # Test with lats and lons
     lats = np.array([-90, 90])
@@ -35,48 +101,179 @@ def test_get_extent():
     selected_tol = 1e-15
     # Test shifting longitudes
     lats = np.array([-90, -45, 45, 90])
-    lons = np.array([0, 179, 180, 360])
-    expected = (-90.0, 90.0, -180.0, 179.0)
+    lons = np.array([0, 179.9, 180.1, 360])
+    expected = (-90.0, 90.0, -179.9, 179.9)
     actual = udata.get_extent(lats=lats, lons=lons, shift_lons=True)
     assert np.allclose(expected, actual, atol=selected_tol, rtol=selected_tol), f"Expected extent {expected} does not match actual extent {actual}"
+    # Test with invalid inputs
+    for invalid_input in invalid_datasets:
+        try:
+            udata.get_extent(xr_dataset=invalid_input)
+        except (TypeError, ValueError) as e:
+            assert True, f"get_extent raised an exception on invalid input: {e}"
+        else:
+            assert False, f"get_extent did not raise an exception on invalid input: {invalid_input}"
 
-def test_get_lats_lons(path='datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc'):
+def test_get_lats_lons():
     """Test the get_lats_lons function."""
     # Load a sample xarray dataset for testing
-    expected_lats = np.load('tests/lats_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy')
-    expected_lons = np.load('tests/lons_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy')
-    actual_lats, actual_lons = udata.get_lats_lons(xr_dataset=xr.open_dataset(path))
+    sample_filepath = 'datafiles/sample_data/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc'
+    expected_lats = np.load('tests/data_for_tests/lats_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy')
+    expected_lons = np.load('tests/data_for_tests/lons_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy')
+    actual_lats, actual_lons = udata.get_lats_lons(xr_dataset=xr.open_dataset(sample_filepath))
     assert np.array_equal(actual_lats, expected_lats), f"Expected lats {expected_lats} do not match actual lats {actual_lats}"
     assert np.array_equal(actual_lons, expected_lons), f"Expected lons {expected_lons} do not match actual lons {actual_lons}"
+    # Load a minimal xarray dataset for testing
+    expected_lats = np.array([-90, 90])
+    expected_lons = np.array([-180, 180])
+    actual_lats, actual_lons = udata.get_lats_lons(xr_dataset=minimal_xr0)
+    assert np.array_equal(actual_lats, expected_lats), f"Expected lats {expected_lats} do not match actual lats {actual_lats}"
+    assert np.array_equal(actual_lons, expected_lons), f"Expected lons {expected_lons} do not match actual lons {actual_lons}"
+    # Load with second minimal xarray dataset for testing
+    expected_lats = np.array([-60, 60])
+    expected_lons = np.array([-100, 100])
+    actual_lats, actual_lons = udata.get_lats_lons(xr_dataset=minimal_xr1)
+    assert np.array_equal(actual_lats, expected_lats), f"Expected lats {expected_lats} do not match actual lats {actual_lats}"
+    assert np.array_equal(actual_lons, expected_lons), f"Expected lons {expected_lons} do not match actual lons {actual_lons}"
+    # Test with invalid inputs
+    for invalid_input in invalid_datasets:
+        try:
+            udata.get_lats_lons(xr_dataset=invalid_input)
+        except (TypeError, ValueError) as e:
+            assert True, f"get_lats_lons raised an exception on invalid input: {e}"
+        else:
+            assert False, f"get_lats_lons did not raise an exception on invalid input: {invalid_input}"
 
-def test_get_latlon_resolution(path='datafiles/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc'):
+def test_get_latlon_resolution():
     """Test the get_latlon_resolution function."""
+    # Test with sample data files
+    expected_lat_reses = [
+        '1.121472716331482 ± 0.0004995913477614522',    # For 2019u10.nc
+        '0.00029904401007776294 ± 0.04318110228951739', # For daily_42602_2019.csv
+        '1.121483870967742 ± 0.0004997397866077013',    # For nox_2019_t106_US.nc
+        '1.1212830543518066 ± 0.11212115734815598',     # For TROPESS_reanalysis_mon_emi_nox_anth_2021.nc
+    ]
+    expected_lon_reses = [
+        '1.125',                                        # For 2019u10.nc
+        '0.0005982165372755421 ± 0.06670451139936068',  # For daily_42602_2019.csv
+        '1.125',                                        # For nox_2019_t106_US.nc
+        '1.125',                                        # For TROPESS_reanalysis_mon_emi_nox_anth_2021.nc
+    ]
+    for i, datafile in enumerate(sample_datafiles):
+        xr_dataset = udata.load_dataset(datafile)
+        actual_lat_res, actual_lon_res = udata.get_latlon_resolution(xr_dataset=xr_dataset)
+        assert actual_lat_res == expected_lat_reses[i], f"Expected latitude resolution {expected_lat_reses[i]} does not match actual {actual_lat_res} for '{datafile}'"
+        assert actual_lon_res == expected_lon_reses[i], f"Expected longitude resolution {expected_lon_reses[i]} does not match actual {actual_lon_res} for '{datafile}'"
     # Load a minimal xarray dataset for testing
     expected_lat_res = '180'
     expected_lon_res = '360'
-    actual_lat_res, actual_lon_res = udata.get_latlon_resolution(xr_dataset=minimal_xr)
+    actual_lat_res, actual_lon_res = udata.get_latlon_resolution(xr_dataset=minimal_xr0)
     assert actual_lat_res == expected_lat_res, f"Expected latitude resolution {expected_lat_res} does not match actual {actual_lat_res}"
     assert actual_lon_res == expected_lon_res, f"Expected longitude resolution {expected_lon_res} does not match actual {actual_lon_res}"
-    # Load a sample xarray dataset for testing
-    expected_lat_res = '1.1212830543518066 ± 0.11212115734815598'
-    expected_lon_res = '1.125'
-    actual_lat_res, actual_lon_res = udata.get_latlon_resolution(xr_dataset=xr.open_dataset(path))
-    assert actual_lat_res == expected_lat_res, f"Expected latitude resolution {expected_lat_res} does not match actual {actual_lat_res}"
-    assert actual_lon_res == expected_lon_res, f"Expected longitude resolution {expected_lon_res} does not match actual {actual_lon_res}"
+    # Test with invalid inputs
+    for invalid_input in invalid_datasets:
+        try:
+            udata.get_latlon_resolution(xr_dataset=invalid_input)
+        except (TypeError, ValueError) as e:
+            assert True, f"get_latlon_resolution raised an exception on invalid input: {e}"
+        else:
+            assert False, f"get_latlon_resolution did not raise an exception on invalid input: {invalid_input}"
+
+def test_print_latlon_info():
+    """Test the print_latlon_info function."""
+    # Capture the printed output
+    from io import StringIO
+    import sys
+    captured_output = StringIO()
+    sys.stdout = captured_output
+    # Use sample netCDF file for testing
+    udata.print_latlon_info(xr_dataset='datafiles/sample_data/nox_2019_t106_US.nc')
+    sys.stdout = sys.__stdout__
+    output = captured_output.getvalue()
+    # Check if the output contains expected strings
+    expected_strings = [
+        'For datafiles/sample_data/nox_2019_t106_US.nc: ',
+	    'Latitude extent: 24.112 to 58.878',
+	    'Longitude extent: -126.0 to -59.625',
+	    'Latitude resolution: 1.121483870967742 ± 0.0004997397866077013',
+        'Longitude resolution: 1.125'
+    ]
+    for expected in expected_strings:
+        assert expected in output, f"Expected string '{expected}' not found in output"
+    # Use sample lat lon arrays for testing
+    captured_output = StringIO()
+    sys.stdout = captured_output
+    lats, lons = unox.load_lats_lons()
+    udata.print_latlon_info(lats=lats, lons=lons)
+    sys.stdout = sys.__stdout__
+    output = captured_output.getvalue()
+    # Check if the output contains expected strings
+    expected_strings = [
+        'For provided lat/lon arrays: ',
+	    'Latitude extent: 11.776000022888184 to 73.45700073242188',
+	    'Longitude extent: -174.375 to -40.5',
+	    'Latitude resolution: 1.121472716331482 ± 0.0004995913477614522',
+	    'Longitude resolution: 1.125',
+    ]
+    for expected in expected_strings:
+        assert expected in output, f"Expected string '{expected}' not found in output"
+    # Test with invalid inputs
+    for invalid_input in invalid_datasets:
+        try:
+            udata.print_latlon_info(xr_dataset=invalid_input)
+        except (TypeError, ValueError, FileNotFoundError) as e:
+            assert True, f"print_latlon_info raised an exception on invalid input: {e}"
+        else:
+            assert False, f"print_latlon_info did not raise an exception on invalid input: {invalid_input}"
+
+def test_load_dataset():
+    """Test the load_dataset function."""
+    # Test with sample data files
+    for datafile in sample_datafiles:
+        xr_dataset = udata.load_dataset(datafile)
+        assert isinstance(xr_dataset, xr.Dataset), f"load_dataset did not return an xarray Dataset from '{datafile}'"
+        # Check if the dataset contains expected variables
+        expected_vars = ['lat', 'lon', 'time']
+        for var in expected_vars:
+            assert var in xr_dataset.variables, f"Variable '{var}' not found in loaded dataset from '{datafile}'"
+    # Test with invalid file paths
+    invalid_inputs = [
+        'datafiles/sample_data/non_existent_file.nc',
+        'tests/data_for_tests/sample.csv',
+        'tests/data_for_tests/lats_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy',
+        'tests/data_for_tests/lons_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy',
+    ]
+    # Concatenate with invalid_datasets list
+    invalid_inputs.extend(invalid_datasets)
+    for invalid_path in invalid_inputs:
+        try:
+            xr_dataset = udata.load_dataset(invalid_path)
+        except Exception as e:
+            assert True, f"load_dataset raised an exception on invalid file path: {e}"
+        else:
+            assert False, f"load_dataset did not raise an exception on invalid file path: {invalid_path}"
 
 def test_verify_dataset():
     """Test the verify_dataset function."""
-    # Verify minimal xarray DataArray
-    try:
-        udata.verify_dataset(minimal_xr, check_time=True)
-    except Exception as e:
-        assert False, f"verify_dataset raised an exception on minimal example: {e}"
+    # Test with sample datafiles
+    for datafile in sample_datafiles:
+        xr_dataset = udata.load_dataset(datafile)
+        try:
+            udata.verify_dataset(xr_dataset, check_time=True)
+        except Exception as e:
+            assert False, f"verify_dataset raised an exception on {datafile}: {e}"
+    # Verify minimal xarray DataArrays
+    for minimal_xr in [minimal_xr0, minimal_xr1]:
+        try:
+            udata.verify_dataset(minimal_xr0, check_time=True)
+        except Exception as e:
+            assert False, f"verify_dataset raised an exception on minimal example: {e}"
     # Try to verify minimal xarray DataArray with each coordinate missing
     for coord in ['lat', 'lon', 'time']:
-        minimal_xr_missing_coord = minimal_xr.copy()
-        minimal_xr_missing_coord = minimal_xr_missing_coord.drop_vars(coord)
+        minimal_xr0_missing_coord = minimal_xr0.copy()
+        minimal_xr0_missing_coord = minimal_xr0_missing_coord.drop_vars(coord)
         try:
-            udata.verify_dataset(minimal_xr_missing_coord, check_time=True)
+            udata.verify_dataset(minimal_xr0_missing_coord, check_time=True)
         except ValueError as e:
             assert True, f"verify_dataset raised an exception on minimal example with missing {coord} coordinate: {e}"
         else:
@@ -84,20 +281,11 @@ def test_verify_dataset():
     # Verify minimal xarray DataArray without time coordinate
     # Assumes that 'time' was the last coordinate tested in above for-loop
     try:
-        udata.verify_dataset(minimal_xr_missing_coord, check_time=False)
+        udata.verify_dataset(minimal_xr0_missing_coord, check_time=False)
     except Exception as e:
         assert False, f"verify_dataset raised an exception on minimal example with check_time=False: {e}"
-    # Load a sample xarray dataset for testing
-    xr_dataset=xr.open_dataset('datafiles/nox_2019_t106_US.nc')
-    try:
-        udata.verify_dataset(xr_dataset, check_time=True)
-    except Exception as e:
-        assert False, f"verify_dataset raised an exception on nox_2019_t106_US.nc: {e}"
-
-def test_verify_dataset_invalid():
-    """Test the verify_dataset function with invalid datasets."""
-    # Create several invalid datasets
-    invalid_datasets = [
+    # Test with invalid inputs
+    invalid_inputs = [
         # Invalid type
         "invalid_string",
         # xarray DataArray with missing lat coordinate
@@ -107,14 +295,15 @@ def test_verify_dataset_invalid():
         # xarray DataArray with missing time coordinate
         xr.DataArray(data=[[1, 2], [3, 4]], coords={"lat": [-90, 90], "lon": [-180, -180]}, dims=["lat", "lon"]),
     ]
-    # Test each invalid dataset
+    # Concatenate with invalid_datasets list
+    invalid_inputs.extend(invalid_datasets)
     for invalid_dataset in invalid_datasets:
         try:
-            udata.verify_dataset(invalid_dataset)
+            udata.verify_dataset(invalid_dataset, check_time=False)
         except (TypeError, ValueError) as e:
             assert True, f"verify_dataset raised an exception on invalid dataset: {e}"
         else:
-            assert False, "verify_dataset did not raise an exception on invalid dataset"
+            assert False, f"verify_dataset did not raise an exception on invalid dataset: {invalid_dataset}"
 
 def test_verify_number():
     """Test the verify_number function."""
@@ -160,38 +349,59 @@ def test_verify_lat():
 
 def test_verify_lon():
     """Test the verify_lon function."""
-    # Test valid longitude values
-    valid_lons = [0, 45, -45, 180, -180]
-    for lon in valid_lons:
-        assert udata.verify_lon(lon) == lon, f"verify_lon failed on valid longitude {lon}"
-    # Test invalid longitude values
-    invalid_lons = [181, -181, 360, -360, 400, -400, np.nan, '45']
-    for lon in invalid_lons:
-        try:
-            udata.verify_lon(lon)
-        except ValueError as e:
-            assert True, f"verify_lon raised an exception on invalid longitude {lon}: {e}"
-        else:
-            assert False, f"verify_lon did not raise an exception on invalid longitude {lon}"
+    # Create test arrays of longitude values
+    too_negative = [-181, -360, -400, -500, -1000, -180.1, -200.1, -360.1]
+    negative = [-180, -179.9, -90, -45, -0.1, -0.0001]
+    positive = [0.1, 0.0001, 45, 90, 179.9, 180]
+    more_positive = [180.1, 180.0001, 225, 270, 359.9, 360]
+    too_positive = [360.1, 361, 400, 500, 1000, ]
+    # Test valid combinations of longitude values and PM_centered
+    valid_lons = {
+        None: [negative, positive, more_positive],
+        True: [negative, positive],
+        False: [positive, more_positive],
+    }
+    invalid_lons = {
+        None: [too_negative, too_positive],
+        True: [too_negative, more_positive, too_positive],
+        False: [too_negative, negative, too_positive],
+    }
+    for test_PM_centered in [None, True, False]:
+        for lons_arr in valid_lons[test_PM_centered]:
+            for lon in lons_arr:
+                assert udata.verify_lon(lon, PM_centered=test_PM_centered) == lon, f"verify_lon failed on valid longitude {lon} with PM_centered={test_PM_centered}"
+        for lons_arr in invalid_lons[test_PM_centered]:
+            for lon in lons_arr:
+                try:
+                    udata.verify_lon(lon, PM_centered=test_PM_centered)
+                except ValueError as e:
+                    assert True, f"verify_lon raised an exception on invalid longitude {lon} with PM_centered={test_PM_centered}: {e}"
+                else:
+                    assert False, f"verify_lon did not raise an exception on invalid longitude {lon} with PM_centered={test_PM_centered}"
 
 def test_shift_lon():
-    """Test the shift_lon function."""
+    """Test the shift_lon and shift_lon_arr functions."""
     # Select a tolerance for comparisons
     selected_tol = 1e-15
-    # Test the Prime Meridian centered shift
+    ## Test the Prime Meridian centered shift
     # Create a sample array of longitude values to shift
     input = np.array([0, 45.3, 200, 359])
     expected = np.array([0, 45.3, -160.0, -1.0])
     actual = udata.shift_lon_arr(input, PM_centered=True)
     assert np.allclose(actual, expected, atol=selected_tol, rtol=selected_tol), f"Expected {expected}, but shift_lon gave {actual}"
-    # Test the International Date Line centered shift
+    # Create a sample array of longitude values to shift
+    input = np.array([0, 45.3, -160.0, -1.0])
+    expected = np.array([0, 45.3, -160.0, -1.0])
+    actual = udata.shift_lon_arr(input, PM_centered=True)
+    assert np.allclose(actual, expected, atol=selected_tol, rtol=selected_tol), f"Expected {expected}, but shift_lon gave {actual}"
+    ## Test the International Date Line centered shift
     # Create a sample array of longitude values to shift
     input = np.array([0, 45.3, -57.5, -179])
     expected = np.array([0, 45.3, 302.5, 181.0])
     actual = np.array(udata.shift_lon_arr(input, PM_centered=False))
     assert np.allclose(actual, expected, atol=selected_tol, rtol=selected_tol), f"Expected {expected}, but shift_lon gave {actual}"
     # Test with invalid longitudes
-    invalid_values = [np.nan, '45', None]
+    invalid_values = [np.nan, '45', None, -200, 400]
     for val in invalid_values:
         try:
             udata.shift_lon(val)
@@ -236,7 +446,7 @@ def test_get_vminmax():
         assert False, "get_vminmax did not raise an exception on invalid input"
     
     # Create a sample xarray dataset for testing
-    xr_dataset=xr.open_dataset('datafiles/nox_2019_t106_US.nc')
+    xr_dataset=xr.open_dataset('datafiles/sample_data/nox_2019_t106_US.nc')
     ex_lat_min = 24.112
     ex_lat_max = 58.878
     ex_lon_min = -126.0
@@ -566,3 +776,58 @@ def test_add_amount_to_date():
             assert True, f"add_amount_to_date raised an exception on invalid input: {e}"
         else:
             assert False, f"add_amount_to_date did not raise an exception on invalid input: {this_date}, {add_this}"
+
+def test_csv_to_pd():
+    """Test the csv_to_pd function."""
+    
+    # Test valid CSV file
+    csv_file = 'tests/data_for_tests/sample.csv'
+    expected_df = pd.DataFrame({
+        'col1': [1, 2, 3],
+        'col2': ['a', 'b', 'c']
+    })
+    actual_df = udata.csv_to_pd(csv_file, is_US_EPA=False)
+    pd.testing.assert_frame_equal(actual_df, expected_df, check_dtype=True)
+
+    # Test US EPA csv file
+    epa_csv_file = 'datafiles/sample_data/daily_42602_2019.csv'
+    expected_cols = ['Latitude', 'Longitude', 'no2']
+    actual_cols = udata.csv_to_pd(epa_csv_file, is_US_EPA=True).columns
+    assert list(actual_cols) == expected_cols, f"Expected columns {expected_cols}, but got {list(actual_cols)}"
+
+    # Test invalid CSV file
+    invalid_csv_file = 'tests/data_for_tests/invalid.csv'
+    try:
+        udata.csv_to_pd(invalid_csv_file)
+    except FileNotFoundError as e:
+        assert True, f"csv_to_pd raised an exception on invalid input: {e}"
+    else:
+        assert False, f"csv_to_pd did not raise an exception on invalid input: {invalid_csv_file}"
+
+    # Test non-CSV file
+    non_csv_file = 12345
+    try:
+        udata.csv_to_pd(non_csv_file)
+    except TypeError as e:
+        assert True, f"csv_to_pd raised an exception on non-CSV file: {e}"
+    else:
+        assert False, f"csv_to_pd did not raise an exception on non-CSV file: {non_csv_file}"
+    
+def test_get_US_EPA_species_name():
+    """Test the get_US_EPA_species_name function."""
+    
+    # Test valid species IDs
+    valid_ids = ['44201', '42401', '88101', '42602']
+    expected_names = ['o3', 'so2', 'pm25', 'no2']
+    for id, expected_name in zip(valid_ids, expected_names):
+        actual_name = udata.get_US_EPA_species_name(id)
+        assert actual_name == expected_name, f"Expected {expected_name}, but got {actual_name}"
+    
+    # Test invalid species name
+    invalid_species = 'not_a_species'
+    try:
+        udata.get_US_EPA_species_name(invalid_species)
+    except ValueError as e:
+        assert True, f"get_US_EPA_species_name raised an exception on invalid input: {e}"
+    else:
+        assert False, f"get_US_EPA_species_name did not raise an exception on invalid input: {invalid_species}"

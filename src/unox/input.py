@@ -268,7 +268,7 @@ def fill_w_insitu(
         The updated dataset with insitu data replacing the specified variable.
     """
     # Verify the dataset
-    udata.verify_dataset(xr_dataset)
+    xr_dataset = udata.verify_dataset(xr_dataset)
     # Verify the insitu file path
     insitu_filepath = unox.verify_path(insitu_filepath)
     # Load the insitu data
