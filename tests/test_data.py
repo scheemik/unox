@@ -51,11 +51,18 @@ def test_get_extent():
     for i, datafile in enumerate(sample_datafiles):
         xr_dataset = udata.load_dataset(datafile)
         actual_extent = udata.get_extent(xr_dataset)
-        print(f"Type of actual_extent: {type(actual_extent)}")
-        print(f"Type of expected_extents[{i}]: {type(expected_extents[i])}")
-        for j in range(len(actual_extent)):
-            print(f"Value {j} of actual_extent: {actual_extent[j]} as dtype {type(actual_extent[j])}")
-            print(f"Value {j} of expected_extents: {expected_extents[i][j]} as dtype {type(expected_extents[i][j])}")
+        assert list(actual_extent) == list(expected_extents[i]), f"Expected extent {expected_extents[i]} does not match actual extent {actual_extent} for {datafile}"
+    # Test shifting longitudes in sample data files
+    expected_extents = [
+        (11.776000022888184, 73.45700073242188, 185.625, 319.5),    # For 2019u10.nc
+        (18.198712, 64.84569, 200.63376, 293.947763),               # For daily_42602_2019.csv
+        (24.112, 58.878, 234.0, 300.375),                           # For nox_2019_t106_US.nc
+        (-89.14199829101562, 89.14199829101562, -178.875, 180),     # For TROPESS_reanalysis_mon_emi_nox_anth_2021.nc
+    ]
+    PM_centereds = [False, False, False, True]
+    for i, datafile in enumerate(sample_datafiles):
+        xr_dataset = udata.load_dataset(datafile)
+        actual_extent = udata.get_extent(xr_dataset, shift_lons=True, PM_centered=PM_centereds[i])
         assert list(actual_extent) == list(expected_extents[i]), f"Expected extent {expected_extents[i]} does not match actual extent {actual_extent} for {datafile}"
     # Test with minimal xarray DataArray
     expected = (-90.0, 90.0, -180.0, 180.0)
