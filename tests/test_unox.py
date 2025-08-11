@@ -4,7 +4,7 @@ import os
 def test_verify_path():
     """Test the verify_path function."""
     # Test with valid path
-    valid_path = 'original_sample_data/stage1/x/X_2005.npy'
+    valid_path = 'inputfiles/no2_sample_input/stage1/x/X_2005.npy'
     actual = unox.verify_path(valid_path)
     print(f"Actual path: {actual}")
     assert type(unox.verify_path(valid_path)) == type('str'), f"verify_path failed on valid path: {valid_path}"
@@ -82,23 +82,23 @@ def test_remove_non_empty_directory():
 def test_show_available_data():
     """Test the show_available_data function and,
     as a result, also test the recursive_paths function."""
-    expected = ['original_sample_data/stage1/x/X_2005.npy', 
-                'original_sample_data/stage1/y/Y_2005.npy', 
-                'original_sample_data/stage2/x/X_2014.npy', 
-                'original_sample_data/stage2/y/Y_2014.npy']
-    actual = unox.show_available_data('original_sample_data/')
+    expected = ['inputfiles/original_sample_data/stage1/x/X_2005.npy', 
+                'inputfiles/original_sample_data/stage1/y/Y_2005.npy', 
+                'inputfiles/original_sample_data/stage2/x/X_2014.npy', 
+                'inputfiles/original_sample_data/stage2/y/Y_2014.npy']
+    actual = unox.show_available_data('inputfiles/original_sample_data/')
     assert actual == expected, f"Expected file list (length {len(expected)}) does not match actual file list (length {len(actual)})"
 
 def test_get_input_data():
     """Test the get_input_data function."""
     # Test with valid parameters
-    expected = 'sample_data/stage1/y/Y_2019.npy'
+    expected = 'inputfiles/no2_sample_input/stage1/y/Y_2019.npy'
     valid_params = [
-        {'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path': 'sample_data'},
+        {'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path': 'no2_sample_input'},
         {'stage': 1, 'x_or_y': 'y', 'year': 2019},
-        {'stage': 1, 'x_or_y': 'y', 'input_path': 'sample_data'},
-        {'stage': 1, 'year': 2019, 'input_path': 'sample_data'},
-        {'x_or_y': 'y', 'year': 2019, 'input_path': 'sample_data'}
+        {'stage': 1, 'x_or_y': 'y', 'input_path': 'no2_sample_input'},
+        {'stage': 1, 'year': 2019, 'input_path': 'no2_sample_input'},
+        {'x_or_y': 'y', 'year': 2019, 'input_path': 'no2_sample_input'}
         ]
     for params in valid_params:
         actual = unox.get_input_data(**params)
@@ -106,9 +106,9 @@ def test_get_input_data():
     
     # Test with invalid parameters
     invalid_params = [
-        {'stage': 3, 'x_or_y': 'y', 'year': 2019, 'input_path': 'sample_data'},
-        {'stage': 1, 'x_or_y': 'z', 'year': 2019, 'input_path': 'sample_data'},
-        {'stage': 1, 'x_or_y': 'y', 'year': -1, 'input_path': 'sample_data'},
+        {'stage': 3, 'x_or_y': 'y', 'year': 2019, 'input_path': 'no2_sample_input'},
+        {'stage': 1, 'x_or_y': 'z', 'year': 2019, 'input_path': 'no2_sample_input'},
+        {'stage': 1, 'x_or_y': 'y', 'year': -1, 'input_path': 'no2_sample_input'},
         {'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path': 'not_a_valid_path'}
         ]
     for params in invalid_params:
