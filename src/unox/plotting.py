@@ -276,11 +276,14 @@ def plot_npy_map(this_fig,
     return this_ax, pcm
 
 def plot_stage_comp_maps(
-    truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
+    truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path':'sample_data'},
     pred_params={'stage': -1, 'HPC_run': 'test_unet_601760', 'year': 2019},
     this_date='2019-07-19T00:00:00',
     restrict_lat_lon_to=None,
-    clr_bar_scale=0.5
+    clr_bar_scale=0.5,
+    var='NOx',
+    units='kg/m2/s',
+    stage1_only=False,
     ):
     """Plots a set of maps to compare the truth and the two stages of the model.
 
@@ -296,7 +299,8 @@ def plot_stage_comp_maps(
     ----------
     truth_params : dict
         Dictionary containing the parameters for the truth data.
-        Must contain 'stage', 'x_or_y', and 'year', as designated in unox.data.get_input_data().
+        Must contain 'stage', 'x_or_y', 'year', and , 'input_path' as designated
+        in unox.data.get_input_data().
     pred_params : dict
         Dictionary containing the parameters for the predicted data.
         Must contain 'stage', 'HPC_run', and 'year', as designated in unox.data.get_pred_data().
@@ -308,7 +312,13 @@ def plot_stage_comp_maps(
         If None, the entire dataset is used.
     clr_bar_scale : float between 0 and 1
         Scale factor for the color bar. If set to 1, the color bar will be scaled 
-        to the maximum absolute value of the data. Default is 0.5. 
+        to the maximum absolute value of the data. Default is 0.5.
+    var : str
+        The name of the gas being modelled.
+    units : str
+        Unit of measurement for the data.
+    stage1_only : bool
+        Produces graphs just corresponding to stage 1.
     
     Returns
     -------
@@ -316,54 +326,102 @@ def plot_stage_comp_maps(
     truth = np.load(unox.get_input_data(**truth_params))
     # Remove `stage` from pred_params, if present
     pred_params.pop('stage', None)
-    stage1 = np.load(unox.get_pred_data(stage=1, **pred_params))
-    stage2 = np.load(unox.get_pred_data(stage=2, **pred_params))
-    # Get the latitude and longitude values
-    lats, lons = unox.load_lats_lons()
+    if stage1_only:
+        stage1 = np.load(unox.get_pred_data(stage=1, **pred_params))
+        # Get the latitude and longitude values
+        lats, lons = unox.load_lats_lons()
 
-    if not isinstance(restrict_lat_lon_to, type(None)):
-        # Restrict range
-        [truth, stage1, stage2], lats, lons = udata.restrict_domain([truth, stage1, stage2], lats, lons, xr.open_dataset(restrict_lat_lon_to))
-    
-    # Get the minimum and maximum values across the truth, stage1, and stage2 arrays
-    vmin, vmax = udata.get_vminmax([truth, stage1, stage2])
-    # Get the halfrange for use with a diverging color map
-    halfrange = udata.get_max_abs_val([vmin, vmax])
+        if not isinstance(restrict_lat_lon_to, type(None)):
+            # Restrict range
+            [truth, stage1, stage2], lats, lons = udata.restrict_domain([truth, stage1, stage2], lats, lons, xr.open_dataset(restrict_lat_lon_to))
+        
+        # Get the minimum and maximum values across the truth, stage1, and stage2 arrays
+        vmin, vmax = udata.get_vminmax([truth, stage1])
 
-    # Get the day of year to plot
-    day = udata.get_DOY(this_date)
+        # Get the halfrange for use with a diverging color map
+        halfrange = udata.get_max_abs_val([vmin, vmax])
 
-    # Create the figure
-    fig = pplt.figure(refwidth=4)
-    ax = fig.subplots(nrows=2, ncols=3, proj='cyl')
-    # ax = fig.subplots(nrows=1, proj='cyl')
-    # Set the figure title
-    fig.suptitle('NOx emissions on ' + this_date, fontsize=16)
-    # Select medium resolution for features such as coastlines
-    pplt.rc.reso = 'med' 
+        # Get the day of year to plot
+        day = udata.get_DOY(this_date)
 
-    # Scale the color bar
-    if clr_bar_scale < 0 or clr_bar_scale > 1:
-        warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
-        clr_bar_scale = 0.5
-    if clr_bar_scale != 1:
-        halfrange *= clr_bar_scale
-        cb_extend = 'both'
+        # Create the figure
+        fig = pplt.figure(refwidth=4)
+        ax = fig.subplots(nrows=2, ncols=3, proj='cyl')
+        # ax = fig.subplots(nrows=1, proj='cyl')
+        # Set the figure title
+        fig.suptitle(f'{var} emissions on ' + this_date, fontsize=16)
+        # Select medium resolution for features such as coastlines
+        pplt.rc.reso = 'med' 
+
+        # Scale the color bar
+        if clr_bar_scale < 0 or clr_bar_scale > 1:
+            warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
+            clr_bar_scale = 0.5
+        if clr_bar_scale != 1:
+            halfrange *= clr_bar_scale
+            cb_extend = 'both'
+        else:
+            cb_extend = 'neither'
+        print('cb_extend:', cb_extend)
+
+        # Add the subplots
+        # plot_npy_map(fig, ax, truth[day,:,:,0], lats, lons, halfrange, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,0], truth[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,1], stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
+        plot_npy_map(fig, ax[1,0], truth[day,:,:,0]-stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
+
+        # Add one overall colorbar for the entire figure on the right-hand side
+        cbar = make_colorbar(fig, ax[0,0].get_children()[0], f'{var} emissions (kg/m2/s)', num_ticks=9, cb_loc='l', cb_extend=cb_extend)
     else:
-        cb_extend = 'neither'
-    print('cb_extend:', cb_extend)
+        stage1 = np.load(unox.get_pred_data(stage=1, **pred_params))
+        stage2 = np.load(unox.get_pred_data(stage=2, **pred_params))
+        # Get the latitude and longitude values
+        lats, lons = unox.load_lats_lons()
 
-    # Add the subplots
-    # plot_npy_map(fig, ax, truth[day,:,:,0], lats, lons, halfrange, ax_title='NOx emissions (truth)')
-    plot_npy_map(fig, ax[0,0], truth[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='NOx emissions (truth)')
-    plot_npy_map(fig, ax[0,1], stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
-    plot_npy_map(fig, ax[0,2], stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
-    plot_npy_map(fig, ax[1,0], truth[day,:,:,0]-stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
-    plot_npy_map(fig, ax[1,1], truth[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
-    plot_npy_map(fig, ax[1,2], stage1[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
+        if not isinstance(restrict_lat_lon_to, type(None)):
+            # Restrict range
+            [truth, stage1, stage2], lats, lons = udata.restrict_domain([truth, stage1, stage2], lats, lons, xr.open_dataset(restrict_lat_lon_to))
+        
+        # Get the minimum and maximum values across the truth, stage1, and stage2 arrays
+        vmin, vmax = udata.get_vminmax([truth, stage1, stage2])
 
-    # Add one overall colorbar for the entire figure on the right-hand side
-    cbar = make_colorbar(fig, ax[0,0].get_children()[0], 'NOx emissions (kg/m2/s)', num_ticks=9, cb_loc='l', cb_extend=cb_extend)
+        # Get the halfrange for use with a diverging color map
+        halfrange = udata.get_max_abs_val([vmin, vmax])
+
+        # Get the day of year to plot
+        day = udata.get_DOY(this_date)
+
+        # Create the figure
+        fig = pplt.figure(refwidth=4)
+        ax = fig.subplots(nrows=2, ncols=3, proj='cyl')
+        # ax = fig.subplots(nrows=1, proj='cyl')
+        # Set the figure title
+        fig.suptitle(f'{var} emissions on ' + this_date, fontsize=16)
+        # Select medium resolution for features such as coastlines
+        pplt.rc.reso = 'med' 
+
+        # Scale the color bar
+        if clr_bar_scale < 0 or clr_bar_scale > 1:
+            warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
+            clr_bar_scale = 0.5
+        if clr_bar_scale != 1:
+            halfrange *= clr_bar_scale
+            cb_extend = 'both'
+        else:
+            cb_extend = 'neither'
+        print('cb_extend:', cb_extend)
+
+        # Add the subplots
+        # plot_npy_map(fig, ax, truth[day,:,:,0], lats, lons, halfrange, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,0], truth[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,1], stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
+        plot_npy_map(fig, ax[0,2], stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
+        plot_npy_map(fig, ax[1,0], truth[day,:,:,0]-stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
+        plot_npy_map(fig, ax[1,1], truth[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
+        plot_npy_map(fig, ax[1,2], stage1[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
+
+        # Add one overall colorbar for the entire figure on the right-hand side
+        cbar = make_colorbar(fig, ax[0,0].get_children()[0], f'{var} emissions ({units})', num_ticks=9, cb_loc='l', cb_extend=cb_extend)
     return fig
 
 def make_colorbar(fig,
@@ -505,10 +563,12 @@ def plot_comparison(npy_a,
     else:
         return q
 
-def plot_true_pred_comp(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
+def plot_true_pred_comp(truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input_path':'sample_data'},
                         pred_data={'stage':1, 'HPC_run':'test_unet_601760', 'year':2019},
                         hist_params={'bins':100, 'vmax':1000, 'vmin':10},
-                        restrict_lat_lon_to=None
+                        restrict_lat_lon_to=None,
+                        var='NOx',
+                        units='ppb',
                         ):
     """Plot a comparison of the truth and predicted data.
 
@@ -519,7 +579,7 @@ def plot_true_pred_comp(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
     ----------
     truth_data : dict
         Dictionary containing the parameters for the truth data.
-        Must contain 'stage', 'x_or_y', and 'year'.
+        Must contain 'stage', 'x_or_y', 'year', and 'input_path'.
     pred_data : dict
         Dictionary containing the parameters for the predicted data.
         Must contain 'stage', 'HPC_run', and 'year'.
@@ -529,6 +589,10 @@ def plot_true_pred_comp(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
     restrict_lat_lon_to : str
         Path to a netCDF file to restrict the latitude and longitude range.
         If None, the entire dataset is used.
+    var : str
+        The name of the gas being modelled.
+    units : str
+        Unit of measurement for the data.
     
     Returns
     -------
@@ -549,8 +613,8 @@ def plot_true_pred_comp(truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
     truths = truth.flatten()
     preds = stage1.flatten()
     fig = plot_comparison(truths, preds, 
-                           label_a="'Truth' surface NO2 (ppb)",
-                           label_b="Stage 1 surface NO2 (ppb)",      
+                           label_a=f"'Truth' surface {var} ({units})",
+                           label_b=f"Stage 1 surface {var} ({units})",      
                            hist_params=hist_params)
     return fig
 
