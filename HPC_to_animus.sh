@@ -6,17 +6,19 @@
 # Takes in the following arguments:
 #	$ bash HPC_mist_to_animus.sh -f <filename>      Ex: test_unet_601760
 #                                -j <HPC_job>       Look for HPC job based on filename
+#                                -c <cluster>       HPC cluster to transfer from (default: trillium)
 #
 # Note: Each file in list must be preceded by the -f flag. Ex:
 #	$ bash HPC_mist_to_animus.sh -f test_file1 -f test_file2
 
 # Having a ":" after a flag means an option is required to invoke that flag
-while getopts "f:j" option;
+while getopts "f:jc:" option;
 do
 	case $option
 		in
 		f) FILENAMES+=("$OPTARG");;
-        j) HPC_JOB=j
+        j) HPC_JOB=j;;
+        c) CLUSTER=${OPTARG}
 	esac
 done
 shift $((OPTIND -1))
@@ -27,11 +29,18 @@ then
 	echo "-f, No files specified, exiting"
 	exit 1
 fi
+if [ -z "$CLUSTER" ]
+then
+    CLUSTER="trillium"
+    echo "-c, No cluster specified, defaulting to $CLUSTER"
+else
+    echo "-c, Copying from $CLUSTER"
+fi
 if [ "$HPC_JOB" = j ]
 then
 	DIR_PREFIX="/HPC_runs"
     EXCLUDE_FLAG="!(.h5)"
-	echo "-j, Copying full HPC job directory for ${FILENAMES[*]} from Mist to Animus"
+	echo "-j, Copying full HPC job directory for ${FILENAMES[*]} from $CLUSTER to Animus"
 else
 	DIR_PREFIX=""
     EXCLUDE_FLAG=""
@@ -39,12 +48,22 @@ fi
 
 ###############################################################################
 
-# Specify the remote server address
-REMOTE_SERVER="mist.scinet.utoronto.ca"
 # Specify the username for the remote server
 USERNAME="mschee"
-# Specify project directory
-PROJECT_DIR="/scratch/d/dylan/$USERNAME/Postdoc/unox"
+if [ "$CLUSTER" = "trillium" ]; then
+    # Specify the remote server address
+    REMOTE_SERVER="trillium.alliancecan.ca"
+    # Specify project directory
+    PROJECT_DIR="/scratch/$USERNAME/Postdoc/unox"
+elif [ "$CLUSTER" = "mist" ]; then
+    # Specify the remote server address
+    REMOTE_SERVER="mist.scinet.utoronto.ca"
+    # Specify project directory
+    PROJECT_DIR="/scratch/d/dylan/$USERNAME/Postdoc/unox"
+else
+    echo "Unknown cluster: $CLUSTER. Exiting."
+    exit 1
+fi
 # Specify the identity file for SSH
 IDENTITY_FILE="~/.ssh/id_ed25519"
 
