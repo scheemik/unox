@@ -1,0 +1,185 @@
+# packages in environment at /home/d/dylan/mschee/.conda/envs/unetmist:
+#
+# Name                    Version                   Build  Channel
+_libgcc_mutex             0.1                        main  
+_openmp_mutex             5.1                       1_gnu  
+_tensorflow_select        2.0                      cuda_2    https://ftp.osuosl.org/pub/open-ce/1.7.2
+absl-py                   1.0.0              pyhe978499_0    https://ftp.osuosl.org/pub/open-ce/1.7.2
+aiohttp                   3.8.6            py38hf118e41_0  
+aiosignal                 1.2.0              pyhd3eb1b0_0  
+argon2-cffi               21.1.0           py38h98b8a6f_2    conda-forge
+astunparse                1.6.3                      py_0  
+async-timeout             4.0.2            py38h6ffa863_0  
+attrs                     23.1.0           py38h6ffa863_0  
+backcall                  0.2.0              pyh9f0ad1d_0    conda-forge
+beautifulsoup4            4.12.3             pyha770c72_0    conda-forge
+black                     22.6.0           py38h6ffa863_0  
+blas                      1.0                    openblas    https://ftp.osuosl.org/pub/open-ce/1.7.2
+bleach                    4.1.0              pyhd8ed1ab_0    conda-forge
+blinker                   1.6.2            py38h6ffa863_0  
+bottleneck                1.3.5            py38h693b716_0  
+brotli-python             1.0.9            py38h4a02239_7  
+c-ares                    1.19.1               hf118e41_0  
+ca-certificates           2025.1.31            h0f6029e_0    conda-forge
+cachetools                4.2.2              pyhd3eb1b0_0  
+certifi                   2024.2.2           pyhd8ed1ab_0    conda-forge
+cffi                      1.15.1           py38h50e77d8_0  
+charset-normalizer        3.3.2              pyhd3eb1b0_0  
+click                     8.1.7            py38h6ffa863_0  
+comm                      0.2.2              pyhd8ed1ab_0    conda-forge
+cryptography              39.0.1           py38h179485c_0  
+cudatoolkit               11.4.4              h5d40d8d_10    https://ftp.osuosl.org/pub/open-ce/1.7.2
+cudnn                     8.3.0_11.4           h5b181e6_1    https://ftp.osuosl.org/pub/open-ce/1.7.2
+debugpy                   1.6.7            py38h4a02239_0  
+decorator                 4.4.2                      py_0    conda-forge
+defusedxml                0.7.1              pyhd8ed1ab_0    conda-forge
+entrypoints               0.4                pyhd8ed1ab_0    conda-forge
+flatbuffers               2.0.0                h29c3540_0  
+freetype                  2.11.0               h9215f1b_0  
+frozenlist                1.4.0            py38hf118e41_0  
+gast                      0.4.0              pyhd3eb1b0_0  
+giflib                    5.2.1                hf118e41_3  
+google-auth               1.33.0             pyhd3eb1b0_0  
+google-auth-oauthlib      0.4.4              pyhd3eb1b0_0  
+google-pasta              0.2.0              pyhd3eb1b0_0  
+grpcio                    1.42.0           py38hedb86c2_0  
+h5py                      3.6.0            py38he0257bb_0    https://ftp.osuosl.org/pub/open-ce/1.7.2
+hdf5                      1.12.1               h37c0fa9_2  
+idna                      3.4              py38h6ffa863_0  
+importlib-metadata        6.0.0            py38h6ffa863_0  
+ipykernel                 6.15.0             pyh210e3f2_0    conda-forge
+ipython                   7.33.0           py38hf8b3453_0    conda-forge
+ipython_genutils          0.2.0              pyhd8ed1ab_1    conda-forge
+ipywidgets                8.1.5              pyhd8ed1ab_0    conda-forge
+jedi                      0.18.2             pyhd8ed1ab_0    conda-forge
+jinja2                    3.1.3              pyhd8ed1ab_0    conda-forge
+jpeg                      9e                   hf118e41_1  
+jsonschema                2.6.0                    py38_0  
+jupyter                   1.0.0            py38hf8b3453_6    conda-forge
+jupyter_client            7.0.6              pyhd8ed1ab_0    conda-forge
+jupyter_console           6.6.3              pyhd8ed1ab_0    conda-forge
+jupyter_core              5.7.2              pyh31011fe_1    conda-forge
+jupyterlab_pygments       0.3.0              pyhd8ed1ab_1    conda-forge
+jupyterlab_widgets        3.0.13             pyhd8ed1ab_0    conda-forge
+keras                     2.9.0              pyhed6b286_1    https://ftp.osuosl.org/pub/open-ce/1.7.2
+keras-preprocessing       1.1.2              pyhd3eb1b0_0  
+krb5                      1.19.4               hd1e490d_0  
+lcms2                     2.12                 h2045e0b_0  
+ld_impl_linux-ppc64le     2.38                 hec883e6_1  
+lerc                      3.0                  h29c3540_0  
+libclang                  14.0.6          default_he8e87e7_0  
+libclang13                14.0.6          default_h0bf02fb_0  
+libcurl                   7.84.0               h1c46003_0  
+libdeflate                1.8                  h140841e_5  
+libedit                   3.1.20221030         hf118e41_0  
+libev                     4.33                 h140841e_1  
+libffi                    3.3                  he6710b0_2  
+libgcc-ng                 11.2.0               h1234567_1  
+libgfortran-ng            11.2.0               hb3889a9_1  
+libgfortran5              11.2.0               h1234567_1  
+libgomp                   11.2.0               h1234567_1  
+libllvm14                 14.0.6               h70c55ce_0  
+libnghttp2                1.46.0               hedb86c2_0  
+libopenblas               0.3.20               hc5a31fb_2    https://ftp.osuosl.org/pub/open-ce/1.7.2
+libpng                    1.6.37               hbc83047_0  
+libprotobuf               3.19.1               h727906f_0  
+libsodium                 1.0.18               h6eb9509_1    conda-forge
+libssh2                   1.10.0               h049c6bf_2  
+libstdcxx-ng              11.2.0               h1234567_1  
+libtiff                   4.4.0                habc1638_0  
+libwebp                   1.2.4                h0f96ee2_1  
+libwebp-base              1.2.4                hf118e41_1  
+llvm-openmp               14.0.6               hf59c774_0    https://ftp.osuosl.org/pub/open-ce/1.7.2
+lz4-c                     1.9.4                h4a02239_0  
+markdown                  3.3.4            py38h6ffa863_0  
+markupsafe                2.1.1            py38h140841e_0  
+matplotlib-inline         0.1.7              pyhd8ed1ab_0    conda-forge
+mistune                   2.0.5              pyhd8ed1ab_0    conda-forge
+multidict                 6.0.2            py38hf118e41_0  
+mypy_extensions           1.0.0            py38h6ffa863_0  
+nbclient                  0.10.2             pyhd8ed1ab_0    conda-forge
+nbconvert                 7.10.0           py38h6ffa863_0  
+nbformat                  5.10.4             pyhd8ed1ab_0    conda-forge
+nccl                      2.12.7               cuda11.4_1    https://ftp.osuosl.org/pub/open-ce/1.7.2
+ncurses                   6.4                  h4a02239_0  
+nest-asyncio              1.6.0              pyhd8ed1ab_0    conda-forge
+notebook                  6.4.12             pyha770c72_0    conda-forge
+numexpr                   2.8.4            py38hab0bb09_1  
+numpy                     1.23.5           py38h181cc9a_0  
+numpy-base                1.23.5           py38h1bde650_0  
+oauthlib                  3.2.2            py38h6ffa863_0  
+openssl                   1.1.1w               h140841e_0  
+opt_einsum                3.3.0              pyhd3eb1b0_1  
+packaging                 23.1             py38h6ffa863_0  
+pandas                    2.0.3            py38h83ae58a_0  
+pandocfilters             1.5.0              pyhd8ed1ab_0    conda-forge
+parso                     0.8.4              pyhd8ed1ab_0    conda-forge
+pathspec                  0.10.3           py38h6ffa863_0  
+pexpect                   4.9.0              pyhd8ed1ab_0    conda-forge
+pickleshare               0.7.5                   py_1003    conda-forge
+pillow                    9.2.0            py38h2af516d_1  
+pip                       23.3             py38h6ffa863_0  
+platformdirs              3.10.0           py38h6ffa863_0  
+portpicker                1.5.2            py38h6ffa863_0  
+prometheus_client         0.20.0             pyhd8ed1ab_0    conda-forge
+prompt-toolkit            3.0.36             pyha770c72_0    conda-forge
+prompt_toolkit            3.0.36               hd8ed1ab_0    conda-forge
+protobuf                  3.19.1           py38h29c3540_0  
+psutil                    5.9.0            py38hf118e41_0  
+ptyprocess                0.7.0              pyhd3deb0d_0    conda-forge
+pyasn1                    0.4.8              pyhd3eb1b0_0  
+pyasn1-modules            0.2.8                      py_0  
+pycparser                 2.21               pyhd3eb1b0_0  
+pygments                  2.18.0             pyhd8ed1ab_0    conda-forge
+pyjwt                     2.4.0            py38h6ffa863_0  
+pyopenssl                 23.2.0           py38h6ffa863_0  
+pysocks                   1.7.1            py38h6ffa863_0  
+python                    3.8.13               h44a25d2_1  
+python-clang              14.0.6          default_py38hebdd076_1  
+python-dateutil           2.8.2              pyhd3eb1b0_0  
+python-fastjsonschema     2.16.2           py38h6ffa863_0  
+python-flatbuffers        2.0                pyhd3eb1b0_0  
+python-tzdata             2023.3             pyhd3eb1b0_0  
+python_abi                3.8                      2_cp38    conda-forge
+pytz                      2023.3.post1     py38h6ffa863_0  
+pyyaml                    6.0.1            py38hf118e41_0  
+pyzmq                     19.0.2           py38haded84a_2    conda-forge
+readline                  8.2                  hf118e41_0  
+requests                  2.31.0           py38h6ffa863_0  
+requests-oauthlib         1.3.0                      py_0  
+rsa                       4.7.2              pyhd3eb1b0_1  
+scipy                     1.8.1            py38h8d9d9fb_0    https://ftp.osuosl.org/pub/open-ce/1.7.2
+send2trash                1.8.3              pyh0d859eb_0    conda-forge
+setuptools                63.4.1           py38h6ffa863_0  
+six                       1.16.0             pyhd3eb1b0_1  
+soupsieve                 2.5                pyhd8ed1ab_1    conda-forge
+sqlite                    3.39.3               hefe40ec_0  
+tensorboard               2.9.1           pyhb230223_pb3.19_3    https://ftp.osuosl.org/pub/open-ce/1.7.2
+tensorboard-data-server   0.6.1              pyhb80c3c2_3    https://ftp.osuosl.org/pub/open-ce/1.7.2
+tensorboard-plugin-wit    1.6.0                      py_0  
+tensorflow                2.9.2           cuda11.4_py38_1    https://ftp.osuosl.org/pub/open-ce/1.7.2
+tensorflow-base           2.9.2           cuda11.4_py38_pb3.19_1    https://ftp.osuosl.org/pub/open-ce/1.7.2
+tensorflow-estimator      2.9.0              pyhd67d765_2    https://ftp.osuosl.org/pub/open-ce/1.7.2
+tensorflow-io-gcs-filesystem 0.26.0          h2cf767d_py38_pb3.19_3    https://ftp.osuosl.org/pub/open-ce/1.7.2
+termcolor                 1.1.0            py38h6ffa863_1  
+terminado                 0.18.1             pyh0d859eb_0    conda-forge
+tinycss2                  1.4.0              pyhd8ed1ab_0    conda-forge
+tk                        8.6.12               h7e00dab_0  
+tomli                     2.0.1            py38h6ffa863_0  
+tornado                   6.1              py38h6e87771_3    conda-forge
+traitlets                 5.7.1            py38h6ffa863_0  
+typing_extensions         4.7.1            py38h6ffa863_0  
+urllib3                   1.26.18          py38h6ffa863_0  
+wcwidth                   0.2.13             pyhd8ed1ab_0    conda-forge
+webencodings              0.5.1              pyhd8ed1ab_2    conda-forge
+werkzeug                  2.2.3            py38h6ffa863_0  
+wheel                     0.37.1             pyhd3eb1b0_0  
+widgetsnbextension        4.0.13             pyhd8ed1ab_0    conda-forge
+wrapt                     1.14.1           py38hf118e41_0  
+xz                        5.4.2                hf118e41_0  
+yaml                      0.2.5                h7b6447c_0  
+yarl                      1.8.1            py38hf118e41_0  
+zeromq                    4.3.4                h29c3540_0  
+zipp                      3.11.0           py38h6ffa863_0  
+zlib                      1.2.12               hf118e41_3  
+zstd                      1.5.2                hc52992f_0
