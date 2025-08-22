@@ -4,7 +4,7 @@ from keras.layers.core import Lambda
 from keras.layers.convolutional import Conv2D, Conv2DTranspose
 from keras.layers.pooling import MaxPooling2D
 from keras.layers.merging import concatenate
-import tensorflow as tf
+# import tensorflow as tf
 
 def build_Unet():
     inputs = Input( ( 56, 120, 9 ), name='model_input')
