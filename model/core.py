@@ -1,10 +1,10 @@
-from keras.models import Model, load_model
-from keras.layers import Input, LSTM, Permute, Reshape
-from keras.layers.core import Lambda
-from keras.layers.convolutional import Conv2D, Conv2DTranspose
-from keras.layers.pooling import MaxPooling2D
-from keras.layers.merging import concatenate
-import tensorflow as tf
+from keras import Model, Input
+from keras.layers import LSTM, Permute, Reshape
+from keras.layers import Lambda
+from keras.layers import Conv2D, Conv2DTranspose
+from keras.layers import MaxPooling2D
+from keras.layers import concatenate
+# import tensorflow as tf
 
 def build_Unet():
     inputs = Input( ( 56, 120, 9 ), name='model_input')
