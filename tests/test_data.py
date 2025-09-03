@@ -312,7 +312,7 @@ def test_verify_number():
     for num in valid_numbers:
         assert udata.verify_number(num) == True, f"verify_number failed on valid number {num}"
     # Test invalid number values
-    invalid_numbers = [np.nan, np.inf, -np.inf, '1', 'abc', None]
+    invalid_numbers = [np.nan, np.inf, -np.inf, '1', 'abc', None, True, False]
     for num in invalid_numbers:
         assert udata.verify_number(num) == False, f"verify_number failed on invalid number {num}"
 
