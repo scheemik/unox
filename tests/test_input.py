@@ -8,7 +8,7 @@ def test_make_y_input_file():
     """Test the make_y_input_file function."""
     # Set the arguments for a test run
     datadir='/data/high_res/emacdonald/unet/datafiles/t106'
-    verifydir='inputfiles/'
+    verifydir='inputfiles/no2_input_test1/'
     this_year=2019
     # Assemble file path to verification array
     verify_filepath = f"{verifydir}stage1/y/Y_{this_year}.npy"
@@ -39,7 +39,7 @@ def test_make_x_input_file():
     """Test the make_x_input_file function."""
     # Set the arguments for a test run
     datadir='/data/high_res/emacdonald/unet/datafiles/'
-    verifydir='inputfiles/'
+    verifydir='inputfiles/no2_input_test1/'
     this_year=2019
     for this_stage in [1, 2]:
         # Assemble file path to verification array
