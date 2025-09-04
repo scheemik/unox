@@ -284,13 +284,14 @@ def plot_npy_map(
     return this_ax, pcm
 
 def plot_stage_comp_maps(
-    truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019},
+    truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path':'sample_data'},
     pred_params={'stage': -1, 'HPC_run': 'test_unet_601760', 'year': 2019},
     this_date='2019-07-19T00:00:00',
     var='nox',
     avg_over=None,
     restrict_lat_lon_to=None,
     clr_bar_scale=0.5,
+    stage1_only=False,
     ):
     """Plots a set of maps to compare the truth and the two stages of the model.
 
@@ -306,7 +307,8 @@ def plot_stage_comp_maps(
     ----------
     truth_params : dict
         Dictionary containing the parameters for the truth data.
-        Must contain 'stage', 'x_or_y', and 'year', as designated in unox.data.get_input_data().
+        Must contain 'stage', 'x_or_y', 'year', and , 'input_path' as designated
+        in unox.data.get_input_data().
     pred_params : dict
         Dictionary containing the parameters for the predicted data.
         Must contain 'stage', 'HPC_run', and 'year', as designated in unox.data.get_pred_data().
@@ -323,47 +325,56 @@ def plot_stage_comp_maps(
         If None, the entire dataset is used.
     clr_bar_scale : float between 0 and 1
         Scale factor for the color bar. If set to 1, the color bar will be scaled 
-        to the maximum absolute value of the data. Default is 0.5. 
+        to the maximum absolute value of the data. Default is 0.5.
+    stage1_only : bool
+        If True, produce graphs just corresponding to stage 1. If False, produce graphs
+        for stage 1 and stage 2. Default is False.
     
     Returns
     -------
     fig : matplotlib.figure.Figure
         The figure object containing the plots.
     """
-    truth = np.load(unox.get_input_data(**truth_params))
-    # Remove `stage` from pred_params, if present
-    pred_params.pop('stage', None)
-    stage1 = np.load(unox.get_pred_data(stage=1, **pred_params))
-    stage2 = np.load(unox.get_pred_data(stage=2, **pred_params))
     # Get the latitude and longitude values
     lats, lons = unox.load_lats_lons()
-
-    if not isinstance(restrict_lat_lon_to, type(None)):
-        # Restrict range
-        [truth, stage1, stage2], lats, lons = udata.restrict_domain([truth, stage1, stage2], lats, lons, xr.open_dataset(restrict_lat_lon_to))
+    # Get the "truth" values
+    truth = np.load(unox.get_input_data(**truth_params))
+    # Get the stage 1 values
+    stage1 = np.load(unox.get_pred_data(stage=1, **pred_params))
+    # Remove `stage` from pred_params, if present
+    pred_params.pop('stage', None)
     
+    if stage1_only:
+        # Make a list of the data
+        data_list = [truth, stage1]
+        # Set the number of rows in the figure
+        num_rows = 1
+    else:
+        # Get the stage 2 values
+        stage2 = np.load(unox.get_pred_data(stage=2, **pred_params))
+        # Make a list of the data
+        data_list = [truth, stage1, stage2]
+        # Set the number of rows in the figure
+        num_rows = 2
+        
+    # Restrict the latitude and longitude range
+    if not isinstance(restrict_lat_lon_to, type(None)):
+        data_list, lats, lons = udata.restrict_domain([data_list, lats, lons, xr.open_dataset(restrict_lat_lon_to))
+
     # Get the minimum and maximum values across the truth, stage1, and stage2 arrays
-    vmin, vmax = udata.get_vminmax([truth, stage1, stage2])
+    vmin, vmax = udata.get_vminmax(data_list)
+    
     # Get the halfrange for use with a diverging color map
     halfrange = udata.get_max_abs_val([vmin, vmax])
 
-    # Get the variable label and units
-    var_label, var_units = uplt_fmt.get_var_label_and_units(var)
-
-    # Create the output arrays for the stage comparison
-    out_arrs, overall_title = uplt_fmt.make_stage_comp_arrs(
-        in_arrs = {'truth': truth, 'stage1': stage1, 'stage2': stage2},
-        this_date = this_date,
-        var = var,
-        avg_over = avg_over
-    )
+    # Get the day of year to plot
+    day = udata.get_DOY(this_date)
 
     # Create the figure
     fig = pplt.figure(refwidth=4)
-    ax = fig.subplots(nrows=2, ncols=3, proj='cyl')
-    # ax = fig.subplots(nrows=1, proj='cyl')
+    ax = fig.subplots(nrows=num_rows, ncols=3, proj='cyl')
     # Set the figure title
-    fig.suptitle(overall_title, fontsize=16)
+    fig.suptitle(f'{var} emissions on ' + this_date, fontsize=16)
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
 
@@ -378,15 +389,33 @@ def plot_stage_comp_maps(
         cb_extend = 'neither'
     print('cb_extend:', cb_extend)
 
-    # Add the subplots
-    # plot_npy_map(fig, ax, out_arrs['truth'], lats, lons, halfrange, ax_title='NOx emissions (truth)')
-    plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, halfrange, cb_extend, ax_title='NOx emissions (truth)')
-    plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
-    plot_npy_map(fig, ax[0,2], out_arrs['stage2'], lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
-    plot_npy_map(fig, ax[1,0], out_arrs['t_m_st1'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
-    plot_npy_map(fig, ax[1,1], out_arrs['t_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
-    plot_npy_map(fig, ax[1,2], out_arrs['st1_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
+    if stage1_only:
+        # Add the subplots
+        plot_npy_map(fig, ax[0,0], truth[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,1], stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
+        plot_npy_map(fig, ax[1,0], truth[day,:,:,0]-stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
 
+        # Add one overall colorbar for the entire figure on the right-hand side
+        cbar = make_colorbar(fig, ax[0,0].get_children()[0], f'{var} emissions (kg/m2/s)', num_ticks=9, cb_loc='l', cb_extend=cb_extend)
+    else:
+        # Create the output arrays for the stage comparison
+        out_arrs, overall_title = uplt_fmt.make_stage_comp_arrs(
+            in_arrs = {'truth': truth, 'stage1': stage1, 'stage2': stage2},
+            this_date = this_date,
+            var = var,
+            avg_over = avg_over
+        )
+
+        # Add the subplots
+        plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
+        plot_npy_map(fig, ax[0,2], out_arrs['stage2'], lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
+        plot_npy_map(fig, ax[1,0], out_arrs['t_m_st1'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
+        plot_npy_map(fig, ax[1,1], out_arrs['t_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
+        plot_npy_map(fig, ax[1,2], out_arrs['st1_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
+
+    # Get the variable label and units
+    var_label, var_units = uplt_fmt.get_var_label_and_units(var)
     # Add one overall colorbar for the entire figure on the right-hand side
     cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='l', cb_extend=cb_extend)
     return fig
@@ -533,11 +562,13 @@ def plot_comparison(
     else:
         return q
 
+
 def plot_true_pred_comp(
-    truth_data={'stage':1, 'x_or_y':'y', 'year':2019},
+    truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input_path':'sample_data'},
     pred_data={'stage':1, 'HPC_run':'test_unet_601760', 'year':2019},
     hist_params={'bins':100, 'vmax':1000, 'vmin':10},
     restrict_lat_lon_to=None,
+    var='nox',
     ):
     """Plot a comparison of the truth and predicted data.
 
@@ -548,7 +579,7 @@ def plot_true_pred_comp(
     ----------
     truth_data : dict
         Dictionary containing the parameters for the truth data.
-        Must contain 'stage', 'x_or_y', and 'year'.
+        Must contain 'stage', 'x_or_y', 'year', and 'input_path'.
     pred_data : dict
         Dictionary containing the parameters for the predicted data.
         Must contain 'stage', 'HPC_run', and 'year'.
@@ -558,6 +589,10 @@ def plot_true_pred_comp(
     restrict_lat_lon_to : str
         Path to a netCDF file to restrict the latitude and longitude range.
         If None, the entire dataset is used.
+    var : str
+        The name of the gas being modelled.
+    units : str
+        Unit of measurement for the data.
     
     Returns
     -------
@@ -578,8 +613,8 @@ def plot_true_pred_comp(
     truths = truth.flatten()
     preds = stage1.flatten()
     fig = plot_comparison(truths, preds, 
-                           label_a="'Truth' surface NO2 (ppb)",
-                           label_b="Stage 1 surface NO2 (ppb)",      
+                           label_a=f"'Truth' surface {var} ({units})",
+                           label_b=f"Stage 1 surface {var} ({units})",      
                            hist_params=hist_params)
     return fig
 
