@@ -364,8 +364,8 @@ def verify_number(
     ):
     """Verify that the given value is a number.
 
-    If the given value is a number that can be converted to
-    an integer but is not a string or character, return True. 
+    If the given value is a number that can be converted to an integer
+    ut is not a string, character, or bool, return True. 
     Otherwise, return False.
 
     Parameters
@@ -387,7 +387,7 @@ def verify_number(
     >>> value = verify_number(np.nan)
     False
     """
-    if isinstance(value, str) or isinstance(value, bytes):
+    if isinstance(value, str) or isinstance(value, bytes) or isinstance(value, type(True)):
         return False
     try:
         foo = int(value)

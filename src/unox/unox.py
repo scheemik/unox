@@ -142,7 +142,7 @@ def remove_non_empty_directory(
     os.rmdir(top)  
 
 def show_available_data(
-    path='original_sample_data/', 
+    path='inputfiles/no2_sample_input/', 
     verb=False,
     ):
     """Print a list of available data in the given directory.
@@ -163,7 +163,13 @@ def show_available_data(
 
     Examples
     --------
-    >>> data_files = show_available_data('original_sample_data/')
+    >>> data_files = show_available_data('inputfiles/no2_sample_input/')
+    ['inputfiles/no2_sample_input/stage1/y/Y_2019.npy',
+     'inputfiles/no2_sample_input/stage1/y/Y_2005.npy',
+     'inputfiles/no2_sample_input/stage1/y/Y_2006.npy',
+     ...
+     'inputfiles/no2_sample_input/stage2/x/X_2014.npy',
+     'inputfiles/no2_sample_input/stage2/x/X_2015.npy']
     """
     # Check if the path exists
     path = verify_path(path)
@@ -196,7 +202,13 @@ def recursive_paths(
 
     Examples
     --------
-    >>> path_list = recursive_paths('original_sample_data/')
+    >>> path_list = recursive_paths('datafiles')
+    ['datafiles/README.md',
+     'datafiles/concatenate.py',
+     'datafiles/download_era5.sh',
+     ...
+     'datafiles/sample_data/daily_42602_2019.csv',
+     'datafiles/sample_data/nox_2019_t106_US.nc']
     """
     # Create an empty list in which to store the paths
     path_list = []
@@ -222,7 +234,7 @@ def get_input_data(
     stage=1, 
     x_or_y='y', 
     year=2019,
-    input_path='sample_data',
+    input_path='no2_sample_input',
     ):
     """Get the path of a input data file.
 
@@ -248,7 +260,7 @@ def get_input_data(
     Examples
     --------
     >>> file_path = get_input_data(stage=1, x_or_y='y', year=2019)
-    '../sample_data/stage1/y/Y_2019.npy'
+    '../inputfiles/no2_sample_input/stage1/y/Y_2019.npy'
     """
     # Verify the stage and x_or_y values
     if stage not in [1, 2]:
@@ -256,11 +268,11 @@ def get_input_data(
     if x_or_y not in ['x', 'y']:
         raise ValueError("x_or_y must be 'x' or 'y'.")
     # Build the file path
-    file_path = f'{input_path}/stage{stage}/{x_or_y}/{x_or_y.upper()}_{year}.npy'
+    file_path = f'inputfiles/{input_path}/stage{stage}/{x_or_y}/{x_or_y.upper()}_{year}.npy'
     # Verify the path
     file_path = verify_path(file_path)
     # Find the available data files
-    data_files = show_available_data(f'{input_path}/')
+    data_files = show_available_data(f'inputfiles/{input_path}/')
     # Check if the file exists
     if file_path not in data_files:
         raise FileNotFoundError(f"File {file_path} not found.")

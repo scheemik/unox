@@ -768,8 +768,8 @@ def compare_input_files(
     stage=1,
     x_or_y='y',
     x_var='no2',
-    old_dir='sample_data',
-    new_dir='inputfiles',
+    old_dir='no2_sample_input',
+    new_dir='no2_input_test0',
     abs_tolerance=2e-5,
     ):
     """
@@ -794,8 +794,8 @@ def compare_input_files(
         The absolute tolerance for comparing the input files. Default is 2e-5.
     """
     # Assemble the paths to the old and new input files
-    old_filepath = f'{old_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
-    new_filepath = f'{new_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
+    old_filepath = f'inputfiles/{old_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
+    new_filepath = f'inputfiles/{new_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
     # Verify the file paths
     old_filepath = unox.verify_path(old_filepath)
     new_filepath = unox.verify_path(new_filepath)
@@ -821,6 +821,6 @@ def compare_input_files(
         if np.allclose(old_input, new_input, atol=abs_tolerance):
             print("The input files are similar within the absolute tolerance of", abs_tolerance)
         else:
-            print("The input files more different than the tolerance of",abs_tolerance)
+            print("The input files differ more than the tolerance of",abs_tolerance)
         # Plot the differences
         return plot_npy_diff(old_input, new_input, title=str(x_or_y).capitalize()+f'_{year} old vs '+ str(x_or_y).capitalize()+f'_{year} new')
