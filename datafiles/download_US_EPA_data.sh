@@ -27,7 +27,7 @@ VALID_SPECIES=("O3" "SO2" "CO" "NO2"
                "PM25FRM" "PM25nFRM" "PM10" "PMc" 
                "PM25SPEC" "PM10SPEC" "WIND" "TEMP" 
                "PRESS" "RH_and_DP" "HAPs" "VOCs" 
-               "NOX" "LEAD")
+               "NONOxNOy" "LEAD")
 
 # Check to see if input arguments are set, otherwise set defaults
 if [ -z "$SPECIES" ]; then
@@ -110,7 +110,7 @@ download_US_EPA_data() {
         # Toxics, Percoursors, and Lead
         "HAPs") ID="HAPS" ;;
         "VOCs") ID="VOCS" ;;
-        "NOX") ID="NONOxNOy" ;;
+        "NONOxNOy") ID="NONOxNOy" ;;
         "LEAD") ID="LEAD" ;;
         *) echo "Invalid species: $SPECIES"; exit 1 ;;
     esac
@@ -119,8 +119,8 @@ download_US_EPA_data() {
     for YEAR in $(seq $START_YEAR $END_YEAR); do
         # Construct the file name
         FILENAME="${FREQUENCY}_${ID}_${YEAR}"
-        # Check if the file already exists locally
-        if [ -f "$FREQUENCY_DIR/$FILENAME.csv" ]; then
+        # Check if the csv or zip file already exists locally
+        if [ -f "$FREQUENCY_DIR/$FILENAME.csv" ] || [ -f "$FREQUENCY_DIR/$FILENAME.zip" ]; then
             echo "File $FILENAME already exists, skipping download."
             continue
         else
@@ -136,10 +136,10 @@ download_US_EPA_data() {
             fi
             
             # Unzip the file
-            unzip -o "$FREQUENCY_DIR/${FILENAME}.zip" -d "$FREQUENCY_DIR"
+            # unzip -o "$FREQUENCY_DIR/${FILENAME}.zip" -d "$FREQUENCY_DIR"
             
             # Remove the zip file after extraction
-            rm "$FREQUENCY_DIR/${FILENAME}.zip"
+            # rm "$FREQUENCY_DIR/${FILENAME}.zip"
         fi
     done
 }

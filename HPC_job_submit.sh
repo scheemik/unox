@@ -2,21 +2,27 @@
 # Author: Mikhail Schee
 # 2025-03-27
 
-# Run this script to submit a job to Mist. 
+# Run this script to submit a job to HPC. Note, by default the code will run 
+# with updated versions of tensorflow and keras, which won't work on Mist. Use
+# `-v 0` to run with the versions that are compatible with Mist.
 # Takes in optional arguments:
 #	$ bash HPC_job_submit.sh -j <job name> 			Default: current datetime
 #							 -t <test run>			Default: True, run test_unet.sh
+#                            -v <version>           Default: 1, use updates
+#                            -c <cluster>           Default: trillium
 
 # Current datetime
 # DATETIME=`date +"%Y-%m-%d_%Hh%M"`
 
 # Having a ":" after a flag means an option is required to invoke that flag
-while getopts j:t option
+while getopts j:tv:c: option
 do
 	case "${option}"
 		in
 		j) JOBNAME=${OPTARG};;
 		t) TEST=t;;
+		v) VERSION=${OPTARG};;
+		c) CLUSTER=${OPTARG};;
 	esac
 done
 
@@ -35,6 +41,20 @@ then
 else
 	echo "No LAUNCHER specified, exiting"
 	exit 1
+fi
+if [ -z "$VERSION" ]
+then
+	VERSION=1
+	echo "-v, No version specified, using VERSION=$VERSION"
+else
+	echo "-v, Version specified, using VERSION=$VERSION"
+fi
+if [ -z "$CLUSTER" ]
+then
+    CLUSTER="trillium"
+    echo "-c, No cluster specified, defaulting to $CLUSTER"
+else
+    echo "-c, Using cluster: $CLUSTER"
 fi
 
 # Check to see whether a directory exists for the job
@@ -59,4 +79,4 @@ fi
 
 ###############################################################################
 # Submit job to queue
-sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME
+sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -v $VERSION -c $CLUSTER

@@ -1,20 +1,35 @@
 #test code based on Unet_Chinese_NOx example_code.ipynb
-from utils.functions import r2_keras
-from utils.functions import msenonzero
-from utils.functions import data_split
-from model.core import Unet
-from tensorflow.keras.optimizers import Adam
-from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 import numpy as np
 import glob
 import sys
 import os 
 
-
+# Load first input argument, if it exists: the save directory
 try:
   savedir = sys.argv[1] + '/'
 except:
   savedir = 'HPC_runs/test_unet/'  #directory to save output in
+
+# Load second input argument, if it exists: the version of the code to use
+try:
+  version = int(sys.argv[2])
+except:
+  version = 1
+print('Running python script with version:', version)
+
+# Import packages based on version
+if version == 0: # keras v2.9.0, tensorflow v2.9.2
+  from utils.functions_old import r2_keras
+  from utils.functions_old import msenonzero
+  from utils.functions_old import data_split
+  from model.core_old import Unet
+elif version == 1: # keras v3.10.0, tensorflow v2.17.0
+  from utils.functions import r2_keras
+  from utils.functions import msenonzero
+  from utils.functions import data_split
+  from model.core import Unet
+from tensorflow.keras.optimizers import Adam
+from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 
 try:
   os.mkdir(savedir)
@@ -29,12 +44,16 @@ try:
   os.mkdir(savedir+'stage2_output/')
 except FileExistsError:
   print('stage2_output/ exists')
+try:
+  os.mkdir(savedir+'checkpts/')
+except FileExistsError:
+  print('checkpts/ exists')
 
 ##################################################################
 # Build and compile the Unet
 
 unet = Unet()
-opt = Adam(lr=1e-5) 
+opt = Adam(learning_rate=1e-5) 
 
 unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
 unet.summary()
@@ -43,8 +62,8 @@ unet.summary()
 # Stage-1 training
 ## Load stage-1 data sets
 
-x_files = sorted(glob.glob('sample_data/stage1/x/X_20*.npy'))
-y_files = sorted(glob.glob('sample_data/stage1/y/Y_20*.npy'))
+x_files = sorted(glob.glob('inputfiles/stage1/x/X_20*.npy'))
+y_files = sorted(glob.glob('inputfiles/stage1/y/Y_20*.npy'))
 
 
 xtrain_files, ytrain_files = x_files[:14], y_files[:14]
@@ -65,7 +84,7 @@ print(xtrain.shape, ytrain.shape, xvalid.shape, yvalid.shape)
 
 csv_logger = CSVLogger( savedir+'unet_stage1_log.csv', append=True, separator=';')
 earlystopper = EarlyStopping(patience=15, verbose=1)
-checkpointer = ModelCheckpoint(savedir+'unet_checkpt_{val_loss:.2f}_{r2_keras:.2f}_stage1.h5', verbose=1, save_best_only=True)
+checkpointer = ModelCheckpoint(savedir+'checkpts/unet_checkpt_{val_loss:.2f}_{r2_keras:.2f}_stage1.h5', verbose=1, save_best_only=True)
 print("begin training stage 1")
 unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), batch_size=30, epochs=250, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
 
@@ -91,8 +110,8 @@ for x in xtest_files:
 # Stage-2 training
 ## Load stage-2 data sets
 
-x_files = sorted(glob.glob('sample_data/stage2/x/X_20*.npy'))
-y_files = sorted(glob.glob('sample_data/stage2/y/Y_20*.npy'))
+x_files = sorted(glob.glob('inputfiles/stage2/x/X_20*.npy'))
+y_files = sorted(glob.glob('inputfiles/stage2/y/Y_20*.npy'))
 print(x_files, y_files)
 xtrain_files, ytrain_files = x_files[:5], y_files[:5]
 xtrain = np.concatenate([ np.load(s) for s in xtrain_files], axis=0)
@@ -112,7 +131,7 @@ unet.load_weights(savedir+'unet_stage1_model.h5')
 # Stage-2 training of the Unet
 csv_logger = CSVLogger( savedir+'unet_stage2_log.csv', append=True, separator=';')
 earlystopper = EarlyStopping(patience=15, verbose=1)
-checkpointer = ModelCheckpoint(savedir+'unet_checkpt_{val_loss:.2f}_{r2_keras:.2f}_stage2.h5', verbose=1, save_best_only=True)
+checkpointer = ModelCheckpoint(savedir+'checkpts/unet_checkpt_{val_loss:.2f}_{r2_keras:.2f}_stage2.h5', verbose=1, save_best_only=True)
 
 print('begin training stage 2')
 unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), 

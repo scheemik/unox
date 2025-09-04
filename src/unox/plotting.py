@@ -9,9 +9,11 @@ from scipy.stats import linregress
 
 from unox import unox
 from unox import data as udata
-from unox import plot_format as uplt_frmt
+from unox import plot_format as uplt_fmt
 
-def plot_extent(xr_dataset='/datafiles/nox_2019_t106_US.nc'):
+def plot_extent(
+    xr_dataset='/datafiles/nox_2019_t106_US.nc',
+    ):
     """Plots the extent of the given xarray dataset.
 
     Creates a map with the Robin projection of the entire world
@@ -38,7 +40,7 @@ def plot_extent(xr_dataset='/datafiles/nox_2019_t106_US.nc'):
         # Now open the dataset
         xr_dataset = xr.open_dataset(xr_dataset)
     # Verify the xr_dataset
-    udata.verify_dataset(xr_dataset)
+    xr_dataset = udata.verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
     lat_min, lat_max, lon_min, lon_max = udata.get_extent(xr_dataset)
     # Find the midpoint of the longitude values to center the map
@@ -59,8 +61,10 @@ def plot_extent(xr_dataset='/datafiles/nox_2019_t106_US.nc'):
     # Return the figure
     return fig
 
-def plot_lats_lons(xr_dataset='/datafiles/nox_2019_t106_US.nc',
-                   padding=0.1):
+def plot_lats_lons(
+    xr_dataset='/datafiles/nox_2019_t106_US.nc',
+    padding=0.1,
+    ):
     """Plot the latitude and longitude values in the given dataset.
 
     Creates a map showing the longitude and latitude resolution of the 
@@ -90,11 +94,11 @@ def plot_lats_lons(xr_dataset='/datafiles/nox_2019_t106_US.nc',
         # Now open the dataset
         xr_dataset = xr.open_dataset(xr_dataset)
     # Verify the xr_dataset
-    udata.verify_dataset(xr_dataset)
+    xr_dataset = udata.verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
     this_extent = udata.get_extent(xr_dataset)
     # Enlarge the extent of the map by the given padding value
-    p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_frmt.pad_extent(this_extent, padding)
+    p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_fmt.pad_extent(this_extent, padding)
     # Make a meshgrid of the lat and lon values
     longrid, latgrid = np.meshgrid(xr_dataset.lon.values, xr_dataset.lat.values)
     # Create the figure
@@ -116,14 +120,16 @@ def plot_lats_lons(xr_dataset='/datafiles/nox_2019_t106_US.nc',
     # Return the figure
     return fig
 
-def plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc',
-                var='nox',
-                var_string='NOx emissions',
-                var_units='kg/m2/s',
-                datetime='2019-01-01T00:00:00',
-                avg_over=None,
-                cbar_max=1.2e-10,
-                padding=0.1):
+def plot_nc_map(
+    xr_dataset='../datafiles/nox_2019_t106_US.nc',
+    var='nox',
+    var_string='NOx emissions',
+    var_units='kg/m2/s',
+    datetime='2019-01-01T00:00:00',
+    avg_over=None,
+    cbar_max=1.2e-10,
+    padding=0.1,
+    ):
     """Plots a map of the 'var' data in a netCDF.
 
     Creates a map of the 'var' data on a map using the provided netCDF file.
@@ -171,11 +177,11 @@ def plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc',
     # this_var.nox[0].plot()
 
     # Verify the xr_dataset
-    udata.verify_dataset(xr_dataset)
+    xr_dataset = udata.verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
     this_extent = udata.get_extent(xr_dataset)
     # Enlarge the extent of the map by the given padding value
-    p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_frmt.pad_extent(this_extent, padding)
+    p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_fmt.pad_extent(this_extent, padding)
     # Select the time to plot
     if isinstance(avg_over, type(None)):
         # Take just that time slice
@@ -216,15 +222,17 @@ def plot_nc_map(xr_dataset='../datafiles/nox_2019_t106_US.nc',
     # Return the figure
     return fig
 
-def plot_npy_map(this_fig,
-                 this_ax,
-                 npy_arr,
-                 lats,
-                 lons,
-                 c_halfrange=None,
-                 cb_extend='neither',
-                 cmap=pplt.Colormap('seismic'),
-                 ax_title=''):
+def plot_npy_map(
+    this_fig,
+    this_ax,
+    npy_arr,
+    lats,
+    lons,
+    c_halfrange=None,
+    cb_extend='neither',
+    cmap=pplt.Colormap('seismic'),
+    ax_title='',
+    ):
     """Plots a map of the given numpy array.
 
     Creates a map of the given numpy array across the given coordinates.
@@ -279,10 +287,10 @@ def plot_stage_comp_maps(
     truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path':'sample_data'},
     pred_params={'stage': -1, 'HPC_run': 'test_unet_601760', 'year': 2019},
     this_date='2019-07-19T00:00:00',
+    var='nox',
+    avg_over=None,
     restrict_lat_lon_to=None,
     clr_bar_scale=0.5,
-    var='NOx',
-    units='kg/m2/s',
     stage1_only=False,
     ):
     """Plots a set of maps to compare the truth and the two stages of the model.
@@ -304,68 +312,85 @@ def plot_stage_comp_maps(
     pred_params : dict
         Dictionary containing the parameters for the predicted data.
         Must contain 'stage', 'HPC_run', and 'year', as designated in unox.data.get_pred_data().
-    this_date : str
+    this_date : np.datetime64 or str
         Date and time to select from the data file.
         Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+    var : str
+        The variable being plotted. Default is 'nox'.
+    avg_over : str, numpy.timedelta64, or None
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
     restrict_lat_lon_to : str
         Path to a netCDF file to restrict the latitude and longitude range.
         If None, the entire dataset is used.
     clr_bar_scale : float between 0 and 1
         Scale factor for the color bar. If set to 1, the color bar will be scaled 
         to the maximum absolute value of the data. Default is 0.5.
-    var : str
-        The name of the gas being modelled.
-    units : str
-        Unit of measurement for the data.
     stage1_only : bool
-        Produces graphs just corresponding to stage 1.
+        If True, produce graphs just corresponding to stage 1. If False, produce graphs
+        for stage 1 and stage 2. Default is False.
     
     Returns
     -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plots.
     """
+    # Get the latitude and longitude values
+    lats, lons = unox.load_lats_lons()
+    # Get the "truth" values
     truth = np.load(unox.get_input_data(**truth_params))
+    # Get the stage 1 values
+    stage1 = np.load(unox.get_pred_data(stage=1, **pred_params))
     # Remove `stage` from pred_params, if present
     pred_params.pop('stage', None)
+    
     if stage1_only:
-        stage1 = np.load(unox.get_pred_data(stage=1, **pred_params))
-        # Get the latitude and longitude values
-        lats, lons = unox.load_lats_lons()
-
-        if not isinstance(restrict_lat_lon_to, type(None)):
-            # Restrict range
-            [truth, stage1, stage2], lats, lons = udata.restrict_domain([truth, stage1, stage2], lats, lons, xr.open_dataset(restrict_lat_lon_to))
+        # Make a list of the data
+        data_list = [truth, stage1]
+        # Set the number of rows in the figure
+        num_rows = 1
+    else:
+        # Get the stage 2 values
+        stage2 = np.load(unox.get_pred_data(stage=2, **pred_params))
+        # Make a list of the data
+        data_list = [truth, stage1, stage2]
+        # Set the number of rows in the figure
+        num_rows = 2
         
-        # Get the minimum and maximum values across the truth, stage1, and stage2 arrays
-        vmin, vmax = udata.get_vminmax([truth, stage1])
+    # Restrict the latitude and longitude range
+    if not isinstance(restrict_lat_lon_to, type(None)):
+        data_list, lats, lons = udata.restrict_domain([data_list, lats, lons, xr.open_dataset(restrict_lat_lon_to))
 
-        # Get the halfrange for use with a diverging color map
-        halfrange = udata.get_max_abs_val([vmin, vmax])
+    # Get the minimum and maximum values across the truth, stage1, and stage2 arrays
+    vmin, vmax = udata.get_vminmax(data_list)
+    
+    # Get the halfrange for use with a diverging color map
+    halfrange = udata.get_max_abs_val([vmin, vmax])
 
-        # Get the day of year to plot
-        day = udata.get_DOY(this_date)
+    # Get the day of year to plot
+    day = udata.get_DOY(this_date)
 
-        # Create the figure
-        fig = pplt.figure(refwidth=4)
-        ax = fig.subplots(nrows=2, ncols=3, proj='cyl')
-        # ax = fig.subplots(nrows=1, proj='cyl')
-        # Set the figure title
-        fig.suptitle(f'{var} emissions on ' + this_date, fontsize=16)
-        # Select medium resolution for features such as coastlines
-        pplt.rc.reso = 'med' 
+    # Create the figure
+    fig = pplt.figure(refwidth=4)
+    ax = fig.subplots(nrows=num_rows, ncols=3, proj='cyl')
+    # Set the figure title
+    fig.suptitle(f'{var} emissions on ' + this_date, fontsize=16)
+    # Select medium resolution for features such as coastlines
+    pplt.rc.reso = 'med' 
 
-        # Scale the color bar
-        if clr_bar_scale < 0 or clr_bar_scale > 1:
-            warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
-            clr_bar_scale = 0.5
-        if clr_bar_scale != 1:
-            halfrange *= clr_bar_scale
-            cb_extend = 'both'
-        else:
-            cb_extend = 'neither'
-        print('cb_extend:', cb_extend)
+    # Scale the color bar
+    if clr_bar_scale < 0 or clr_bar_scale > 1:
+        warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
+        clr_bar_scale = 0.5
+    if clr_bar_scale != 1:
+        halfrange *= clr_bar_scale
+        cb_extend = 'both'
+    else:
+        cb_extend = 'neither'
+    print('cb_extend:', cb_extend)
 
+    if stage1_only:
         # Add the subplots
-        # plot_npy_map(fig, ax, truth[day,:,:,0], lats, lons, halfrange, ax_title=f'{var} emissions (truth)')
         plot_npy_map(fig, ax[0,0], truth[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
         plot_npy_map(fig, ax[0,1], stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
         plot_npy_map(fig, ax[1,0], truth[day,:,:,0]-stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
@@ -373,63 +398,36 @@ def plot_stage_comp_maps(
         # Add one overall colorbar for the entire figure on the right-hand side
         cbar = make_colorbar(fig, ax[0,0].get_children()[0], f'{var} emissions (kg/m2/s)', num_ticks=9, cb_loc='l', cb_extend=cb_extend)
     else:
-        stage1 = np.load(unox.get_pred_data(stage=1, **pred_params))
-        stage2 = np.load(unox.get_pred_data(stage=2, **pred_params))
-        # Get the latitude and longitude values
-        lats, lons = unox.load_lats_lons()
-
-        if not isinstance(restrict_lat_lon_to, type(None)):
-            # Restrict range
-            [truth, stage1, stage2], lats, lons = udata.restrict_domain([truth, stage1, stage2], lats, lons, xr.open_dataset(restrict_lat_lon_to))
-        
-        # Get the minimum and maximum values across the truth, stage1, and stage2 arrays
-        vmin, vmax = udata.get_vminmax([truth, stage1, stage2])
-
-        # Get the halfrange for use with a diverging color map
-        halfrange = udata.get_max_abs_val([vmin, vmax])
-
-        # Get the day of year to plot
-        day = udata.get_DOY(this_date)
-
-        # Create the figure
-        fig = pplt.figure(refwidth=4)
-        ax = fig.subplots(nrows=2, ncols=3, proj='cyl')
-        # ax = fig.subplots(nrows=1, proj='cyl')
-        # Set the figure title
-        fig.suptitle(f'{var} emissions on ' + this_date, fontsize=16)
-        # Select medium resolution for features such as coastlines
-        pplt.rc.reso = 'med' 
-
-        # Scale the color bar
-        if clr_bar_scale < 0 or clr_bar_scale > 1:
-            warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
-            clr_bar_scale = 0.5
-        if clr_bar_scale != 1:
-            halfrange *= clr_bar_scale
-            cb_extend = 'both'
-        else:
-            cb_extend = 'neither'
-        print('cb_extend:', cb_extend)
+        # Create the output arrays for the stage comparison
+        out_arrs, overall_title = uplt_fmt.make_stage_comp_arrs(
+            in_arrs = {'truth': truth, 'stage1': stage1, 'stage2': stage2},
+            this_date = this_date,
+            var = var,
+            avg_over = avg_over
+        )
 
         # Add the subplots
-        # plot_npy_map(fig, ax, truth[day,:,:,0], lats, lons, halfrange, ax_title=f'{var} emissions (truth)')
-        plot_npy_map(fig, ax[0,0], truth[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
-        plot_npy_map(fig, ax[0,1], stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
-        plot_npy_map(fig, ax[0,2], stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
-        plot_npy_map(fig, ax[1,0], truth[day,:,:,0]-stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
-        plot_npy_map(fig, ax[1,1], truth[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
-        plot_npy_map(fig, ax[1,2], stage1[day,:,:,0]-stage2[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
+        plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
+        plot_npy_map(fig, ax[0,2], out_arrs['stage2'], lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
+        plot_npy_map(fig, ax[1,0], out_arrs['t_m_st1'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
+        plot_npy_map(fig, ax[1,1], out_arrs['t_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
+        plot_npy_map(fig, ax[1,2], out_arrs['st1_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
 
-        # Add one overall colorbar for the entire figure on the right-hand side
-        cbar = make_colorbar(fig, ax[0,0].get_children()[0], f'{var} emissions ({units})', num_ticks=9, cb_loc='l', cb_extend=cb_extend)
+    # Get the variable label and units
+    var_label, var_units = uplt_fmt.get_var_label_and_units(var)
+    # Add one overall colorbar for the entire figure on the right-hand side
+    cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='l', cb_extend=cb_extend)
     return fig
 
-def make_colorbar(fig,
-                  cb_ax,
-                  cb_label,
-                  num_ticks=9,
-                  cb_loc='l',
-                  cb_extend='neither'):
+def make_colorbar(
+    fig,
+    cb_ax,
+    cb_label,
+    num_ticks=9,
+    cb_loc='l',
+    cb_extend='neither',
+    ):
     """Creates a colorbar for the given figure and axes.
 
     Parameters
@@ -465,16 +463,17 @@ def make_colorbar(fig,
     cbar.update_ticks()
     return cbar
 
-def plot_comparison(npy_a, 
-                    npy_b,
-                    label_a='Array A',
-                    label_b='Array B',
-                    ax=None,
-                    hist_params={'bins':100, 'vmax':1000, 'vmin':10},
-                    cmap=pplt.Colormap('viridis'),
-                    log_scale=True,
-                    set_under_val=1,
-                    ):
+def plot_comparison(
+    npy_a, 
+    npy_b,
+    label_a='Array A',
+    label_b='Array B',
+    ax=None,
+    hist_params={'bins':100, 'vmax':1000, 'vmin':10},
+    cmap=pplt.Colormap('viridis'),
+    log_scale=True,
+    set_under_val=1,
+    ):
     """
     Plot a comparison of two numpy arrays.
 
@@ -563,13 +562,14 @@ def plot_comparison(npy_a,
     else:
         return q
 
-def plot_true_pred_comp(truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input_path':'sample_data'},
-                        pred_data={'stage':1, 'HPC_run':'test_unet_601760', 'year':2019},
-                        hist_params={'bins':100, 'vmax':1000, 'vmin':10},
-                        restrict_lat_lon_to=None,
-                        var='NOx',
-                        units='ppb',
-                        ):
+
+def plot_true_pred_comp(
+    truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input_path':'sample_data'},
+    pred_data={'stage':1, 'HPC_run':'test_unet_601760', 'year':2019},
+    hist_params={'bins':100, 'vmax':1000, 'vmin':10},
+    restrict_lat_lon_to=None,
+    var='nox',
+    ):
     """Plot a comparison of the truth and predicted data.
 
     Creates a correlation plot of the stage 1 data (truth) and the
@@ -618,15 +618,16 @@ def plot_true_pred_comp(truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input
                            hist_params=hist_params)
     return fig
 
-def plot_npy_hist(npy_arr,
-                  ax=None,
-                  n_bins=100,
-                  xlabel='NOx emissions (kg/m2/s)',
-                  ylabel='Frequency',
-                  title=None,
-                  log_scale=False,
-                  clr='blue'
-                  ):
+def plot_npy_hist(
+    npy_arr,
+    ax=None,
+    n_bins=100,
+    xlabel='NOx emissions (kg/m2/s)',
+    ylabel='Frequency',
+    title=None,
+    log_scale=False,
+    clr='blue',
+    ):
     """Plots a histogram of the given numpy array.
 
     Creates a histogram of the given numpy array on the given axis, or
@@ -691,11 +692,12 @@ def plot_npy_hist(npy_arr,
     else:
         return ax
 
-def plot_npy_diff(npy_a,
-                  npy_b,
-                  title=None,
-                  filename=None
-                  ):
+def plot_npy_diff(
+    npy_a,
+    npy_b,
+    title=None,
+    filename=None,
+    ):
     """Plots the difference between two numpy arrays.
 
     Assuming the npy arrays have dimensions (time, lat, lon), creates a heatmap of number of differences for all time across lat vs. lon and the number of differences for all locations across time.
@@ -801,9 +803,9 @@ def compare_input_files(
     stage=1,
     x_or_y='y',
     x_var='no2',
-    old_dir='sample_data',
-    new_dir='inputfiles',
-    abs_tolerance=2e-5
+    old_dir='no2_sample_input',
+    new_dir='no2_input_test0',
+    abs_tolerance=2e-5,
     ):
     """
     Compares new and old input files for the given year and stage.
@@ -827,8 +829,8 @@ def compare_input_files(
         The absolute tolerance for comparing the input files. Default is 2e-5.
     """
     # Assemble the paths to the old and new input files
-    old_filepath = f'{old_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
-    new_filepath = f'{new_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
+    old_filepath = f'inputfiles/{old_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
+    new_filepath = f'inputfiles/{new_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
     # Verify the file paths
     old_filepath = unox.verify_path(old_filepath)
     new_filepath = unox.verify_path(new_filepath)
@@ -854,6 +856,6 @@ def compare_input_files(
         if np.allclose(old_input, new_input, atol=abs_tolerance):
             print("The input files are similar within the absolute tolerance of", abs_tolerance)
         else:
-            print("The input files more different than the tolerance of",abs_tolerance)
+            print("The input files differ more than the tolerance of",abs_tolerance)
         # Plot the differences
         return plot_npy_diff(old_input, new_input, title=str(x_or_y).capitalize()+f'_{year} old vs '+ str(x_or_y).capitalize()+f'_{year} new')
