@@ -10,9 +10,16 @@ try:
 except:
   savedir = 'HPC_runs/test_unet/'  #directory to save output in
 
-# Load second input argument, if it exists: the version of the code to use
+# Load second input argument, if it exists: the input files to use
 try:
-  version = int(sys.argv[2])
+  inputfiles = int(sys.argv[2])
+except:
+  inputfiles = 'no2_sample_input'
+print('Running python script with inputfiles:', inputfiles)
+
+# Load third input argument, if it exists: the version of the code to use
+try:
+  version = int(sys.argv[3])
 except:
   version = 1
 print('Running python script with version:', version)
@@ -62,8 +69,8 @@ unet.summary()
 # Stage-1 training
 ## Load stage-1 data sets
 
-x_files = sorted(glob.glob('inputfiles/stage1/x/X_20*.npy'))
-y_files = sorted(glob.glob('inputfiles/stage1/y/Y_20*.npy'))
+x_files = sorted(glob.glob(f'inputfiles/{inputfiles}/stage1/x/X_20*.npy'))
+y_files = sorted(glob.glob(f'inputfiles/{inputfiles}/stage1/y/Y_20*.npy'))
 
 
 xtrain_files, ytrain_files = x_files[:14], y_files[:14]
@@ -110,8 +117,8 @@ for x in xtest_files:
 # Stage-2 training
 ## Load stage-2 data sets
 
-x_files = sorted(glob.glob('inputfiles/stage2/x/X_20*.npy'))
-y_files = sorted(glob.glob('inputfiles/stage2/y/Y_20*.npy'))
+x_files = sorted(glob.glob(f'inputfiles/{inputfiles}/stage2/x/X_20*.npy'))
+y_files = sorted(glob.glob(f'inputfiles/{inputfiles}/stage2/y/Y_20*.npy'))
 print(x_files, y_files)
 xtrain_files, ytrain_files = x_files[:5], y_files[:5]
 xtrain = np.concatenate([ np.load(s) for s in xtrain_files], axis=0)

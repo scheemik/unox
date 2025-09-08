@@ -7,6 +7,7 @@
 # `-v 0` to run with the versions that are compatible with Mist.
 # Takes in optional arguments:
 #	$ bash HPC_job_submit.sh -j <job name> 			Default: current datetime
+#							 -i <inputfiles>        Default: no2_sample_input
 #							 -t <test run>			Default: True, run test_unet.sh
 #                            -v <version>           Default: 1, use updates
 #                            -c <cluster>           Default: trillium
@@ -15,11 +16,12 @@
 # DATETIME=`date +"%Y-%m-%d_%Hh%M"`
 
 # Having a ":" after a flag means an option is required to invoke that flag
-while getopts j:tv:c: option
+while getopts j:i:tv:c: option
 do
 	case "${option}"
 		in
 		j) JOBNAME=${OPTARG};;
+		i) INPUTFILES=${OPTARG};;
 		t) TEST=t;;
 		v) VERSION=${OPTARG};;
 		c) CLUSTER=${OPTARG};;
@@ -33,6 +35,13 @@ then
 	echo "-j, No name specified, using JOBNAME=$JOBNAME"
 else
 	echo "-j, Name specified, using JOBNAME=$JOBNAME"
+fi
+if [ -z "$INPUTFILES" ]
+then
+	INPUTFILES=1
+	echo "-i, No input files specified, using INPUTFILES=$INPUTFILES"
+else
+	echo "-i, Input files specified, using INPUTFILES=$INPUTFILES"
 fi
 if [ "$TEST" = t ]
 then
@@ -79,4 +88,4 @@ fi
 
 ###############################################################################
 # Submit job to queue
-sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -v $VERSION -c $CLUSTER
+sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -i $INPUTFILES -v $VERSION -c $CLUSTER
