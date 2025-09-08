@@ -86,11 +86,18 @@ def get_var_label_and_units(
     var_labels_and_units = {
         'lat': ('Latitude', r'$^\circ$N'),
         'lon': ('Longitude', r'$^\circ$E'),
+        ## NOx
         # t106 variables
         'nox': (r'Surface NO$_x$ emissions', r'kg N m$^{-2}$ s$^{-1}$'),
         # TROPESS variables
         'no2': (r'NO$_2$', 'ppt'), 
         'no2_tm1': (r'NO$_2$ at $t-1$', 'ppt'),
+        ## CO
+        # HEMCO variables
+        'EmisCO_Total': (r'CO emission flux (all sectors)', r'kg/m$^2$/s'),
+        # GEOS-Chem variables
+        'SpeciesConcVV_CO': (r'CO concentration', r'mol / mol dry'),
+        ## Meteorology
         # ERA5 variables
         'u10': ('10 metre U wind component', r'm s$^{-1}$'),
         'v10': ('10 metre V wind component', r'm s$^{-1}$'),
