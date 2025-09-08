@@ -25,6 +25,7 @@ def make_y_input_file(
     nan_fill=0,
     stage_2_cutoff=2013,
     output_dir='test_input',
+    **kwargs,
     ):
     """
     Create a y input file for the Unet model for the given year.
@@ -132,6 +133,7 @@ def make_x_input_file(
                     'blh': 1000},
     stage_2_cutoff=2013,
     output_dir='test_input',
+    **kwargs,
     ):
     """
     Create an x input file for the Unet model for the given year and stage.
