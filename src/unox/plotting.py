@@ -393,7 +393,7 @@ def plot_stage_comp_maps(
     if stage1_only:
         # Create the output arrays for the stage comparison
         out_arrs, overall_title = uplt_fmt.make_stage_comp_arrs(
-            in_arrs = {'truth': truth, 'stage1': stage1},
+            in_arrs = {'truth': data_list[0], 'stage1': data_list[1]},
             this_date = this_date,
             var = var,
             avg_over = avg_over,
@@ -407,7 +407,7 @@ def plot_stage_comp_maps(
     else:
         # Create the output arrays for the stage comparison
         out_arrs, overall_title = uplt_fmt.make_stage_comp_arrs(
-            in_arrs = {'truth': truth, 'stage1': stage1, 'stage2': stage2},
+            in_arrs = {'truth': data_list[0], 'stage1': data_list[1], 'stage2': data_list[2]},
             this_date = this_date,
             var = var,
             avg_over = avg_over,
