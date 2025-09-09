@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=1
-#SBATCH --time=3:00:00
+#SBATCH --time=2:00:00
 #SBATCH --mail-user=mikhail.schee@mail.utoronto.ca
 #SBATCH --mail-type=ALL
 #SBATCH --output=HPC_runs/%x/log_%x_%j.txt				# %x = job_name, %j = job_number
@@ -39,7 +39,7 @@ else
 fi
 if [ -z "$INPUTFILES" ]
 then
-	INPUTFILES=1
+	INPUTFILES='no2_sample_input'
 	echo "-i, No input files specified, using INPUTFILES=$INPUTFILES"
 else
 	echo "-i, Input files specified, using INPUTFILES=$INPUTFILES"

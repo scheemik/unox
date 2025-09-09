@@ -1,4 +1,7 @@
 #test code based on Unet_Chinese_NOx example_code.ipynb
+print('')
+print('Running test_unet.py')
+
 import numpy as np
 import glob
 import sys
@@ -9,10 +12,11 @@ try:
   savedir = sys.argv[1] + '/'
 except:
   savedir = 'HPC_runs/test_unet/'  #directory to save output in
+print('Running python script with savedir:', savedir)
 
 # Load second input argument, if it exists: the input files to use
 try:
-  inputfiles = int(sys.argv[2])
+  inputfiles = sys.argv[2]
 except:
   inputfiles = 'no2_sample_input'
 print('Running python script with inputfiles:', inputfiles)
