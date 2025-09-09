@@ -373,8 +373,6 @@ def plot_stage_comp_maps(
     # Create the figure
     fig = pplt.figure(refwidth=4)
     ax = fig.subplots(nrows=num_rows, ncols=3, proj='cyl')
-    # Set the figure title
-    fig.suptitle(f'{var} emissions on ' + this_date, fontsize=16)
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
 
@@ -390,17 +388,27 @@ def plot_stage_comp_maps(
     print('cb_extend:', cb_extend)
 
     if stage1_only:
+        # Create the output arrays for the stage comparison
+        out_arrs, overall_title = uplt_fmt.make_stage_comp_arrs(
+            in_arrs = {'truth': truth, 'stage1': stage1},
+            this_date = this_date,
+            var = var,
+            avg_over = avg_over,
+            stage1_only = True,
+        )
+
         # Add the subplots
-        plot_npy_map(fig, ax[0,0], truth[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
-        plot_npy_map(fig, ax[0,1], stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
-        plot_npy_map(fig, ax[0,2], truth[day,:,:,0]-stage1[day,:,:,0], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
+        plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
+        plot_npy_map(fig, ax[0,2], out_arrs['t_m_st1'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
     else:
         # Create the output arrays for the stage comparison
         out_arrs, overall_title = uplt_fmt.make_stage_comp_arrs(
             in_arrs = {'truth': truth, 'stage1': stage1, 'stage2': stage2},
             this_date = this_date,
             var = var,
-            avg_over = avg_over
+            avg_over = avg_over,
+            stage1_only = False,
         )
 
         # Add the subplots
@@ -415,6 +423,8 @@ def plot_stage_comp_maps(
     var_label, var_units = uplt_fmt.get_var_label_and_units(var)
     # Add one overall colorbar for the entire figure on the right-hand side
     cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='l', cb_extend=cb_extend)
+    # Set the figure title
+    fig.suptitle(overall_title, fontsize=16)
     return fig
 
 def make_colorbar(
@@ -559,7 +569,6 @@ def plot_comparison(
     else:
         return q
 
-
 def plot_true_pred_comp(
     truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input_set':'sample_data'},
     pred_data={'stage':1, 'HPC_run':'test_unet_601760', 'year':2019},
@@ -600,6 +609,8 @@ def plot_true_pred_comp(
     --------
     >>> fig = plot_comparison(truth_arr, pred_arr)
     """
+    # Get the variable label and units
+    var_label, var_units = uplt_fmt.get_var_label_and_units(var)
     # Load the data
     truth = np.load(unox.get_input_data(**truth_data))  #truth (y input file)
     stage1 = np.load(unox.get_pred_data(**pred_data))  #stage 1 prediction
@@ -610,8 +621,8 @@ def plot_true_pred_comp(
     truths = truth.flatten()
     preds = stage1.flatten()
     fig = plot_comparison(truths, preds, 
-                           label_a=f"'Truth' surface {var} ({units})",
-                           label_b=f"Stage 1 surface {var} ({units})",      
+                           label_a=f"'Truth' surface {var_label} ({var_units})",
+                           label_b=f"Stage 1 surface {var_label} ({var_units})",      
                            hist_params=hist_params)
     return fig
 
