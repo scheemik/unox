@@ -244,7 +244,7 @@ def plot_npy_map(
     this_ax : matplotlib.axes.Axes
         The axes on which to plot the data.
     npy_arr : numpy.ndarray
-        The numpy array to plot. Expects the shape (len(lons), len(lats), 1).
+        The numpy array to plot. Expects the shape (len(lons), len(lats)).
     lats : numpy.ndarray
         The latitude coordinates of the data.
     lons : numpy.ndarray
@@ -267,6 +267,9 @@ def plot_npy_map(
     >>> fig, ax = pplt.subplots()
     >>> plot_npy_map(ax, npy_arr, lats, lons, title='NOx emissions')
     """
+    # Verify the dimensions of the numpy array
+    if npy_arr.shape != (len(lats), len(lons)):
+        raise ValueError(f"npy_arr must have shape (len(lats), len(lons)). Expected: ({len(lats)}, {len(lons)}), got: {npy_arr.shape}")
     # Plot the data
     if isinstance(c_halfrange, type(None)):
         pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=cmap, shading='auto', levels=100)
