@@ -221,5 +221,4 @@ def make_stage_comp_arrs(
         out_arrs['stage2'] = stage2[:,:,0]
         out_arrs['t_m_st2'] = t_m_st2[:,:,0]
         out_arrs['st1_m_st2'] = st1_m_st2[:,:,0]
-    print('overall title:', overall_title)
     return out_arrs, overall_title
