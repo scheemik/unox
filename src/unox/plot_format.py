@@ -86,11 +86,18 @@ def get_var_label_and_units(
     var_labels_and_units = {
         'lat': ('Latitude', r'$^\circ$N'),
         'lon': ('Longitude', r'$^\circ$E'),
+        ## NOx
         # t106 variables
         'nox': (r'Surface NO$_x$ emissions', r'kg N m$^{-2}$ s$^{-1}$'),
         # TROPESS variables
         'no2': (r'NO$_2$', 'ppt'), 
         'no2_tm1': (r'NO$_2$ at $t-1$', 'ppt'),
+        ## CO
+        # HEMCO variables
+        'EmisCO_Total': (r'CO emission flux (all sectors)', r'kg/m$^2$/s'),
+        # GEOS-Chem variables
+        'SpeciesConcVV_CO': (r'CO concentration', r'mol / mol dry'),
+        ## Meteorology
         # ERA5 variables
         'u10': ('10 metre U wind component', r'm s$^{-1}$'),
         'v10': ('10 metre V wind component', r'm s$^{-1}$'),
@@ -112,6 +119,7 @@ def make_stage_comp_arrs(
     this_date,
     var,
     avg_over=None,
+    stage1_only=False,
     ):
     """Create arrays for stage comparison plots.
 
@@ -132,6 +140,9 @@ def make_stage_comp_arrs(
     avg_over : str, numpy.timedelta64, or None
         If provided, averages the data over the specified time period.
         If None, takes just the time slice specified in `datetime`.
+    stage1_only : bool
+        If True, produce arrays just corresponding to stage 1. If False, produce arrays
+        for stage 1 and stage 2. Default is False.
 
     Returns
     -------
@@ -155,13 +166,17 @@ def make_stage_comp_arrs(
         # Get just that day from the numpy arrays
         truth = in_arrs['truth'][DOY, :, :, :]
         stage1 = in_arrs['stage1'][DOY, :, :, :]
-        stage2 = in_arrs['stage2'][DOY, :, :, :]
         # Get the differences
         t_m_st1 = truth - stage1
-        t_m_st2 = truth - stage2
-        st1_m_st2 = stage1 - stage2
         # Format a string for the title
         overall_title = var_label + ' on ' + this_date
+        # If including stage 2
+        if not stage1_only:
+            # Get just that day from the numpy arrays
+            stage2 = in_arrs['stage2'][DOY, :, :, :]
+            # Get the differences
+            t_m_st2 = truth - stage2
+            st1_m_st2 = stage1 - stage2
     # If averaging over a time period, get the end date
     else:
         # Add the increment to the date
@@ -175,18 +190,23 @@ def make_stage_comp_arrs(
         # Get just the data between those two days
         truth = in_arrs['truth'][DOY:DOY_end, :, :, :]
         stage1 = in_arrs['stage1'][DOY:DOY_end, :, :, :]
-        stage2 = in_arrs['stage2'][DOY:DOY_end, :, :, :]
         # Get the differences
         t_m_st1 = truth - stage1
-        t_m_st2 = truth - stage2
-        st1_m_st2 = stage1 - stage2
         # Take the average over the time period for all
         truth = truth.mean(axis=0)
         stage1 = stage1.mean(axis=0)
-        stage2 = stage2.mean(axis=0)
         t_m_st1 = t_m_st1.mean(axis=0)
-        t_m_st2 = t_m_st2.mean(axis=0)
-        st1_m_st2 = st1_m_st2.mean(axis=0)
+        # If including stage 2
+        if not stage1_only:
+            # Get just the data between those two days
+            stage2 = in_arrs['stage2'][DOY:DOY_end, :, :, :]
+            # Get the differences
+            t_m_st2 = truth - stage2
+            st1_m_st2 = stage1 - stage2
+            # Take the average over the time period for all
+            stage2 = stage2.mean(axis=0)
+            t_m_st2 = t_m_st2.mean(axis=0)
+            st1_m_st2 = st1_m_st2.mean(axis=0)
         # Get the value and unit of the averaging
         avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
         # Format a string for the title
@@ -195,8 +215,10 @@ def make_stage_comp_arrs(
     ## They only have one channel, so just select index 0
     out_arrs['truth']  = truth[:,:,0]
     out_arrs['stage1'] = stage1[:,:,0]
-    out_arrs['stage2'] = stage2[:,:,0]
     out_arrs['t_m_st1'] = t_m_st1[:,:,0]
-    out_arrs['t_m_st2'] = t_m_st2[:,:,0]
-    out_arrs['st1_m_st2'] = st1_m_st2[:,:,0]
+    # If including stage 2
+    if not stage1_only:
+        out_arrs['stage2'] = stage2[:,:,0]
+        out_arrs['t_m_st2'] = t_m_st2[:,:,0]
+        out_arrs['st1_m_st2'] = st1_m_st2[:,:,0]
     return out_arrs, overall_title

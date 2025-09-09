@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=1
-#SBATCH --time=3:00:00
+#SBATCH --time=2:00:00
 #SBATCH --mail-user=mikhail.schee@mail.utoronto.ca
 #SBATCH --mail-type=ALL
 #SBATCH --output=HPC_runs/%x/log_%x_%j.txt				# %x = job_name, %j = job_number
@@ -11,15 +11,17 @@
 # `-v 0` to run with the versions that are compatible with Mist.
 # Takes in optional arguments:
 #	$ sbatch test_unet.sh -j <job name> 				 Default: test_unet
+#                         -i <inputfiles>                Default: no2_sample_input
 #                         -v <version>                   Default: 1, use updates
 #                         -c <cluster>                   Default: trillium
 
 # Having a ":" after a flag means an option is required to invoke that flag
-while getopts j:v:c: option
+while getopts j:i:v:c: option
 do
 	case "${option}"
 		in
 		j) JOBNAME=${OPTARG};;
+		i) INPUTFILES=${OPTARG};;
 		v) VERSION=${OPTARG};;
 		c) CLUSTER=${OPTARG};;
 	esac
@@ -34,6 +36,13 @@ then
 	echo "-j, No name specified, using JOBNAME=$JOBNAME"
 else
 	echo "-j, Name specified, using JOBNAME=$JOBNAME"
+fi
+if [ -z "$INPUTFILES" ]
+then
+	INPUTFILES='no2_sample_input'
+	echo "-i, No input files specified, using INPUTFILES=$INPUTFILES"
+else
+	echo "-i, Input files specified, using INPUTFILES=$INPUTFILES"
 fi
 if [ -z "$VERSION" ]
 then
@@ -116,4 +125,4 @@ fi
 echo ""
 echo "Running $CODEFILE with savedir $SAVEDIR"
 echo ""
-python $CODEFILE $SAVEDIR $VERSION
+python $CODEFILE $SAVEDIR $INPUTFILES $VERSION

@@ -234,7 +234,8 @@ def get_input_data(
     stage=1, 
     x_or_y='y', 
     year=2019,
-    input_path='no2_sample_input',
+    input_set='no2_sample_input',
+    path_prefix='',
     ):
     """Get the path of a input data file.
 
@@ -249,8 +250,10 @@ def get_input_data(
         'x' or 'y' to specify the type of data.
     year : int
         Year of the data.
-    input_path : str
-        Relative path to the directory containing data files.
+    input_set : str
+        Name of the directory under `inputfiles/` containing the data files.
+    path_prefix : str
+        Prefix to the path to the directory containing data files.
     
     Returns
     -------
@@ -268,11 +271,11 @@ def get_input_data(
     if x_or_y not in ['x', 'y']:
         raise ValueError("x_or_y must be 'x' or 'y'.")
     # Build the file path
-    file_path = f'inputfiles/{input_path}/stage{stage}/{x_or_y}/{x_or_y.upper()}_{year}.npy'
+    file_path = f'{path_prefix}inputfiles/{input_set}/stage{stage}/{x_or_y}/{x_or_y.upper()}_{year}.npy'
     # Verify the path
     file_path = verify_path(file_path)
     # Find the available data files
-    data_files = show_available_data(f'inputfiles/{input_path}/')
+    data_files = show_available_data(f'{path_prefix}inputfiles/{input_set}/')
     # Check if the file exists
     if file_path not in data_files:
         raise FileNotFoundError(f"File {file_path} not found.")
@@ -282,6 +285,7 @@ def get_pred_data(
     stage=1, 
     HPC_run='test_unet_601760', 
     year=2019,
+    path_prefix='',
     ):
     """Get the path of a prediction data file.
 
@@ -296,6 +300,8 @@ def get_pred_data(
         ID of the HPC run.
     year : int
         Year of the data.
+    path_prefix : str
+        Prefix to the path to the directory containing data files.
 
     Returns
     -------
@@ -311,11 +317,11 @@ def get_pred_data(
     if stage not in [1, 2]:
         raise ValueError("Stage must be 1 or 2.")
     # Build the file path
-    file_path = f'HPC_runs/{HPC_run}/stage{stage}_output/pred_X_{year}.npy'
+    file_path = f'{path_prefix}HPC_runs/{HPC_run}/stage{stage}_output/pred_X_{year}.npy'
     # Verify the path
     file_path = verify_path(file_path)
     # Find the available data files
-    data_files = show_available_data('HPC_runs/')
+    data_files = show_available_data(f'{path_prefix}HPC_runs/')
     # Check if the file exists
     if file_path not in data_files:
         raise FileNotFoundError(f"File {file_path} not found.")
