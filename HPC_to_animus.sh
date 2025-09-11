@@ -6,20 +6,22 @@
 # To be run on Animus.
 # Takes in the following arguments:
 #	$ bash HPC_to_animus.sh -f <filename>      Ex: test_unet_601760
-#                           -j <HPC_job>       Look for HPC job based on filename
+#                           -j <HPC_job>       Wether to look for HPC job based on filename (default: False)
 #                           -c <cluster>       HPC cluster to transfer from (default: trillium)
+#                           -m <model>         Whether to copy model files (default: False)
 #
 # Note: Each file in list must be preceded by the -f flag. Ex:
 #	$ bash HPC_to_animus.sh -f test_file1 -f test_file2
 
 # Having a ":" after a flag means an option is required to invoke that flag
-while getopts "f:jc:" option;
+while getopts "f:jc:m" option;
 do
 	case $option
 		in
 		f) FILENAMES+=("$OPTARG");;
         j) HPC_JOB=j;;
-        c) CLUSTER=${OPTARG}
+        c) CLUSTER=${OPTARG};;
+        m) MODEL=m
 	esac
 done
 shift $((OPTIND -1))
@@ -43,6 +45,13 @@ then
 	echo "-j, Copying full HPC job directory for ${FILENAMES[*]} from $CLUSTER to Animus"
 else
 	DIR_PREFIX=""
+fi
+if [ "$MODEL" = m ]
+then
+	COPY_MODELS=1
+	echo "-m, Copying model files for ${FILENAMES[*]} from $CLUSTER to Animus"
+else
+	COPY_MODELS=0
 fi
 
 ###############################################################################
@@ -77,10 +86,14 @@ if [ "$HPC_JOB" = j ]; then
             echo "Directory .$DIR_PREFIX/$FILE does not exist, creating it."
             mkdir -p .$DIR_PREFIX/$FILE
         fi
-        # Copy just the log (.txt) file and the files in `stage1_output` and `stage2_output`
+        # Copy the log (.txt) file, the files in `stage1_output` and `stage2_output`,
+        # and the model files
         FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/*.txt "
         FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/stage1_output/ "
         FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/stage2_output/ "
+        if [ "$COPY_MODELS" = 1 ]; then
+            FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/*_model.h5 "
+        fi
         # Copy the files over
         scp -r -i $IDENTITY_FILE $USERNAME@$REMOTE_SERVER:"$FILES" .$DIR_PREFIX/$FILE
     done
