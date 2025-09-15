@@ -101,6 +101,7 @@ unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), batch_size=30, epoc
 
 # Save stage-1 model weights
 unet.save_model(savedir+'unet_stage1_model.h5')
+unet.save_model(savedir+'unet_stage1_model.keras')
 
 # Generate predictions for evaluation
 ### Load testing data sets
@@ -150,6 +151,7 @@ unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid),
 
 # Save stage-2 model weights
 unet.save_model(savedir+'unet_stage2_model.h5')
+unet.save_model(savedir+'unet_stage2_model.keras')
 
 
 # Generate predictions for evaluation
