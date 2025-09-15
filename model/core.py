@@ -6,6 +6,7 @@ from keras.layers import MaxPooling2D
 from keras.layers import concatenate
 # import tensorflow as tf
 
+@keras.saving.register_keras_serializable(package="unox", name="build_Unet")
 def build_Unet():
     inputs = Input( ( 56, 120, 9 ), name='model_input')
 
@@ -57,8 +58,7 @@ def build_Unet():
 
     return model
 
-
-
+@keras.saving.register_keras_serializable(package="unox")
 class Unet():
 
     def __init__(self):
