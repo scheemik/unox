@@ -48,7 +48,7 @@ then
 	LAUNCHER="test_unet.sh"
 	echo "-t, Test run specified, using LAUNCHER=$LAUNCHER"
 else
-	echo "No LAUNCHER specified, exiting"
+	echo "-t No LAUNCHER specified, exiting"
 	exit 1
 fi
 if [ -z "$VERSION" ]
