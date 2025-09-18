@@ -168,7 +168,8 @@ for x in xtest_files:
 #    pred = unet.predict(ynow)
 #    np.save(savedir+'stage2_output/ypred_' + y.split('/')[-1], pred)
 
-
+print('')
+print('Done running test_unet.py')
 
 
 
