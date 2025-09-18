@@ -9,56 +9,58 @@ import os
 
 # Load first input argument, if it exists: the save directory
 try:
-  savedir = sys.argv[1] + '/'
+    savedir = sys.argv[1] + '/'
 except:
-  savedir = 'HPC_runs/test_unet/'  #directory to save output in
+    savedir = 'HPC_runs/test_unet/'  #directory to save output in
 print('Running python script with savedir:', savedir)
 
 # Load second input argument, if it exists: the input files to use
 try:
-  inputfiles = sys.argv[2]
+    inputfiles = sys.argv[2]
 except:
-  inputfiles = 'no2_sample_input'
+    inputfiles = 'no2_sample_input'
 print('Running python script with inputfiles:', inputfiles)
 
 # Load third input argument, if it exists: the version of the code to use
 try:
-  version = int(sys.argv[3])
+    version = int(sys.argv[3])
 except:
-  version = 1
+    version = 1
 print('Running python script with version:', version)
 
 # Import packages based on version
 if version == 0: # keras v2.9.0, tensorflow v2.9.2
-  from utils.functions_old import r2_keras
-  from utils.functions_old import msenonzero
-  from utils.functions_old import data_split
-  from model.core_old import Unet
+    from utils.functions_old import r2_keras
+    from utils.functions_old import msenonzero
+    from utils.functions_old import data_split
+    from model.core_old import Unet
 elif version == 1: # keras v3.10.0, tensorflow v2.17.0
-  from utils.functions import r2_keras
-  from utils.functions import msenonzero
-  from utils.functions import data_split
-  from model.core import Unet
+    from utils.functions import r2_keras
+    from utils.functions import msenonzero
+    from utils.functions import data_split
+    from model.core import Unet
 from tensorflow.keras.optimizers import Adam
 from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 
 try:
-  os.mkdir(savedir)
+    os.mkdir(savedir)
 except FileExistsError:
-  print(savedir+' exists')
+    print(savedir+' exists')
 
 try:
-  os.mkdir(savedir+'stage1_output/')
+    os.mkdir(savedir+'stage1_output/')
 except FileExistsError:
-  print('stage1_output/ exists')
+    print('stage1_output/ exists')
 try:
-  os.mkdir(savedir+'stage2_output/')
+    os.mkdir(savedir+'stage2_output/')
 except FileExistsError:
-  print('stage2_output/ exists')
+    print('stage2_output/ exists')
 try:
-  os.mkdir(savedir+'checkpts/')
+    os.mkdir(savedir+'checkpts/')
 except FileExistsError:
-  print('checkpts/ exists')
+    print('checkpts/ exists')
+
+n_epochs = 250
 
 ##################################################################
 # Build and compile the Unet
@@ -97,11 +99,13 @@ csv_logger = CSVLogger( savedir+'unet_stage1_log.csv', append=True, separator=';
 earlystopper = EarlyStopping(patience=15, verbose=1)
 checkpointer = ModelCheckpoint(savedir+'checkpts/unet_checkpt_{val_loss:.2f}_{r2_keras:.2f}_stage1.h5', verbose=1, save_best_only=True)
 print("begin training stage 1")
-unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), batch_size=30, epochs=250, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
+unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), batch_size=30, epochs=n_epochs, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
 
 # Save stage-1 model weights
 unet.save_model(savedir+'unet_stage1_model.h5')
 unet.save_model(savedir+'unet_stage1_model.keras')
+
+exit(0)
 
 # Generate predictions for evaluation
 ### Load testing data sets
@@ -147,7 +151,7 @@ checkpointer = ModelCheckpoint(savedir+'checkpts/unet_checkpt_{val_loss:.2f}_{r2
 
 print('begin training stage 2')
 unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), 
-           batch_size=30, epochs=250, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
+           batch_size=30, epochs=n_epochs, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
 
 # Save stage-2 model weights
 unet.save_model(savedir+'unet_stage2_model.h5')
