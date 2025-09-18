@@ -1,3 +1,4 @@
+import keras
 from keras import Model, Input
 from keras.layers import LSTM, Permute, Reshape
 from keras.layers import Lambda

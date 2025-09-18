@@ -38,7 +38,7 @@ else
 fi
 if [ -z "$INPUTFILES" ]
 then
-	INPUTFILES=1
+	INPUTFILES='no2_sample_input'
 	echo "-i, No input files specified, using INPUTFILES=$INPUTFILES"
 else
 	echo "-i, Input files specified, using INPUTFILES=$INPUTFILES"
