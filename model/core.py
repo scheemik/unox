@@ -84,3 +84,13 @@ class Unet():
 
     def save_model(self, modelname):
         self.model.save(modelname)
+    
+    def get_config(self):
+        config = super().get_config()
+        # Update the config dictionary with any custom attributes
+        config.update(
+            {
+                'model': self.model,
+            }
+        )
+        return config
