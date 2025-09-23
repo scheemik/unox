@@ -92,7 +92,7 @@ if [ "$HPC_JOB" = j ]; then
         FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/stage1_output/ "
         FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/stage2_output/ "
         if [ "$COPY_MODELS" = 1 ]; then
-            FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/*_model.h5 "
+            FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/*_model* "
         fi
         # Copy the files over
         scp -r -i $IDENTITY_FILE $USERNAME@$REMOTE_SERVER:"$FILES" .$DIR_PREFIX/$FILE
