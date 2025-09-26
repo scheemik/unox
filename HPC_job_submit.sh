@@ -6,9 +6,9 @@
 # with updated versions of tensorflow and keras, which won't work on Mist. Use
 # `-v 0` to run with the versions that are compatible with Mist.
 # Takes in optional arguments:
-#	$ bash HPC_job_submit.sh -j <job name> 			Default: current datetime
+#	$ bash HPC_job_submit.sh -j <job name> 			Default: test_unet
 #							 -i <inputfiles>        Default: no2_sample_input
-#							 -t <test run>			Default: True, run test_unet.sh
+#							 -t <run type>			Default: test, other options: shap
 #                            -v <version>           Default: 1, use updates
 #                            -c <cluster>           Default: trillium
 
@@ -16,13 +16,13 @@
 # DATETIME=`date +"%Y-%m-%d_%Hh%M"`
 
 # Having a ":" after a flag means an option is required to invoke that flag
-while getopts j:i:tv:c: option
+while getopts j:i:t:v:c: option
 do
 	case "${option}"
 		in
 		j) JOBNAME=${OPTARG};;
 		i) INPUTFILES=${OPTARG};;
-		t) TEST=t;;
+		t) TYPE=${OPTARG};;
 		v) VERSION=${OPTARG};;
 		c) CLUSTER=${OPTARG};;
 	esac
@@ -43,14 +43,23 @@ then
 else
 	echo "-i, Input files specified, using INPUTFILES=$INPUTFILES"
 fi
-if [ "$TEST" = t ]
+if [ -z "$TYPE" ]
+then
+	TYPE="test"
+	echo "-t, No run type specified, using TYPE=$TYPE"
+fi
+if [ "$TYPE" = "test" ]
 then
 	LAUNCHER="test_unet.sh"
-	echo "-t, Test run specified, using LAUNCHER=$LAUNCHER"
+elif [ "$TYPE" = "shap" ]
+then
+	echo "-t, Run type specified, using TYPE=$TYPE"
+	LAUNCHER="src/unox/shap/shap_parallel.sh"
 else
-	echo "-t No LAUNCHER specified, exiting"
+	echo "Invalid run type specified. Use 'test' or 'shap'."
 	exit 1
 fi
+echo "    Using launcher script: $LAUNCHER"
 if [ -z "$VERSION" ]
 then
 	VERSION=1
@@ -69,20 +78,31 @@ fi
 # Check to see whether a directory exists for the job
 if [ ! -d "HPC_runs/$JOBNAME" ]
 then
+	if [ "$TYPE" = "shap" ]; then
+		echo "For SHAP jobs, please ensure that the run directory (HPC_runs/$JOBNAME) already exist."
+		echo "Exiting..."
+		exit 1
+	fi
 	echo "Creating directory for job $JOBNAME"
 	mkdir HPC_runs/$JOBNAME
 else
 	echo "Directory for job HPC_runs/$JOBNAME already exists"
-	echo "Would you like to overwrite it? (y/n)"
-	read -r answer
-	if [[ "$answer" == "y" || "$answer" == "Y" ]]
-	then
-		echo "Overwriting directory HPC_runs/$JOBNAME"
-		rm -rf HPC_runs/$JOBNAME
-		mkdir HPC_runs/$JOBNAME
+	if [ "$TYPE" = "shap" ]; then
+		echo "Directory for job HPC_runs/$JOBNAME exists"
+		echo "Proceeding..."
 	else
-		echo "Exiting without overwriting directory"
-		exit 1
+		echo "Directory for job HPC_runs/$JOBNAME already exists"
+		echo "Would you like to overwrite it? (y/n)"
+		read -r answer
+		if [[ "$answer" == "y" || "$answer" == "Y" ]]
+		then
+			echo "Overwriting directory HPC_runs/$JOBNAME"
+			rm -rf HPC_runs/$JOBNAME
+			mkdir HPC_runs/$JOBNAME
+		else
+			echo "Exiting without overwriting directory"
+			exit 1
+		fi
 	fi
 fi
 
