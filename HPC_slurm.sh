@@ -150,6 +150,6 @@ fi
 echo ""
 echo "Running $CODEFILE with savedir $SAVEDIR"
 echo ""
-echo "python $CODEFILE $SAVEDIR $INPUTFILES $VERSION"
+python $CODEFILE $SAVEDIR $INPUTFILES $VERSION
 
 deactivate
