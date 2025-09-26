@@ -47,19 +47,13 @@ if [ -z "$TYPE" ]
 then
 	TYPE="test"
 	echo "-t, No run type specified, using TYPE=$TYPE"
-fi
-if [ "$TYPE" = "test" ]
-then
-	LAUNCHER="test_unet.sh"
-elif [ "$TYPE" = "shap" ]
+elif [ "$TYPE" = "test" ] || [ "$TYPE" = "shap" ]
 then
 	echo "-t, Run type specified, using TYPE=$TYPE"
-	LAUNCHER="src/unox/shap/shap_parallel.sh"
 else
 	echo "Invalid run type specified. Use 'test' or 'shap'."
 	exit 1
 fi
-echo "    Using launcher script: $LAUNCHER"
 if [ -z "$VERSION" ]
 then
 	VERSION=1
@@ -86,7 +80,6 @@ then
 	echo "Creating directory for job $JOBNAME"
 	mkdir HPC_runs/$JOBNAME
 else
-	echo "Directory for job HPC_runs/$JOBNAME already exists"
 	if [ "$TYPE" = "shap" ]; then
 		echo "Directory for job HPC_runs/$JOBNAME exists"
 		echo "Proceeding..."
@@ -108,4 +101,4 @@ fi
 
 ###############################################################################
 # Submit job to queue
-sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -i $INPUTFILES -v $VERSION -c $CLUSTER
+sbatch --job-name=$JOBNAME HPC_slurm.sh -j $JOBNAME -i $INPUTFILES -t $TYPE -v $VERSION -c $CLUSTER
