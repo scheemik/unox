@@ -1,6 +1,6 @@
 #test code based on Unet_Chinese_NOx example_code.ipynb
 print('')
-print('Running test_unet.py')
+print('Running test_run.py')
 
 import numpy as np
 import glob
