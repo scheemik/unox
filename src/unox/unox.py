@@ -313,8 +313,42 @@ def get_one_input_var_array(
         if var in input_vars_dict[key][f'{x_or_y}_vars']:
             var_index = input_vars_dict[key][f'{x_or_y}_vars'].index(var)
             var_array = input_array[:, :, :, var_index]
-            return var_array
+            return var_array, var_index
     raise ValueError(f"Variable '{var}' not found in input_vars_dict: {input_vars_dict}")
+
+def get_one_t_input_var_array(
+    var,
+    this_date,
+    **kwargs,
+    ):
+    """
+    Get an array of a single variable at the given date from the given input file.
+
+    Parameters
+    ----------
+    var : str
+        Name of the variable to get.
+    this_date : np.datetime64 or str
+        Date and time to select from the data file.
+        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+    **kwargs : dict
+        Additional keyword arguments to pass to `get_input_data()`.
+        Should include `var`, `stage`, and `input_set`.
+    
+    Returns
+    -------
+    var_array : numpy.ndarray
+        Array of the specified variable at the given date.
+    """
+    # Get the year from the date
+    from unox.data import get_YMD_from_date, get_DOY
+    year, month, day = get_YMD_from_date(this_date)
+    # Get the input array for the year
+    year_array, index = get_one_input_var_array(var, year=year, **kwargs)
+    # Get the DOY from the date
+    doy = get_DOY(this_date)
+    # Return the array for that date
+    return year_array[doy, :, :]
 
 def get_pred_data(
     stage=1, 
