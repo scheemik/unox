@@ -61,7 +61,7 @@ except FileExistsError:
     print('checkpts/ exists')
 
 n_epochs = 250
-save_fmt = 'keras'
+save_fmt = 'both' # 'h5', 'keras', or 'both'
 
 ##################################################################
 # Build and compile the Unet
@@ -334,7 +334,12 @@ x_train, y_train, x_valid, y_valid = split_input_files(x_files, y_files, stage=2
 
 
 # Load the pre-trained model from stage-1
-unet.load_weights(f'{savedir}unet_stage1_model.{save_fmt}')
+if save_fmt in ['keras', 'both']:
+    unet.load_weights(f'{savedir}unet_stage1_model.keras')
+elif save_fmt in ['h5']:
+    unet.load_weights(f'{savedir}unet_stage1_model.h5')
+else:
+    raise ValueError(f"save_fmt must be 'h5', 'keras', or 'both', got {save_fmt}")
 
 
 # Stage-2 training of the Unet
