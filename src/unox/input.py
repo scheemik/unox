@@ -15,6 +15,53 @@ import unox.data as udata
 # insitu = Insitu data (EPA)
 # era5 = ERA5 reanalysis data
 
+# Define a dictionary of the variables to be used for each model variable
+era5_vars_list = ['u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
+input_vars_dict = {
+    'no2': {
+        'x_vars': ['no2', 'no2_tm1'] + era5_vars_list,
+        'y_vars': ['nox'],
+    },
+    'co': {
+        'x_vars': ['SpeciesConcVV_CO', 'SpeciesConcVV_CO_tm1'] + era5_vars_list,
+        'y_vars': ['EmisCO_Total'],
+    }
+}
+
+def x_or_y_var(
+    var,
+    ):
+    """
+    Return whether the given variable is an x or y variable.
+
+    Parameters
+    ----------
+    var : str
+        The variable to check.
+
+    Returns
+    -------
+    x_or_y : str
+        'x' if the variable is an x variable, 'y' if it is a y variable.
+    
+    Examples
+    --------
+    >>> x_or_y_var('no2')
+    'x'
+    >>> x_or_y_var('nox')
+    'y'
+    """
+    # Verify the variable is a string
+    if not isinstance(var, str):
+        raise TypeError(f'Variable must be a string, got {type(var)}.')
+    # Check if the variable is in the input_vars_dict
+    for key in input_vars_dict.keys():
+        if var in input_vars_dict[key]['x_vars']:
+            return 'x'
+        elif var in input_vars_dict[key]['y_vars']:
+            return 'y'
+    raise ValueError(f"Variable '{var}' not recognized. Available variables: {list(input_vars_dict.keys())}")
+
 def make_y_input_file(
     year,
     var='nox',
