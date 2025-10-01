@@ -286,6 +286,88 @@ def plot_npy_map(
     )
     return this_ax, pcm
 
+def plot_input_map(
+    input_set='no2_sample_input',
+    this_date='2019-07-19T00:00:00',
+    var='nox',
+    stage=1,
+    avg_over=None,
+    restrict_lat_lon_to=None,
+    cmap=pplt.Colormap('viridis'),
+    **kwargs,
+    ):
+    """Plots a map of input data for the specified variable and time.
+
+    Creates a map of the input data for the specified variable and time,
+    averaging over a time period if specified.
+
+    Parameters
+    ----------
+    input_set : str
+        The input set set to use. Default is 'no2_sample_input'.
+    this_date : np.datetime64 or str
+        Date and time to select from the data file.
+        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+    var : str
+        The variable being plotted. Default is 'nox'.
+        Y files contain ['nox']
+        X files contain ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
+    stage : int
+        The stage of the data to use (1 or 2). Default is 1.
+    avg_over : str, numpy.timedelta64, or None
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
+    restrict_lat_lon_to : str   
+        Path to a netCDF file to restrict the latitude and longitude range.
+        If None, the entire dataset is used.
+    **kwargs : dict
+        Additional keyword arguments to pass to the `plot_npy_map` function.
+    
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+    """
+    # Get the latitude and longitude values
+    lats, lons = unox.load_lats_lons()
+    # Get the variable's x or y designation and index
+    x_or_y = x_or_y_var(var)
+    var_idx = get_input_index(var)
+    # Get the date's DOY
+    doy = udata.get_DOY(this_date)
+
+    # Get the input filepath
+    input_filepath = unox.get_input_data(
+        stage=stage,
+        x_or_y=x_or_y,
+        year=int(this_date.split('-')[0]),
+        input_set=input_set,
+        **kwargs,
+    )
+    # Get the array to plot
+    array_to_plot = unox.get_one_t_input_var_array(
+        var,
+        this_date,
+        stage=stage,
+        input_set=input_set,
+    )
+    # Create the figure
+    fig = pplt.figure(refwidth=4)
+    ax = fig.subplots(nrows=1, ncols=1, proj='cyl')
+    # Select medium resolution for features such as coastlines
+    pplt.rc.reso = 'med' 
+    # Restrict the latitude and longitude range
+    if not isinstance(restrict_lat_lon_to, type(None)):
+        array_to_plot, lats, lons = udata.restrict_domain(array_to_plot, lats, lons, xr.open_dataset(restrict_lat_lon_to))
+    # Add the subplot
+    plot_npy_map(fig, ax, array_to_plot, lats=lats, lons=lons, cmap=cmap, **kwargs)
+    # Add a colorbar on the right-hand side
+    cbar = make_colorbar(fig, ax.get_children()[0], var+' ('+x_or_y+'_vars['+str(var_idx)+'])', num_ticks=9, cb_loc='r', cb_extend='neither')
+    # Set the figure title
+    overall_title = input_filepath + ' on DOY ' + str(doy)
+    fig.suptitle(overall_title, fontsize=title_font_size)
+    return fig
+
 def plot_stage_comp_maps(
     truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_set':'no2_sample_input'},
     pred_params={'HPC_run': 'test_unet_601760', 'year': 2019},
