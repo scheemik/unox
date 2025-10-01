@@ -281,6 +281,41 @@ def get_input_data(
         raise FileNotFoundError(f"File {file_path} not found.")
     return file_path
 
+def get_one_input_var_array(
+    var,
+    **kwargs,
+    ):
+    """
+    Get the array of a single input variable for a given year.
+
+    Parameters
+    ----------
+    var : str
+        Name of the variable to get.
+    **kwargs : dict
+        Additional keyword arguments to pass to `get_input_data()`.
+        Should include `stage`, `year`, and `input_set`.
+    
+    Returns
+    -------
+    var_array : numpy.ndarray
+        Array of the specified variable.
+    """
+    # Determine if the variable is an x or y variable
+    from unox.input import x_or_y_var, input_vars_dict
+    x_or_y = x_or_y_var(var)
+    # Get the file path
+    file_path = get_input_data(x_or_y=x_or_y, **kwargs)
+    # Load the array
+    input_array = np.load(file_path)
+    # Determine which var list `var` is in and at which index
+    for key in input_vars_dict.keys():
+        if var in input_vars_dict[key][f'{x_or_y}_vars']:
+            var_index = input_vars_dict[key][f'{x_or_y}_vars'].index(var)
+            var_array = input_array[:, :, :, var_index]
+            return var_array
+    raise ValueError(f"Variable '{var}' not found in input_vars_dict: {input_vars_dict}")
+
 def get_pred_data(
     stage=1, 
     HPC_run='test_unet_601760', 
