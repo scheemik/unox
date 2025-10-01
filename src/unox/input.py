@@ -62,6 +62,40 @@ def x_or_y_var(
             return 'y'
     raise ValueError(f"Variable '{var}' not recognized. Available variables in input_vars_dict: {input_vars_dict}")
 
+def get_input_index(
+    var,
+    ):
+    """
+    Get the index of the given variable in the input array.
+
+    Parameters
+    ----------
+    var : str
+        The variable to check.
+    
+    Returns
+    -------
+    index : int
+        The index of the variable in the input array.
+
+    Examples
+    --------
+    >>> get_input_index('no2')
+    0
+    >>> get_input_index('u10')
+    2
+    """
+    # Verify the variable is a string
+    if not isinstance(var, str):
+        raise TypeError(f'Variable must be a string, got {type(var)}.')
+    # Check if the variable is in the input_vars_dict
+    for key in input_vars_dict.keys():
+        if var in input_vars_dict[key]['x_vars']:
+            return input_vars_dict[key]['x_vars'].index(var)
+        elif var in input_vars_dict[key]['y_vars']:
+            return input_vars_dict[key]['y_vars'].index(var)
+    raise ValueError(f"Variable '{var}' not recognized. Available variables in input_vars_dict: {input_vars_dict}")
+
 def make_y_input_file(
     year,
     var='nox',
@@ -151,7 +185,7 @@ def make_y_input_file(
             year=year,
             x_or_y='y',
             attr_dict={
-                'var': var,
+                'vars': var,
                 'emiss_dir': emiss_dir,
                 'emiss_pre': emiss_pre,
                 'emiss_post': emiss_post,
@@ -277,7 +311,7 @@ def make_x_input_file(
     datasets.append(previousday[chemra_var_tm1][:-1])  # day t-1
 
     # Add the other variables from the ERA5 dataset
-    for variable in ['u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']:
+    for variable in era5_vars_list:
         # Assemble the file path for the ERA5 variable
         era5_var_filepath = os.path.join(data_dir, f'{era5_path}{year}{variable}.nc')
         # Verify the path
@@ -323,6 +357,7 @@ def make_x_input_file(
             year=year,
             x_or_y='x',
             attr_dict={
+                'vars': datavars,
                 'data_dir': data_dir,
                 'chemra_path': chemra_path,
                 'insitu_path': insitu_path,
