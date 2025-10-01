@@ -1,3 +1,4 @@
+import keras
 from keras import Model, Input
 from keras.layers import LSTM, Permute, Reshape
 from keras.layers import Lambda
@@ -6,6 +7,7 @@ from keras.layers import MaxPooling2D
 from keras.layers import concatenate
 # import tensorflow as tf
 
+@keras.saving.register_keras_serializable(package="unox", name="build_Unet")
 def build_Unet():
     inputs = Input( ( 56, 120, 9 ), name='model_input')
 
@@ -57,8 +59,7 @@ def build_Unet():
 
     return model
 
-
-
+@keras.saving.register_keras_serializable(package="unox")
 class Unet():
 
     def __init__(self):
@@ -84,3 +85,13 @@ class Unet():
 
     def save_model(self, modelname):
         self.model.save(modelname)
+    
+    def get_config(self):
+        config = super().get_config()
+        # Update the config dictionary with any custom attributes
+        config.update(
+            {
+                'model': self.model,
+            }
+        )
+        return config

@@ -5,7 +5,7 @@ import xarray as xr
 def test_pad_extent():
     """Test the pad_extent function."""
     # Get extent from sample netcdf
-    nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
+    nox = xr.open_dataset('datafiles/sample_data/nox_2019_t106_US.nc')
     nox_extent = udata.get_extent(nox)
     # Define valid and expected outputs
     inputs_pad_expected = [

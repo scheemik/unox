@@ -94,11 +94,11 @@ def test_get_input_data():
     # Test with valid parameters
     expected = 'inputfiles/no2_sample_input/stage1/y/Y_2019.npy'
     valid_params = [
-        {'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path': 'no2_sample_input'},
+        {'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_set': 'no2_sample_input'},
         {'stage': 1, 'x_or_y': 'y', 'year': 2019},
-        {'stage': 1, 'x_or_y': 'y', 'input_path': 'no2_sample_input'},
-        {'stage': 1, 'year': 2019, 'input_path': 'no2_sample_input'},
-        {'x_or_y': 'y', 'year': 2019, 'input_path': 'no2_sample_input'}
+        {'stage': 1, 'x_or_y': 'y', 'input_set': 'no2_sample_input'},
+        {'stage': 1, 'year': 2019, 'input_set': 'no2_sample_input'},
+        {'x_or_y': 'y', 'year': 2019, 'input_set': 'no2_sample_input'}
         ]
     for params in valid_params:
         actual = unox.get_input_data(**params)
@@ -106,10 +106,10 @@ def test_get_input_data():
     
     # Test with invalid parameters
     invalid_params = [
-        {'stage': 3, 'x_or_y': 'y', 'year': 2019, 'input_path': 'no2_sample_input'},
-        {'stage': 1, 'x_or_y': 'z', 'year': 2019, 'input_path': 'no2_sample_input'},
-        {'stage': 1, 'x_or_y': 'y', 'year': -1, 'input_path': 'no2_sample_input'},
-        {'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_path': 'not_a_valid_path'}
+        {'stage': 3, 'x_or_y': 'y', 'year': 2019, 'input_set': 'no2_sample_input'},
+        {'stage': 1, 'x_or_y': 'z', 'year': 2019, 'input_set': 'no2_sample_input'},
+        {'stage': 1, 'x_or_y': 'y', 'year': -1, 'input_set': 'no2_sample_input'},
+        {'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_set': 'not_a_valid_path'}
         ]
     for params in invalid_params:
         try:
