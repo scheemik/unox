@@ -99,7 +99,8 @@ then
 			exit 1
 		fi
 		module load StdEnv/2020 gcc/9.3.0 python/3.8.10 cuda/11.4
-		ENVDIR="/home/mschee/.virtualenvs/unoxTrillium"
+		ENVNAME="unoxTrillium"
+		ENVDIR="/home/mschee/.virtualenvs/$ENVNAME"
 	elif [ "$VERSION" = 1 ]
 	then
 		echo "-v $VERSION, using updated code"
