@@ -8,7 +8,7 @@
 # Takes in optional arguments:
 #	$ bash HPC_job_submit.sh -j <job name> 			Default: test_unet
 #							 -i <inputfiles>        Default: no2_sample_input
-#							 -t <run type>			Default: test, other options: shap
+#							 -t <run type>			Default: test, other options: pred
 #                            -v <version>           Default: 1, use updates
 #                            -c <cluster>           Default: trillium
 
@@ -47,13 +47,20 @@ if [ -z "$TYPE" ]
 then
 	TYPE="test"
 	echo "-t, No run type specified, using TYPE=$TYPE"
-elif [ "$TYPE" = "test" ] || [ "$TYPE" = "shap" ]
+	LAUNCHER='HPC_GPU_slurm.sh'
+elif [ "$TYPE" = "test" ] 
 then
 	echo "-t, Run type specified, using TYPE=$TYPE"
+	LAUNCHER='HPC_GPU_slurm.sh'
+elif [ "$TYPE" = "pred" ]
+then
+	echo "-t, Run type specified, using TYPE=$TYPE"
+	LAUNCHER='HPC_CPU_slurm.sh'
 else
-	echo "Invalid run type specified. Use 'test' or 'shap'."
+	echo "Invalid run type specified. Use 'test' or 'pred'."
 	exit 1
 fi
+echo "    Using LAUNCHER=$LAUNCHER"
 if [ -z "$VERSION" ]
 then
 	VERSION=1
@@ -72,15 +79,15 @@ fi
 # Check to see whether a directory exists for the job
 if [ ! -d "HPC_runs/$JOBNAME" ]
 then
-	if [ "$TYPE" = "shap" ]; then
-		echo "For SHAP jobs, please ensure that the run directory (HPC_runs/$JOBNAME) already exist."
+	if [ "$TYPE" = "pred" ]; then
+		echo "For prediction jobs, please ensure that the run directory (HPC_runs/$JOBNAME) already exist."
 		echo "Exiting..."
 		exit 1
 	fi
 	echo "Creating directory for job $JOBNAME"
 	mkdir HPC_runs/$JOBNAME
 else
-	if [ "$TYPE" = "shap" ]; then
+	if [ "$TYPE" = "pred" ]; then
 		echo "Directory for job HPC_runs/$JOBNAME exists"
 		echo "Proceeding..."
 	else
@@ -101,4 +108,4 @@ fi
 
 ###############################################################################
 # Submit job to queue
-sbatch --job-name=$JOBNAME HPC_slurm.sh -j $JOBNAME -i $INPUTFILES -t $TYPE -v $VERSION -c $CLUSTER
+sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -i $INPUTFILES -t $TYPE -v $VERSION -c $CLUSTER

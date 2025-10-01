@@ -12,7 +12,7 @@
 # Takes in optional arguments:
 #	$ sbatch test_unet.sh -j <job name> 				Default: test_unet
 #                         -i <inputfiles>               Default: no2_sample_input
-#						  -t <run type>					Default: test, other options: shap
+#						  -t <run type>					Default: test, other options: pred
 #                         -v <version>                  Default: 1, use updates
 #                         -c <cluster>                  Default: trillium
 
@@ -55,13 +55,13 @@ then
 	echo "-t, Run type specified, using TYPE=$TYPE"
 	CODEFILE='src/unox/HPC_scripts/test_run.py'
 	echo "    Using CODEFILE=$CODEFILE"
-elif [ "$TYPE" = "shap" ]
+elif [ "$TYPE" = "pred" ]
 then
 	echo "-t, Run type specified, using TYPE=$TYPE"
-	CODEFILE='src/unox/HPC_scripts/shap_parallel.py'
+	CODEFILE='src/unox/HPC_scripts/pred_parallel.py'
 	echo "    Using CODEFILE=$CODEFILE"
 else
-	echo "Invalid run type specified. Use 'test' or 'shap'."
+	echo "Invalid run type specified. Use 'test' or 'pred'."
 	exit 1
 fi
 if [ -z "$VERSION" ]
@@ -69,9 +69,9 @@ then
 	VERSION=1
 	echo "-v, No version specified, using VERSION=$VERSION"
 else
-	if [ "$TYPE" = "shap" ]
+	if [ "$TYPE" = "pred" ]
 	then
-		echo "-v, shap type run, using VERSION=$VERSION"
+		echo "-v, pred type run, using VERSION=$VERSION"
 	else
 		echo "-v, Version specified, using VERSION=$VERSION"
 	fi
@@ -92,9 +92,9 @@ then
 	if [ "$VERSION" = 0 ]
 	then
 		echo "-v $VERSION, using original code"
-		if [ "$TYPE" = "shap" ]
+		if [ "$TYPE" = "pred" ]
 		then
-			echo "Original code not supported with shap"
+			echo "Original code not supported with pred"
 			echo "Exiting..."
 			exit 1
 		fi
@@ -104,12 +104,7 @@ then
 	then
 		echo "-v $VERSION, using updated code"
 		module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6
-		if [ "$TYPE" = "shap" ]
-		then
-			ENVNAME="unoxSHAP"
-		else
-			ENVNAME="unoxTrilliumNew"
-		fi
+		ENVNAME="unoxTrilliumNew"
 		ENVDIR="/home/mschee/.virtualenvs/$ENVNAME"
 	else
 		echo "Version $VERSION not recognized, exiting"
