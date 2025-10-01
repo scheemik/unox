@@ -60,7 +60,7 @@ def x_or_y_var(
             return 'x'
         elif var in input_vars_dict[key]['y_vars']:
             return 'y'
-    raise ValueError(f"Variable '{var}' not recognized. Available variables: {list(input_vars_dict.keys())}")
+    raise ValueError(f"Variable '{var}' not recognized. Available variables in input_vars_dict: {input_vars_dict}")
 
 def make_y_input_file(
     year,
