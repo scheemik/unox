@@ -17,7 +17,6 @@ scipy = ">=1.8.1"
 matplotlib = ">=3.4.3"
 netcdf4 = ">=1.6.2"
 numpy = "<2"
-shap = "^0.48.0"
 tensorflow = "2.17.0"
 
 
