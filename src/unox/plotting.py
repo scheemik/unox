@@ -10,6 +10,9 @@ from scipy.stats import linregress
 from unox import unox
 from unox import data as udata
 from unox import plot_format as uplt_fmt
+from unox.input import x_or_y_var, get_input_index
+
+title_font_size = 12
 
 def plot_extent(
     xr_dataset='/datafiles/nox_2019_t106_US.nc',
@@ -509,7 +512,7 @@ def plot_stage_comp_maps(
     # Add one overall colorbar for the entire figure on the right-hand side
     cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='l', cb_extend=cb_extend)
     # Set the figure title
-    fig.suptitle(overall_title, fontsize=16)
+    fig.suptitle(overall_title, fontsize=title_font_size)
     return fig
 
 def make_colorbar(
@@ -894,8 +897,7 @@ def plot_npy_diff(
 def compare_input_files(
     year=2019,
     stage=1,
-    x_or_y='y',
-    x_var='no2',
+    var='no2',
     old_dir='no2_sample_input',
     new_dir='no2_input_test0',
     abs_tolerance=2e-5,
@@ -909,11 +911,9 @@ def compare_input_files(
         The year for which to compare the input files.
     stage : int
         The stage of the input files to compare.
-    x_or_y : str
-        The type of input file to compare ('x' or 'y').
-    x_var : str
-        The variable to pull out if the input file is an x input file. Default is 'no2'. 
-        Choose from ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
+    var : str
+        The variable to pull out of the input file. Default is 'no2'. 
+        Choose from the input_vars_dict
     old_dir : str
         The directory containing the old input files.
     new_dir : str
@@ -921,6 +921,10 @@ def compare_input_files(
     abs_tolerance : float
         The absolute tolerance for comparing the input files. Default is 2e-5.
     """
+    from unox.input import x_or_y_var, get_input_index
+    # Get the x_or_y and index of the variable
+    x_or_y = x_or_y_var(var)
+    input_idx = get_input_index(var)
     # Assemble the paths to the old and new input files
     old_filepath = f'inputfiles/{old_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
     new_filepath = f'inputfiles/{new_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
@@ -930,20 +934,15 @@ def compare_input_files(
     # Load the old and new input files
     old_input = np.load(old_filepath)
     new_input = np.load(new_filepath)
-    # Pull out a variable if it is an x input file
-    if x_or_y == 'x':
-        x_vars = ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
-        # Find the index of the chosen variable
-        x_var_index = x_vars.index(x_var)
-        # Pull out just that variable from both arrays
-        old_input = old_input[..., x_var_index]
-        new_input = new_input[..., x_var_index]
+    # Pull out just the chosen variable from both arrays
+    old_input = old_input[..., input_idx]
+    new_input = new_input[..., input_idx]
     # Output the shapes
-    print(f"Shape of {old_filepath}: \n\t{old_input.shape}")
-    print(f"Shape of {new_filepath}: \n\t{new_input.shape}")
+    print(f"Shape of {var} in {old_filepath}: \n\t{old_input.shape}")
+    print(f"Shape of {var} in {new_filepath}: \n\t{new_input.shape}")
     # Are the arrays different?
     if np.array_equal(old_input, new_input):
-        print("The input files are the same.")
+        print(f"The input files are the same for {var}.")
         return None
     else:
         if np.allclose(old_input, new_input, atol=abs_tolerance):
@@ -951,4 +950,6 @@ def compare_input_files(
         else:
             print("The input files differ more than the tolerance of",abs_tolerance)
         # Plot the differences
-        return plot_npy_diff(old_input, new_input, title=str(x_or_y).capitalize()+f'_{year} old vs '+ str(x_or_y).capitalize()+f'_{year} new')
+        caps_x_or_y = str(x_or_y).capitalize()
+        overall_title = f'{old_filepath} (old) vs {new_filepath} (new) for {var}'
+        return plot_npy_diff(old_input, new_input, title=overall_title)
