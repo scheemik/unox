@@ -65,15 +65,15 @@ def verify_path(
     if not isinstance(path, str):
         raise TypeError("Path must be a string.")
     if not os.path.exists(path):
-        path = '..' + path
-        if not os.path.exists(path):
-            path = '../' + path[2:]
-            if not os.path.exists(path):
+        path0 = '..' + path
+        if not os.path.exists(path0):
+            path1 = '../' + path
+            if not os.path.exists(path1):
                 raise FileNotFoundError(f"Path {path} does not exist.")
             else:
-                return path
+                return path1
         else:
-            return path
+            return path0
     else:
         return path
 
