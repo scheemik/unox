@@ -352,7 +352,7 @@ def get_one_t_input_var_array(
 
 def get_pred_data(
     stage=1, 
-    HPC_run='test_unet_601760', 
+    HPC_run='no2_example_run', 
     year=2019,
     path_prefix='',
     ):
@@ -379,8 +379,8 @@ def get_pred_data(
 
     Examples
     --------
-    >>> file_path = get_pred_data(stage=1, HPC_run='test_unet_601760', year=2019)
-    '../HPC_runs/test_unet_601760/stage1_output/pred_X_2019.npy'
+    >>> file_path = get_pred_data(stage=1, HPC_run='no2_example_run', year=2019)
+    '../HPC_runs/no2_example_run/stage1_output/pred_X_2019.npy'
     """
     # Verify the stage value
     if stage not in [1, 2]:
