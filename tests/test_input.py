@@ -4,6 +4,58 @@ import numpy as np
 import os
 import json
 
+def test_x_or_y_var():
+    """Test the x_or_y_var function."""
+    # Make lists of valid inputs
+    valid_x_vars = []
+    valid_y_vars = []
+    for key in uin.input_vars_dict.keys():
+        valid_x_vars += uin.input_vars_dict[key]['x_vars']
+        valid_y_vars += uin.input_vars_dict[key]['y_vars']
+    # Test valid x variables
+    for var in valid_x_vars:
+        assert uin.x_or_y_var(var) == 'x', f"x_or_y_var did not return 'x' for valid x variable '{var}'"
+    # Test valid y variables
+    for var in valid_y_vars:
+        assert uin.x_or_y_var(var) == 'y', f"x_or_y_var did not return 'y' for valid y variable '{var}'"
+    # Make lists of invalid inputs
+    invalid_vars = [None, '', 'not_a_var', 123, True, False, [], {}]
+    # Test invalid variables
+    for var in invalid_vars:
+        try:
+            uin.x_or_y_var(var)
+        except (TypeError, ValueError) as e:
+            assert True, f"x_or_y_var raised an exception on invalid input '{var}': {e}"
+        else:
+            assert False, f"x_or_y_var did not raise an exception on invalid input '{var}'"
+
+def test_get_input_index():
+    """Test the get_input_index function."""
+    # Loop across the keys in the input variable dictionary
+    for key in uin.input_vars_dict.keys():
+        valid_x_vars = uin.input_vars_dict[key]['x_vars']
+        valid_y_vars = uin.input_vars_dict[key]['y_vars']
+        # Test valid x variables
+        for i in range(len(valid_x_vars)):
+            var = valid_x_vars[i]
+            index = uin.get_input_index(var)
+            assert index == i, f"get_input_index returned {index} instead of {i} for valid x variable '{var}'"
+        # Test valid y variables
+        for i in range(len(valid_y_vars)):
+            var = valid_y_vars[i]
+            index = uin.get_input_index(var)
+            assert index == i, f"get_input_index returned {index} instead of {i} for valid y variable '{var}'"
+    # Make lists of invalid inputs
+    invalid_vars = [None, '', 'not_a_var', 123, True, False, [], {}]
+    # Test invalid variables
+    for var in invalid_vars:
+        try:
+            uin.get_input_index(var)
+        except (TypeError, ValueError) as e:
+            assert True, f"get_input_index raised an exception on invalid input '{var}': {e}"
+        else:
+            assert False, f"get_input_index did not raise an exception on invalid input '{var}'"
+
 def test_make_y_input_file():
     """Test the make_y_input_file function."""
     # Set the arguments for a test run

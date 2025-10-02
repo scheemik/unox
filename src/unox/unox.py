@@ -65,15 +65,15 @@ def verify_path(
     if not isinstance(path, str):
         raise TypeError("Path must be a string.")
     if not os.path.exists(path):
-        path = '..' + path
-        if not os.path.exists(path):
-            path = '../' + path[2:]
-            if not os.path.exists(path):
+        path0 = '..' + path
+        if not os.path.exists(path0):
+            path1 = '../' + path
+            if not os.path.exists(path1):
                 raise FileNotFoundError(f"Path {path} does not exist.")
             else:
-                return path
+                return path1
         else:
-            return path
+            return path0
     else:
         return path
 
@@ -281,9 +281,78 @@ def get_input_data(
         raise FileNotFoundError(f"File {file_path} not found.")
     return file_path
 
+def get_one_input_var_array(
+    var,
+    **kwargs,
+    ):
+    """
+    Get the array of a single input variable for a given year.
+
+    Parameters
+    ----------
+    var : str
+        Name of the variable to get.
+    **kwargs : dict
+        Additional keyword arguments to pass to `get_input_data()`.
+        Should include `stage`, `year`, and `input_set`.
+    
+    Returns
+    -------
+    var_array : numpy.ndarray
+        Array of the specified variable.
+    """
+    # Determine if the variable is an x or y variable
+    from unox.input import x_or_y_var, input_vars_dict
+    x_or_y = x_or_y_var(var)
+    # Get the file path
+    file_path = get_input_data(x_or_y=x_or_y, **kwargs)
+    # Load the array
+    input_array = np.load(file_path)
+    # Determine which var list `var` is in and at which index
+    for key in input_vars_dict.keys():
+        if var in input_vars_dict[key][f'{x_or_y}_vars']:
+            var_index = input_vars_dict[key][f'{x_or_y}_vars'].index(var)
+            var_array = input_array[:, :, :, var_index]
+            return var_array, var_index
+    raise ValueError(f"Variable '{var}' not found in input_vars_dict: {input_vars_dict}")
+
+def get_one_t_input_var_array(
+    var,
+    this_date,
+    **kwargs,
+    ):
+    """
+    Get an array of a single variable at the given date from the given input file.
+
+    Parameters
+    ----------
+    var : str
+        Name of the variable to get.
+    this_date : np.datetime64 or str
+        Date and time to select from the data file.
+        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+    **kwargs : dict
+        Additional keyword arguments to pass to `get_input_data()`.
+        Should include `var`, `stage`, and `input_set`.
+    
+    Returns
+    -------
+    var_array : numpy.ndarray
+        Array of the specified variable at the given date.
+    """
+    # Get the year from the date
+    from unox.data import get_YMD_from_date, get_DOY
+    year, month, day = get_YMD_from_date(this_date)
+    # Get the input array for the year
+    year_array, index = get_one_input_var_array(var, year=year, **kwargs)
+    # Get the DOY from the date
+    doy = get_DOY(this_date)
+    # Return the array for that date
+    return year_array[doy, :, :]
+
 def get_pred_data(
     stage=1, 
-    HPC_run='test_unet_601760', 
+    HPC_run='no2_example_run', 
     year=2019,
     path_prefix='',
     ):
@@ -310,8 +379,8 @@ def get_pred_data(
 
     Examples
     --------
-    >>> file_path = get_pred_data(stage=1, HPC_run='test_unet_601760', year=2019)
-    '../HPC_runs/test_unet_601760/stage1_output/pred_X_2019.npy'
+    >>> file_path = get_pred_data(stage=1, HPC_run='no2_example_run', year=2019)
+    '../HPC_runs/no2_example_run/stage1_output/pred_X_2019.npy'
     """
     # Verify the stage value
     if stage not in [1, 2]:

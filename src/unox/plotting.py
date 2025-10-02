@@ -10,6 +10,9 @@ from scipy.stats import linregress
 from unox import unox
 from unox import data as udata
 from unox import plot_format as uplt_fmt
+from unox.input import x_or_y_var, get_input_index
+
+title_font_size = 12
 
 def plot_extent(
     xr_dataset='/datafiles/nox_2019_t106_US.nc',
@@ -127,6 +130,7 @@ def plot_nc_map(
     var_units='kg/m2/s',
     datetime='2019-01-01T00:00:00',
     avg_over=None,
+    cmap=pplt.Colormap('Fire'),
     cbar_max=1.2e-10,
     padding=0.1,
     ):
@@ -149,6 +153,8 @@ def plot_nc_map(
     avg_over : str, numpy.timedelta64, or None
         If provided, averages the data over the specified time period.
         If None, takes just the time slice specified in `datetime`.
+    cmap : matplotlib.colors.Colormap
+        The colormap to use for the plot. Default is pplt.cm.Fire.
     cbar_max : float
         Maximum value for the colorbar.
     padding : float
@@ -163,7 +169,7 @@ def plot_nc_map(
     Examples
     --------
     >>> import xarray as xr
-    >>> this_dataset = xr.open_dataset('../datafiles/nox_2019_t106_US.nc')
+    >>> this_dataset = xr.open_dataset('../datafiles/sample_data/nox_2019_t106_US.nc')
     >>> fig = plot_nc_map(xr_dataset=this_dataset)
     """
     # Check if xr_dataset is a file path or an xarray object
@@ -228,9 +234,9 @@ def plot_npy_map(
     npy_arr,
     lats,
     lons,
+    cmap=pplt.Colormap('seismic'),
     c_halfrange=None,
     cb_extend='neither',
-    cmap=pplt.Colormap('seismic'),
     ax_title='',
     ):
     """Plots a map of the given numpy array.
@@ -249,6 +255,8 @@ def plot_npy_map(
         The latitude coordinates of the data.
     lons : numpy.ndarray
         The longitude coordinates of the data.
+    cmap : matplotlib.colors.Colormap
+        The colormap to use for the plot. Default is pplt.cm.seismic.
     c_halfrange : float
         The half range for the color normalization on diverging colormaps.
     cb_extend : str
@@ -270,11 +278,15 @@ def plot_npy_map(
     # Verify the dimensions of the numpy array
     if npy_arr.shape != (len(lats), len(lons)):
         raise ValueError(f"npy_arr must have shape (len(lats), len(lons)). Expected: ({len(lats)}, {len(lons)}), got: {npy_arr.shape}")
+    # Verify c_halfrange is a number
+
     # Plot the data
     if isinstance(c_halfrange, type(None)):
         pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=cmap, shading='auto', levels=100)
+    elif udata.verify_number(c_halfrange):
+        pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=cmap, shading='auto', levels=100, vmin=-1*c_halfrange, vmax=c_halfrange, extend=cb_extend)  
     else:
-        pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=cmap, shading='auto', levels=100, vmin=-c_halfrange, vmax=c_halfrange, extend=cb_extend)  
+        raise TypeError(f'c_halfrange must be a number, got: {type(c_halfrange)}. c_halfrange value: {c_halfrange}')
     # Get the minimum and maximum latitude and longitude values
     (p_lat_min, p_lat_max, p_lon_min, p_lon_max) = udata.get_extent(lats=lats, lons=lons)
     # Format the map
@@ -286,9 +298,93 @@ def plot_npy_map(
     )
     return this_ax, pcm
 
+def plot_input_map(
+    input_set='no2_sample_input',
+    this_date='2019-07-19T00:00:00',
+    var='nox',
+    stage=1,
+    avg_over=None,
+    restrict_lat_lon_to=None,
+    cmap=pplt.Colormap('Fire'),
+    **kwargs,
+    ):
+    """Plots a map of input data for the specified variable and time.
+
+    Creates a map of the input data for the specified variable and time,
+    averaging over a time period if specified.
+
+    Parameters
+    ----------
+    input_set : str
+        The input set set to use. Default is 'no2_sample_input'.
+    this_date : np.datetime64 or str
+        Date and time to select from the data file.
+        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+    var : str
+        The variable being plotted. Default is 'nox'.
+        Y files contain ['nox']
+        X files contain ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
+    stage : int
+        The stage of the data to use (1 or 2). Default is 1.
+    avg_over : str, numpy.timedelta64, or None
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
+    restrict_lat_lon_to : str   
+        Path to a netCDF file to restrict the latitude and longitude range.
+        If None, the entire dataset is used.
+    cmap : matplotlib.colors.Colormap
+        The colormap to use for the plot. Default is pplt.cm.Fire.
+    **kwargs : dict
+        Additional keyword arguments to pass to the `plot_npy_map` function.
+    
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+    """
+    # Get the latitude and longitude values
+    lats, lons = unox.load_lats_lons()
+    # Get the variable's x or y designation and index
+    x_or_y = x_or_y_var(var)
+    var_idx = get_input_index(var)
+    # Get the date's DOY
+    doy = udata.get_DOY(this_date)
+
+    # Get the input filepath
+    input_filepath = unox.get_input_data(
+        stage=stage,
+        x_or_y=x_or_y,
+        year=int(this_date.split('-')[0]),
+        input_set=input_set,
+        **kwargs,
+    )
+    # Get the array to plot
+    array_to_plot = unox.get_one_t_input_var_array(
+        var,
+        this_date,
+        stage=stage,
+        input_set=input_set,
+    )
+    # Create the figure
+    fig = pplt.figure(refwidth=4)
+    ax = fig.subplots(nrows=1, ncols=1, proj='cyl')
+    # Select medium resolution for features such as coastlines
+    pplt.rc.reso = 'med' 
+    # Restrict the latitude and longitude range
+    if not isinstance(restrict_lat_lon_to, type(None)):
+        array_to_plot, lats, lons = udata.restrict_domain(array_to_plot, lats, lons, xr.open_dataset(restrict_lat_lon_to))
+    # Add the subplot
+    plot_npy_map(fig, ax, array_to_plot, lats=lats, lons=lons, cmap=cmap, **kwargs)
+    # Add a colorbar on the right-hand side
+    cbar = make_colorbar(fig, ax.get_children()[0], var+' ('+x_or_y+'_vars['+str(var_idx)+'])', num_ticks=9, cb_loc='r', cb_extend='neither')
+    # Set the figure title
+    overall_title = input_filepath + ' on DOY ' + str(doy)
+    fig.suptitle(overall_title, fontsize=title_font_size)
+    return fig
+
 def plot_stage_comp_maps(
     truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_set':'no2_sample_input'},
-    pred_params={'HPC_run': 'test_unet_601760', 'year': 2019},
+    pred_params={'HPC_run': 'no2_example_run', 'year': 2019},
     this_date='2019-07-19T00:00:00',
     var='nox',
     avg_over=None,
@@ -368,7 +464,7 @@ def plot_stage_comp_maps(
     vmin, vmax = udata.get_vminmax(data_list)
     
     # Get the halfrange for use with a diverging color map
-    halfrange = udata.get_max_abs_val([vmin, vmax])
+    chr = udata.get_max_abs_val([vmin, vmax])
 
     # Get the day of year to plot
     day = udata.get_DOY(this_date)
@@ -384,11 +480,10 @@ def plot_stage_comp_maps(
         warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
         clr_bar_scale = 0.5
     if clr_bar_scale != 1:
-        halfrange *= clr_bar_scale
-        cb_extend = 'both'
+        chr *= clr_bar_scale
+        cbe = 'both'
     else:
-        cb_extend = 'neither'
-    print('cb_extend:', cb_extend)
+        cbe = 'neither'
 
     if stage1_only:
         # Create the output arrays for the stage comparison
@@ -401,9 +496,9 @@ def plot_stage_comp_maps(
         )
 
         # Add the subplots
-        plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
-        plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
-        plot_npy_map(fig, ax[0,2], out_arrs['t_m_st1'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
+        plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Stage 1 prediction')
+        plot_npy_map(fig, ax[0,2], out_arrs['t_m_st1'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Truth - stage 1 prediction')
     else:
         # Create the output arrays for the stage comparison
         out_arrs, overall_title = uplt_fmt.make_stage_comp_arrs(
@@ -415,19 +510,19 @@ def plot_stage_comp_maps(
         )
 
         # Add the subplots
-        plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
-        plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
-        plot_npy_map(fig, ax[0,2], out_arrs['stage2'], lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
-        plot_npy_map(fig, ax[1,0], out_arrs['t_m_st1'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
-        plot_npy_map(fig, ax[1,1], out_arrs['t_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
-        plot_npy_map(fig, ax[1,2], out_arrs['st1_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
+        plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Stage 1 prediction')
+        plot_npy_map(fig, ax[0,2], out_arrs['stage2'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Stage 2 prediction')
+        plot_npy_map(fig, ax[1,0], out_arrs['t_m_st1'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Truth - stage 1 prediction')
+        plot_npy_map(fig, ax[1,1], out_arrs['t_m_st2'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Truth - stage 2 prediction')
+        plot_npy_map(fig, ax[1,2], out_arrs['st1_m_st2'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Stage 1 - stage 2 prediction')
 
     # Get the variable label and units
     var_label, var_units = uplt_fmt.get_var_label_and_units(var)
     # Add one overall colorbar for the entire figure on the right-hand side
-    cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='l', cb_extend=cb_extend)
+    cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='r', cb_extend=cbe)
     # Set the figure title
-    fig.suptitle(overall_title, fontsize=16)
+    fig.suptitle(overall_title, fontsize=title_font_size)
     return fig
 
 def make_colorbar(
@@ -499,6 +594,8 @@ def plot_comparison(
         The label for the first array in the plot.
     label_b : str
         The label for the second array in the plot.
+    ax : matplotlib.axes.Axes or None
+        The axes on which to plot the data. If None, a new figure and axes are created.
     hist_params : dict
         Dictionary containing the parameters for the histogram.
         Must contain 'bins', 'vmax', and 'vmin'.
@@ -574,7 +671,7 @@ def plot_comparison(
 
 def plot_true_pred_comp(
     truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input_set':'sample_data'},
-    pred_data={'stage':1, 'HPC_run':'test_unet_601760', 'year':2019},
+    pred_data={'stage':1, 'HPC_run':'no2_example_run', 'year':2019},
     hist_params={'bins':100, 'vmax':1000, 'vmin':10},
     restrict_lat_lon_to=None,
     var='nox',
@@ -599,9 +696,7 @@ def plot_true_pred_comp(
         Path to a netCDF file to restrict the latitude and longitude range.
         If None, the entire dataset is used.
     var : str
-        The name of the gas being modelled.
-    units : str
-        Unit of measurement for the data.
+        The name of the gas being modelled. Default is 'nox'.
     
     Returns
     -------
@@ -812,8 +907,7 @@ def plot_npy_diff(
 def compare_input_files(
     year=2019,
     stage=1,
-    x_or_y='y',
-    x_var='no2',
+    var='no2',
     old_dir='no2_sample_input',
     new_dir='no2_input_test0',
     abs_tolerance=2e-5,
@@ -827,11 +921,9 @@ def compare_input_files(
         The year for which to compare the input files.
     stage : int
         The stage of the input files to compare.
-    x_or_y : str
-        The type of input file to compare ('x' or 'y').
-    x_var : str
-        The variable to pull out if the input file is an x input file. Default is 'no2'. 
-        Choose from ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
+    var : str
+        The variable to pull out of the input file. Default is 'no2'. 
+        Choose from the input_vars_dict
     old_dir : str
         The directory containing the old input files.
     new_dir : str
@@ -839,6 +931,10 @@ def compare_input_files(
     abs_tolerance : float
         The absolute tolerance for comparing the input files. Default is 2e-5.
     """
+    from unox.input import x_or_y_var, get_input_index
+    # Get the x_or_y and index of the variable
+    x_or_y = x_or_y_var(var)
+    input_idx = get_input_index(var)
     # Assemble the paths to the old and new input files
     old_filepath = f'inputfiles/{old_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
     new_filepath = f'inputfiles/{new_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
@@ -848,20 +944,15 @@ def compare_input_files(
     # Load the old and new input files
     old_input = np.load(old_filepath)
     new_input = np.load(new_filepath)
-    # Pull out a variable if it is an x input file
-    if x_or_y == 'x':
-        x_vars = ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
-        # Find the index of the chosen variable
-        x_var_index = x_vars.index(x_var)
-        # Pull out just that variable from both arrays
-        old_input = old_input[..., x_var_index]
-        new_input = new_input[..., x_var_index]
+    # Pull out just the chosen variable from both arrays
+    old_input = old_input[..., input_idx]
+    new_input = new_input[..., input_idx]
     # Output the shapes
-    print(f"Shape of {old_filepath}: \n\t{old_input.shape}")
-    print(f"Shape of {new_filepath}: \n\t{new_input.shape}")
+    print(f"Shape of {var} in {old_filepath}: \n\t{old_input.shape}")
+    print(f"Shape of {var} in {new_filepath}: \n\t{new_input.shape}")
     # Are the arrays different?
     if np.array_equal(old_input, new_input):
-        print("The input files are the same.")
+        print(f"The input files are the same for {var}.")
         return None
     else:
         if np.allclose(old_input, new_input, atol=abs_tolerance):
@@ -869,4 +960,6 @@ def compare_input_files(
         else:
             print("The input files differ more than the tolerance of",abs_tolerance)
         # Plot the differences
-        return plot_npy_diff(old_input, new_input, title=str(x_or_y).capitalize()+f'_{year} old vs '+ str(x_or_y).capitalize()+f'_{year} new')
+        caps_x_or_y = str(x_or_y).capitalize()
+        overall_title = f'{old_filepath} (old) vs {new_filepath} (new) for {var}'
+        return plot_npy_diff(old_input, new_input, title=overall_title)

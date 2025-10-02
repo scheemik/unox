@@ -708,7 +708,7 @@ def restrict_domain(
     
     Examples
     --------
-    >>> stage1 = np.load(get_pred_data(stage=1, 'HPC_run'='test_unet_601760', 'year'=2019))
+    >>> stage1 = np.load(get_pred_data(stage=1, 'HPC_run'='no2_example_run', 'year'=2019))
     >>> lats, lons = load_lats_lons()
     >>> nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
     >>> stage1_restricted = restrict_domain([nox], lats, lons, nox)
