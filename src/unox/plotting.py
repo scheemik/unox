@@ -130,6 +130,7 @@ def plot_nc_map(
     var_units='kg/m2/s',
     datetime='2019-01-01T00:00:00',
     avg_over=None,
+    cmap=pplt.Colormap('Fire'),
     cbar_max=1.2e-10,
     padding=0.1,
     ):
@@ -152,6 +153,8 @@ def plot_nc_map(
     avg_over : str, numpy.timedelta64, or None
         If provided, averages the data over the specified time period.
         If None, takes just the time slice specified in `datetime`.
+    cmap : matplotlib.colors.Colormap
+        The colormap to use for the plot. Default is pplt.cm.Fire.
     cbar_max : float
         Maximum value for the colorbar.
     padding : float
@@ -166,7 +169,7 @@ def plot_nc_map(
     Examples
     --------
     >>> import xarray as xr
-    >>> this_dataset = xr.open_dataset('../datafiles/nox_2019_t106_US.nc')
+    >>> this_dataset = xr.open_dataset('../datafiles/sample_data/nox_2019_t106_US.nc')
     >>> fig = plot_nc_map(xr_dataset=this_dataset)
     """
     # Check if xr_dataset is a file path or an xarray object
@@ -231,9 +234,9 @@ def plot_npy_map(
     npy_arr,
     lats,
     lons,
+    cmap=pplt.Colormap('seismic'),
     c_halfrange=None,
     cb_extend='neither',
-    cmap=pplt.Colormap('seismic'),
     ax_title='',
     ):
     """Plots a map of the given numpy array.
@@ -252,6 +255,8 @@ def plot_npy_map(
         The latitude coordinates of the data.
     lons : numpy.ndarray
         The longitude coordinates of the data.
+    cmap : matplotlib.colors.Colormap
+        The colormap to use for the plot. Default is pplt.cm.seismic.
     c_halfrange : float
         The half range for the color normalization on diverging colormaps.
     cb_extend : str
@@ -296,7 +301,7 @@ def plot_input_map(
     stage=1,
     avg_over=None,
     restrict_lat_lon_to=None,
-    cmap=pplt.Colormap('viridis'),
+    cmap=pplt.Colormap('Fire'),
     **kwargs,
     ):
     """Plots a map of input data for the specified variable and time.
@@ -323,6 +328,8 @@ def plot_input_map(
     restrict_lat_lon_to : str   
         Path to a netCDF file to restrict the latitude and longitude range.
         If None, the entire dataset is used.
+    cmap : matplotlib.colors.Colormap
+        The colormap to use for the plot. Default is pplt.cm.Fire.
     **kwargs : dict
         Additional keyword arguments to pass to the `plot_npy_map` function.
     
@@ -584,6 +591,8 @@ def plot_comparison(
         The label for the first array in the plot.
     label_b : str
         The label for the second array in the plot.
+    ax : matplotlib.axes.Axes or None
+        The axes on which to plot the data. If None, a new figure and axes are created.
     hist_params : dict
         Dictionary containing the parameters for the histogram.
         Must contain 'bins', 'vmax', and 'vmin'.
@@ -684,9 +693,7 @@ def plot_true_pred_comp(
         Path to a netCDF file to restrict the latitude and longitude range.
         If None, the entire dataset is used.
     var : str
-        The name of the gas being modelled.
-    units : str
-        Unit of measurement for the data.
+        The name of the gas being modelled. Default is 'nox'.
     
     Returns
     -------
