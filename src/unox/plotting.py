@@ -278,11 +278,15 @@ def plot_npy_map(
     # Verify the dimensions of the numpy array
     if npy_arr.shape != (len(lats), len(lons)):
         raise ValueError(f"npy_arr must have shape (len(lats), len(lons)). Expected: ({len(lats)}, {len(lons)}), got: {npy_arr.shape}")
+    # Verify c_halfrange is a number
+
     # Plot the data
     if isinstance(c_halfrange, type(None)):
         pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=cmap, shading='auto', levels=100)
+    elif udata.verify_number(c_halfrange):
+        pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=cmap, shading='auto', levels=100, vmin=-1*c_halfrange, vmax=c_halfrange, extend=cb_extend)  
     else:
-        pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=cmap, shading='auto', levels=100, vmin=-c_halfrange, vmax=c_halfrange, extend=cb_extend)  
+        raise TypeError(f'c_halfrange must be a number, got: {type(c_halfrange)}. c_halfrange value: {c_halfrange}')
     # Get the minimum and maximum latitude and longitude values
     (p_lat_min, p_lat_max, p_lon_min, p_lon_max) = udata.get_extent(lats=lats, lons=lons)
     # Format the map
@@ -380,7 +384,7 @@ def plot_input_map(
 
 def plot_stage_comp_maps(
     truth_params={'stage': 1, 'x_or_y': 'y', 'year': 2019, 'input_set':'no2_sample_input'},
-    pred_params={'HPC_run': 'test_unet_601760', 'year': 2019},
+    pred_params={'HPC_run': 'no2_example_run', 'year': 2019},
     this_date='2019-07-19T00:00:00',
     var='nox',
     avg_over=None,
@@ -460,7 +464,7 @@ def plot_stage_comp_maps(
     vmin, vmax = udata.get_vminmax(data_list)
     
     # Get the halfrange for use with a diverging color map
-    halfrange = udata.get_max_abs_val([vmin, vmax])
+    chr = udata.get_max_abs_val([vmin, vmax])
 
     # Get the day of year to plot
     day = udata.get_DOY(this_date)
@@ -476,11 +480,10 @@ def plot_stage_comp_maps(
         warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
         clr_bar_scale = 0.5
     if clr_bar_scale != 1:
-        halfrange *= clr_bar_scale
-        cb_extend = 'both'
+        chr *= clr_bar_scale
+        cbe = 'both'
     else:
-        cb_extend = 'neither'
-    print('cb_extend:', cb_extend)
+        cbe = 'neither'
 
     if stage1_only:
         # Create the output arrays for the stage comparison
@@ -493,9 +496,9 @@ def plot_stage_comp_maps(
         )
 
         # Add the subplots
-        plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
-        plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
-        plot_npy_map(fig, ax[0,2], out_arrs['t_m_st1'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
+        plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Stage 1 prediction')
+        plot_npy_map(fig, ax[0,2], out_arrs['t_m_st1'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Truth - stage 1 prediction')
     else:
         # Create the output arrays for the stage comparison
         out_arrs, overall_title = uplt_fmt.make_stage_comp_arrs(
@@ -507,17 +510,17 @@ def plot_stage_comp_maps(
         )
 
         # Add the subplots
-        plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, halfrange, cb_extend, ax_title=f'{var} emissions (truth)')
-        plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 prediction')
-        plot_npy_map(fig, ax[0,2], out_arrs['stage2'], lats, lons, halfrange, cb_extend, ax_title='Stage 2 prediction')
-        plot_npy_map(fig, ax[1,0], out_arrs['t_m_st1'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 1 prediction')
-        plot_npy_map(fig, ax[1,1], out_arrs['t_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Truth - stage 2 prediction')
-        plot_npy_map(fig, ax[1,2], out_arrs['st1_m_st2'], lats, lons, halfrange, cb_extend, ax_title='Stage 1 - stage 2 prediction')
+        plot_npy_map(fig, ax[0,0], out_arrs['truth'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title=f'{var} emissions (truth)')
+        plot_npy_map(fig, ax[0,1], out_arrs['stage1'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Stage 1 prediction')
+        plot_npy_map(fig, ax[0,2], out_arrs['stage2'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Stage 2 prediction')
+        plot_npy_map(fig, ax[1,0], out_arrs['t_m_st1'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Truth - stage 1 prediction')
+        plot_npy_map(fig, ax[1,1], out_arrs['t_m_st2'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Truth - stage 2 prediction')
+        plot_npy_map(fig, ax[1,2], out_arrs['st1_m_st2'], lats, lons, c_halfrange=chr, cb_extend=cbe, ax_title='Stage 1 - stage 2 prediction')
 
     # Get the variable label and units
     var_label, var_units = uplt_fmt.get_var_label_and_units(var)
     # Add one overall colorbar for the entire figure on the right-hand side
-    cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='l', cb_extend=cb_extend)
+    cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='r', cb_extend=cbe)
     # Set the figure title
     fig.suptitle(overall_title, fontsize=title_font_size)
     return fig
@@ -668,7 +671,7 @@ def plot_comparison(
 
 def plot_true_pred_comp(
     truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input_set':'sample_data'},
-    pred_data={'stage':1, 'HPC_run':'test_unet_601760', 'year':2019},
+    pred_data={'stage':1, 'HPC_run':'no2_example_run', 'year':2019},
     hist_params={'bins':100, 'vmax':1000, 'vmin':10},
     restrict_lat_lon_to=None,
     var='nox',
