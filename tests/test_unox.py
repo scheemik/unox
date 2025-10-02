@@ -158,6 +158,41 @@ def test_get_one_input_var_array():
         else:
             assert False, f"get_one_input_var_array did not raise an exception on invalid variable '{var}'"
 
+def test_get_one_t_input_var_array():
+    """Test the get_one_t_input_var_array function."""
+    # Get the input variable dictionary
+    from unox.input import input_vars_dict
+    # Set the parameters for the test
+    this_stage = 1
+    this_year = 2019
+    this_input_set = 'no2_sample_input'
+    # Create a list of dates and DOYs to test in this_year
+    valid_dates_doys = [
+        ('2019-01-01', 0),
+        ('2019-06-15', 165),
+        ('2019-12-31', 364),
+        ('2019-02-28', 58),
+        ('2019-03-01', 59),
+    ]
+    # Test across all 'no2' variables in the input variable dictionary
+    key = 'no2'
+    for x_or_y_key in input_vars_dict[key].keys():
+        x_or_y = x_or_y_key[0]
+        list_of_vars = input_vars_dict[key][x_or_y_key]
+        for i in range(len(list_of_vars)):
+            var = list_of_vars[i]
+            for this_date, this_doy in valid_dates_doys:
+                actual = unox.get_one_t_input_var_array(
+                    var,
+                    this_date,
+                    stage=this_stage,
+                    input_set=this_input_set,
+                )
+                expected = np.load(unox.get_input_data(stage=this_stage, x_or_y=x_or_y, year=this_year, input_set=this_input_set))[this_doy, :, :, i]
+                assert actual.shape == expected.shape, f"get_one_t_input_var_array returned array with shape {actual.shape} instead of expected shape {expected.shape} for {key}, {x_or_y_key}[{i}]={var} on {this_date}"
+                assert np.array_equal(actual, expected), f"get_one_t_input_var_array did not return expected array for {key}, {x_or_y_key}[{i}]={var} on {this_date}"
+
+
 def test_get_pred_data():
     """Test the get_pred_data function."""
     # Test with valid parameters
