@@ -106,6 +106,7 @@ def make_y_input_file(
     nan_fill=0,
     stage_2_cutoff=2013,
     output_dir='test_input',
+    overwrite=True,
     **kwargs,
     ):
     """
@@ -140,6 +141,10 @@ def make_y_input_file(
     output_dir : str, optional
         Directory inside `inputfiles/` where the output y input file will be saved.
         Default is `'test_input'`.
+    overwrite : bool, optional
+        Whether to overwrite existing netcdf files. Default is True.
+    **kwargs : dict, optional
+        Additional keyword arguments (not used).
 
     Returns
     -------
@@ -164,41 +169,77 @@ def make_y_input_file(
     # and fill NaNs with specified value
     y_data = y_data.interp(lat=lats, lon=lons).resample(time='d').mean().fillna(nan_fill)
     # Add a dimension of size 1 to the end to match the number of dimensions for the x input files
-    y_data = y_data.expand_dims('var',-1)  
+    y_data = y_data.expand_dims('var',-1)
     # Skip the first day because of the t-1 thing
+    input_netcdf_xr = y_data.isel(time=slice(1,None))
     y_data = y_data[var][1::]
     # Save the data as a numpy file
     if not isinstance(output_dir, type(None)):
         # Assemble the file path
-        output_filepath = os.path.join(f'inputfiles/{output_dir}/stage1/y/Y_{year}.npy')
-        # Make sure the output directory exists
-        unox.make_file_path(output_filepath)
-        np.save(output_filepath, y_data)
-        if year > stage_2_cutoff:
-            # Save in stage 2 for years later than specified
-            output_filepath_stage2 = os.path.join(f'inputfiles/{output_dir}/stage2/y/Y_{year}.npy')
-            # Make sure the output directory exists
-            unox.make_file_path(output_filepath_stage2)
-            np.save(output_filepath_stage2, y_data)
-        # Create metadata file
-        make_input_metadata_file(
-            year=year,
-            x_or_y='y',
-            attr_dict={
-                'vars': var,
-                'emiss_dir': emiss_dir,
-                'emiss_pre': emiss_pre,
-                'emiss_post': emiss_post,
-                'scale_factor': scale_factor,
-                'nan_fill': nan_fill,
-                'stage_2_cutoff': stage_2_cutoff,
-            },
-            stage=None,
-            output_dir=output_dir,
-        )
-        # Output message
-        print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
-    return np.array(y_data)
+        # output_filepath = os.path.join(f'inputfiles/{output_dir}/stage1/y/Y_{year}.npy')
+        # # Make sure the output directory exists
+        # unox.make_file_path(output_filepath)
+        # np.save(output_filepath, y_data)
+        # if year > stage_2_cutoff:
+        #     # Save in stage 2 for years later than specified
+        #     output_filepath_stage2 = os.path.join(f'inputfiles/{output_dir}/stage2/y/Y_{year}.npy')
+        #     # Make sure the output directory exists
+        #     unox.make_file_path(output_filepath_stage2)
+        #     np.save(output_filepath_stage2, y_data)
+        # # Create metadata file
+        # make_input_metadata_file(
+        #     year=year,
+        #     x_or_y='y',
+        #     attr_dict={
+        #         'vars': var,
+        #         'emiss_dir': emiss_dir,
+        #         'emiss_pre': emiss_pre,
+        #         'emiss_post': emiss_post,
+        #         'scale_factor': scale_factor,
+        #         'nan_fill': nan_fill,
+        #         'stage_2_cutoff': stage_2_cutoff,
+        #     },
+        #     stage=None,
+        #     output_dir=output_dir,
+        # )
+        # # Output message
+        # print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
+        ### For netcdf
+        # Assemble the file path
+        output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
+        # Check whether the netcdf file already exists
+        if os.path.exists(output_filepath):
+            # Load the existing netcdf file
+            existing_ds = xr.load_dataset(output_filepath)
+            # Verify the dataset
+            existing_ds = udata.verify_dataset(existing_ds)
+            # Check if the existing dataset and the new one have the same coordinates
+            if not existing_ds.coords.equals(input_netcdf_xr.coords):
+                raise ValueError(f"Coordinates of the existing netcdf file and the new data do not match. Existing coords: {existing_ds.coords}, new coords: {input_netcdf_xr.coords}")
+            # Check whether any time values are already present in the existing dataset
+            existing_times = set(existing_ds.coords['time'].values)
+            new_times = set(input_netcdf_xr.coords['time'].values)
+            overlapping_times = existing_times.intersection(new_times)
+            if len(overlapping_times) > 1:
+                # Get the first and last overlapping times
+                first_overlap = min(overlapping_times)
+                last_overlap = max(overlapping_times)
+                # Format them to YYYY-MM-DD
+                first_overlap = pd.to_datetime(str(first_overlap)).strftime('%Y-%m-%d')
+                last_overlap = pd.to_datetime(str(last_overlap)).strftime('%Y-%m-%d')
+            if overlapping_times and overwrite==False:
+                raise ValueError(f"The new data overlaps with the existing file in {output_filepath} between {first_overlap} and {last_overlap}. To overwrite, set overwrite=True.")
+            elif overlapping_times and overwrite==True:
+                print(f"Overwriting overlapping data in {output_filepath} for times between {first_overlap} and {last_overlap}.")
+                # Remove the overlapping times from the existing dataset
+                existing_ds = existing_ds.drop_sel(time=list(overlapping_times))
+            # Concatenate the new data with the existing dataset along the time dimension
+            input_netcdf_xr = xr.concat([existing_ds, input_netcdf_xr], dim='time')
+        # Save the netcdf file
+        input_netcdf_xr.to_netcdf(output_filepath)
+        print(f"Saved y input data to {output_filepath}")
+    # return np.array(y_data)
+    return input_netcdf_xr
 
 def make_x_input_file(
     year,
