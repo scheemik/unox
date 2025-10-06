@@ -1,8 +1,30 @@
 from unox import input as uin
 import unox.unox as unox
 import numpy as np
+import xarray as xr
+import pandas as pd
 import os
 import json
+
+# Create an example xarray Dataset for testing
+# Include dimensions of time, lat, lon, and some example variables
+n_lat = 10
+n_lon = 20
+n_start = '2020-01-01'
+n_end = '2020-01-30'
+time_arr = pd.date_range(start=n_start, end=n_end, freq='D')
+n_time = len(time_arr)
+example_xr = xr.Dataset(
+    {
+        'no2_sfc': (('time', 'lat', 'lon'), np.random.rand(n_time, n_lat, n_lon)),
+        'u10': (('time', 'lat', 'lon'), np.random.rand(n_time, n_lat, n_lon)),
+    },
+    coords={
+        'time': time_arr,
+        'lat': np.linspace(-90, 90, n_lat),
+        'lon': np.linspace(-180, 180, n_lon),
+    }
+)
 
 def test_x_or_y_var():
     """Test the x_or_y_var function."""
@@ -86,6 +108,43 @@ def test_make_y_input_file():
     assert y_data.shape == verify_array.shape, f"make_y_input_file output shape {y_data.shape} does not match verification array shape {verify_array.shape}"
     # Verify that the output matches the verification array
     assert np.array_equal(y_data, verify_array), f"make_y_input_file output does not match array from {verify_filepath}"
+
+def test_set_global_attrs():
+    """Test the set_global_attrs function."""
+    # Define global attributes
+    g_attrs = {
+        'title': 'Test Dataset',
+        'institution': 'Test Institution',
+    }
+    # Call the function to set global attributes
+    actual = uin.set_global_attrs(example_xr, g_attrs)
+    # Get the time stamp
+    modification_date = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+    # Verify that the output is an xarray Dataset
+    assert isinstance(actual, xr.Dataset), "set_global_attrs did not return an xarray Dataset."
+    # Verify that the global attributes were set correctly
+    for attr, value in g_attrs.items():
+        assert actual.attrs.get(attr) == value, f"set_global_attrs did not set attribute '{attr}' correctly."
+    # Verify that the modification_date is within a minute
+    actual_mod_date = pd.to_datetime(actual.attrs.get('modification_date'))
+    expected_mod_date = pd.to_datetime(modification_date)
+    time_diff = abs((actual_mod_date - expected_mod_date).total_seconds())
+    assert time_diff < 60, f"set_global_attrs did not set modification_date correctly. Expected {modification_date}, got {actual.attrs.get('modification_date')}"
+    # Test invalid inputs
+    invalid_inputs = [None, 'not_a_dataset', 123, True, False, []]
+    for invalid in invalid_inputs:
+        try:
+            uin.set_global_attrs(invalid, g_attrs)
+        except (TypeError, ValueError) as e:
+            assert True, f"set_global_attrs raised an exception on invalid dataset input '{invalid}': {e}"
+        else:
+            assert False, f"set_global_attrs did not raise an exception on invalid dataset input '{invalid}'"
+        try:
+            uin.set_global_attrs(example_xr, invalid)
+        except (TypeError, ValueError) as e:
+            assert True, f"set_global_attrs raised an exception on invalid g_attrs input '{invalid}': {e}"
+        else:
+            assert False, f"set_global_attrs did not raise an exception on invalid g_attrs input '{invalid}'"
 
 def test_make_x_input_file():
     """Test the make_x_input_file function."""
