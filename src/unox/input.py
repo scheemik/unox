@@ -285,6 +285,48 @@ def set_global_attrs(
     # Update the modification date
     xr_dataset.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
     return xr_dataset
+
+def set_var_attrs(
+    xr_dataset,
+    var,
+    attr_dict,
+    scale_factor=None,
+    ):
+    """
+    Add attributes to a variable in an xarray Dataset.
+
+    Parameters
+    ----------
+    xr_dataset : xarray.Dataset
+        The dataset containing the variable to which attributes will be added.
+    var : str
+        The variable to which attributes will be added.
+    attr_dict : dict
+        Dictionary of attributes to add to the variable.
+    scale_factor : float, optional
+        If provided, add an attribute indicating the scale factor applied to the variable.
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset with the variable having added attributes.
+    """
+    # Verify the dataset
+    xr_dataset = udata.verify_dataset(xr_dataset)
+    # Verify the variable is in the dataset
+    if var not in xr_dataset.data_vars:
+        raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+    # Verify the attribute dictionary
+    if not isinstance(attr_dict, dict):
+        raise TypeError(f'attr_dict must be a dictionary, got {type(attr_dict)}.')
+    # Add each attribute to the variable
+    for key, value in attr_dict.items():
+        if key in ['units']:
+            attr_update = f"{value} * scale_factor"
+        else:
+            attr_update = value
+        xr_dataset[var].attrs[key] = attr_update
+    return xr_dataset
 def make_x_input_file(
     year,
     stage,
