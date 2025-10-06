@@ -162,7 +162,8 @@ def make_y_input_file(
         print("level dimension detected")
         y_data = y_data.sum("lev")
     # Scale data
-    y_data = y_data * scale_factor
+    y_data = scale_xr_var(y_data, var, scale_factor)
+    # y_data = y_data * scale_factor
     # Load lats and lons
     lats, lons = unox.load_lats_lons()
     # Interpolate to the latitude and longitude grid, resample to daily mean, 
@@ -327,6 +328,44 @@ def set_var_attrs(
             attr_update = value
         xr_dataset[var].attrs[key] = attr_update
     return xr_dataset
+
+def scale_xr_var(
+    xr_dataset,
+    var,
+    scale_factor,
+    ):
+    """
+    Scale a variable in an xarray Dataset by a given factor.
+
+    Parameters
+    ----------
+    xr_dataset : xarray.Dataset
+        The dataset containing the variable to be scaled.
+    var : str
+        The variable to be scaled.
+    scale_factor : float
+        The factor by which to scale the variable.
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset with the scaled variable.
+    """
+    # Verify the dataset
+    xr_dataset = udata.verify_dataset(xr_dataset)
+    # Verify the variable is in the dataset
+    if var not in xr_dataset.data_vars:
+        raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+    # Note the variable attributes
+    var_attrs = xr_dataset[var].attrs
+    # Scale the variable
+    xr_dataset[var] = xr_dataset[var] * scale_factor
+    # Add scale factor to the attributes
+    var_attrs['scale_factor'] = scale_factor
+    # Reapply the variable attributes
+    xr_dataset = set_var_attrs(xr_dataset, var, var_attrs, scale_factor)
+    return xr_dataset
+
 def make_x_input_file(
     year,
     stage,
