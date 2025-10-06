@@ -235,12 +235,56 @@ def make_y_input_file(
                 existing_ds = existing_ds.drop_sel(time=list(overlapping_times))
             # Concatenate the new data with the existing dataset along the time dimension
             input_netcdf_xr = xr.concat([existing_ds, input_netcdf_xr], dim='time')
+        else:
+            # New netcdf, add global attributes
+            attr_dict={
+                'y_var': var,
+                'emiss_dir': emiss_dir,
+                'emiss_pre': emiss_pre,
+                'emiss_post': emiss_post,
+                'y_scale_factor': scale_factor,
+                'nan_fill': nan_fill,
+                'stage_2_cutoff': stage_2_cutoff,
+            }
+            input_netcdf_xr = set_global_attrs(input_netcdf_xr, attr_dict)
+            # Add a description
+            input_netcdf_xr.attrs['description'] = f"Input data for the Unet model. Data for each year is added to this file as it is generated."
         # Save the netcdf file
         input_netcdf_xr.to_netcdf(output_filepath)
         print(f"Saved y input data to {output_filepath}")
     # return np.array(y_data)
     return input_netcdf_xr
 
+def set_global_attrs(
+    xr_dataset,
+    attr_dict,
+    ):
+    """
+    Add attributes to an xarray Dataset.
+
+    Parameters
+    ----------
+    xr_dataset : xarray.Dataset
+        The dataset to which attributes will be added.
+    attr_dict : dict
+        Dictionary of attributes to add to the dataset.
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset with added attributes.
+    """
+    # Verify the dataset
+    xr_dataset = udata.verify_dataset(xr_dataset)
+    # Verify the attribute dictionary
+    if not isinstance(attr_dict, dict):
+        raise TypeError(f'attr_dict must be a dictionary, got {type(attr_dict)}.')
+    # Add each attribute to the dataset
+    for key, value in attr_dict.items():
+        xr_dataset.attrs[key] = value
+    # Update the modification date
+    xr_dataset.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+    return xr_dataset
 def make_x_input_file(
     year,
     stage,
