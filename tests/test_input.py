@@ -16,7 +16,7 @@ time_arr = pd.date_range(start=n_start, end=n_end, freq='D')
 n_time = len(time_arr)
 example_xr = xr.Dataset(
     {
-        'no2_sfc': (('time', 'lat', 'lon'), np.random.rand(n_time, n_lat, n_lon)),
+        'nox': (('time', 'lat', 'lon'), np.random.rand(n_time, n_lat, n_lon)),
         'u10': (('time', 'lat', 'lon'), np.random.rand(n_time, n_lat, n_lon)),
     },
     coords={
@@ -148,6 +148,54 @@ def test_set_global_attrs():
             assert True, f"set_global_attrs raised an exception on invalid g_attrs input '{invalid}': {e}"
         else:
             assert False, f"set_global_attrs did not raise an exception on invalid g_attrs input '{invalid}'"
+
+def test_set_var_attrs():
+    """Test the set_var_attrs function."""
+    # Define variable attributes
+    var_attrs = {
+        'nox': {
+            'long_name': 'Surface NOx emissions',
+            'units': 'kgN/m2/s',
+        },
+        'u10': {
+            'long_name': '10m U Wind',
+            'units': 'm/s',
+        },
+    }
+    # Create a copy of the example dataset to avoid modifying the original
+    actual = example_xr.copy()
+    # Call the function to set variable attributes
+    for var in var_attrs.keys():
+        if var not in actual.data_vars:
+            raise ValueError(f"Variable '{var}' not found in actual Dataset.")
+        if not isinstance(var_attrs[var], dict):
+            raise TypeError(f"Attributes for variable '{var}' must be a dictionary.")
+        actual = uin.set_var_attrs(actual, var, var_attrs[var])
+    # Verify that the output is an xarray Dataset
+    assert isinstance(actual, xr.Dataset), "set_var_attrs did not return an xarray Dataset."
+    # Verify that the variable attributes were set correctly
+    for var, attrs in var_attrs.items():
+        for attr, value in attrs.items():
+            actual_attr = actual[var].attrs.get(attr)
+            assert actual_attr == value, f"set_var_attrs did not set attribute '{attr}' for variable '{var}' correctly. Expected {value}, got {actual_attr}"
+
+    # Create a copy of the example dataset to avoid modifying the original
+    actual = example_xr.copy()
+    # Test invalid inputs
+    invalid_inputs = [None, 'not_a_dataset', 123, True, False, []]
+    for invalid in invalid_inputs:
+        try:
+            uin.set_var_attrs(invalid, var_attrs)
+        except (TypeError, ValueError) as e:
+            assert True, f"set_var_attrs raised an exception on invalid dataset input '{invalid}': {e}"
+        else:
+            assert False, f"set_var_attrs did not raise an exception on invalid dataset input '{invalid}'"
+        try:
+            uin.set_var_attrs(actual, invalid)
+        except (TypeError, ValueError) as e:
+            assert True, f"set_var_attrs raised an exception on invalid var_attrs input '{invalid}': {e}"
+        else:
+            assert False, f"set_var_attrs did not raise an exception on invalid var_attrs input '{invalid}'"
 
 def test_make_x_input_file():
     """Test the make_x_input_file function."""
