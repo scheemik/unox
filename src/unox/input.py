@@ -291,7 +291,6 @@ def set_var_attrs(
     xr_dataset,
     var,
     attr_dict,
-    scale_factor=None,
     ):
     """
     Add attributes to a variable in an xarray Dataset.
@@ -304,8 +303,6 @@ def set_var_attrs(
         The variable to which attributes will be added.
     attr_dict : dict
         Dictionary of attributes to add to the variable.
-    scale_factor : float, optional
-        If provided, add an attribute indicating the scale factor applied to the variable.
 
     Returns
     -------
@@ -322,11 +319,7 @@ def set_var_attrs(
         raise TypeError(f'attr_dict must be a dictionary, got {type(attr_dict)}.')
     # Add each attribute to the variable
     for key, value in attr_dict.items():
-        if key in ['units']:
-            attr_update = f"{value} * scale_factor"
-        else:
-            attr_update = value
-        xr_dataset[var].attrs[key] = attr_update
+        xr_dataset[var].attrs[key] = value
     return xr_dataset
 
 def scale_xr_var(
