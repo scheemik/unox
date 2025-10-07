@@ -130,6 +130,9 @@ def test_set_global_attrs():
     expected_mod_date = pd.to_datetime(modification_date)
     time_diff = abs((actual_mod_date - expected_mod_date).total_seconds())
     assert time_diff < 60, f"set_global_attrs did not set modification_date correctly. Expected {modification_date}, got {actual.attrs.get('modification_date')}"
+
+    # Create a copy of the example dataset to avoid modifying the original
+    actual = example_xr.copy()
     # Test invalid inputs
     invalid_inputs = [None, 'not_a_dataset', 123, True, False, []]
     for invalid in invalid_inputs:
@@ -140,7 +143,7 @@ def test_set_global_attrs():
         else:
             assert False, f"set_global_attrs did not raise an exception on invalid dataset input '{invalid}'"
         try:
-            uin.set_global_attrs(example_xr, invalid)
+            uin.set_global_attrs(actual, invalid)
         except (TypeError, ValueError) as e:
             assert True, f"set_global_attrs raised an exception on invalid g_attrs input '{invalid}': {e}"
         else:
