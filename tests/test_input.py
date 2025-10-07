@@ -197,6 +197,52 @@ def test_set_var_attrs():
         else:
             assert False, f"set_var_attrs did not raise an exception on invalid var_attrs input '{invalid}'"
 
+def test_scale_xr_var():
+    """Test the scale_xr_var function."""
+    # Create a copy of the example dataset to avoid modifying the original
+    actual = example_xr.copy()
+    # Define scale factors
+    scale_factors = {
+        'nox': 1e12,
+        'u10': 1,
+    }
+    # Call the function to scale variables
+    for var, factor in scale_factors.items():
+        if var not in actual.data_vars:
+            raise ValueError(f"Variable '{var}' not found in actual Dataset.")
+        if not isinstance(factor, (int, float)):
+            raise TypeError(f"Scale factor for variable '{var}' must be a number.")
+        actual = uin.scale_xr_var(actual, var, factor)
+    # Verify that the output is an xarray Dataset
+    assert isinstance(actual, xr.Dataset), "scale_xr_var did not return an xarray Dataset."
+    # Verify that the variables were scaled correctly
+    for var, factor in scale_factors.items():
+        expected = example_xr[var] * factor
+        actual_data = actual[var].data
+        assert np.array_equal(actual_data, expected.data), f"scale_xr_var did not scale variable '{var}' correctly."
+
+    # Create a copy of the example dataset to avoid modifying the original
+    actual = example_xr.copy()
+    # Test invalid inputs
+    invalid_inputs = [None, 'not_a_dataset', 123, True, False, []]
+    for invalid in invalid_inputs:
+        try:
+            uin.scale_xr_var(invalid, 'nox', 1e12)
+        except (TypeError, ValueError) as e:
+            assert True, f"scale_xr_var raised an exception on invalid dataset input '{invalid}': {e}"
+        else:
+            assert False, f"scale_xr_var did not raise an exception on invalid dataset input '{invalid}'"
+        try:
+            uin.scale_xr_var(actual, invalid, 1e12)
+        except (TypeError, ValueError) as e:
+            assert True, f"scale_xr_var raised an exception on invalid var input '{invalid}': {e}"
+        else:
+            assert False, f"scale_xr_var did not raise an exception on invalid var input '{invalid}'"
+        try:
+            uin.scale_xr_var(actual, 'nox', invalid)
+        except (TypeError, ValueError) as e:
+            assert True
+
 def test_make_x_input_file():
     """Test the make_x_input_file function."""
     # Set the arguments for a test run
