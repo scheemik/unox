@@ -356,7 +356,7 @@ def scale_xr_var(
     # Add scale factor to the attributes
     var_attrs['scale_factor'] = scale_factor
     # Reapply the variable attributes
-    xr_dataset = set_var_attrs(xr_dataset, var, var_attrs, scale_factor)
+    xr_dataset = set_var_attrs(xr_dataset, var, var_attrs)
     return xr_dataset
 
 def make_x_input_file(
