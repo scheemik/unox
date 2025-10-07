@@ -9,6 +9,7 @@ import warnings
 
 import unox.unox as unox
 import unox.data as udata
+from unox.plot_format import pad_extent
 
 # emiss = Emissions (TCR-2 t106)
 # chemra = Chemical Reanalysis (TROPESS TCR-2)
@@ -390,13 +391,21 @@ def scale_xr_var(
     # Note the variable attributes
     var_attrs = xr_dataset[var].attrs
     # Print the time range
-    print(f"Scaling variable '{var}' for time range {xr_dataset.coords['time'].values[0]} to {xr_dataset.coords['time'].values[-1]} by a factor of {scale_factor}.")
+    time_start = xr_dataset.coords['time'].values[0]
+    time_end = xr_dataset.coords['time'].values[-1]
+    print(f"Scaling variable '{var}' for time range {time_start} to {time_end} by a factor of {scale_factor}.")
     # Print the maximum, minimum, and mean before scaling
-    print(f"Before scaling {var}: max={xr_dataset[var].max().item()}, min={xr_dataset[var].min().item()}, mean={xr_dataset[var].mean().item()}")
+    this_max = xr_dataset[var].max().item()
+    this_min = xr_dataset[var].min().item()
+    this_mean = xr_dataset[var].mean().item()
+    print(f"Before scaling {var}: max={this_max}, min={this_min}, mean={this_mean}")
     # Scale the variable
     xr_dataset[var] = xr_dataset[var] * scale_factor
     # Print the maximum, minimum, and mean after scaling
-    print(f"After scaling {var}: max={xr_dataset[var].max().item()}, min={xr_dataset[var].min().item()}, mean={xr_dataset[var].mean().item()}")
+    this_max = xr_dataset[var].max().item()
+    this_min = xr_dataset[var].min().item()
+    this_mean = xr_dataset[var].mean().item()
+    print(f"After scaling {var}: max={this_max}, min={this_min}, mean={this_mean}")
     # Add scale factor to the attributes
     var_attrs['scale_factor'] = scale_factor
     # Reapply the variable attributes
@@ -417,6 +426,7 @@ def make_x_input_file(
                     'blh': 1000},
     stage_2_cutoff=2013,
     output_dir='test_input',
+    overwrite=True,
     **kwargs,
     ):
     """
@@ -462,7 +472,7 @@ def make_x_input_file(
         The x input data for the specified year and stage.
     """
     # Assemble the file path for the chemical reanalysis data
-    chemra_filepath = os.path.join(data_dir, f'{chemra_path}{year}.nc')
+    chemra_filepath = f'{data_dir}/{chemra_path}{year}.nc'
     # Verify the path
     chemra_filepath = unox.verify_path(chemra_filepath)
     # Load chemical reanalysis data
@@ -476,8 +486,24 @@ def make_x_input_file(
     # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
     if chemra_path=='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
         chemra.coords['lon'] = udata.shift_lon_arr(chemra.coords['lon'])
-    # Resample and rescale
-    chemra = chemra.resample(time='d').mean() / scale_factors['chemra']
+    # Get latitude and longitude values
+    lats, lons = unox.load_lats_lons()
+    # Get the extent of the lats and lons
+    extent = udata.get_extent(lats=lats, lons=lons)
+    # Pad the extent
+    extent = pad_extent(extent, padding=0.1)
+    # Trim the chemical reanalysis data to the extent of the lat/lon grid
+    chemra = chemra.where(
+        (chemra.lat >= extent[0]) &
+        (chemra.lat <= extent[1]) &
+        (chemra.lon >= extent[2]) &
+        (chemra.lon <= extent[3]),
+        drop=True,
+    )
+    # Resample the time to days
+    chemra = chemra.resample(time='d').mean()
+    # Rescale the chemical reanalysis data
+    chemra = scale_xr_var(chemra, chemra_var, 1/scale_factors['chemra'])
     # Find the number of days in the year
     ndays = len(chemra.coords['time'])
     # Fix the time coordinate to match the year
@@ -495,7 +521,6 @@ def make_x_input_file(
         chemra = fill_w_insitu(chemra, epa_filepath)
     
     # Interpolate to latitude and longitude grid
-    lats, lons = unox.load_lats_lons()
     chemra = chemra.interp(lat=lats, lon=lons, method='slinear')
     
     # Start a list to hold datasets
