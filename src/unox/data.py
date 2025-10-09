@@ -601,7 +601,12 @@ def shift_lon_arr(
         raise TypeError("Input must be a numpy.ndarray or xarray.DataArray.")
     # Map the shift_lon function to each element in the array
     shifted_lon = np.vectorize(shift_lon, excluded={1})(lon_array, **kwargs)
-    return shifted_lon
+    # If it is an xarray DataArray, save the variable attributes
+    if isinstance(lon_array, xr.DataArray):
+        lon_array.assign_coords({'lon':shifted_lon})
+        return lon_array
+    else:
+        return shifted_lon
 
 def get_vminmax(
     arrays,
