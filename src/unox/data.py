@@ -570,7 +570,7 @@ def shift_lon(
     return lon_value
 
 def shift_lon_arr(
-    lon_array,
+    in_array,
     **kwargs,
     ):
     """
@@ -580,31 +580,43 @@ def shift_lon_arr(
 
     Parameters
     ----------
-    lon_array : numpy.ndarray or xarray.DataArray
+    in_array : numpy.ndarray or xarray.Dataset
         The array of longitude values to shift.
     **kwargs : keyword arguments
         Additional keyword arguments to pass to `shift_lon()`.
 
     Returns
     -------
-    numpy.ndarray or xarray.DataArray
+    numpy.ndarray or xarray.Dataset
         The shifted longitude values in the range [-180, 180].
 
     Examples
     --------
-    >>> lon_array = np.array([0, 90, 180, 270, 360])
-    >>> shifted_lon = shift_lon_arr(lon_array)
+    >>> in_array = np.array([0, 90, 180, 270, 360])
+    >>> shifted_lon = shift_lon_arr(in_array)
     array([0, 90, 180, -90, 0])
+
+    >>> xarray_dataset.coords['lon'].values
+    array([  0.   ,   1.125,   2.25 , ... 357.75 , 358.875], dtype=float32)
+    >>> xarray_dataset = shift_lon_arr(xarray_dataset)
+    >>> xarray_dataset.coords['lon'].values
+    array([  0.   ,   1.125,   2.25 , ...  -2.25 ,  -1.125], dtype=float32)
     """
-    # Ensure the input is a numpy array or xarray DataArray
-    if not isinstance(lon_array, (np.ndarray, xr.DataArray)):
-        raise TypeError("Input must be a numpy.ndarray or xarray.DataArray.")
+    # Ensure the input is a numpy array or xarray Dataset
+    if isinstance(in_array, np.ndarray):
+        lon_array = in_array
+    elif isinstance(in_array, xr.Dataset):
+        lon_array = in_array.coords['lon']
+        lon_attrs = lon_array.attrs
+    else:
+        raise TypeError("Input must be a numpy.ndarray or xarray.Dataset.")
     # Map the shift_lon function to each element in the array
     shifted_lon = np.vectorize(shift_lon, excluded={1})(lon_array, **kwargs)
-    # If it is an xarray DataArray, save the variable attributes
-    if isinstance(lon_array, xr.DataArray):
-        lon_array.assign_coords({'lon':shifted_lon})
-        return lon_array
+    # If it is an xarray Dataset, save the variable attributes
+    if isinstance(in_array, xr.Dataset):
+        in_array = in_array.assign_coords({'lon':shifted_lon})
+        in_array.lon.attrs = lon_attrs
+        return in_array
     else:
         return shifted_lon
 
