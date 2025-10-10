@@ -841,6 +841,8 @@ def plot_npy_diff(
     print("Number of differences:", np.sum(ab_diff),'/', total_entries, '(', np.sum(ab_diff)/total_entries*100, '% )')
     if np.sum(ab_diff) == 0:
         no_diff = True
+        print("The two arrays are identical. Skiping plot.")
+        return
     else:
         no_diff = False
 
