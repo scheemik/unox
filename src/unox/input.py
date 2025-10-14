@@ -498,10 +498,18 @@ def make_x_input_file(
     if "lev" in list(chemra.coords):
         print("level dimension detected")
         chemra = chemra.sum("lev")
-    # Change longitude coordinate convention to match other data
-    # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
+    # Regularize the data depending on the source
     if chemra_path=='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
-        chemra.coords['lon'] = udata.shift_lon_arr(chemra.coords['lon'])
+        # Change longitude coordinate convention to match other data
+        # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
+        chemra = udata.shift_lon_arr(chemra)
+        # Drop the `nv` dimension and the `bnds` variables
+        if 'nv' in chemra.dims:
+            chemra = chemra.isel(nv=0).drop_vars(['time_bnds', 'lon_bnds', 'lat_bnds'])
+        # For time, latitude, and longitude, drop the var+`_bnds` attributes
+        for coord in ['time', 'lat', 'lon']:
+            if 'bounds' in chemra[coord].attrs:
+                chemra[coord].attrs.pop('bounds')
     # Get latitude and longitude values
     lats, lons = unox.load_lats_lons()
     # Get the extent of the lats and lons
@@ -524,8 +532,12 @@ def make_x_input_file(
     ndays = len(chemra.coords['time'])
     # Fix the time coordinate to match the year
     if chemra_path=='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
+        # Save the time attributes
+        time_attrs = chemra['time'].attrs
         # For an unexplained reason, the year in all TCR-2 files is always 2005.
         chemra.coords['time'] = pd.date_range(f"{year}-01-01", periods=ndays)
+        # Reapply the time attributes
+        chemra['time'].attrs = time_attrs
     
     # Combine chemical reanalysis and insitu data for stage 2
     if stage == 2 and year > stage_2_cutoff:
