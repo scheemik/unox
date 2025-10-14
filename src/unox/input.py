@@ -553,6 +553,9 @@ def make_x_input_file(
     previousday = previousday.rename({chemra_var: chemra_var_tm1})
     # Add the chemical reanalysis data for the previous day (t-1)
     datasets.append(previousday[chemra_var_tm1][:-1])  # day t-1
+    chemra[chemra_var_tm1] = chemra[chemra_var].shift(time=1)
+    # Drop January 1st, as the t-1 variable will have null values on that day
+    chemra = chemra.drop_sel(time=f'{year}-01-01')
 
     # Add the other variables from the ERA5 dataset
     for variable in era5_vars_list:
@@ -563,10 +566,19 @@ def make_x_input_file(
         # Load the ERA5 variable dataset
         # Note: The variable name in the dataset is assumed to be the same as `variable`
         era5_var = xr.load_dataset(era5_var_filepath)
+        # Drop the `number` coordinate
+        era5_var = era5_var.drop_vars('number')
         # Rename coordinates to match the other datasets
         era5_var = era5_var.rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
         # Add the variable data to the datasets list, skipping the first day
         datasets.append(getattr(era5_var, variable)[1:])
+        # Drop January 1st, as the t-1 variable will have null values on that day
+        era5_var = era5_var.drop_sel(time=f'{year}-01-01')
+        # Add the variable to the xarray
+        ## Note: This assumes that the coordinates are the same
+        ## which is true in this case as the lat lon arrays used to interpolate
+        ## the chemra data came from the ERA5 data originally
+        chemra[variable] = era5_var[variable]
     
     # Merge all datasets into a single xarray Dataset
     x_data = xr.merge(datasets)
