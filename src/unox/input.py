@@ -180,34 +180,34 @@ def make_y_input_file(
     # Save the data as a numpy file
     if not isinstance(output_dir, type(None)):
         # Assemble the file path
-        # output_filepath = os.path.join(f'inputfiles/{output_dir}/stage1/y/Y_{year}.npy')
-        # # Make sure the output directory exists
-        # unox.make_file_path(output_filepath)
-        # np.save(output_filepath, y_data)
-        # if year > stage_2_cutoff:
-        #     # Save in stage 2 for years later than specified
-        #     output_filepath_stage2 = os.path.join(f'inputfiles/{output_dir}/stage2/y/Y_{year}.npy')
-        #     # Make sure the output directory exists
-        #     unox.make_file_path(output_filepath_stage2)
-        #     np.save(output_filepath_stage2, y_data)
-        # # Create metadata file
-        # make_input_metadata_file(
-        #     year=year,
-        #     x_or_y='y',
-        #     attr_dict={
-        #         'vars': var,
-        #         'emiss_dir': emiss_dir,
-        #         'emiss_pre': emiss_pre,
-        #         'emiss_post': emiss_post,
-        #         'scale_factor': scale_factor,
-        #         'nan_fill': nan_fill,
-        #         'stage_2_cutoff': stage_2_cutoff,
-        #     },
-        #     stage=None,
-        #     output_dir=output_dir,
-        # )
-        # # Output message
-        # print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
+        output_filepath = os.path.join(f'inputfiles/{output_dir}/stage1/y/Y_{year}.npy')
+        # Make sure the output directory exists
+        unox.make_file_path(output_filepath)
+        np.save(output_filepath, y_data)
+        if year > stage_2_cutoff:
+            # Save in stage 2 for years later than specified
+            output_filepath_stage2 = os.path.join(f'inputfiles/{output_dir}/stage2/y/Y_{year}.npy')
+            # Make sure the output directory exists
+            unox.make_file_path(output_filepath_stage2)
+            np.save(output_filepath_stage2, y_data)
+        # Create metadata file
+        make_input_metadata_file(
+            year=year,
+            x_or_y='y',
+            attr_dict={
+                'vars': var,
+                'emiss_dir': emiss_dir,
+                'emiss_pre': emiss_pre,
+                'emiss_post': emiss_post,
+                'scaled_by': scale_factor,
+                'nan_fill': nan_fill,
+                'stage_2_cutoff': stage_2_cutoff,
+            },
+            stage=None,
+            output_dir=output_dir,
+        )
+        # Output message
+        print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
         ### For netcdf
         # Assemble the file path
         output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
@@ -590,6 +590,14 @@ def make_x_input_file(
     for i in range(len(datavars)):
         xnp[:, :, :, i] = x_data[datavars[i]]  # Put it in the numpy array
 
+    # Create a dictionary of global attributes
+    g_attr_dict={
+        'x_vars': datavars,
+        'data_dir': data_dir,
+        'chemra_path': chemra_path,
+        'insitu_path': insitu_path,
+        'era5_path': era5_path,
+    }
     ## Save the data as a numpy file
     if not isinstance(output_dir, type(None)):
         # Assemble the file path
@@ -619,14 +627,7 @@ def make_x_input_file(
         ### For netcdf
         # Assemble the file path
         output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
-        # Create a dictionary of global attributes
-        g_attr_dict={
-            'x_vars': datavars,
-            'data_dir': data_dir,
-            'chemra_path': chemra_path,
-            'insitu_path': insitu_path,
-            'era5_path': era5_path,
-        }
+        # Write data out to a netcdf
         input_netcdf_xr = write_input_netcdf(
             chemra,
             output_filepath,
@@ -843,13 +844,13 @@ def make_all_x_input_files(
     # Make sure the output directory exists
     if not os.path.exists(f'inputfiles/{output_dir}/stage{stage}/x'):
         os.makedirs(f'inputfiles/{output_dir}/stage{stage}/x')
-    x_data_array = []
+    # x_data_array = []
     for year in years:
         if stage == 2 and year <= stage_2_cutoff:
             # Skip stage 2 for years before the cutoff
             continue
         print(f"Creating x input file for stage {stage} in {year}...")
-        x_data = make_x_input_file(
+        input_netcdf_xr = make_x_input_file(
             year=year,
             stage=stage,
             stage_2_cutoff=stage_2_cutoff,
@@ -857,7 +858,7 @@ def make_all_x_input_files(
             sort=False,
             **kwargs,
         )
-        x_data_array.append(x_data)
+        # x_data_array.append(x_data)
     # Sort the dataset by time
     if sort:
         print("Sorting the x data by time.")
