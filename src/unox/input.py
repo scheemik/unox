@@ -223,6 +223,7 @@ def make_y_input_file(
             output_filepath,
             g_attr_dict=g_attr_dict,
             overwrite=overwrite,
+            **kwargs,
         )
         print(f"Saved y input data to {output_filepath}")
     # return np.array(y_data)
@@ -233,6 +234,7 @@ def write_input_netcdf(
     output_filepath,
     g_attr_dict=None,
     overwrite=True,
+    sort=True,
     ):
     """
     Write an xarray Dataset to a netcdf file, appending or overwriting as needed.
@@ -247,6 +249,9 @@ def write_input_netcdf(
         Dictionary of global attributes to add to the dataset if creating a new file.
     overwrite : bool, optional
         Whether to overwrite existing data in the netcdf file if there are overlapping times.
+        Default is True.
+    sort : bool, optional
+        Whether to sort the xarray before writing to netcdf. Sorting takes a long time.
         Default is True.
 
     Returns
@@ -285,7 +290,9 @@ def write_input_netcdf(
         # Concatenate the new data with the existing dataset along the time dimension
         input_netcdf_xr = xr.concat([existing_ds, input_netcdf_xr], dim='time')
         # Sort the dataset by time
-        input_netcdf_xr = input_netcdf_xr.sortby('time')
+        if sort:
+            print("Sorting the dataset by time.")
+            input_netcdf_xr = input_netcdf_xr.sortby('time')
     else:
         # New netcdf, add global attributes
         input_netcdf_xr = set_global_attrs(input_netcdf_xr, g_attr_dict)
@@ -711,6 +718,7 @@ def make_all_y_input_files(
     years=range(2005, 2021),
     var='nox',
     output_dir='test_input',
+    sort=True,
     **kwargs,
     ):
     """
@@ -727,6 +735,9 @@ def make_all_y_input_files(
     output_dir : str, optional
         Directory inside `inputfiles/` where the output y input files will be saved.
         Default is `'test_input'`.
+    sort : bool, optional
+        Whether to sort the xarray after making all y inputs. Sorting takes a long time.
+        Default is True.
     **kwargs : dict, optional
         Additional keyword arguments to pass to the `make_y_input_file` function.
 
@@ -747,9 +758,14 @@ def make_all_y_input_files(
             year=year, 
             var=var,
             output_dir=output_dir,
+            sort=False,
             **kwargs,
         )
         # y_data_array.append(y_data)
+    # Sort the dataset by time
+    if sort:
+        print("Sorting the y data by time.")
+        input_netcdf_xr = input_netcdf_xr.sortby('time')
     return input_netcdf_xr
 
 def make_all_x_input_files(
@@ -757,6 +773,7 @@ def make_all_x_input_files(
     stage=1,
     stage_2_cutoff=2013,
     output_dir='test_input',
+    sort=True,
     **kwargs,
     ):
     """
@@ -776,6 +793,9 @@ def make_all_x_input_files(
     output_dir : str, optional
         Directory inside `inputfiles/` where the output x input files will be saved.
         Default is `'test_input'`.
+    sort : bool, optional
+        Whether to sort the xarray after making all x inputs. Sorting takes a long time.
+        Default is True.
     **kwargs : dict, optional
         Additional keyword arguments to pass to the `make_x_input_file` function.
 
@@ -798,15 +818,21 @@ def make_all_x_input_files(
             stage=stage,
             stage_2_cutoff=stage_2_cutoff,
             output_dir=output_dir,
+            sort=False,
             **kwargs,
         )
         x_data_array.append(x_data)
+    # Sort the dataset by time
+    if sort:
+        print("Sorting the x data by time.")
+        input_netcdf_xr = input_netcdf_xr.sortby('time')
     return x_data_array
 
 def make_all_input_files(
     years=range(2005, 2021),
     stages=[1, 2],
     output_dir='test_input',
+    sort=True,
     **kwargs,
     ):
     """
@@ -825,6 +851,9 @@ def make_all_input_files(
     output_dir : str, optional
         Directory inside `inputfiles/` where the output input files will be saved.
         Default is `'test_input'`.
+    sort : bool, optional
+        Whether to sort the xarray after making all inputs. Sorting takes a long time.
+        Default is True.
     **kwargs : dict, optional
         Additional keyword arguments to pass to the `make_y_input_file` and 
         `make_x_input_file` functions.
@@ -844,21 +873,28 @@ def make_all_input_files(
             os.makedirs(stage_dir)
     # Create y input files
     print("Creating y input files...")
-    make_all_y_input_files(
+    input_netcdf_xr = make_all_y_input_files(
         years=years,
         output_dir=output_dir,
+        sort=False,
         **kwargs,
     )
     # Create x input files for each stage
     for stage in stages:
         print(f"Creating x input files for stage {stage}...")
-        make_all_x_input_files(
+        input_netcdf_xr = make_all_x_input_files(
             years=years,
             stage=stage,
             output_dir=output_dir,
+            sort=False,
             **kwargs,
         )
+    # Sort the dataset by time
+    if sort:
+        print("Sorting the y data by time.")
+        input_netcdf_xr = input_netcdf_xr.sortby('time')
     print("Completed making all input files.")
+    return input_netcdf_xr
 
 def make_input_metadata_file(
     year,
