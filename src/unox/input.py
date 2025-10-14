@@ -177,6 +177,15 @@ def make_y_input_file(
     # Skip the first day because of the t-1 thing
     input_netcdf_xr = y_data.isel(time=slice(1,None))
     y_data = y_data[var][1::]
+    # Create a dictionary of global attributes
+    g_attr_dict={
+        'y_var': var,
+        'emiss_dir': emiss_dir,
+        'emiss_pre': emiss_pre,
+        'emiss_post': emiss_post,
+        'nan_fill': nan_fill,
+        'stage_2_cutoff': stage_2_cutoff,
+    }
     # Save the data as a numpy file
     if not isinstance(output_dir, type(None)):
         # Assemble the file path
@@ -211,15 +220,7 @@ def make_y_input_file(
         ### For netcdf
         # Assemble the file path
         output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
-        # Create a dictionary of global attributes
-        g_attr_dict={
-            'y_var': var,
-            'emiss_dir': emiss_dir,
-            'emiss_pre': emiss_pre,
-            'emiss_post': emiss_post,
-            'nan_fill': nan_fill,
-            'stage_2_cutoff': stage_2_cutoff,
-        }
+        # Write data out to a netcdf
         input_netcdf_xr = write_input_netcdf(
             input_netcdf_xr,
             output_filepath,
@@ -228,8 +229,10 @@ def make_y_input_file(
             **kwargs,
         )
         print(f"Saved y input data to {output_filepath}")
-    # return np.array(y_data)
-    return xr.load_dataset(output_filepath)
+        # return np.array(y_data)
+        return xr.load_dataset(output_filepath), g_attr_dict
+    else:
+        return input_netcdf_xr, g_attr_dict
 
 def write_input_netcdf(
     input_netcdf_xr,
@@ -237,6 +240,7 @@ def write_input_netcdf(
     g_attr_dict=None,
     overwrite=True,
     sort=True,
+    **kwargs,
     ):
     """
     Write an xarray Dataset to a netcdf file, appending or overwriting as needed.
@@ -276,35 +280,46 @@ def write_input_netcdf(
             raise ValueError(f"Latitude values of the existing netcdf file and the new data do not match. \nExisting lats: \n{existing_lats} \nNew lats: \n{new_lats}")
         if not np.array_equal(existing_lons, new_lons):
             raise ValueError(f"Longitude values of the existing netcdf file and the new data do not match. \nExisting lons: \n{existing_lons} \nNew lons: \n{new_lons}")
-        # Check whether any time values are already present in the existing dataset
-        existing_times = set(existing_ds.coords['time'].values)
-        new_times = set(input_netcdf_xr.coords['time'].values)
-        overlapping_times = existing_times.intersection(new_times)
-        if len(overlapping_times) > 1:
-            # Get the first and last overlapping times
-            first_overlap = min(overlapping_times)
-            last_overlap = max(overlapping_times)
-            # Format them to YYYY-MM-DD
-            first_overlap = pd.to_datetime(str(first_overlap)).strftime('%Y-%m-%d')
-            last_overlap = pd.to_datetime(str(last_overlap)).strftime('%Y-%m-%d')
-        if overlapping_times and overwrite==False:
-            raise ValueError(f"The new data overlaps with the existing file in {output_filepath} between {first_overlap} and {last_overlap}. To overwrite, set overwrite=True.")
-        elif overlapping_times and overwrite==True:
-            print(f"Overwriting overlapping data in {output_filepath} for times between {first_overlap} and {last_overlap}.")
-            # Remove the overlapping times from the existing dataset
-            existing_ds = existing_ds.drop_sel(time=list(overlapping_times))
-        # Concatenate the new data with the existing dataset along the time dimension
-        input_netcdf_xr = xr.concat([existing_ds, input_netcdf_xr], dim='time')
+        # Get lists of variables from both datasets
+        new_vars = list(input_netcdf_xr.data_vars)
+        existing_vars = list(existing_ds.data_vars)
+        # Find the variables in common, if any
+        shared_vars = set(new_vars) & set(existing_vars)
+        if len(shared_vars) > 0:
+            # Check whether any time values are already present in the existing dataset
+            existing_times = set(existing_ds.coords['time'].values)
+            new_times = set(input_netcdf_xr.coords['time'].values)
+            overlapping_times = existing_times.intersection(new_times)
+            if len(overlapping_times) > 1:
+                # Get the first and last overlapping times
+                first_overlap = min(overlapping_times)
+                last_overlap = max(overlapping_times)
+                # Format them to YYYY-MM-DD
+                first_overlap = pd.to_datetime(str(first_overlap)).strftime('%Y-%m-%d')
+                last_overlap = pd.to_datetime(str(last_overlap)).strftime('%Y-%m-%d')
+            if overlapping_times and overwrite==False:
+                raise ValueError(f"The new data overlaps with the existing file in {output_filepath} between {first_overlap} and {last_overlap}. To overwrite, set overwrite=True.")
+            elif overlapping_times and overwrite==True:
+                print(f"Overwriting overlapping data in {output_filepath} for times between {first_overlap} and {last_overlap}.")
+                # Remove the overlapping times from the existing dataset
+                existing_ds = existing_ds.drop_sel(time=list(overlapping_times))
+            # Concatenate the new data with the existing dataset along the time dimension
+            input_netcdf_xr = xr.concat([existing_ds, input_netcdf_xr], dim='time')
+        else:
+            # Merge the datasets
+            input_netcdf_xr = xr.merge([existing_ds, input_netcdf_xr])
         # Sort the dataset by time
         if sort:
             print("Sorting the dataset by time.")
             input_netcdf_xr = input_netcdf_xr.sortby('time')
     else:
-        # New netcdf, add global attributes
-        input_netcdf_xr = set_global_attrs(input_netcdf_xr, g_attr_dict)
         # Add a description
         input_netcdf_xr.attrs['description'] = f"Input data for the Unet model. Data for each year is added to this file as it is generated."
+    # Add global attributes
+    input_netcdf_xr = set_global_attrs(input_netcdf_xr, g_attr_dict)
     # Save the netcdf file
+    # Make sure the output directory exists
+    unox.make_file_path(output_filepath)
     input_netcdf_xr.to_netcdf(output_filepath)
     return input_netcdf_xr
 
@@ -666,7 +681,7 @@ def make_x_input_file(
         print(f"Saved x input data to {output_filepath}")
     # return xnp
     # return chemra
-    return xr.load_dataset(output_filepath)
+    return xr.load_dataset(output_filepath), g_attr_dict
 
 def get_npy_from_netcdf(
     netcdf,
@@ -814,22 +829,32 @@ def make_all_y_input_files(
     #     os.makedirs(f'inputfiles/{output_dir}/stage1/y')
     # if not os.path.exists(f'inputfiles/{output_dir}/stage2/y'):
     #     os.makedirs(f'inputfiles/{output_dir}/stage2/y')
-    # y_data_array = []
+    y_data_array = []
     for year in years:
         print(f"\tCreating y input data for {var} in {year}...")
-        input_netcdf_xr = make_y_input_file(
+        y_data, g_attr_dict = make_y_input_file(
             year=year, 
             var=var,
-            output_dir=output_dir,
+            output_dir=None,
             sort=False,
             **kwargs,
         )
-        # y_data_array.append(y_data)
+        y_data_array.append(y_data)
+    # Concatenate the datasets along the time dimension
+    print(f"Concatenating the y datasets")
+    input_netcdf_xr = xr.concat(y_data_array, dim='time')
     # Sort the dataset by time
     if sort:
         print("Sorting the y data by time.")
         input_netcdf_xr = input_netcdf_xr.sortby('time')
-    output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
+    # Save the y data to a netcdf
+    print(f"Saving y inputs to {output_filepath}")
+    input_netcdf_xr = write_input_netcdf(
+        input_netcdf_xr,
+        output_filepath,
+        g_attr_dict=g_attr_dict,
+        **kwargs,
+    )
     return xr.load_dataset(output_filepath)
 
 def make_all_x_input_files(
