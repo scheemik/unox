@@ -265,11 +265,15 @@ def write_input_netcdf(
         existing_ds = xr.load_dataset(output_filepath)
         # Verify the dataset
         existing_ds = udata.verify_dataset(existing_ds)
-        # Check if the existing dataset and the new one have the same lat/lon coordinates
-        if not existing_ds.coords['lat'].equals(input_netcdf_xr.coords['lat']):
-            raise ValueError(f"Latitude coordinates of the existing netcdf file and the new data do not match. Existing lats: {existing_ds.coords['lat']}, new lats: {input_netcdf_xr.coords['lat']}")
-        if not existing_ds.coords['lon'].equals(input_netcdf_xr.coords['lon']):
-            raise ValueError(f"Longitude coordinates of the existing netcdf file and the new data do not match. Existing lons: {existing_ds.coords['lon']}, new lons: {input_netcdf_xr.coords['lon']}")
+        # Check if the existing dataset and the new one have the same lat/lon values
+        existing_lats = existing_ds.coords['lat'].values
+        existing_lons = existing_ds.coords['lon'].values
+        new_lats = input_netcdf_xr.coords['lat'].values
+        new_lons = input_netcdf_xr.coords['lon'].values
+        if not np.array_equal(existing_lats, new_lats):
+            raise ValueError(f"Latitude values of the existing netcdf file and the new data do not match. \nExisting lats: \n{existing_lats} \nNew lats: \n{new_lats}")
+        if not np.array_equal(existing_lons, new_lons):
+            raise ValueError(f"Longitude values of the existing netcdf file and the new data do not match. \nExisting lons: \n{existing_lons} \nNew lons: \n{new_lons}")
         # Check whether any time values are already present in the existing dataset
         existing_times = set(existing_ds.coords['time'].values)
         new_times = set(input_netcdf_xr.coords['time'].values)
