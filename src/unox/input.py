@@ -406,19 +406,19 @@ def scale_xr_var(
     # Print the time range
     time_start = xr_dataset.coords['time'].values[0]
     time_end = xr_dataset.coords['time'].values[-1]
-    print(f"Scaling variable '{var}' for time range {time_start} to {time_end} by a factor of {scale_factor}.")
+    # print(f"Scaling variable '{var}' for time range {time_start} to {time_end} by a factor of {scale_factor}.")
     # Print the maximum, minimum, and mean before scaling
-    this_max = xr_dataset[var].max().item()
-    this_min = xr_dataset[var].min().item()
-    this_mean = xr_dataset[var].mean().item()
-    print(f"Before scaling {var}: max={this_max}, min={this_min}, mean={this_mean}")
+    # this_max = xr_dataset[var].max().item()
+    # this_min = xr_dataset[var].min().item()
+    # this_mean = xr_dataset[var].mean().item()
+    # print(f"Before scaling {var}: max={this_max}, min={this_min}, mean={this_mean}")
     # Scale the variable
     xr_dataset[var] = xr_dataset[var] * scale_factor
     # Print the maximum, minimum, and mean after scaling
-    this_max = xr_dataset[var].max().item()
-    this_min = xr_dataset[var].min().item()
-    this_mean = xr_dataset[var].mean().item()
-    print(f"After scaling {var}: max={this_max}, min={this_min}, mean={this_mean}")
+    # this_max = xr_dataset[var].max().item()
+    # this_min = xr_dataset[var].min().item()
+    # this_mean = xr_dataset[var].mean().item()
+    # print(f"After scaling {var}: max={this_max}, min={this_min}, mean={this_mean}")
     # Add scale factor to the attributes
     ## Note: `scale_factor` is a protected attribute name in xarray. If used, the variable
     ## will be scaled by that factor when loading with xr.load_dataset() and `scale_factor`
@@ -575,9 +575,13 @@ def make_x_input_file(
     chemra = chemra.convert_calendar('noleap')
 
     # Scale some variables to make orders of magnitude more similar
-    x_data['sp'] = x_data['sp'] / scale_factors['sp']        # Surface pressure
-    x_data['ssrd'] = x_data['ssrd'] / scale_factors['ssrd']  # Surface solar radiation
-    x_data['blh'] = x_data['blh'] / scale_factors['blh']     # Boundary layer height
+    for variable in era5_vars_list:
+        if variable in scale_factors.keys():
+            x_data = scale_xr_var(x_data, variable, 1/scale_factors[variable])
+            chemra = scale_xr_var(chemra, variable, 1/scale_factors[variable])
+    # x_data['sp'] = x_data['sp'] / scale_factors['sp']        # Surface pressure
+    # x_data['ssrd'] = x_data['ssrd'] / scale_factors['ssrd']  # Surface solar radiation
+    # x_data['blh'] = x_data['blh'] / scale_factors['blh']     # Boundary layer height
     # Reorder dimensions to match the expected format
     x_data = x_data[['time', 'lat', 'lon', *list(x_data.data_vars)]]
 
