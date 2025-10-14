@@ -172,6 +172,8 @@ def make_y_input_file(
     y_data = y_data.interp(lat=lats, lon=lons).resample(time='d').mean().fillna(nan_fill)
     # Add a dimension of size 1 to the end to match the number of dimensions for the x input files
     y_data = y_data.expand_dims('var',-1)
+    # Convert calendar to 'noleap' to remove February 29th
+    y_data = y_data.convert_calendar('noleap')
     # Skip the first day because of the t-1 thing
     input_netcdf_xr = y_data.isel(time=slice(1,None))
     y_data = y_data[var][1::]
@@ -567,6 +569,7 @@ def make_x_input_file(
     x_data = xr.merge(datasets)
     # Convert calendar to 'noleap' to remove February 29th
     x_data = x_data.convert_calendar('noleap')
+    chemra = chemra.convert_calendar('noleap')
 
     # Scale some variables to make orders of magnitude more similar
     x_data['sp'] = x_data['sp'] / scale_factors['sp']        # Surface pressure
