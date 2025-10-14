@@ -229,7 +229,7 @@ def make_y_input_file(
         )
         print(f"Saved y input data to {output_filepath}")
     # return np.array(y_data)
-    return input_netcdf_xr
+    return xr.load_dataset(output_filepath)
 
 def write_input_netcdf(
     input_netcdf_xr,
@@ -420,7 +420,10 @@ def scale_xr_var(
     this_mean = xr_dataset[var].mean().item()
     print(f"After scaling {var}: max={this_max}, min={this_min}, mean={this_mean}")
     # Add scale factor to the attributes
-    var_attrs['scale_factor'] = scale_factor
+    ## Note: `scale_factor` is a protected attribute name in xarray. If used, the variable
+    ## will be scaled by that factor when loading with xr.load_dataset() and `scale_factor`
+    ## will not show up in the loaded xarray. I'm using `scaled_by` to avoid this confusion.
+    var_attrs['scaled_by'] = scale_factor
     # Reapply the variable attributes
     xr_dataset = set_var_attrs(xr_dataset, var, var_attrs)
     return xr_dataset
@@ -598,6 +601,7 @@ def make_x_input_file(
         make_input_metadata_file(
             year=year,
             x_or_y='x',
+            
             attr_dict={
                 'vars': datavars,
                 'data_dir': data_dir,
@@ -612,6 +616,28 @@ def make_x_input_file(
         )
         # Output message
         print(f"Created X input file for stage {stage} in {year}, saved to {output_filepath}")
+        ### For netcdf
+        # Assemble the file path
+        output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
+        # Create a dictionary of global attributes
+        g_attr_dict={
+            'x_vars': datavars,
+            'data_dir': data_dir,
+            'chemra_path': chemra_path,
+            'insitu_path': insitu_path,
+            'era5_path': era5_path,
+        }
+        input_netcdf_xr = write_input_netcdf(
+            chemra,
+            output_filepath,
+            g_attr_dict=g_attr_dict,
+            overwrite=overwrite,
+            **kwargs,
+        )
+        print(f"Saved x input data to {output_filepath}")
+    # return xnp
+    # return chemra
+    return xr.load_dataset(output_filepath)
 
 def get_npy_from_netcdf(
     netcdf,
@@ -753,6 +779,7 @@ def make_all_y_input_files(
     y_data_array : list of numpy.ndarray
         List of y input data arrays for the specified years.
     """
+    output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
     # Make sure the output directory exists
     # if not os.path.exists(f'inputfiles/{output_dir}/stage1/y'):
     #     os.makedirs(f'inputfiles/{output_dir}/stage1/y')
@@ -773,7 +800,8 @@ def make_all_y_input_files(
     if sort:
         print("Sorting the y data by time.")
         input_netcdf_xr = input_netcdf_xr.sortby('time')
-    return input_netcdf_xr
+    output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
+    return xr.load_dataset(output_filepath)
 
 def make_all_x_input_files(
     years=range(2005, 2021),
@@ -811,6 +839,7 @@ def make_all_x_input_files(
     x_data_array : list of xarray.Dataset
         List of x input data arrays for the specified years and stages.
     """
+    output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
     # Make sure the output directory exists
     if not os.path.exists(f'inputfiles/{output_dir}/stage{stage}/x'):
         os.makedirs(f'inputfiles/{output_dir}/stage{stage}/x')
@@ -833,7 +862,7 @@ def make_all_x_input_files(
     if sort:
         print("Sorting the x data by time.")
         input_netcdf_xr = input_netcdf_xr.sortby('time')
-    return x_data_array
+    return xr.load_dataset(output_filepath)
 
 def make_all_input_files(
     years=range(2005, 2021),
