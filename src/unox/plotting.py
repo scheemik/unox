@@ -235,6 +235,7 @@ def plot_npy_map(
     lats,
     lons,
     cmap=pplt.Colormap('seismic'),
+    add_colorbar=False,
     c_halfrange=None,
     cb_extend='neither',
     ax_title='',
@@ -257,6 +258,9 @@ def plot_npy_map(
         The longitude coordinates of the data.
     cmap : matplotlib.colors.Colormap
         The colormap to use for the plot. Default is pplt.cm.seismic.
+    add_colorbar : bool, optional
+        Whether to add a colorbar on the right-hand side of the axis.
+        Default is False.
     c_halfrange : float
         The half range for the color normalization on diverging colormaps.
     cb_extend : str
@@ -296,6 +300,9 @@ def plot_npy_map(
         latlines=10, lonlines=10, coast=True,
         labels=True, gridminor=True
     )
+    # Add a colorbar on the right-hand side
+    if add_colorbar:
+        cbar = make_colorbar(this_fig, this_ax.get_children()[0], 'Values', num_ticks=9, cb_loc='r', cb_extend='neither')
     return this_ax, pcm
 
 def plot_input_map(
