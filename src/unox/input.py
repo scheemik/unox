@@ -153,7 +153,7 @@ def make_y_input_file(
         The y input data for the specified year, scaled and processed.
     """
     # Assemble file path
-    filepath = os.path.join(emiss_dir, f"{emiss_pre}{year}{emiss_post}")
+    filepath = f'{emiss_dir}/{emiss_pre}{year}{emiss_post}'
     # Verify the path
     filepath = unox.verify_path(filepath)
     # Load data for the specified year
@@ -189,13 +189,13 @@ def make_y_input_file(
     # Save the data as a numpy file
     if not isinstance(output_dir, type(None)):
         # Assemble the file path
-        output_filepath = os.path.join(f'inputfiles/{output_dir}/stage1/y/Y_{year}.npy')
+        output_filepath = f'inputfiles/{output_dir}/stage1/y/Y_{year}.npy'
         # Make sure the output directory exists
         unox.make_file_path(output_filepath)
         np.save(output_filepath, y_data)
         if year > stage_2_cutoff:
             # Save in stage 2 for years later than specified
-            output_filepath_stage2 = os.path.join(f'inputfiles/{output_dir}/stage2/y/Y_{year}.npy')
+            output_filepath_stage2 = f'inputfiles/{output_dir}/stage2/y/Y_{year}.npy'
             # Make sure the output directory exists
             unox.make_file_path(output_filepath_stage2)
             np.save(output_filepath_stage2, y_data)
@@ -556,7 +556,7 @@ def make_x_input_file(
     # Combine chemical reanalysis and insitu data for stage 2
     if stage == 2 and year > stage_2_cutoff:
         # Assemble the file path for the insitu data
-        epa_filepath = os.path.join(data_dir, f'{insitu_path}{year}.csv')
+        epa_filepath = f'{data_dir}/{insitu_path}{year}.csv'
         # Verify the path
         epa_filepath = unox.verify_path(epa_filepath)
         # Combine chemical reanalysis and insitu data
@@ -586,7 +586,7 @@ def make_x_input_file(
     # Add the other variables from the ERA5 dataset
     for variable in era5_vars_list:
         # Assemble the file path for the ERA5 variable
-        era5_var_filepath = os.path.join(data_dir, f'{era5_path}{year}{variable}.nc')
+        era5_var_filepath = f'{data_dir}/{era5_path}{year}{variable}.nc'
         # Verify the path
         era5_var_filepath = unox.verify_path(era5_var_filepath)
         # Load the ERA5 variable dataset
@@ -640,10 +640,10 @@ def make_x_input_file(
         'insitu_path': insitu_path,
         'era5_path': era5_path,
     }
-    ## Save the data as a numpy file
+    # Save the data as a numpy file
     if not isinstance(output_dir, type(None)):
         # Assemble the file path
-        output_filepath = os.path.join(f'inputfiles/{output_dir}/stage{stage}/x/X_{year}.npy')
+        output_filepath = f'inputfiles/{output_dir}/stage{stage}/x/X_{year}.npy'
         # Make sure the output directory exists
         unox.make_file_path(output_filepath)
         np.save(output_filepath, xnp)
@@ -651,7 +651,6 @@ def make_x_input_file(
         make_input_metadata_file(
             year=year,
             x_or_y='x',
-            
             attr_dict={
                 'vars': datavars,
                 'data_dir': data_dir,
@@ -970,7 +969,7 @@ def make_all_input_files(
         os.makedirs(f'inputfiles/{output_dir}')
     # Make sure the directories for the stages exist
     for stage in stages:
-        stage_dir = os.path.join(f'inputfiles/{output_dir}/stage{stage}')
+        stage_dir = f'inputfiles/{output_dir}/stage{stage}'
         if not os.path.exists(stage_dir):
             os.makedirs(stage_dir)
     # Create y input files
