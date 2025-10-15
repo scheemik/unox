@@ -229,7 +229,6 @@ def make_y_input_file(
             **kwargs,
         )
         print(f"Saved y input data to {output_filepath}")
-        # return np.array(y_data)
         return xr.load_dataset(output_filepath), g_attr_dict
     else:
         return input_netcdf_xr, g_attr_dict
@@ -679,9 +678,9 @@ def make_x_input_file(
             **kwargs,
         )
         print(f"Saved x input data to {output_filepath}")
-    # return xnp
-    # return chemra
-    return xr.load_dataset(output_filepath), g_attr_dict
+        return xr.load_dataset(output_filepath), g_attr_dict
+    else:
+        return chemra, g_attr_dict
 
 def get_npy_from_netcdf(
     netcdf,
@@ -823,6 +822,7 @@ def make_all_y_input_files(
     y_data_array : list of numpy.ndarray
         List of y input data arrays for the specified years.
     """
+    # Assemble the filepath
     output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
     # Make sure the output directory exists
     # if not os.path.exists(f'inputfiles/{output_dir}/stage1/y'):
@@ -893,29 +893,41 @@ def make_all_x_input_files(
     x_data_array : list of xarray.Dataset
         List of x input data arrays for the specified years and stages.
     """
+    # Assemble the filepath
     output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
     # Make sure the output directory exists
-    if not os.path.exists(f'inputfiles/{output_dir}/stage{stage}/x'):
-        os.makedirs(f'inputfiles/{output_dir}/stage{stage}/x')
-    # x_data_array = []
+    # if not os.path.exists(f'inputfiles/{output_dir}/stage{stage}/x'):
+    #     os.makedirs(f'inputfiles/{output_dir}/stage{stage}/x')
+    x_data_array = []
     for year in years:
         if stage == 2 and year <= stage_2_cutoff:
             # Skip stage 2 for years before the cutoff
             continue
         print(f"Creating x input file for stage {stage} in {year}...")
-        input_netcdf_xr = make_x_input_file(
+        x_data, g_attr_dict = make_x_input_file(
             year=year,
             stage=stage,
             stage_2_cutoff=stage_2_cutoff,
-            output_dir=output_dir,
+            output_dir=None,
             sort=False,
             **kwargs,
         )
-        # x_data_array.append(x_data)
+        x_data_array.append(x_data)
+    # Concatenate the datasets along the time dimension
+    print(f"Concatenating the x datasets")
+    input_netcdf_xr = xr.concat(x_data_array, dim='time')
     # Sort the dataset by time
     if sort:
         print("Sorting the x data by time.")
         input_netcdf_xr = input_netcdf_xr.sortby('time')
+    # Save the x data to a netcdf
+    print(f"Saving x inputs to {output_filepath}")
+    input_netcdf_xr = write_input_netcdf(
+        input_netcdf_xr,
+        output_filepath,
+        g_attr_dict=g_attr_dict,
+        **kwargs,
+    )
     return xr.load_dataset(output_filepath)
 
 def make_all_input_files(
