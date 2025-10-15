@@ -108,6 +108,7 @@ def make_y_input_file(
     stage_2_cutoff=2013,
     output_dir='test_input',
     overwrite=True,
+    output_format='nc',
     **kwargs,
     ):
     """
@@ -142,6 +143,9 @@ def make_y_input_file(
     output_dir : str, optional
         Directory inside `inputfiles/` where the output y input file will be saved.
         Default is `'test_input'`.
+    output_format : str, optional
+        Whether to save netcdf files ('nc'), numpy arrays ('npy'), or 'both'.
+        Default is 'nc'. Irrelevant if `output_dir` is None.
     overwrite : bool, optional
         Whether to overwrite existing netcdf files. Default is True.
     **kwargs : dict, optional
@@ -186,50 +190,54 @@ def make_y_input_file(
         'nan_fill': nan_fill,
         'stage_2_cutoff': stage_2_cutoff,
     }
-    # Save the data as a numpy file
+    # Save the data to file
     if not isinstance(output_dir, type(None)):
-        # Assemble the file path
-        output_filepath = f'inputfiles/{output_dir}/stage1/y/Y_{year}.npy'
-        # Make sure the output directory exists
-        unox.make_file_path(output_filepath)
-        np.save(output_filepath, y_data)
-        if year > stage_2_cutoff:
-            # Save in stage 2 for years later than specified
-            output_filepath_stage2 = f'inputfiles/{output_dir}/stage2/y/Y_{year}.npy'
+        # For writing out a numpy file
+        if output_format in ['npy', 'both']:
+            # Assemble the file path
+            output_filepath = f'inputfiles/{output_dir}/stage1/y/Y_{year}.npy'
             # Make sure the output directory exists
-            unox.make_file_path(output_filepath_stage2)
-            np.save(output_filepath_stage2, y_data)
-        # Create metadata file
-        make_input_metadata_file(
-            year=year,
-            x_or_y='y',
-            attr_dict={
-                'vars': var,
-                'emiss_dir': emiss_dir,
-                'emiss_pre': emiss_pre,
-                'emiss_post': emiss_post,
-                'scaled_by': scale_factor,
-                'nan_fill': nan_fill,
-                'stage_2_cutoff': stage_2_cutoff,
-            },
-            stage=None,
-            output_dir=output_dir,
-        )
-        # Output message
-        print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
-        ### For netcdf
-        # Assemble the file path
-        output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
-        # Write data out to a netcdf
-        input_netcdf_xr = write_input_netcdf(
-            input_netcdf_xr,
-            output_filepath,
-            g_attr_dict=g_attr_dict,
-            overwrite=overwrite,
-            **kwargs,
-        )
-        print(f"Saved y input data to {output_filepath}")
-        return xr.load_dataset(output_filepath), g_attr_dict
+            unox.make_file_path(output_filepath)
+            np.save(output_filepath, y_data)
+            if year > stage_2_cutoff:
+                # Save in stage 2 for years later than specified
+                output_filepath_stage2 = f'inputfiles/{output_dir}/stage2/y/Y_{year}.npy'
+                # Make sure the output directory exists
+                unox.make_file_path(output_filepath_stage2)
+                np.save(output_filepath_stage2, y_data)
+            # Create metadata file
+            make_input_metadata_file(
+                year=year,
+                x_or_y='y',
+                attr_dict={
+                    'vars': var,
+                    'emiss_dir': emiss_dir,
+                    'emiss_pre': emiss_pre,
+                    'emiss_post': emiss_post,
+                    'scaled_by': scale_factor,
+                    'nan_fill': nan_fill,
+                    'stage_2_cutoff': stage_2_cutoff,
+                },
+                stage=None,
+                output_dir=output_dir,
+            )
+            # Output message
+            print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
+            return y_data, g_attr_dict
+        # For writing out a netcdf file
+        if output_format in ['nc', 'both']:
+            # Assemble the file path
+            output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
+            # Write data out to a netcdf
+            input_netcdf_xr = write_input_netcdf(
+                input_netcdf_xr,
+                output_filepath,
+                g_attr_dict=g_attr_dict,
+                overwrite=overwrite,
+                **kwargs,
+            )
+            print(f"Saved y input data to {output_filepath}")
+            return xr.load_dataset(output_filepath), g_attr_dict
     else:
         return input_netcdf_xr, g_attr_dict
 
@@ -442,6 +450,7 @@ def make_x_input_file(
                     'blh': 1e-3},
     stage_2_cutoff=2013,
     output_dir='test_input',
+    output_format='nc',
     overwrite=True,
     **kwargs,
     ):
@@ -481,6 +490,13 @@ def make_x_input_file(
     output_dir : str, optional
         Directory inside `inputfiles/` where the output x input file will be saved.
         Default is `'test_input'`.
+    output_format : str, optional
+        Whether to save netcdf files ('nc'), numpy arrays ('npy'), or 'both'.
+        Default is 'nc'. Irrelevant if `output_dir` is None.
+    overwrite : bool, optional
+        Whether to overwrite existing netcdf files. Default is True.
+    **kwargs : dict, optional
+        Additional keyword arguments (not used).
 
     Returns
     -------
@@ -623,44 +639,48 @@ def make_x_input_file(
         'insitu_path': insitu_path,
         'era5_path': era5_path,
     }
-    # Save the data as a numpy file
+    # Save the data to file
     if not isinstance(output_dir, type(None)):
-        # Assemble the file path
-        output_filepath = f'inputfiles/{output_dir}/stage{stage}/x/X_{year}.npy'
-        # Make sure the output directory exists
-        unox.make_file_path(output_filepath)
-        np.save(output_filepath, xnp)
-        # Create metadata file
-        make_input_metadata_file(
-            year=year,
-            x_or_y='x',
-            attr_dict={
-                'vars': datavars,
-                'data_dir': data_dir,
-                'chemra_path': chemra_path,
-                'insitu_path': insitu_path,
-                'era5_path': era5_path,
-                'var_scale_factors': scale_factors,
-                'stage_2_cutoff': stage_2_cutoff,
-            },
-            stage=stage,
-            output_dir=output_dir,
-        )
-        # Output message
-        print(f"Created X input file for stage {stage} in {year}, saved to {output_filepath}")
-        ### For netcdf
-        # Assemble the file path
-        output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
-        # Write data out to a netcdf
-        input_netcdf_xr = write_input_netcdf(
-            chemra,
-            output_filepath,
-            g_attr_dict=g_attr_dict,
-            overwrite=overwrite,
-            **kwargs,
-        )
-        print(f"Saved x input data to {output_filepath}")
-        return xr.load_dataset(output_filepath), g_attr_dict
+        # For writing out a numpy file
+        if output_format in ['npy', 'both']:
+            # Assemble the file path
+            output_filepath = f'inputfiles/{output_dir}/stage{stage}/x/X_{year}.npy'
+            # Make sure the output directory exists
+            unox.make_file_path(output_filepath)
+            np.save(output_filepath, xnp)
+            # Create metadata file
+            make_input_metadata_file(
+                year=year,
+                x_or_y='x',
+                attr_dict={
+                    'vars': datavars,
+                    'data_dir': data_dir,
+                    'chemra_path': chemra_path,
+                    'insitu_path': insitu_path,
+                    'era5_path': era5_path,
+                    'var_scale_factors': scale_factors,
+                    'stage_2_cutoff': stage_2_cutoff,
+                },
+                stage=stage,
+                output_dir=output_dir,
+            )
+            # Output message
+            print(f"Created X input file for stage {stage} in {year}, saved to {output_filepath}")
+            return xnp, g_attr_dict
+        # For writing out a netcdf file
+        if output_format in ['nc', 'both']:
+            # Assemble the file path
+            output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
+            # Write data out to a netcdf
+            input_netcdf_xr = write_input_netcdf(
+                chemra,
+                output_filepath,
+                g_attr_dict=g_attr_dict,
+                overwrite=overwrite,
+                **kwargs,
+            )
+            print(f"Saved x input data to {output_filepath}")
+            return xr.load_dataset(output_filepath), g_attr_dict
     else:
         return chemra, g_attr_dict
 
