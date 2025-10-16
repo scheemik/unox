@@ -466,22 +466,22 @@ def add_tm1_var(
         raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
     # Note the variable attributes
     var_attrs = xr_dataset[var].attrs
-    # Rename t-1 variable
+    # Create name for t-1 variable
     var_tm1 = f'{var}_tm1'
-    print(f'Adding t-1 variable {var_tm1}')
+    # Create a t-1 shifted version of the variable
     xr_dataset[var_tm1] = xr_dataset[var].shift(time=1)
-    # Add shifted from variable to the attributes
+    # Add shifted_from to the attributes
     var_attrs['shifted_from'] = var
     # Check for stage 2 variable
     var_s2 = f'{var}_s2'
     if var_s2 in xr_dataset.data_vars:
         # Note the variable attributes
         var_s2_attrs = xr_dataset[var].attrs
-        # Rename t-1 variable
+        # Create name for t-1 variable
         var_s2_tm1 = f'{var_s2}_tm1'
-        print(f'Adding t-1 variable {var_s2_tm1}')
+        # Create a t-1 shifted version of the variable
         xr_dataset[var_s2_tm1] = xr_dataset[var_s2].shift(time=1)
-        # Add shifted from variable to the attributes
+        # Add shifted_from to the attributes
         var_s2_attrs['shifted_from'] = var_s2
     # Drop January 1st, as the t-1 variable will have null values on that day
     try:
@@ -496,7 +496,7 @@ def add_tm1_var(
 
 def make_x_input_file(
     year,
-    stage,
+    stage_2=True,
     data_dir='/data/high_res/emacdonald/unet/datafiles/',
     chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
     chemra_var='no2',
@@ -526,8 +526,9 @@ def make_x_input_file(
     ----------
     year : int
         The year for which to create the x input file.
-    stage : int
-        The stage of the model (1 or 2) this will be input for.
+    stage_2 : bool, optional
+        Whether or not to make stage 2 in addition to stage 1 for the input.
+        Default is True.
     data_dir : str, optional
         Directory where the NOx data are stored. 
         Default is '/data/high_res/emacdonald/unet/datafiles/'.
@@ -559,7 +560,7 @@ def make_x_input_file(
     Returns
     -------
     x_data : xarray.Dataset
-        The x input data for the specified year and stage.
+        The x input data for the specified year.
     """
     # Assemble the file path for the chemical reanalysis data
     chemra_filepath = f'{data_dir}/{chemra_path}{year}.nc'
@@ -614,13 +615,18 @@ def make_x_input_file(
         chemra['time'].attrs = time_attrs
     
     # Combine chemical reanalysis and insitu data for stage 2
-    if stage == 2 and year > stage_2_cutoff:
+    if stage_2 and year > stage_2_cutoff:
+        stages=[1,2]
+        print(f'Adding stage 2 data for {chemra_var} in {year}')
         # Assemble the file path for the insitu data
         epa_filepath = f'{data_dir}/{insitu_path}{year}.csv'
         # Verify the path
         epa_filepath = unox.verify_path(epa_filepath)
         # Combine chemical reanalysis and insitu data
         chemra = fill_w_insitu(chemra, epa_filepath)
+        print(f'Stage 2 data added for {chemra_var} in {year}')
+    else:
+        stages=[1]
     
     # Interpolate to latitude and longitude grid
     chemra = chemra.interp(lat=lats, lon=lons, method='slinear')
@@ -674,13 +680,13 @@ def make_x_input_file(
     x_data = xr.merge(datasets)
     # Convert calendar to 'noleap' to remove February 29th
     x_data = x_data.convert_calendar('noleap')
-    chemra = chemra.convert_calendar('noleap')
+    input_netcdf_xr = chemra.convert_calendar('noleap')
 
     # Scale some variables to make orders of magnitude more similar
     for variable in era5_vars_list:
         if variable in scale_factors.keys():
             x_data = scale_xr_var(x_data, variable, scale_factors[variable])
-            chemra = scale_xr_var(chemra, variable, scale_factors[variable])
+            input_netcdf_xr = scale_xr_var(input_netcdf_xr, variable, scale_factors[variable])
     # Reorder dimensions to match the expected format
     x_data = x_data[['time', 'lat', 'lon', *list(x_data.data_vars)]]
 
@@ -705,29 +711,30 @@ def make_x_input_file(
     if not isinstance(output_dir, type(None)):
         # For writing out a numpy file
         if output_format in ['npy', 'both']:
-            # Assemble the file path
-            output_filepath = f'inputfiles/{output_dir}/stage{stage}/x/X_{year}.npy'
-            # Make sure the output directory exists
-            unox.make_file_path(output_filepath)
-            np.save(output_filepath, xnp)
-            # Create metadata file
-            make_input_metadata_file(
-                year=year,
-                x_or_y='x',
-                attr_dict={
-                    'vars': datavars,
-                    'data_dir': data_dir,
-                    'chemra_path': chemra_path,
-                    'insitu_path': insitu_path,
-                    'era5_path': era5_path,
-                    'var_scale_factors': scale_factors,
-                    'stage_2_cutoff': stage_2_cutoff,
-                },
-                stage=stage,
-                output_dir=output_dir,
-            )
-            # Output message
-            print(f"Created X input file for stage {stage} in {year}, saved to {output_filepath}")
+            for stage in stages:
+                # Assemble the file path
+                output_filepath = f'inputfiles/{output_dir}/stage{stage}/x/X_{year}.npy'
+                # Make sure the output directory exists
+                unox.make_file_path(output_filepath)
+                np.save(output_filepath, xnp)
+                # Create metadata file
+                make_input_metadata_file(
+                    year=year,
+                    x_or_y='x',
+                    attr_dict={
+                        'vars': datavars,
+                        'data_dir': data_dir,
+                        'chemra_path': chemra_path,
+                        'insitu_path': insitu_path,
+                        'era5_path': era5_path,
+                        'var_scale_factors': scale_factors,
+                        'stage_2_cutoff': stage_2_cutoff,
+                    },
+                    stage=stage,
+                    output_dir=output_dir,
+                )
+                # Output message
+                print(f"Created X input file for stage {stage} in {year}, saved to {output_filepath}")
             return xnp, g_attr_dict
         # For writing out a netcdf file
         if output_format in ['nc', 'both']:
@@ -735,7 +742,7 @@ def make_x_input_file(
             output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
             # Write data out to a netcdf
             input_netcdf_xr = write_input_netcdf(
-                chemra,
+                input_netcdf_xr,
                 output_filepath,
                 g_attr_dict=g_attr_dict,
                 overwrite=overwrite,
@@ -744,7 +751,7 @@ def make_x_input_file(
             print(f"Saved x input data to {output_filepath}")
             return xr.load_dataset(output_filepath), g_attr_dict
     else:
-        return chemra, g_attr_dict
+        return input_netcdf_xr, g_attr_dict
 
 def get_npy_from_netcdf(
     netcdf,
@@ -789,16 +796,18 @@ def get_npy_from_netcdf(
     data_array = data_for_year.to_numpy()
     return data_array
 
+@unox.timer_func
 def fill_w_insitu(
     xr_dataset,
     insitu_filepath, 
     var='no2',
     ):
     """
-    Replace the variable in an xarray Dataset with available insitu data.
+    Add stage 2 for the variable in an xarray Dataset using available insitu data.
 
-    Given an xarray Dataset of reanalysis data, replace those values of the specified 
-    variable when there is available insitu data in the provided filepath.
+    Given an xarray Dataset with reanalysis data, duplicate the specified variable and
+    replace values of that duplicated variable when and where there is available 
+    insitu data in the provided filepath, to be used for stage 2 of training the unet.
 
     Parameters
     ----------
@@ -816,6 +825,12 @@ def fill_w_insitu(
     """
     # Verify the dataset
     xr_dataset = udata.verify_dataset(xr_dataset)
+    # Make a new variable to store the stage 2 data, filled with insitu
+    var_s2 = f'{var}_s2'
+    # Make a deep copy so that changes to `var_s2` don't affect `var`
+    xr_dataset[var_s2]= xr_dataset[var].copy(deep=True)
+    # Save the variable attributes
+    var_s2_attrs = xr_dataset[var_s2].attrs
     # Verify the insitu file path
     insitu_filepath = unox.verify_path(insitu_filepath)
     # Load the insitu data
@@ -828,7 +843,7 @@ def fill_w_insitu(
     insitu_keys = [key for key in insitu_groups.groups.keys()]
     # Narrow the domain to the selected latitude and longitude grid
     lats, lons = unox.load_lats_lons()
-    in1 = xr_dataset[var].where((xr_dataset.lat >= np.min(lats)), drop=True)
+    in1 = xr_dataset[var_s2].where((xr_dataset.lat >= np.min(lats)), drop=True)
     in2 = in1.where((in1.lon <= np.max(lons)), drop=True)
 
     # Loop through each day in the insitu data
@@ -851,7 +866,11 @@ def fill_w_insitu(
             ## Tolerance is set to the grid cell size (1.125 degrees)
             pt = day.sel({'lat': lt[j], 'lon': ln[j]}, method='nearest', tolerance=1.125)
             # Replace the chemical reanalysis value with the insitu value
-            xr_dataset[var].loc[{'time': insitu_keys[i], 'lon': pt.lon, 'lat': pt.lat}] = values[j]
+            xr_dataset[var_s2].loc[{'time': insitu_keys[i], 'lon': pt.lon, 'lat': pt.lat}] = values[j]
+    # Add attribute to note which variable this is from
+    var_s2_attrs['insitu_filled_from'] = var
+    # Reapply the variable attributes
+    xr_dataset = set_var_attrs(xr_dataset, var_s2, var_s2_attrs)
     return xr_dataset
 
 def make_all_y_input_files(
@@ -923,7 +942,7 @@ def make_all_y_input_files(
 
 def make_all_x_input_files(
     years=range(2005, 2021),
-    stage=1,
+    stage_2=True,
     stage_2_cutoff=2013,
     output_dir='test_input',
     sort=True,
@@ -938,9 +957,9 @@ def make_all_x_input_files(
     ----------
     years : iterable, optional
         Years for which to create x input files. Default is range(2005, 2021).
-    stage : int, optional
-        Stage of the model (1 or 2) for which to create x input files. 
-        Default is 1.
+    stage_2 : bool, optional
+        Whether or not to make stage 2 in addition to stage 1 for the input.
+        Default is True.
     stage_2_cutoff : int, optional
         Year after which the data will also be saved in stage 2. Default is 2013.
     output_dir : str, optional
@@ -964,13 +983,10 @@ def make_all_x_input_files(
     #     os.makedirs(f'inputfiles/{output_dir}/stage{stage}/x')
     x_data_array = []
     for year in years:
-        if stage == 2 and year <= stage_2_cutoff:
-            # Skip stage 2 for years before the cutoff
-            continue
-        print(f"Creating x input file for stage {stage} in {year}...")
+        print(f"Creating x input file for {year}...")
         x_data, g_attr_dict = make_x_input_file(
             year=year,
-            stage=stage,
+            stage_2=stage_2,
             stage_2_cutoff=stage_2_cutoff,
             output_dir=None,
             sort=False,
