@@ -467,14 +467,31 @@ def add_tm1_var(
     # Note the variable attributes
     var_attrs = xr_dataset[var].attrs
     # Rename t-1 variable
-    var_tm1 = var+'_tm1'
+    var_tm1 = f'{var}_tm1'
+    print(f'Adding t-1 variable {var_tm1}')
     xr_dataset[var_tm1] = xr_dataset[var].shift(time=1)
-    # Drop January 1st, as the t-1 variable will have null values on that day
-    xr_dataset = xr_dataset.drop_sel(time=f'{year}-01-01')
-    # Add scale factor to the attributes
+    # Add shifted from variable to the attributes
     var_attrs['shifted_from'] = var
+    # Check for stage 2 variable
+    var_s2 = f'{var}_s2'
+    if var_s2 in xr_dataset.data_vars:
+        # Note the variable attributes
+        var_s2_attrs = xr_dataset[var].attrs
+        # Rename t-1 variable
+        var_s2_tm1 = f'{var_s2}_tm1'
+        print(f'Adding t-1 variable {var_s2_tm1}')
+        xr_dataset[var_s2_tm1] = xr_dataset[var_s2].shift(time=1)
+        # Add shifted from variable to the attributes
+        var_s2_attrs['shifted_from'] = var_s2
+    # Drop January 1st, as the t-1 variable will have null values on that day
+    try:
+        xr_dataset = xr_dataset.drop_sel(time=f'{year}-01-01')
+    except:
+        print(f'\tJanuary 1st, {year} not present in xr_dataset')
     # Reapply the variable attributes
     xr_dataset = set_var_attrs(xr_dataset, var_tm1, var_attrs)
+    if var_s2 in xr_dataset.data_vars:
+        xr_dataset = set_var_attrs(xr_dataset, var_s2_tm1, var_s2_attrs)
     return xr_dataset
 
 def make_x_input_file(
@@ -611,6 +628,25 @@ def make_x_input_file(
     # Start a list to hold datasets
     datasets = []
 
+    # Add the chemical reanalysis data for day t (starting from the second day)
+    datasets.append(chemra[chemra_var][1::])
+
+    # Get the time-shifted variable (day t-1)
+    previousday = chemra.copy()
+    # Fix rounding
+    previousday.coords['time'] = (previousday.coords['time'] + 1).dt.ceil('D')
+    # Rename t-1 variable
+    chemra_var_tm1 = chemra_var+'_tm1'
+    previousday = previousday.rename({chemra_var: chemra_var_tm1})
+    # Add the chemical reanalysis data for the previous day (t-1)
+    datasets.append(previousday[chemra_var_tm1][:-1])  # day t-1
+    # chemra[chemra_var_tm1] = chemra[chemra_var].shift(time=1)
+    # Drop January 1st, as the t-1 variable will have null values on that day
+    # chemra = chemra.drop_sel(time=f'{year}-01-01')
+
+    # Add the chemical reanalysis data for the previous day (t-1)
+    chemra = add_tm1_var(chemra, chemra_var, year)
+
     # Add the other variables from the ERA5 dataset
     for variable in era5_vars_list:
         # Assemble the file path for the ERA5 variable
@@ -633,25 +669,6 @@ def make_x_input_file(
         ## which is true in this case as the lat lon arrays used to interpolate
         ## the chemra data came from the ERA5 data originally
         chemra[variable] = era5_var[variable]
-
-    # Add the chemical reanalysis data for day t (starting from the second day)
-    datasets.append(chemra[chemra_var][1::])
-
-    # Get the time-shifted variable (day t-1)
-    previousday = chemra.copy()
-    # Fix rounding
-    previousday.coords['time'] = (previousday.coords['time'] + 1).dt.ceil('D')
-    # Rename t-1 variable
-    chemra_var_tm1 = chemra_var+'_tm1'
-    previousday = previousday.rename({chemra_var: chemra_var_tm1})
-    # Add the chemical reanalysis data for the previous day (t-1)
-    datasets.append(previousday[chemra_var_tm1][:-1])  # day t-1
-    # chemra[chemra_var_tm1] = chemra[chemra_var].shift(time=1)
-    # Drop January 1st, as the t-1 variable will have null values on that day
-    # chemra = chemra.drop_sel(time=f'{year}-01-01')
-
-    # Add the chemical reanalysis data for the previous day (t-1)
-    chemra = add_tm1_var(chemra, chemra_var, year)
     
     # Merge all datasets into a single xarray Dataset
     x_data = xr.merge(datasets)
