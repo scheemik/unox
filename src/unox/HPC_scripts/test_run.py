@@ -62,6 +62,9 @@ except FileExistsError:
 
 n_epochs = 250
 save_fmt = 'both' # 'h5', 'keras', or 'both'
+input_fmt = 'npy' # 'nc' or 'npy'
+split_year = 2019
+split_value = 0.9
 
 ##################################################################
 # Build and compile the Unet
@@ -111,8 +114,6 @@ def load_input_files(
     print(f'Number of x_files: {len(x_files)}')
     print(f'Number of y_files: {len(y_files)}')
     return x_files, y_files
-
-x_files, y_files = load_input_files(inputfiles, stage=1)
 
 def split_input_files(
     x_files,
@@ -171,7 +172,42 @@ def split_input_files(
     print(f'Shape of yvalid: {yvalid.shape}')
     return xtrain, ytrain, xvalid, yvalid
 
-xtrain, ytrain, xvalid, yvalid = split_input_files(x_files, y_files, stage=1, split_value=0.9)
+if input_fmt == 'npy':
+    x_files, y_files = load_input_files(inputfiles, stage=1)
+    xtrain, ytrain, xvalid, yvalid = split_input_files(x_files, y_files, stage=1, split_value=0.9)
+elif input_fmt == 'nc':
+    # Assemble the file path to the netcdf
+    netcdf_path = f'inputfiles/{inputfiles}/{inputfiles}.nc'
+    # Ensure the netcdf file exists
+    if not os.path.exists(netcdf_path):
+        raise FileNotFoundError(f"NetCDF file not found: {netcdf_path}")
+    # Load the netcdf file
+    input_ds = xr.load_dataset(netcdf_path)
+    # Get list of years present in the `from_xr` netcdf
+    years = input_ds['time'].dt.year.values
+    years = sorted(list(set(years)))
+    xtrain_list = []
+    ytrain_list = []
+    # If before the split year, add x and y data to train lists
+    for year in range(min(years), split_year):
+        xtrain_list.append(get_npy_from_netcdf(input_ds, year, x_or_y='x'))
+        ytrain_list.append(get_npy_from_netcdf(input_ds, year, x_or_y='y'))
+    print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
+    print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
+    # Concatenate training data
+    xtrain = np.concatenate(xtrain_list, axis=0)
+    ytrain = np.concatenate(ytrain_list, axis=0)
+    print('After concatenation:')
+    print(f'Shape of xtrain: {xtrain.shape}')
+    print(f'Shape of ytrain: {ytrain.shape}')
+    # Split into training and validation sets
+    xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
+    print('After data split:')
+    print(f'Shape of xtrain: {xtrain.shape}')
+    print(f'Shape of ytrain: {ytrain.shape}')
+    print(f'Shape of xvalid: {xvalid.shape}')
+    print(f'Shape of yvalid: {yvalid.shape}')
+
 
 # Stage-1 training of the Unet
 
@@ -307,6 +343,9 @@ predict_and_save(savedir, unet, x_files=x_files, stage=1)
 #    ynow = np.load(y)
 #    pred = unet.predict(ynow)
 #    np.save(savedir+'stage1_output/ypred_' + y.split('/')[-1], pred)
+
+print('Done with stage 1')
+exit(0)
 
 ##################################################################
 # Stage-2 training
