@@ -104,8 +104,8 @@ then
 	elif [ "$VERSION" = 1 ]
 	then
 		echo "-v $VERSION, using updated code"
-		module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6
-		ENVNAME="unoxTrilliumNew"
+		module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
+		ENVNAME="unoxTrilliumNC"
 		ENVDIR="/home/mschee/.virtualenvs/$ENVNAME"
 	else
 		echo "Version $VERSION not recognized, exiting"
