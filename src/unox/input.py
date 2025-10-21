@@ -796,7 +796,7 @@ def get_npy_from_netcdf(
     data_array = data_for_year.to_numpy()
     return data_array
 
-@unox.timer_func
+@unox.time_this
 def fill_w_insitu(
     xr_dataset,
     insitu_filepath, 
@@ -1010,9 +1010,8 @@ def make_all_x_input_files(
     )
     return xr.load_dataset(output_filepath)
 
+@unox.time_this
 def make_all_input_files(
-    years=range(2005, 2021),
-    stages=[1, 2],
     output_dir='test_input',
     sort=True,
     **kwargs,
