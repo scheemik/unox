@@ -1011,11 +1011,6 @@ def make_all_input_files(
 
     Parameters
     ----------
-    years : iterable, optional
-        Years for which to create input files. Default is range(2005, 2021).
-    stages : iterable, optional
-        Stages of the model for which to create x input files. 
-        Default is [1, 2].
     output_dir : str, optional
         Directory inside `inputfiles/` where the output input files will be saved.
         Default is `'test_input'`.
@@ -1028,35 +1023,27 @@ def make_all_input_files(
 
     Returns
     -------
-    None
+    input_netcdf_xr : xarray.Dataset
+        The combined input data for both x and y.
     """
-    print("It may take around 3 hours to generate all input files.")
+    print("Note: It may take around an hour to generate all input files.")
     # Make sure the output directory exists
     if not os.path.exists(f'inputfiles/{output_dir}'):
         os.makedirs(f'inputfiles/{output_dir}')
-    # Make sure the directories for the stages exist
-    for stage in stages:
-        stage_dir = f'inputfiles/{output_dir}/stage{stage}'
-        if not os.path.exists(stage_dir):
-            os.makedirs(stage_dir)
-    # Create y input files
-    print("Creating y input files...")
+    # Create y input data
+    print("Creating y input data...")
     input_netcdf_xr = make_all_y_input_files(
-        years=years,
         output_dir=output_dir,
         sort=False,
         **kwargs,
     )
-    # Create x input files for each stage
-    for stage in stages:
-        print(f"Creating x input files for stage {stage}...")
-        input_netcdf_xr = make_all_x_input_files(
-            years=years,
-            stage=stage,
-            output_dir=output_dir,
-            sort=False,
-            **kwargs,
-        )
+    # Create x input data
+    print("Creating x input data...")
+    input_netcdf_xr = make_all_x_input_files(
+        output_dir=output_dir,
+        sort=False,
+        **kwargs,
+    )
     # Sort the dataset by time
     if sort:
         print("Sorting the y data by time.")
