@@ -31,7 +31,7 @@ input_vars_dict = {
 
 def x_or_y_var(
     var,
-    ):
+):
     """
     Return whether the given variable is an x or y variable.
 
@@ -65,7 +65,7 @@ def x_or_y_var(
 
 def get_input_index(
     var,
-    ):
+):
     """
     Get the index of the given variable in the input array.
 
@@ -111,7 +111,7 @@ def make_y_input_file(
     overwrite=True,
     output_format='nc',
     **kwargs,
-    ):
+):
     """
     Create a y input file for the Unet model for the given year.
 
@@ -244,7 +244,7 @@ def write_input_netcdf(
     overwrite=True,
     sort=True,
     **kwargs,
-    ):
+):
     """
     Write an xarray Dataset to a netcdf file, appending or overwriting as needed.
 
@@ -329,7 +329,7 @@ def write_input_netcdf(
 def set_global_attrs(
     xr_dataset,
     attr_dict,
-    ):
+):
     """
     Add attributes to an xarray Dataset.
 
@@ -361,7 +361,7 @@ def set_var_attrs(
     xr_dataset,
     var,
     attr_dict,
-    ):
+):
     """
     Add attributes to a variable in an xarray Dataset.
 
@@ -396,7 +396,7 @@ def scale_xr_var(
     xr_dataset,
     var,
     scale_factor,
-    ):
+):
     """
     Scale a variable in an xarray Dataset by a given factor.
 
@@ -436,7 +436,7 @@ def add_tm1_var(
     xr_dataset,
     var,
     year,
-    ):
+):
     """
     Add a version of the given variable which is shifted by one day (t-1)
     to the dataset, and drop January 1st from the time coordinate.
@@ -508,7 +508,7 @@ def make_x_input_file(
     output_format='nc',
     overwrite=True,
     **kwargs,
-    ):
+):
     """
     Create an x input file for the Unet model for the given year and stage.
 
@@ -748,7 +748,7 @@ def get_npy_from_netcdf(
     netcdf,
     var,
     year,
-    ):
+ ):
     """ 
     Extract a numpy array for a specific variable and year from a netcdf file.
 
@@ -792,7 +792,7 @@ def fill_w_insitu(
     xr_dataset,
     insitu_filepath, 
     var='no2',
-    ):
+):
     """
     Add stage 2 for the variable in an xarray Dataset using available insitu data.
 
@@ -870,7 +870,7 @@ def make_all_y_input_files(
     output_dir='test_input',
     sort=True,
     **kwargs,
-    ):
+):
     """
     Create y input files for multiple years.
 
@@ -935,7 +935,7 @@ def make_all_x_input_files(
     output_dir='test_input',
     sort=True,
     **kwargs,
-    ):
+):
     """
     Create x input files for multiple years and stages.
 
@@ -1004,7 +1004,7 @@ def make_all_input_files(
     output_dir='test_input',
     sort=True,
     **kwargs,
-    ):
+):
     """
     Create all input files for the Unet model.
 
@@ -1058,7 +1058,7 @@ def make_input_metadata_file(
     output_dir=None,
     g_attrs=None,
     overwrite=True,
-    ):
+):
     """
     Create a metadata file for the dataset in the given directory.
 
