@@ -1078,138 +1078,139 @@ def make_all_input_files(
     return input_netcdf_xr
 
 def make_input_metadata_file(
-    year,
-    x_or_y,
-    attr_dict,
-    stage=None,
-    output_dir='test_input',
+    input_set,
+    output_dir=None,
+    g_attrs=None,
+    overwrite=True,
     ):
     """
-    Create a metadata file for the input data.
+    Create a metadata file for the dataset in the given directory.
 
-    Gather the metadata for the input files and save it to a csv in the same 
-    directory as those input files.
+    Gather the metadata from the given dataset, format it, and output
+    to a clear-text file that can be easily read.
 
     Parameters
     ----------
-    year : int
-        The year for which the metadata is being created.
-    x_or_y : str
-        Specify whether the metadata is for 'x' or 'y' input files.
-    attr_dict : dict
-        Dictionary containing metadata attributes and their values.
-    stage : int, optional
-        The stage of the model (1 or 2) this metadata is for.
-    output_dir : str, optional
-        Directory inside `inputfiles/` where the metadata file will be saved.
-        Default is `'test_input'`. If None, the metadata will not be saved to a file.
+    input_set : str, xr.Dataset
+        Directory inside `inputfiles/` where the dataset is found and 
+        in which the metadata file will be saved, or the xarray Dataset
 
     Returns
     -------
     metadata_dict : dict
         The metadata dictionary that was saved to the json file.
         Has the format:
-        ```json
-        {
-            "years": {
-                "stage1": {
-                    "x": [2005, ...],
-                    "y": [2005, ...]
-                },
-                "stage2": {
-                    "x": [2014, ...],
-                    "y": [2014, ...]
-                }
-            },
-            "x_attrs": {
-                "data_dir": "/data/high_res/emacdonald/unet/datafiles/",
-                ...,
-                "var_scale_factors": {"chemra": 1000, ...},
-                "stage_2_cutoff": 2013
-            },
-            "y_attrs": {
-                "var": "nox",
-                ...,
-                "stage_2_cutoff": 2013
-            }
-        }
-        ```
+    ```json
+    {
+        "years": {
+            "x": [
+                2005,
+                ...
+                2020
+            ],
+            "y": [
+                2005,
+                ...
+                2020
+            ]
+        },
+        "y_var": "nox",
+        "emiss_dir": "/data/high_res/emacdonald/unet/datafiles/t106",
+        "emiss_pre": "nox_",
+        "emiss_post": "_t106_US.nc",
+        "nan_fill": 0,
+        "stage_2_cutoff": 2013,
+        "x_vars": [
+            "no2",
+            ...
+            "ssrd"
+        ],
+        "data_dir": "/data/high_res/emacdonald/unet/datafiles/",
+        "chemra_path": "TROPESS/TROPESS_reanalysis_2hr_no2_sfc_",
+        "insitu_path": "US_EPA/daily_42602_",
+        "era5_path": "ERA5concatenated/",
+        "stages": [
+            1,
+            2
+        ]
+    }
+    ```
     """
-    # Verify `year` is a number
-    if udata.verify_number(year) == False:
-        raise TypeError(f'Year must be a number, got {year}.')
-    # Verify `x_or_y` is either 'x' or 'y'
-    if x_or_y not in ['x', 'y']:
-        raise ValueError(f"x_or_y must be either 'x' or 'y', got {x_or_y}.")
-    # Verify `attr_dict` is a dictionary
-    if not isinstance(attr_dict, dict):
-        raise TypeError(f'attr_dict must be a dictionary, got {type(attr_dict)}.')
-    # Check for a valid stage number
-    if udata.verify_number(stage):
-        if stage in [1, 2]:
-            pass
-        else:
-            raise ValueError("Stage must be 1, 2, or None.")
-    elif isinstance(stage, type(None)):
-        pass
-    else:
-        raise ValueError("Stage must be 1, 2, or None.")
-    # Verify output_dir is a string or None
-    if not (isinstance(output_dir, str) or isinstance(output_dir, type(None))):
-        raise TypeError(f'output_dir must be a string or None, got {type(output_dir)}.')
-    # Check whether the given output directory includes 'inputfiles/'
-    if isinstance(output_dir, type(None)):
-        output_filepath = None
-    elif not output_dir.startswith('inputfiles/'):
+    # Verify input_set is a string or xr.Dataset
+    if isinstance(input_set, str):
+        # Check whether the given input_set exists in 'inputfiles/'
+        xr_path = f'inputfiles/{input_set}/{input_set}.nc'
+        if not os.path.exists(xr_path):
+            raise ValueError(f'File {xr_path} does not exist.')
+        # Load the dataset
+        xr_dataset = xr.load_dataset(xr_path)
+    elif isinstance(input_set, xr.Dataset):
+        xr_dataset = input_set
+    # Verify the dataset
+    xr_dataset = udata.verify_dataset(xr_dataset)
+    # If the metadata file already exists, load it
+    if not isinstance(output_dir, type(None)):
+        # Assemble the filepath for the metadata file
         output_filepath = 'inputfiles/' + output_dir + '/input_metadata.json'
-        output_dir = 'inputfiles/' + output_dir
+        if os.path.exists(output_filepath):
+            with open(output_filepath, 'r') as f:
+                metadata_dict = json.load(f)
+                isNew = False
+        else:
+            isNew = True
+            # Make sure the output directory exists
+            unox.make_file_path(output_filepath)
     else:
-        output_filepath = output_dir + '/input_metadata.json'
-    # Make sure the output directory exists
-    if not isinstance(output_dir, type(None)) and not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    # If the file already exists, load it
-    if not isinstance(output_filepath, type(None)) and os.path.exists(output_filepath):
-        with open(output_filepath, 'r') as f:
-            metadata_dict = json.load(f)
-            isNew = False
-    else:
+        isNew = True
+    if isNew:
         metadata_dict = {
             'years': {
-                'stage1': {
-                    'x': [],
-                    'y': [],
-                },
-                'stage2': {
-                    'x': [],
-                    'y': [],
-                },
+                'x': [],
+                'y': [],
             },
-            'x_attrs': {},
-            'y_attrs': {},
         }
-        isNew = True
+    # Get a list of years present in the dataset
+    years = xr_dataset['time'].dt.year.values
+    years = sorted(list(set(years)))
+    # Convert years to list of ints
+    ## to avoid TypeError: Object of type int64 is not JSON serializable
+    years = [int(year) for year in years]
+    # Check for global attributes
+    if isinstance(g_attrs, type(None)):
+        g_attrs = xr_dataset.attrs
+    # Add select global attributes to the metadata dictionary
+    for g_attr in [
+        'y_var',
+        'x_vars',
+        'description',
+        'data_dir',
+        'chemra_path',
+        'insitu_path',
+        'era5_path',
+        'modification_date',
+        'emiss_dir',
+        'emiss_pre',
+        'emiss_post',
+        'nan_fill',
+        'stage_2_cutoff',
+        'stages',
+    ]:
+        if g_attr in g_attrs:
+            # Add to metadata dictionary
+            metadata_dict[g_attr] = g_attrs[g_attr]
+            # If x_vars or y_var, also add year
+            if g_attr == 'x_vars':
+                metadata_dict['years']['x'] = metadata_dict['years']['x'] + years
+            elif g_attr == 'y_var':
+                metadata_dict['years']['y'] = metadata_dict['years']['y'] + years
     ## Add the attributes and years to the metadata dictionary
-    # Check if the attrs match
-    if isNew == False and metadata_dict[x_or_y+'_attrs'] != attr_dict:
-        warnings.warn(f'Metadata attributes for {x_or_y} {year} input files do not match the existing metadata. Overwriting existing attributes.')
-    # Add the y attributes to the metadata dictionary
-    metadata_dict[x_or_y+'_attrs'] = attr_dict
-    # Select the stage
-    if stage in [1, None]:
-        # Add the year to the metadata dictionary
-        metadata_dict['years']['stage1'][x_or_y].append(year)
-        # Sort the list of years in ascending order, removing duplicates
-        metadata_dict['years']['stage1'][x_or_y] = sorted(list(set(metadata_dict['years']['stage1'][x_or_y])))
-    # Add info about stage 2 if applicable
-    if stage in [2, None]:
-        if year > attr_dict['stage_2_cutoff']:
-            metadata_dict['years']['stage2'][x_or_y].append(year)
-            # Sort the list of years in ascending order, removing duplicates
-            metadata_dict['years']['stage2'][x_or_y] = sorted(list(set(metadata_dict['years']['stage2'][x_or_y])))
-        else:
-            print(f'Stage 2 cutoff is {attr_dict["stage_2_cutoff"]}, skipping {x_or_y} {year} input file for stage 2.')
-            
+    # Check if the attrs match and decide whether to overwrite
+    # if isNew == False and metadata_dict[x_or_y+'_attrs'] != attr_dict:
+    #     warnings.warn(f'Metadata attributes for {x_or_y} {year} input files do not match the existing metadata. Overwriting existing attributes.')
+    # Sort the list of years in ascending order, removing duplicates
+    metadata_dict['years']['x'] = sorted(list(set(metadata_dict['years']['x'])))
+    metadata_dict['years']['y'] = sorted(list(set(metadata_dict['years']['y'])))
+
     # Output the metadata dictionary to a json file
     if not isinstance(output_dir, type(None)):
         with open(output_filepath, 'w') as file:
