@@ -896,18 +896,15 @@ def make_all_y_input_files(
     """
     # Assemble the filepath
     output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
-    # Make sure the output directory exists
-    # if not os.path.exists(f'inputfiles/{output_dir}/stage1/y'):
-    #     os.makedirs(f'inputfiles/{output_dir}/stage1/y')
-    # if not os.path.exists(f'inputfiles/{output_dir}/stage2/y'):
-    #     os.makedirs(f'inputfiles/{output_dir}/stage2/y')
+    # Create an empty array to hold y data
     y_data_array = []
     for year in years:
         print(f"\tCreating y input data for {var} in {year}...")
         y_data, g_attr_dict = make_y_input_file(
             year=year, 
             var=var,
-            output_dir=None,
+            output_dir=output_dir,
+            write_this_year=False,
             sort=False,
             **kwargs,
         )
@@ -972,12 +969,13 @@ def make_all_x_input_files(
     #     os.makedirs(f'inputfiles/{output_dir}/stage{stage}/x')
     x_data_array = []
     for year in years:
-        print(f"Creating x input file for {year}...")
+        print(f"\tCreating x input file for {year}...")
         x_data, g_attr_dict = make_x_input_file(
             year=year,
             stage_2=stage_2,
             stage_2_cutoff=stage_2_cutoff,
-            output_dir=None,
+            output_dir=output_dir,
+            write_this_year=False,
             sort=False,
             **kwargs,
         )
