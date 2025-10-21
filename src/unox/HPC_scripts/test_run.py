@@ -3,6 +3,8 @@ import numpy as np
 import glob
 import sys
 import os 
+import xarray as xr
+from utils.load_input import get_npy_from_netcdf
 
 print('')
 print(f'Running test_run.py from current working directory:{os.getcwd()}')
@@ -28,20 +30,6 @@ except:
     version = 1
 print('Running python script with version:', version)
 
-# Import packages based on version
-if version == 0: # keras v2.9.0, tensorflow v2.9.2
-    from utils.functions_old import r2_keras
-    from utils.functions_old import msenonzero
-    from utils.functions_old import data_split
-    from model.core_old import Unet
-elif version == 1: # keras v3.10.0, tensorflow v2.17.0
-    from utils.functions import r2_keras
-    from utils.functions import msenonzero
-    from utils.functions import data_split
-    from model.core import Unet
-from tensorflow.keras.optimizers import Adam
-from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
-
 try:
     os.mkdir(savedir)
 except FileExistsError:
@@ -62,19 +50,12 @@ except FileExistsError:
 
 n_epochs = 250
 save_fmt = 'both' # 'h5', 'keras', or 'both'
-input_fmt = 'npy' # 'nc' or 'npy'
+input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
 split_value = 0.9
 
 ##################################################################
-# Build and compile the Unet
-
-unet = Unet()
-opt = Adam(learning_rate=1e-5) 
-
-unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
-unet.summary()
-
+from utils.data_split import data_split
 ##################################################################
 # Stage-1 training
 ## Load stage-1 data sets
@@ -182,7 +163,8 @@ elif input_fmt == 'nc':
     if not os.path.exists(netcdf_path):
         raise FileNotFoundError(f"NetCDF file not found: {netcdf_path}")
     # Load the netcdf file
-    input_ds = xr.load_dataset(netcdf_path)
+    input_ds = xr.open_dataset(netcdf_path)
+    print(f'Finished loading: {netcdf_path}')
     # Get list of years present in the `from_xr` netcdf
     years = input_ds['time'].dt.year.values
     years = sorted(list(set(years)))
@@ -208,6 +190,33 @@ elif input_fmt == 'nc':
     print(f'Shape of xvalid: {xvalid.shape}')
     print(f'Shape of yvalid: {yvalid.shape}')
 
+print('Done loading data sets for stage 1')
+# exit(0)
+
+##################################################################
+
+# Import packages based on version
+if version == 0: # keras v2.9.0, tensorflow v2.9.2
+    from utils.functions_old import r2_keras
+    from utils.functions_old import msenonzero
+    from model.core_old import Unet
+elif version == 1: # keras v3.10.0, tensorflow v2.17.0
+    from utils.functions import r2_keras
+    from utils.functions import msenonzero
+    from model.core import Unet
+from tensorflow.keras.optimizers import Adam
+from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
+
+##################################################################
+# Build and compile the Unet
+
+unet = Unet()
+opt = Adam(learning_rate=1e-5) 
+
+unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
+unet.summary()
+
+##################################################################
 
 # Stage-1 training of the Unet
 
@@ -329,7 +338,15 @@ def predict_and_save(
         pred = model.predict(xnow)
         np.save(savedir+f'stage{kwargs["stage"]}_output/pred_' + x.split('/')[-1], pred)
 
-predict_and_save(savedir, unet, x_files=x_files, stage=1)
+if input_fmt == 'npy':
+    predict_and_save(savedir, unet, x_files=x_files, stage=1)
+elif input_fmt == 'nc':
+    # Make predictions based on x data for years >= split_year
+    for year in range(split_year, max(years)+1):
+        print(f'Generating predictions for year: {year}')
+        x_test = get_npy_from_netcdf(input_ds, year, x_or_y='x')
+        pred = unet.predict(x_test)
+        np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
 
 # xtest_files = x_files[14:]
 # 
