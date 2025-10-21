@@ -691,7 +691,8 @@ def make_x_input_file(
 
     # Get a list of the variables in the dataset
     datavars = list(x_data.data_vars)
-    # print(datavars)
+    all_datavars = list(input_netcdf_xr.data_vars)
+    print('make_x_input_file datavars:',datavars)
     # Create an empty numpy array to hold the data
     xnp = np.ndarray([364, 56, 120, len(datavars)])  # Adjust dimensions as needed
     # Fill the numpy array with data from the xarray Dataset
@@ -700,11 +701,12 @@ def make_x_input_file(
 
     # Create a dictionary of global attributes
     g_attr_dict={
-        'x_vars': datavars,
+        'x_vars': all_datavars,
         'data_dir': data_dir,
         'chemra_path': chemra_path,
         'insitu_path': insitu_path,
         'era5_path': era5_path,
+        'stages': stages,
     }
     # Write out results
     if not isinstance(output_dir, type(None)):
