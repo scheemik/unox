@@ -1,26 +1,34 @@
 #!/bin/bash
 
-#Download ERA5 data for all variables for every month in the given year
-year=$1   #command line argument 
+# Launch with tmux and pipe the output to a log file:
+# $ tmux
+# $ conda activate uplt
+# $ bash datafiles/download_era5.sh 2005 2020 > datafiles/download_era5_log_mine.txt 2>&1
 
-mkdir ${year}
+#Download ERA5 data for all variables for every month in the given year
+start_year=$1   #command line argument 
+end_year=$2
+
+# Be sure to activate conda environment before running this script
+
+ERA5_DIR=~/unox/datafiles/era5_downloads/
 
 months='01 02 03 04 05 06 07 08 09 10 11 12'
 
-for month in $months
+for ((year=start_year; year<=end_year; year++))
 do
-  echo $month
-  python download_era5.py $year $month  #get all the variables for the chosen year and month and save them as 20xx_mm_var.zip
-
-  for f in ${year}*_${month}*.zip   #unzip all the zips
+  echo "Year: ${year}"
+  mkdir ${ERA5_DIR}${year}
+  for month in $months
   do
-  echo "${year}"
-#  unzip "$f" -d "${year}/${f%.zip}"
-  echo ${year}/${f%.zip}/
-  unzip $f -d "${year}/${f%.zip}/" 
-#  unzip $f > "${year}/${f%.zip}.nc"
+    echo "Month: ${month}"
+    # Get all the variables for the chosen year and month and save them as 20xx_mm_var.zip
+    python ~/unox/datafiles/download_era5.py $year $month
+    # Unzip all the zip files
+    for f in ${ERA5_DIR}${year}/${year}*_${month}*.zip
+    do
+      echo ${f%.zip}
+      unzip $f -d "${f%.zip}/"
+    done
   done
-
 done
-
-#for f in 2013_??_*.zip; do unzip "$f" > 2013/"${f%.zip}.nc"; done   #not sure if this works
