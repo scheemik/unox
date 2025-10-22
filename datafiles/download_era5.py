@@ -21,6 +21,8 @@ print(year)
 month = sys.argv[2]
 print(month)
 
+era5_dir = f'~/unox/datafiles/era5_downloads/{year}/'
+
 #variable short and long names
 variable_names = {
    "u10":"10m_u_component_of_wind", 
@@ -37,7 +39,7 @@ variable_names = {
 for v in variable_names:
     variable = [variable_names[v]]
     print(variable)
-    savename = year+'_'+month+'_'+v+'.zip'   #directory where data will be saved
+    savename = f'{year}_{month}_{v}.zip'   #directory where data will be saved
     print(savename)
 
     #code copied from the CDS download website, generalized to be loopable
@@ -81,3 +83,10 @@ for v in variable_names:
     target = savename   #where data will be stored
     client = cdsapi.Client()
     client.retrieve(dataset, request, target)
+
+import os
+# Check whether the path exists or not
+if not os.path.exists(era5_dir):
+    os.makedirs(era5_dir)
+# Move all files matching f'{year}_{month}_{v}.zip' to the era5_dir
+os.system(f'mv {year}_{month}_*.zip {era5_dir}')
