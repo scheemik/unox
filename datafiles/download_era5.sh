@@ -17,7 +17,7 @@ months='01 02 03 04 05 06 07 08 09 10 11 12'
 
 for ((year=start_year; year<=end_year; year++))
 do
-    echo "Year: ${year}"
+    echo "--- Year: ${year}"
     # If the year directory does not exist, create it
     if [ ! -d ${ERA5_DIR}${year} ]; then
         mkdir ${ERA5_DIR}${year}
@@ -35,7 +35,7 @@ do
                 echo ${f%.zip}
                 unzip $f -d "${f%.zip}/"
             else
-                echo "  Directory already exists: ${f%.zip}/ already exists."
+                echo "  Directory already exists: ${f%.zip}/"
                 echo "  Skipping unzip."
             fi
         done
