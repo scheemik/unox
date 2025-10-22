@@ -3,7 +3,7 @@
 # Launch with tmux and pipe the output to a log file:
 # $ tmux
 # $ conda activate uplt
-# $ bash datafiles/download_era5.sh 2005 2020 > datafiles/download_era5_log.txt 2>&1
+# $ bash datafiles/dera5_download.sh 2005 2020 > datafiles/era5_download_log.txt 2>&1
 
 #Download ERA5 data for all variables for every month in the given year
 start_year=$1   #command line argument 
@@ -26,7 +26,7 @@ do
     do
         echo "Month: ${month}"
         # Get all the variables for the chosen year and month and save them as 20xx_mm_var.zip
-        python ~/unox/datafiles/download_era5.py $year $month
+        python ~/unox/datafiles/era5_download.py $year $month
         # Unzip all the zip files
         for f in ${ERA5_DIR}${year}/${year}*_${month}*.zip
         do
