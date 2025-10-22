@@ -22,8 +22,16 @@ month = sys.argv[2]
 print(month)
 
 #variable short and long names
-variable_names = {"u10":"10m_u_component_of_wind", "v10":"10m_v_component_of_wind", "t2m":"2m_temperature", "sp":"surface_pressure",
-                     "skt":"skin_temperature", "ssrd":"surface_solar_radiation_downwards", "blh":"boundary_layer_height"}
+variable_names = {
+   "u10":"10m_u_component_of_wind", 
+#    "v10":"10m_v_component_of_wind", 
+#    "t2m":"2m_temperature", 
+#    "sp":"surface_pressure",
+#    "skt":"skin_temperature", 
+#    "ssrd":"surface_solar_radiation_downwards", 
+    # "blh":"boundary_layer_height",
+   "msk":"land_sea_mask",
+}
 
 
 for v in variable_names:
