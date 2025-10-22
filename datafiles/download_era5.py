@@ -12,7 +12,7 @@ import cdsapi
 import sys
 import os
 
-# from unox.data import DEFAULT_EXTENT
+from unox.data import DEFAULT_EXTENT
 
 #year and month are command line arguments
 #files are huge so it's easier to do one month of one variable per file
@@ -49,7 +49,7 @@ else:
     # print(f'\tDirectory {era5_dir} exists')
     # If it does exist, check whether files are downloaded for the given variables
     for v in variable_names:
-        zip_file_name = f'{era5_dir}/{year}_{month}_{v}.zip'
+        zip_file_name = f'{era5_dir}{year}_{month}_{v}.zip'
         if os.path.exists(zip_file_name):
             print(f'\t{zip_file_name} already exists. Skipping {v}.')
             # Remove variable from the list to download
@@ -99,8 +99,8 @@ for v in variable_short_names:
         ],
         "data_format": "netcdf",
         "download_format": "zip",    #changing this to "unarchived" might make things easier, but then have to change savename above
-        "area": [75, -175, 11, -39]  #[north, west, south, east]
-        # "area": DEFAULT_EXTENT  #[north, west, south, east]
+        # "area": [75, -175, 11, -39]  #[north, west, south, east]
+        "area": DEFAULT_EXTENT  #[north, west, south, east]
     }
 
 

@@ -13,7 +13,8 @@ DEFAULT_LAT_MIN = 11
 DEFAULT_LAT_MAX = 75
 DEFAULT_LON_MIN = -175
 DEFAULT_LON_MAX = -39
-DEFAULT_EXTENT = [DEFAULT_LAT_MIN, DEFAULT_LAT_MAX, DEFAULT_LON_MIN, DEFAULT_LON_MAX]
+# Needs to be [north, west, south, east] for the cdsapi call in download_era5.py
+DEFAULT_EXTENT = [DEFAULT_LAT_MAX, DEFAULT_LON_MIN, DEFAULT_LAT_MIN, DEFAULT_LON_MAX]
 
 def generate_lats_lons(
     dataset='datafiles/sample_data/2019u10.nc',
