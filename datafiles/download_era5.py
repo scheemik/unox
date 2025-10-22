@@ -10,18 +10,17 @@ key: [your API token from your CDS profile]
 
 import cdsapi
 import sys
+import os
 
 # from unox.data import DEFAULT_EXTENT
 
 #year and month are command line arguments
 #files are huge so it's easier to do one month of one variable per file
 year = sys.argv[1]
-print(year)
+# print(year)
 
 month = sys.argv[2]
-print(month)
-
-era5_dir = f'~/unox/datafiles/era5_downloads/{year}/'
+# print(month)
 
 #variable short and long names
 variable_names = {
@@ -34,15 +33,41 @@ variable_names = {
     # "blh":"boundary_layer_height",
    "msk":"land_sea_mask",
 }
+# Get the list of variable short names
+variable_short_names = list(variable_names.keys())
+
+# Define file paths
+home_dir = os.getenv('HOME')
+era5_dir = f'{home_dir}/unox/datafiles/era5_downloads/{year}/'
+
+# Check whether the path for this year exists or not
+if not os.path.exists(era5_dir):
+    # If not, make the path
+    print(f'\tCreating directory: {era5_dir}')
+    os.makedirs(era5_dir)
+else:
+    # print(f'\tDirectory {era5_dir} exists')
+    # If it does exist, check whether files are downloaded for the given variables
+    for v in variable_names:
+        zip_file_name = f'{era5_dir}/{year}_{month}_{v}.zip'
+        if os.path.exists(zip_file_name):
+            print(f'\t{zip_file_name} already exists. Skipping {v}.')
+            # Remove variable from the list to download
+            variable_short_names.remove(v)
+    # If there are no variables left to download, exit the script
+    if len(variable_short_names) < 1:
+        print(f'\tAll requested files for {year}-{month} already exist. Exiting script.')
+        sys.exit()
 
 
-for v in variable_names:
+for v in variable_short_names:
+    # Get the variable long name from the dictionary
     variable = [variable_names[v]]
-    print(variable)
-    savename = f'{year}_{month}_{v}.zip'   #directory where data will be saved
-    print(savename)
+    # Build the filename for what will be saved
+    savename = f'{year}_{month}_{v}.zip'
+    print(f'\tDownloading {variable} to {savename}')
 
-    #code copied from the CDS download website, generalized to be loopable
+    # Code copied from the CDS download website, generalized to be loopable
     dataset = "reanalysis-era5-single-levels"
     request = {
         "product_type": ["reanalysis"],
@@ -84,9 +109,5 @@ for v in variable_names:
     client = cdsapi.Client()
     client.retrieve(dataset, request, target)
 
-import os
-# Check whether the path exists or not
-if not os.path.exists(era5_dir):
-    os.makedirs(era5_dir)
 # Move all files matching f'{year}_{month}_{v}.zip' to the era5_dir
 os.system(f'mv {year}_{month}_*.zip {era5_dir}')
