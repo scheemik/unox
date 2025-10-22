@@ -1,5 +1,41 @@
 import numpy as np
 import os
+from datetime import datetime
+
+def time_this(func):
+    """
+    A decorator which can be applied to a function to print the execution time.
+
+    Parameters
+    ----------
+    func : function
+        The function for which to time.
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    @time_this
+    def my_function():
+        # Do some calculations
+        ...
+        return result
+    >>> my_function()
+    Function my_function executed in 2.91s
+    """
+    def wrap_func(*args, **kwargs):
+        # Get the time at the start of the execution
+        t1 = datetime.now()
+        # Execute the function
+        result = func(*args, **kwargs)
+        # Get the time at the end of the execution
+        t2 = datetime.now()
+        # Calculate the difference and output the execution time
+        print(f'\tFunction {func.__name__!r} execution time: {t2-t1}')
+        return result
+    return wrap_func
 
 def load_lats_lons(
     path='datafiles/',

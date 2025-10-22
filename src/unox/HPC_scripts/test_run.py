@@ -3,6 +3,8 @@ import numpy as np
 import glob
 import sys
 import os 
+import xarray as xr
+from utils.load_input import get_npy_from_netcdf
 
 print('')
 print(f'Running test_run.py from current working directory:{os.getcwd()}')
@@ -28,20 +30,6 @@ except:
     version = 1
 print('Running python script with version:', version)
 
-# Import packages based on version
-if version == 0: # keras v2.9.0, tensorflow v2.9.2
-    from utils.functions_old import r2_keras
-    from utils.functions_old import msenonzero
-    from utils.functions_old import data_split
-    from model.core_old import Unet
-elif version == 1: # keras v3.10.0, tensorflow v2.17.0
-    from utils.functions import r2_keras
-    from utils.functions import msenonzero
-    from utils.functions import data_split
-    from model.core import Unet
-from tensorflow.keras.optimizers import Adam
-from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
-
 try:
     os.mkdir(savedir)
 except FileExistsError:
@@ -62,16 +50,12 @@ except FileExistsError:
 
 n_epochs = 250
 save_fmt = 'both' # 'h5', 'keras', or 'both'
+input_fmt = 'nc' # 'nc' or 'npy'
+split_year = 2019
+split_value = 0.9
 
 ##################################################################
-# Build and compile the Unet
-
-unet = Unet()
-opt = Adam(learning_rate=1e-5) 
-
-unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
-unet.summary()
-
+from utils.data_split import data_split
 ##################################################################
 # Stage-1 training
 ## Load stage-1 data sets
@@ -111,8 +95,6 @@ def load_input_files(
     print(f'Number of x_files: {len(x_files)}')
     print(f'Number of y_files: {len(y_files)}')
     return x_files, y_files
-
-x_files, y_files = load_input_files(inputfiles, stage=1)
 
 def split_input_files(
     x_files,
@@ -171,7 +153,70 @@ def split_input_files(
     print(f'Shape of yvalid: {yvalid.shape}')
     return xtrain, ytrain, xvalid, yvalid
 
-xtrain, ytrain, xvalid, yvalid = split_input_files(x_files, y_files, stage=1, split_value=0.9)
+if input_fmt == 'npy':
+    x_files, y_files = load_input_files(inputfiles, stage=1)
+    xtrain, ytrain, xvalid, yvalid = split_input_files(x_files, y_files, stage=1, split_value=0.9)
+elif input_fmt == 'nc':
+    # Assemble the file path to the netcdf
+    netcdf_path = f'inputfiles/{inputfiles}/{inputfiles}.nc'
+    # Ensure the netcdf file exists
+    if not os.path.exists(netcdf_path):
+        raise FileNotFoundError(f"NetCDF file not found: {netcdf_path}")
+    # Load the netcdf file
+    input_ds = xr.open_dataset(netcdf_path)
+    print(f'Finished loading: {netcdf_path}')
+    # Get list of years present in the `from_xr` netcdf
+    years = input_ds['time'].dt.year.values
+    years = sorted(list(set(years)))
+    xtrain_list = []
+    ytrain_list = []
+    # If before the split year, add x and y data to train lists
+    for year in range(min(years), split_year):
+        xtrain_list.append(get_npy_from_netcdf(input_ds, year, x_or_y='x'))
+        ytrain_list.append(get_npy_from_netcdf(input_ds, year, x_or_y='y'))
+    print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
+    print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
+    # Concatenate training data
+    xtrain = np.concatenate(xtrain_list, axis=0)
+    ytrain = np.concatenate(ytrain_list, axis=0)
+    print('After concatenation:')
+    print(f'Shape of xtrain: {xtrain.shape}')
+    print(f'Shape of ytrain: {ytrain.shape}')
+    # Split into training and validation sets
+    xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
+    print('After data split:')
+    print(f'Shape of xtrain: {xtrain.shape}')
+    print(f'Shape of ytrain: {ytrain.shape}')
+    print(f'Shape of xvalid: {xvalid.shape}')
+    print(f'Shape of yvalid: {yvalid.shape}')
+
+print('Done loading data sets for stage 1')
+# exit(0)
+
+##################################################################
+
+# Import packages based on version
+if version == 0: # keras v2.9.0, tensorflow v2.9.2
+    from utils.functions_old import r2_keras
+    from utils.functions_old import msenonzero
+    from model.core_old import Unet
+elif version == 1: # keras v3.10.0, tensorflow v2.17.0
+    from utils.functions import r2_keras
+    from utils.functions import msenonzero
+    from model.core import Unet
+from tensorflow.keras.optimizers import Adam
+from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
+
+##################################################################
+# Build and compile the Unet
+
+unet = Unet()
+opt = Adam(learning_rate=1e-5) 
+
+unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
+unet.summary()
+
+##################################################################
 
 # Stage-1 training of the Unet
 
@@ -293,7 +338,15 @@ def predict_and_save(
         pred = model.predict(xnow)
         np.save(savedir+f'stage{kwargs["stage"]}_output/pred_' + x.split('/')[-1], pred)
 
-predict_and_save(savedir, unet, x_files=x_files, stage=1)
+if input_fmt == 'npy':
+    predict_and_save(savedir, unet, x_files=x_files, stage=1)
+elif input_fmt == 'nc':
+    # Make predictions based on x data for years >= split_year
+    for year in range(split_year, max(years)+1):
+        print(f'Generating predictions for year: {year}')
+        x_test = get_npy_from_netcdf(input_ds, year, x_or_y='x')
+        pred = unet.predict(x_test)
+        np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
 
 # xtest_files = x_files[14:]
 # 
@@ -308,26 +361,52 @@ predict_and_save(savedir, unet, x_files=x_files, stage=1)
 #    pred = unet.predict(ynow)
 #    np.save(savedir+'stage1_output/ypred_' + y.split('/')[-1], pred)
 
+print('Done with stage 1')
+# exit(0)
+
 ##################################################################
 # Stage-2 training
 ## Load stage-2 data sets
 
-# x_files = sorted(glob.glob(f'inputfiles/{inputfiles}/stage2/x/X_20*.npy'))
-# y_files = sorted(glob.glob(f'inputfiles/{inputfiles}/stage2/y/Y_20*.npy'))
-x_files, y_files = load_input_files(inputfiles, stage=2)
-# print(x_files, y_files)
-# xtrain_files, ytrain_files = x_files[:5], y_files[:5]
-# xtrain = np.concatenate([ np.load(s) for s in xtrain_files], axis=0)
-# #xtrain = xtrain[:,:,:,:9] #definitely not the right way to make the data the right size
-# 
-# ytrain = np.concatenate([ np.load(s) for s in ytrain_files], axis=0)
-# # print(xtrain.shape, ytrain.shape)
-# 
-# # split into training, validation, and test sets
-# xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, 0.9)
-# print(xtrain.shape, ytrain.shape, xvalid.shape, yvalid.shape)
+if input_fmt == 'npy':
+    x_files, y_files = load_input_files(inputfiles, stage=2)
+    x_train, y_train, x_valid, y_valid = split_input_files(x_files, y_files, stage=2, split_value=0.9)
+elif input_fmt == 'nc':
+    # Assemble the file path to the netcdf
+    # netcdf_path = f'inputfiles/{inputfiles}/{inputfiles}.nc'
+    # # Ensure the netcdf file exists
+    # if not os.path.exists(netcdf_path):
+    #     raise FileNotFoundError(f"NetCDF file not found: {netcdf_path}")
+    # # Load the netcdf file
+    # input_ds = xr.open_dataset(netcdf_path)
+    # print(f'Finished loading: {netcdf_path}')
+    # # Get list of years present in the `from_xr` netcdf
+    # years = input_ds['time'].dt.year.values
+    # years = sorted(list(set(years)))
+    xtrain_list = []
+    ytrain_list = []
+    # If before the split year, add x and y data to train lists
+    stage_2_cutoff=2013
+    for year in range(stage_2_cutoff+1, split_year):
+        xtrain_list.append(get_npy_from_netcdf(input_ds, year, x_or_y='x'))
+        ytrain_list.append(get_npy_from_netcdf(input_ds, year, x_or_y='y'))
+    print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
+    print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
+    # Concatenate training data
+    xtrain = np.concatenate(xtrain_list, axis=0)
+    ytrain = np.concatenate(ytrain_list, axis=0)
+    print('After concatenation:')
+    print(f'Shape of xtrain: {xtrain.shape}')
+    print(f'Shape of ytrain: {ytrain.shape}')
+    # Split into training and validation sets
+    xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
+    print('After data split:')
+    print(f'Shape of xtrain: {xtrain.shape}')
+    print(f'Shape of ytrain: {ytrain.shape}')
+    print(f'Shape of xvalid: {xvalid.shape}')
+    print(f'Shape of yvalid: {yvalid.shape}')
 
-x_train, y_train, x_valid, y_valid = split_input_files(x_files, y_files, stage=2, split_value=0.9)
+print('Done loading data sets for stage 2')
 
 # # Load the stage-1 model weights to the U-net model
 # unet.load_weights(savedir+'unet_stage1_model.h5')
@@ -355,8 +434,7 @@ else:
 # unet.save_model(savedir+'unet_stage2_model.h5')
 # unet.save_model(savedir+'unet_stage2_model.keras')
 
-
-unet = begin_training(savedir, stage=2, xtrain=x_train, ytrain=y_train, xvalid=x_valid, yvalid=y_valid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=save_fmt)
+unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=save_fmt)
 
 
 # Generate predictions for evaluation
@@ -375,7 +453,15 @@ unet = begin_training(savedir, stage=2, xtrain=x_train, ytrain=y_train, xvalid=x
 #    pred = unet.predict(ynow)
 #    np.save(savedir+'stage2_output/ypred_' + y.split('/')[-1], pred)
 
-predict_and_save(savedir, unet, x_files=x_files, stage=2)
+if input_fmt == 'npy':
+    predict_and_save(savedir, unet, x_files=x_files, stage=2)
+elif input_fmt == 'nc':
+    # Make predictions based on x data for years >= split_year
+    for year in range(split_year, max(years)+1):
+        print(f'Generating predictions for year: {year}')
+        x_test = get_npy_from_netcdf(input_ds, year, x_or_y='x')
+        pred = unet.predict(x_test)
+        np.save(savedir+f'stage2_output/pred_X_{year}.npy', pred)
 
 print('')
 print('Done running test_unet.py')
