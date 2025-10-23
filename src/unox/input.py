@@ -17,7 +17,7 @@ from unox.plot_format import pad_extent
 # era5 = ERA5 reanalysis data
 
 # Define a dictionary of the variables to be used for each model variable
-era5_vars_list = ['u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
+era5_vars_list = ['u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd', 'lsm']
 input_vars_dict = {
     'no2': {
         'x_vars': ['no2', 'no2_tm1'] + era5_vars_list,
@@ -692,6 +692,9 @@ def make_x_input_file(
     # Get a list of the variables in the dataset
     datavars = list(x_data.data_vars)
     all_datavars = list(input_netcdf_xr.data_vars)
+    # Remove `lsm` from the list of datavars
+    datavars.remove('lsm')
+    all_datavars.remove('lsm')
     print('make_x_input_file datavars:',datavars)
     # Create an empty numpy array to hold the data
     xnp = np.ndarray([364, 56, 120, len(datavars)])  # Adjust dimensions as needed
@@ -1154,6 +1157,12 @@ def make_input_metadata_file(
     # Check for global attributes
     if isinstance(g_attrs, type(None)):
         g_attrs = xr_dataset.attrs
+    # Check whether `lsm` is in the list of data variables
+    if 'lsm' in list(xr_dataset.data_vars):
+        # Add `lsm: True` to the global attributes
+        g_attrs['lsm'] = 'True'
+    else:
+        g_attrs['lsm'] = 'False'
     # Add select global attributes to the metadata dictionary
     for g_attr in [
         'y_var',
@@ -1170,6 +1179,7 @@ def make_input_metadata_file(
         'nan_fill',
         'stage_2_cutoff',
         'stages',
+        'lsm',
     ]:
         if g_attr in g_attrs:
             # Add to metadata dictionary
