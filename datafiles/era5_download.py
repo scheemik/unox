@@ -31,7 +31,7 @@ variable_names = {
 #    "skt":"skin_temperature", 
 #    "ssrd":"surface_solar_radiation_downwards", 
     # "blh":"boundary_layer_height",
-   "msk":"land_sea_mask",
+   "lsm":"land_sea_mask",
 }
 # Get the list of variable short names
 variable_short_names = list(variable_names.keys())
