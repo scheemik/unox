@@ -279,6 +279,8 @@ def plot_npy_map(
     >>> fig, ax = pplt.subplots()
     >>> plot_npy_map(ax, npy_arr, lats, lons, title='NOx emissions')
     """
+    # Squeeze the numpy array
+    npy_arr = np.squeeze(npy_arr)
     # Verify the dimensions of the numpy array
     if npy_arr.shape != (len(lats), len(lons)):
         raise ValueError(f"npy_arr must have shape (len(lats), len(lons)). Expected: ({len(lats)}, {len(lons)}), got: {npy_arr.shape}")
@@ -1002,6 +1004,9 @@ def compare_input_vars(
                 year=input_dict['year'],
                 var=input_dict['var'],
             )
+            # If nox, remove extra dimension
+            if input_dict['var'] == 'nox':
+                this_input = this_input.squeeze()
         input_dict['data_array'] = this_input
         print(f"Shape of {input_dict['var']} from {input_dict['input_set']}: {this_input.shape}")
     # Are the arrays different?
