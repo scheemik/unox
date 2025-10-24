@@ -143,6 +143,8 @@ else
 	echo "Directory for job $SAVEDIR already exists"
 fi
 
+export HDF5_USE_FILE_LOCKING=FALSE
+
 echo ""
 echo "Running $CODEFILE with savedir $SAVEDIR"
 echo ""
