@@ -1103,11 +1103,7 @@ def make_input_metadata_file(
             },
         }
     # Get a list of years present in the dataset
-    years = xr_dataset['time'].dt.year.values
-    years = sorted(list(set(years)))
-    # Convert years to list of ints
-    ## to avoid TypeError: Object of type int64 is not JSON serializable
-    years = [int(year) for year in years]
+    years = udata.get_years(xr_dataset)
     # Check for global attributes
     if isinstance(g_attrs, type(None)):
         g_attrs = xr_dataset.attrs
