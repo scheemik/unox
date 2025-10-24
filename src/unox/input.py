@@ -744,49 +744,6 @@ def make_x_input_file(
                 return xr.load_dataset(output_filepath), g_attr_dict
     return input_netcdf_xr, g_attr_dict
 
-def get_npy_from_netcdf(
-    netcdf,
-    var,
-    year,
- ):
-    """ 
-    Extract a numpy array for a specific variable and year from a netcdf file.
-
-    Parameters
-    ----------
-    netcdf : str or xr.Dataset
-        Path to the netcdf file or an xarray Dataset.
-    var : str
-        The variable to extract.
-    year : int
-        The year for which to extract the data.
-
-    Returns
-    -------
-    np.ndarray
-        The extracted data as a numpy array.
-    """
-    # Check if netcdf is a string (file path) or an xarray Dataset
-    if isinstance(netcdf, str):
-        # Verify the netcdf file path
-        netcdf_filepath = unox.verify_path(netcdf_filepath)
-        # Load the netcdf file
-        xr_dataset = xr.load_dataset(netcdf_filepath)
-    elif isinstance(netcdf, xr.Dataset):
-        xr_dataset = netcdf
-    else:
-        raise TypeError(f'netcdf must be a file path (str) or an xarray.Dataset, got {type(netcdf)}.')
-    # Verify the dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
-    # Verify the variable is in the dataset
-    if var not in xr_dataset.data_vars:
-        raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
-    # Select the data for the specified year
-    data_for_year = xr_dataset[var].sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
-    # Convert to numpy array
-    data_array = data_for_year.to_numpy()
-    return data_array
-
 @unox.time_this
 def fill_w_insitu(
     xr_dataset,
