@@ -4,7 +4,7 @@ import glob
 import sys
 import os 
 import xarray as xr
-from utils.load_input import get_npy_from_netcdf
+from utils.load_input import get_npy_from_netcdf, lsm_vars
 
 print('')
 print(f'Running test_run.py from current working directory:{os.getcwd()}')
@@ -57,6 +57,20 @@ will_use_lsm = True
 
 ##################################################################
 from utils.data_split import data_split
+##################################################################
+# Create output metadata dictionary
+
+output_metadata = {
+    'savedir': savedir,
+    'inputfiles': inputfiles,
+    'version': version,
+    'n_epochs': n_epochs,
+    'save_fmt': save_fmt,
+    'input_fmt': input_fmt,
+    'split_year': split_year,
+    'split_value': split_value,
+    'will_use_lsm': will_use_lsm,
+}
 ##################################################################
 # Stage-1 training
 ## Load stage-1 data sets
@@ -463,6 +477,12 @@ elif input_fmt == 'nc':
         x_test = get_npy_from_netcdf(input_ds, year, x_or_y='x', use_lsm=will_use_lsm)
         pred = unet.predict(x_test)
         np.save(savedir+f'stage2_output/pred_X_{year}.npy', pred)
+
+# Save the output metadata dictionary to file
+print('output_metadata:', output_metadata)
+import json
+with open(savedir+'output_metadata.json', 'w') as file:
+    file.write(json.dumps(metadata_dict, indent=4))
 
 print('')
 print('Done running test_unet.py')
