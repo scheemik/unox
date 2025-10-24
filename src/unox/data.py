@@ -389,6 +389,34 @@ def verify_var(
         raise ValueError(f"(verify_var) Variable '{var}' not found in the xarray dataset. Available variables are: {list(xr_dataset.data_vars)}")
     else:
         return True
+
+def get_years(
+    xr_dataset,
+):
+    """Get a list of unique years from the time coordinate of the given xarray dataset.
+
+    Parameters
+    ----------
+    xr_dataset : xarray.Dataset or xarray.DataArray
+        The xarray data from which to extract the years.
+
+    Returns
+    -------
+    years : list of int
+        A list of unique years in the dataset.
+    """
+    # Verify the dataset (must have time coordinate)
+    ## Note: this also verifies the argument types
+    xr_dataset = verify_dataset(xr_dataset, check_time=True)
+    # Get a list of years present in the dataset
+    years = xr_dataset['time'].dt.year.values
+    # Sort and get unique years
+    years = sorted(list(set(years)))
+    # Convert years to list of ints
+    ## to avoid TypeError: Object of type int64 is not JSON serializable
+    years = [int(year) for year in years]
+    return years
+
 def verify_number(
     value,
     ):
