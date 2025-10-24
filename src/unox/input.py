@@ -381,9 +381,8 @@ def set_var_attrs(
     """
     # Verify the dataset
     xr_dataset = udata.verify_dataset(xr_dataset)
-    # Verify the variable is in the dataset
-    if var not in xr_dataset.data_vars:
-        raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+    # Verify `var` is in the dataset
+    udata.verify_var(xr_dataset, var)
     # Verify the attribute dictionary
     if not isinstance(attr_dict, dict):
         raise TypeError(f'attr_dict must be a dictionary, got {type(attr_dict)}.')
@@ -416,9 +415,8 @@ def scale_xr_var(
     """
     # Verify the dataset
     xr_dataset = udata.verify_dataset(xr_dataset)
-    # Verify the variable is in the dataset
-    if var not in xr_dataset.data_vars:
-        raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+    # Verify `var` is in the dataset
+    udata.verify_var(xr_dataset, var)
     # Note the variable attributes
     var_attrs = xr_dataset[var].attrs
     # Scale the variable
@@ -457,9 +455,8 @@ def add_tm1_var(
     """
     # Verify the dataset
     xr_dataset = udata.verify_dataset(xr_dataset)
-    # Verify the variable is in the dataset
-    if var not in xr_dataset.data_vars:
-        raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+    # Verify `var` is in the dataset
+    udata.verify_var(xr_dataset, var)
     # Note the variable attributes
     var_attrs = xr_dataset[var].attrs
     # Create name for t-1 variable
