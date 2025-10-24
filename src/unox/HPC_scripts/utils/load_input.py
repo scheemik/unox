@@ -75,35 +75,35 @@ def get_npy_from_netcdf(
             # Get the list of x variables from the `x_vars` attribute
             x_vars = xr_dataset.attrs.get('x_vars')
             if x_or_y == 'x':
-                # x_vars = xr_dataset.attrs.get('x1_vars')
-                x_vars = [
-                    'no2',
-                    'no2_tm1',
-                    'u10',
-                    'v10',
-                    'blh',
-                    'sp',
-                    'skt',
-                    't2m',
-                    'ssrd',
-                ]
+                x_vars = xr_dataset.attrs.get('x1_vars')
+                # x_vars = [
+                #     'no2',
+                #     'no2_tm1',
+                #     'u10',
+                #     'v10',
+                #     'blh',
+                #     'sp',
+                #     'skt',
+                #     't2m',
+                #     'ssrd',
+                # ]
             elif x_or_y == 'x2':
                 # Get the stage 2 cutoff
                 stage_2_cutoff = xr_dataset.attrs.get('stage_2_cutoff')
                 if stage_2_cutoff > year:
                     raise ValueError(f"Stage 2 data not available for year {year} (cutoff is {stage_2_cutoff}).")
-                # x_vars = xr_dataset.attrs.get('x2_vars')
-                x_vars = [
-                    'no2_s2',
-                    'no2_s2_tm1',
-                    'u10',
-                    'v10',
-                    'blh',
-                    'sp',
-                    'skt',
-                    't2m',
-                    'ssrd',
-                ]
+                x_vars = xr_dataset.attrs.get('x2_vars')
+                # x_vars = [
+                #     'no2_s2',
+                #     'no2_s2_tm1',
+                #     'u10',
+                #     'v10',
+                #     'blh',
+                #     'sp',
+                #     'skt',
+                #     't2m',
+                #     'ssrd',
+                # ]
             # Grab just the x variables for the dataset
             # data_for_year = data_for_year[x_vars]
             # Drop all nan values
