@@ -336,6 +336,8 @@ def get_one_input_var_array(
     -------
     var_array : numpy.ndarray
         Array of the specified variable.
+    var_index : int
+        Index of the specified variable in the input data array.
     """
     # Determine if the variable is an x or y variable
     from unox.input import x_or_y_var, input_vars_dict
