@@ -315,7 +315,7 @@ def verify_dataset(
     check_time=True,
     shift_lons=False,
     **kwargs,
-    ):
+):
     """Verify that the given xarray dataset is valid.
 
     Checks to make sure the given dataset is of the expected type
@@ -327,14 +327,18 @@ def verify_dataset(
         The xarray data to verify.
     check_time : bool, optional
         If True, verify that the dataset has a 'time' coordinate.
-    shift_lons : bool or string, optional
+    shift_lons : bool, optional
         If True, shift the longitude values based on the PM_centered kwarg.
     **kwargs : keyword arguments
         Additional keyword arguments to pass to `shift_lon_arr()`.
     """
-    # Verify that xr_dataset is an xarray Dataset or DataArray
+    # Verify argument types
     if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
-        raise TypeError("xr_dataset must be an xarray Dataset or DataArray.")
+        raise TypeError(f"(verify_dataset) `xr_dataset` must be an xarray Dataset or DataArray. Got type: {type(xr_dataset)}.")
+    if not isinstance(check_time, bool):
+        raise TypeError(f"(verify_dataset) `check_time` must be a bool. Got type: {type(check_time)}.")
+    if not isinstance(shift_lons, bool):
+        raise TypeError(f"(verify_dataset) `shift_lons` must be a bool. Got type: {type(shift_lons)}.")
     # Standardize the coordinate names
     xr_coords = list(xr_dataset.coords)
     for coord in xr_coords:
