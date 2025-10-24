@@ -297,6 +297,7 @@ def test_verify_dataset():
     ]
     # Concatenate with invalid_datasets list
     invalid_inputs.extend(invalid_datasets)
+    # Test invalid inputs to xr_dataset argument
     for invalid_dataset in invalid_datasets:
         try:
             udata.verify_dataset(invalid_dataset, check_time=False)
@@ -304,6 +305,24 @@ def test_verify_dataset():
             assert True, f"verify_dataset raised an exception on invalid dataset: {e}"
         else:
             assert False, f"verify_dataset did not raise an exception on invalid dataset: {invalid_dataset}"
+    # Create invalid inputs list for check_time argument
+    invalid_inputs = ['invalid_string', 1234, None, 1.5, [], {}]
+    # Test invalid inputs to check_time argument
+    for invalid_check_time in invalid_inputs:
+        try:
+            udata.verify_dataset(minimal_xr0, check_time=invalid_check_time)
+        except TypeError as e:
+            assert True, f"verify_dataset raised an exception on invalid check_time argument: {e}"
+        else:
+            assert False, f"verify_dataset did not raise an exception on invalid check_time argument: {invalid_check_time}"
+    # Test invalid inputs to shift_lons argument
+    for invalid_shift_lons in invalid_inputs:
+        try:
+            udata.verify_dataset(minimal_xr0, shift_lons=invalid_shift_lons)
+        except TypeError as e:
+            assert True, f"verify_dataset raised an exception on invalid shift_lons argument: {e}"
+        else:
+            assert False, f"verify_dataset did not raise an exception on invalid shift_lons argument: {invalid_shift_lons}"
 
 def test_verify_var():
     """Test the verify_var function."""
