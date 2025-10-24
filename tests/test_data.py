@@ -342,6 +342,35 @@ def test_verify_var():
             else:
                 assert False, f"verify_var did not raise an exception on invalid variable '{var}' in '{datafile}'"
 
+def test_get_years():
+    """Test the get_years function."""
+    # Test with sample data files
+    expected_years = [
+        [2019],         # For 2019u10.nc
+        [2019],         # For daily_42602_2019.csv
+        [2019],         # For nox_2019_t106_US.nc
+        [2021],         # For TROPESS_reanalysis_mon_emi_nox_anth_2021.nc
+    ]
+    for i, datafile in enumerate(sample_datafiles):
+        xr_dataset = udata.load_dataset(datafile)
+        actual_years = udata.get_years(xr_dataset)
+        assert actual_years == expected_years[i], f"Expected years {expected_years[i]} do not match actual years {actual_years} for '{datafile}'"
+    # Test with minimal xarray DataArray
+    expected_years = [2019]
+    actual_years = udata.get_years(minimal_xr0)
+    assert actual_years == expected_years, f"Expected years {expected_years} do not match actual years {actual_years} for minimal example 0"
+    expected_years = [2009]
+    actual_years = udata.get_years(minimal_xr1)
+    assert actual_years == expected_years, f"Expected years {expected_years} do not match actual years {actual_years} for minimal example 1"
+    # Test with invalid inputs
+    for invalid_input in invalid_datasets:
+        try:
+            udata.get_years(invalid_input)
+        except (TypeError, ValueError) as e:
+            assert True, f"get_years raised an exception on invalid input: {e}"
+        else:
+            assert False, f"get_years did not raise an exception on invalid input: {invalid_input}"
+
 def test_verify_number():
     """Test the verify_number function."""
     # Test valid number values
