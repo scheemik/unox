@@ -1,11 +1,27 @@
 import numpy as np
 import xarray as xr
 
+lsm_vars = [
+    'nox',
+    'no2',
+    'no2_tm1',
+    'no2_s2',
+    'no2_s2_tm1',
+    'u10',
+    'v10',
+    'blh',
+    'sp',
+    'skt',
+    't2m',
+    'ssrd',
+]
+
 def get_npy_from_netcdf(
     netcdf,
     year,
     x_or_y=None,
     var=None,
+    use_lsm=False,
     ):
     """ 
     Extract a numpy array for a specific year (and variable if requested) from a netcdf file.
@@ -22,6 +38,8 @@ def get_npy_from_netcdf(
     var : str, optional
         The variable to extract from the netcdf file. Overrides the `x_or_y` argument. 
         If None, all variables are returned.
+    use_lsm : bool, optional
+        Whether to use land-sea mask when extracting data. Default is False.
 
     Returns
     -------
@@ -92,8 +110,19 @@ def get_npy_from_netcdf(
             # Convert the entire dataset to a numpy array by looping over x_vars
             list_of_x_arrs = []
             for i in range(len(x_vars)):
-                this_arr = get_npy_from_netcdf(data_for_year, year, var=x_vars[i])
+                this_var = x_vars[i]
+                # Skip the land-sea mask if applicable
+                if this_var == 'lsm':
+                    continue
+                # Check whether to apply the land-sea mask to this variable
+                if use_lsm and this_var in lsm_vars:
+                    print(f'\tApplying land-sea mask to {this_var} for year {year}')
+                    this_use_lsm = True
+                else:
+                    this_use_lsm = False
+                this_arr = get_npy_from_netcdf(data_for_year, year, var=this_var, use_lsm=this_use_lsm)
                 list_of_x_arrs.append(this_arr)
+                print(f'\tLoaded {this_var} for year {year} with shape {this_arr.shape}')
             # Stack the arrays together along a new axis in last place
             data_array = np.stack(tuple(list_of_x_arrs), axis=-1)
         elif x_or_y == 'y':
@@ -101,15 +130,26 @@ def get_npy_from_netcdf(
             y_var = xr_dataset.attrs.get('y_var')
             if y_var is None:
                 raise ValueError("The dataset does not have a 'y_var' attribute.")
-            return get_npy_from_netcdf(data_for_year, year, var=y_var)
+            return get_npy_from_netcdf(data_for_year, year, var=y_var, use_lsm=use_lsm)
         else:
             raise ValueError(f"x_or_y must be 'x', 'y', or None, got {x_or_y}.")
     elif not isinstance(var, str):
         raise TypeError(f'var must be a string, got {type(var)}.')
     else:
         # Verify the variable is in the dataset
+        # udata.verify_var(data_for_year, var)
         if var not in data_for_year.data_vars:
             raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
+        # Check whether to apply the land-sea mask
+        if use_lsm:
+            # Verify the land-sea mask exists
+            # udata.verify_var(data_for_year, 'lsm')
+            if 'lsm' not in data_for_year.data_vars:
+                raise ValueError(f"Variable 'lsm' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
+            # Apply the land-sea mask
+            data_for_year[var] = data_for_year[var]*data_for_year['lsm']
+            # lsm_threshold = 1
+            # data_for_year[var] = data_for_year[var].where(data_for_year['lsm'] >= lsm_threshold)
         # Drop all nan values
         data_for_year = data_for_year[var].dropna(dim='time', how='all')
         # Convert to numpy array
