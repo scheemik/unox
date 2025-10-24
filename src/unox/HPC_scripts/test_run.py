@@ -4,7 +4,7 @@ import glob
 import sys
 import os 
 import xarray as xr
-from utils.load_input import get_npy_from_netcdf, lsm_vars
+from utils.load_input import get_npy_from_netcdf, g_lsm_vars
 
 print('')
 print(f'Running test_run.py from current working directory:{os.getcwd()}')
@@ -34,7 +34,7 @@ print('Running python script with version:', version)
 try:
     lsm_vars = [int(sys.argv[4])]
 except:
-    foo = 2
+    lsm_vars = g_lsm_vars
 print(f'Using lsm_vars: {lsm_vars}')
 
 try:
@@ -367,7 +367,7 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
-        x_test = get_npy_from_netcdf(input_ds, year, x_or_y='x', use_lsm=will_use_lsm)
+        x_test = get_npy_from_netcdf(input_ds, year, x_or_y='x', use_lsm=will_use_lsm, lsm_vars=lsm_vars)
         pred = unet.predict(x_test)
         np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
 

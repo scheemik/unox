@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
 
-lsm_vars = [
+g_lsm_vars = [
     'nox',
     'no2',
     'no2_tm1',
@@ -22,6 +22,7 @@ def get_npy_from_netcdf(
     x_or_y=None,
     var=None,
     use_lsm=False,
+    lsm_vars=g_lsm_vars,
     ):
     """ 
     Extract a numpy array for a specific year (and variable if requested) from a netcdf file.
