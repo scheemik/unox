@@ -70,6 +70,7 @@ output_metadata = {
     'split_year': split_year,
     'split_value': split_value,
     'will_use_lsm': will_use_lsm,
+    'lsm_vars': lsm_vars,
 }
 ##################################################################
 # Stage-1 training
