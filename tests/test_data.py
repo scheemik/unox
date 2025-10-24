@@ -305,6 +305,43 @@ def test_verify_dataset():
         else:
             assert False, f"verify_dataset did not raise an exception on invalid dataset: {invalid_dataset}"
 
+def test_verify_var():
+    """Test the verify_var function."""
+    # Create lists of valid variables for the sample data files
+    valid_vars = [
+        ['u10'],                # 'datafiles/sample_data/2019u10.nc'
+        ['no2'],                # 'datafiles/sample_data/daily_42602_2019.csv'
+        ['nox'],                # 'datafiles/sample_data/nox_2019_t106_US.nc'
+        ['nox'],       # 'datafiles/sample_data/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc'
+    ]
+    # Create list of invalid variables for testing
+    invalid_vars = [
+        'invalid_var', 
+        1234, 
+        True, 
+        None,
+    ]
+    # Test each sample dataset
+    for i in range(len(valid_vars)):
+        datafile = sample_datafiles[i]
+        var_list = valid_vars[i]
+        # Load the dataset
+        xr_dataset = udata.load_dataset(datafile)
+        # Test valid variables
+        for var in var_list:
+            try:
+                udata.verify_var(xr_dataset, var)
+            except (ValueError, TypeError) as e:
+                assert False, f"verify_var raised an exception on valid variable '{var}' in '{datafile}': {e}"
+        # Test invalid variables
+        for var in invalid_vars:
+            try:
+                udata.verify_var(xr_dataset, var)
+            except (ValueError, TypeError) as e:
+                assert True, f"verify_var raised an exception on invalid variable '{var}' in '{datafile}': {e}"
+            else:
+                assert False, f"verify_var did not raise an exception on invalid variable '{var}' in '{datafile}'"
+
 def test_verify_number():
     """Test the verify_number function."""
     # Test valid number values
