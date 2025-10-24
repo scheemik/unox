@@ -626,12 +626,6 @@ def make_x_input_file(
     
     # Interpolate to latitude and longitude grid
     chemra = chemra.interp(lat=lats, lon=lons, method='slinear')
-    
-    # Start a list to hold datasets
-    datasets = []
-
-    # Add the chemical reanalysis data for day t (starting from the second day)
-    datasets.append(chemra[chemra_var][1::])
 
     # Get the time-shifted variable (day t-1)
     previousday = chemra.copy()
@@ -640,11 +634,6 @@ def make_x_input_file(
     # Rename t-1 variable
     chemra_var_tm1 = chemra_var+'_tm1'
     previousday = previousday.rename({chemra_var: chemra_var_tm1})
-    # Add the chemical reanalysis data for the previous day (t-1)
-    datasets.append(previousday[chemra_var_tm1][:-1])  # day t-1
-    # chemra[chemra_var_tm1] = chemra[chemra_var].shift(time=1)
-    # Drop January 1st, as the t-1 variable will have null values on that day
-    # chemra = chemra.drop_sel(time=f'{year}-01-01')
 
     # Add the chemical reanalysis data for the previous day (t-1)
     chemra = add_tm1_var(chemra, chemra_var, year)
@@ -652,7 +641,7 @@ def make_x_input_file(
     # Add the other variables from the ERA5 dataset
     for variable in era5_vars_list:
         # Assemble the file path for the ERA5 variable
-        era5_var_filepath = f'{data_dir}/{era5_path}{year}{variable}.nc'
+        era5_var_filepath = f'{data_dir}/{era5_path}/{year}{variable}.nc'
         # Verify the path
         era5_var_filepath = unox.verify_path(era5_var_filepath)
         # Load the ERA5 variable dataset
@@ -662,46 +651,60 @@ def make_x_input_file(
         era5_var = era5_var.drop_vars('number')
         # Rename coordinates to match the other datasets
         era5_var = era5_var.rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
-        # Add the variable data to the datasets list, skipping the first day
-        datasets.append(getattr(era5_var, variable)[1:])
         # Drop January 1st, as the t-1 variable will have null values on that day
         era5_var = era5_var.drop_sel(time=f'{year}-01-01')
         # Add the variable to the xarray
         ## Note: This assumes that the coordinates are the same
-        ## which is true in this case as the lat lon arrays used to interpolate
-        ## the chemra data came from the ERA5 data originally
+        ## which is true in this case as the lat lon arrays used to interpolate the
+        ## chemra data were used to interpolate the ERA5 data upon their concatenation
         chemra[variable] = era5_var[variable]
     
-    # Merge all datasets into a single xarray Dataset
-    x_data = xr.merge(datasets)
     # Convert calendar to 'noleap' to remove February 29th
-    x_data = x_data.convert_calendar('noleap')
     input_netcdf_xr = chemra.convert_calendar('noleap')
 
     # Scale some variables to make orders of magnitude more similar
     for variable in era5_vars_list:
         if variable in scale_factors.keys():
-            x_data = scale_xr_var(x_data, variable, scale_factors[variable])
             input_netcdf_xr = scale_xr_var(input_netcdf_xr, variable, scale_factors[variable])
-    # Reorder dimensions to match the expected format
-    x_data = x_data[['time', 'lat', 'lon', *list(x_data.data_vars)]]
 
     # Get a list of the variables in the dataset
-    datavars = list(x_data.data_vars)
+    datavars = list(input_netcdf_xr.data_vars)
     all_datavars = list(input_netcdf_xr.data_vars)
     # Remove `lsm` from the list of datavars
     datavars.remove('lsm')
     all_datavars.remove('lsm')
-    print('make_x_input_file datavars:',datavars)
+    # Prepare data to be saved to numpy array files
+    if stage_2 and year > stage_2_cutoff:
+        # Assemble the names of the stage 2 variables
+        chemra_var_s2 = f'{chemra_var}_s2'
+        chemra_var_s2_tm1 = f'{chemra_var}_s2_tm1'
+        datavars_s2 = list(input_netcdf_xr.data_vars)
+        datavars_s2.remove('lsm')
+        datavars_s2.remove(chemra_var)
+        datavars_s2.remove(chemra_var_tm1)
+        # Prepare a separate numpy array for stage 2
+        xnp_s2 = np.ndarray([364, 56, 120, len(datavars_s2)])  # Adjust dimensions as needed
+        # Fill the numpy array with data from the xarray Dataset
+        for i in range(len(datavars_s2)):
+            xnp_s2[:, :, :, i] = input_netcdf_xr[datavars_s2[i]].values
+        # Remove stage 2 variables from the datavars list
+        datavars.remove(chemra_var_s2)
+        datavars.remove(chemra_var_s2_tm1)
+    else:
+        datavars_s2 = []
+    print('all_datavars:',all_datavars)
+    print('datavars:',datavars)
     # Create an empty numpy array to hold the data
     xnp = np.ndarray([364, 56, 120, len(datavars)])  # Adjust dimensions as needed
     # Fill the numpy array with data from the xarray Dataset
     for i in range(len(datavars)):
-        xnp[:, :, :, i] = x_data[datavars[i]]  # Put it in the numpy array
+        xnp[:, :, :, i] = input_netcdf_xr[datavars[i]].values
 
     # Create a dictionary of global attributes
     g_attr_dict={
         'x_vars': all_datavars,
+        'x1_vars': datavars,
+        'x2_vars': datavars_s2,
         'data_dir': data_dir,
         'chemra_path': chemra_path,
         'insitu_path': insitu_path,
@@ -724,7 +727,11 @@ def make_x_input_file(
                 output_filepath = f'inputfiles/{output_dir}/stage{stage}/x/X_{year}.npy'
                 # Make sure the output directory exists
                 unox.make_file_path(output_filepath)
-                np.save(output_filepath, xnp)
+                # Choose the correct array to save
+                if stage == 1:
+                    np.save(output_filepath, xnp)
+                elif stage == 2:
+                    np.save(output_filepath, xnp_s2)
                 # Output message
                 print(f"Created X input file for stage {stage} in {year}, saved to {output_filepath}")
         if write_this_year:
