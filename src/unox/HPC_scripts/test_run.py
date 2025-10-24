@@ -30,6 +30,13 @@ except:
     version = 1
 print('Running python script with version:', version)
 
+# Load third input argument, if it exists: a variable to apply lsm to
+try:
+    lsm_vars = [int(sys.argv[4])]
+except:
+    foo = 2
+print(f'Using lsm_vars: {lsm_vars}')
+
 try:
     os.mkdir(savedir)
 except FileExistsError:
@@ -483,7 +490,7 @@ elif input_fmt == 'nc':
 print('output_metadata:', output_metadata)
 import json
 with open(savedir+'output_metadata.json', 'w') as file:
-    file.write(json.dumps(metadata_dict, indent=4))
+    file.write(json.dumps(output_metadata, indent=4))
 
 print('')
 print('Done running test_unet.py')

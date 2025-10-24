@@ -4,7 +4,7 @@
 #SBATCH --time=1:00:00
 #SBATCH --mail-user=mikhail.schee@mail.utoronto.ca
 #SBATCH --mail-type=ALL
-#SBATCH --output=HPC_runs/%x/log_test_%x_%j.txt				# %x = job_name, %j = job_number
+#SBATCH --output=HPC_runs/%x/log_%x_%j.txt				# %x = job_name, %j = job_number
 
 # Submit this script to a HPC with `sbatch`. Note, by default the code will run 
 # with updated versions of tensorflow and keras, which won't work on Mist. Use
@@ -15,9 +15,10 @@
 #						  -t <run type>					Default: test, other options: pred
 #                         -v <version>                  Default: 1, use updates
 #                         -c <cluster>                  Default: trillium
+#                         -l <lsm_var>                  Default: none
 
 # Having a ":" after a flag means an option is required to invoke that flag
-while getopts j:i:t:v:c: option
+while getopts j:i:t:v:c:l: option
 do
 	case "${option}"
 		in
@@ -26,7 +27,8 @@ do
 		t) TYPE=${OPTARG};;
 		v) VERSION=${OPTARG};;
 		c) CLUSTER=${OPTARG};;
+		l) LSM_VAR=${OPTARG};;
 	esac
 done
 
-bash HPC_slurm.sh -j $JOBNAME -i $INPUTFILES -t $TYPE -v $VERSION -c $CLUSTER
+bash HPC_slurm.sh -j $JOBNAME -i $INPUTFILES -t $TYPE -v $VERSION -c $CLUSTER -l $LSM_VAR

@@ -15,9 +15,10 @@
 #						  -t <run type>					Default: test, other options: pred
 #                         -v <version>                  Default: 1, use updates
 #                         -c <cluster>                  Default: trillium
+#                         -l <lsm_var>                  Default: none
 
 # Having a ":" after a flag means an option is required to invoke that flag
-while getopts j:i:t:v:c: option
+while getopts j:i:t:v:c:l: option
 do
 	case "${option}"
 		in
@@ -26,6 +27,7 @@ do
 		t) TYPE=${OPTARG};;
 		v) VERSION=${OPTARG};;
 		c) CLUSTER=${OPTARG};;
+		l) LSM_VAR=${OPTARG};;
 	esac
 done
 
@@ -82,6 +84,13 @@ then
     echo "-c, No cluster specified, defaulting to $CLUSTER"
 else
     echo "-c, Using cluster: $CLUSTER"
+fi
+if [ -z "$LSM_VAR" ]
+then
+    LSM_VAR=""
+    echo "-l, No land-sea mask variable specified, defaulting to none $LSM_VAR"
+else
+    echo "-l, Using land-sea mask variable: $LSM_VAR"
 fi
 
 # Load modules and activate virtual environment
@@ -148,6 +157,6 @@ export HDF5_USE_FILE_LOCKING=FALSE
 echo ""
 echo "Running $CODEFILE with savedir $SAVEDIR"
 echo ""
-python $CODEFILE $SAVEDIR $INPUTFILES $VERSION
+python $CODEFILE $SAVEDIR $INPUTFILES $VERSION $LSM_VAR
 
 deactivate
