@@ -73,11 +73,7 @@ def get_npy_from_netcdf(
             y_var = xr_dataset.attrs.get('y_var')
             if y_var is None:
                 raise ValueError("The dataset does not have a 'y_var' attribute.")
-            data_for_year = data_for_year[y_var]
-            # Drop all nan values
-            data_for_year = data_for_year.dropna(dim='time', how='all')
-            # Convert the xr.DataArray to a numpy array
-            data_array = data_for_year.to_numpy()
+            return get_npy_from_netcdf(data_for_year, year, var=y_var)
         else:
             raise ValueError(f"x_or_y must be 'x', 'y', or None, got {x_or_y}.")
     elif not isinstance(var, str):
