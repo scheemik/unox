@@ -130,7 +130,7 @@ def make_y_input_file(
         The variable to extract from the dataset. Default is 'nox'.
     emiss_dir : str, optional
         Directory where the emissions data are stored. 
-        Default is '/data/high_res/emacdonald/unet/datafiles/t106'.
+        Default is '/data/high_res/t106'.
     emiss_pre : str, optional
         Prefix for the emissions input file name. Default is 'nox_'.
     emiss_post : str, optional
@@ -493,11 +493,11 @@ def add_tm1_var(
 def make_x_input_file(
     year,
     stage_2=True,
-    data_dir='/data/high_res/emacdonald/unet/datafiles/',
-    chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
+    data_dir='/data/high_res',
+    chemra_path='emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
     chemra_var='no2',
-    insitu_path='US_EPA/daily_42602_',
-    era5_path='ERA5concatenated/',
+    insitu_path='US_EPA/NO2/daily_NO2/daily_42602_',
+    era5_path='ERA5concatenated',
     scale_factors={'chemra': 1e-3,
                     'sp': 1e-5,
                     'ssrd': 1e-6,
@@ -528,16 +528,16 @@ def make_x_input_file(
         Default is True.
     data_dir : str, optional
         Directory where the NOx data are stored. 
-        Default is '/data/high_res/emacdonald/unet/datafiles/'.
+        Default is '/data/high_res'.
     chemra_path : str, optional
         Path to the chemical reanalysis data files. 
-        Default is 'TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
+        Default is 'emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
     chemra_var : str, optional
         The variable to extract from the dataset. Default is 'no2'
     insitu_path : str, optional
-        Path to the insitu data files. Default is 'US_EPA/daily_42602_'.
+        Path to the insitu data files. Default is 'US_EPA/NO2/daily_NO2/daily_42602_'.
     era5_path : str, optional
-        Path to the ERA5 reanalysis data files. Default is 'ERA5concatenated/'.
+        Path to the ERA5 reanalysis data files. Default is 'ERA5concatenated'.
     scale_factors : dict, optional
         Scaling factors for the variables. Default is a dictionary with
         scaling factors for 'chemra', 'sp', 'ssrd', and 'blh'.
@@ -574,7 +574,7 @@ def make_x_input_file(
         print("level dimension detected")
         chemra = chemra.sum("lev")
     # Regularize the data depending on the source
-    if chemra_path=='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
+    if chemra_path=='emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
         # Change longitude coordinate convention to match other data
         # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
         chemra = udata.shift_lon_arr(chemra)
@@ -606,7 +606,7 @@ def make_x_input_file(
     # Find the number of days in the year
     ndays = len(chemra.coords['time'])
     # Fix the time coordinate to match the year
-    if chemra_path=='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
+    if chemra_path=='emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
         # Save the time attributes
         time_attrs = chemra['time'].attrs
         # For an unexplained reason, the year in all TCR-2 files is always 2005.
@@ -1094,7 +1094,7 @@ def make_input_metadata_file(
             ]
         },
         "y_var": "nox",
-        "emiss_dir": "/data/high_res/emacdonald/unet/datafiles/t106",
+        "emiss_dir": "/data/high_res/t106",
         "emiss_pre": "nox_",
         "emiss_post": "_t106_US.nc",
         "nan_fill": 0,
@@ -1104,10 +1104,10 @@ def make_input_metadata_file(
             ...
             "ssrd"
         ],
-        "data_dir": "/data/high_res/emacdonald/unet/datafiles/",
-        "chemra_path": "TROPESS/TROPESS_reanalysis_2hr_no2_sfc_",
-        "insitu_path": "US_EPA/daily_42602_",
-        "era5_path": "ERA5concatenated/",
+        "data_dir": "/data/high_res",
+        "chemra_path": "emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_",
+        "insitu_path": "US_EPA/NO2/daily_NO2/daily_42602_",
+        "era5_path": "ERA5concatenated",
         "stages": [
             1,
             2
