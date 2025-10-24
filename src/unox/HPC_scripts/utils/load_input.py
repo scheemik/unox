@@ -17,7 +17,8 @@ def get_npy_from_netcdf(
     year : int
         The year for which to extract the data.
     x_or_y : str, optional
-        If 'x', return the x variables, if 'y', return the y variables. If None, return all variables.
+        If 'x', return the stage 1 x variables, if 'x2', return the stage 2 x variables, 
+        if 'y', return the y variables. If None, return all variables.
     var : str, optional
         The variable to extract from the netcdf file. Overrides the `x_or_y` argument. 
         If None, all variables are returned.
@@ -51,14 +52,41 @@ def get_npy_from_netcdf(
     # Select the data for the specified year
     data_for_year = xr_dataset.sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
     if isinstance(var, type(None)):
-        if x_or_y == 'x':
+        if x_or_y in ['x', 'x2']:
             # Get the list of x variables from the `x_vars` attribute
             x_vars = xr_dataset.attrs.get('x_vars')
-            # Remove any variables not in the x_vars list
-            if x_vars is None:
-                raise ValueError("The dataset does not have an 'x_vars' attribute.")
+            if x_or_y == 'x':
+                # x_vars = xr_dataset.attrs.get('x1_vars')
+                x_vars = [
+                    'no2',
+                    'no2_tm1',
+                    'u10',
+                    'v10',
+                    'blh',
+                    'sp',
+                    'skt',
+                    't2m',
+                    'ssrd',
+                ]
+            elif x_or_y == 'x2':
+                # Get the stage 2 cutoff
+                stage_2_cutoff = xr_dataset.attrs.get('stage_2_cutoff')
+                if stage_2_cutoff > year:
+                    raise ValueError(f"Stage 2 data not available for year {year} (cutoff is {stage_2_cutoff}).")
+                # x_vars = xr_dataset.attrs.get('x2_vars')
+                x_vars = [
+                    'no2_s2',
+                    'no2_s2_tm1',
+                    'u10',
+                    'v10',
+                    'blh',
+                    'sp',
+                    'skt',
+                    't2m',
+                    'ssrd',
+                ]
             # Grab just the x variables for the dataset
-            data_for_year = data_for_year[x_vars]
+            # data_for_year = data_for_year[x_vars]
             # Drop all nan values
             data_for_year = data_for_year.dropna(dim='time', how='all')
             # Convert the entire dataset to a numpy array by looping over x_vars
