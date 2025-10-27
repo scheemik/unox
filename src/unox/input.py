@@ -1159,3 +1159,118 @@ def make_input_metadata_file(
         with open(output_filepath, 'w') as file:
             file.write(json.dumps(metadata_dict, indent=4))
     return metadata_dict
+
+def make_input_config(
+    config_name,
+    input_set = 'no2_sample_input',
+    x_vars = [
+        'no2',
+        'no2_tm1',
+        'u10',
+        'v10',
+        'blh',
+        'sp',
+        'skt',
+        't2m',
+        'ssrd',
+    ],
+    stage_2 = True,
+    stage_2_cutoff = 2013,
+    lsm_vars = [
+        'no2',
+        'no_tm1',
+    ],
+    overwrite=False,
+    **kwargs,
+):
+    """
+    Create a configuration file for using input data with the Unet model.
+
+    Parameters
+    ----------
+    config_name : str
+        Name of the configuration file to be created.
+    input_set : str or xr.Dataset, optional
+        Directory inside `inputfiles/` where the dataset is found, or the xarray Dataset.
+        Default is 'no2_sample_input'.
+    x_vars : list of str, optional
+        List of variable names to be used as input features for the model.
+        Default is a list of common meteorological and chemical variables.
+    stage_2 : bool, optional
+        Whether or not stage 2 should be run with the Unet model.
+        Default is True.
+    stage_2_cutoff : int, optional
+        Year after which stage 2 data will be used.
+        Default is 2013.
+    lsm_vars : list of str, optional
+        List of variable names that should use land-sea mask.
+        Default is ['no2', 'no_tm1'].
+    **kwargs : dict, optional
+
+    Returns
+    -------
+    config_dict : dict
+        The configuration dictionary that was saved to the json file.
+    """
+    # Verify argument types
+    if not isinstance(config_name, str):
+        raise TypeError(f"config_name must be a string. Got type: {type(config_name)}")
+    # Verify input_set is a string or xr.Dataset
+    if isinstance(input_set, str):
+        # Check whether the given input_set exists in 'inputfiles/'
+        xr_path = f'inputfiles/{input_set}/{input_set}.nc'
+        if not os.path.exists(xr_path):
+            raise ValueError(f'File {xr_path} does not exist.')
+        # Load the dataset
+        xr_dataset = xr.load_dataset(xr_path)
+    elif isinstance(input_set, xr.Dataset):
+        xr_dataset = input_set
+    else:
+        raise TypeError(f"input_set must be a string or xarray.Dataset. Got type: {type(input_set)}")
+    if not isinstance(x_vars, list):
+        raise TypeError(f"x_vars must be a list of strings. Got type: {type(x_vars)}")
+    if not isinstance(stage_2, bool):
+        raise TypeError(f"stage_2 must be a boolean. Got type: {type(stage_2)}")
+    if not isinstance(stage_2_cutoff, int):
+        raise TypeError(f"stage_2_cutoff must be an integer. Got type: {type(stage_2_cutoff)}")
+    if not isinstance(lsm_vars, list):
+        raise TypeError(f"lsm_vars must be a list of strings. Got type: {type(lsm_vars)}")
+    if not isinstance(overwrite, bool):
+        raise TypeError(f"overwrite must be a boolean. Got type: {type(overwrite)}")
+    # Verify the dataset
+    xr_dataset = udata.verify_dataset(xr_dataset)
+    # Verify that all x_vars are in the dataset
+    for var in x_vars:
+        udata.verify_var(xr_dataset, var)
+    # Verify that stage 2 exists in the dataset
+    if not 2 in xr_dataset.attrs.get('stages', []):
+        stage_2 = False
+        print('Stage 2 not found in dataset. Setting stage_2 to False in configuration.')
+    # Verify that stage_2_cutoff is a year that exists in the dataset
+    years = udata.get_years(xr_dataset)
+    if stage_2_cutoff not in years:
+        raise ValueError(f'stage_2_cutoff {stage_2_cutoff} not found in dataset years: {years}')
+    # Verify that the lsm_vars are in the dataset
+    for var in lsm_vars:
+        udata.verify_var(xr_dataset, var)
+    # Build the dictionary
+    config_dict = {
+        'input_set': input_set,
+        'x_vars': x_vars,
+        'stage_2': stage_2,
+        'stage_2_cutoff': stage_2_cutoff,
+        'lsm_vars': lsm_vars,
+    }
+    # Check whether the configuration file already exists
+    config_filepath = f'inputfiles/_input_configs/{config_name}.json'
+    if os.path.exists(config_filepath) and overwrite == False:
+        # Ask whether to overwrite the existing file
+        overwrite = unox.interpret_user_input(input(f'Configuration file {config_filepath} already exists. Overwrite?'))
+        if not overwrite:
+            print('Aborting configuration file creation.')
+            return
+    # Save the configuration dictionary to a json file
+    with open(config_filepath, 'w') as file:
+        file.write(json.dumps(config_dict, indent=4))
+    print(f'Saved configuration file to {config_filepath}')
+    return config_dict
