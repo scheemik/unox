@@ -1178,7 +1178,7 @@ def make_input_config(
     stage_2_cutoff = 2013,
     lsm_vars = [
         'no2',
-        'no_tm1',
+        'no2_tm1',
     ],
     overwrite=False,
     **kwargs,
@@ -1204,7 +1204,7 @@ def make_input_config(
         Default is 2013.
     lsm_vars : list of str, optional
         List of variable names that should use land-sea mask.
-        Default is ['no2', 'no_tm1'].
+        Default is ['no2', 'no2_tm1'].
     **kwargs : dict, optional
 
     Returns
@@ -1265,7 +1265,7 @@ def make_input_config(
     config_filepath = f'inputfiles/_input_configs/{config_name}.json'
     if os.path.exists(config_filepath) and overwrite == False:
         # Ask whether to overwrite the existing file
-        overwrite = unox.interpret_user_input(input(f'Configuration file {config_filepath} already exists. Overwrite?'))
+        overwrite = unox.interpret_user_input(input(f'Configuration file {config_filepath} already exists. Overwrite? (y/n)'))
         if not overwrite:
             print('Aborting configuration file creation.')
             return
