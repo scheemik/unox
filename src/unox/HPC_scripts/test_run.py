@@ -4,7 +4,8 @@ import glob
 import sys
 import os 
 import xarray as xr
-from utils.load_input import get_npy_from_netcdf, g_lsm_vars
+import json
+from utils.load_input import get_npy_from_netcdf
 
 print('')
 print(f'Running test_run.py from current working directory:{os.getcwd()}')
@@ -16,12 +17,16 @@ except:
     savedir = 'HPC_runs/test_unet/'  #directory to save output in
 print('Running python script with savedir:', savedir)
 
-# Load second input argument, if it exists: the input files to use
+# Load second input argument, if it exists: the config file to use
 try:
-    inputfiles = sys.argv[2]
+    config_file = sys.argv[2]
 except:
-    inputfiles = 'no2_sample_input'
-print('Running python script with inputfiles:', inputfiles)
+    config_file = 'sample_config'
+print('Running python script with config_file:', config_file)
+# Load config file to a dictionary
+with open(f"inputfiles/_input_configs/{config_file}.json", 'r') as file:
+    config_dict = json.load(file)
+    inputfiles = config_dict['input_set']
 
 # Load third input argument, if it exists: the version of the code to use
 try:
@@ -29,13 +34,6 @@ try:
 except:
     version = 1
 print('Running python script with version:', version)
-
-# Load third input argument, if it exists: a variable to apply lsm to
-try:
-    lsm_vars = [int(sys.argv[4])]
-except:
-    lsm_vars = g_lsm_vars
-print(f'Using lsm_vars: {lsm_vars}')
 
 try:
     os.mkdir(savedir)
@@ -60,7 +58,6 @@ save_fmt = 'both' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
 split_value = 0.9
-will_use_lsm = True
 
 ##################################################################
 from utils.data_split import data_split
@@ -69,15 +66,14 @@ from utils.data_split import data_split
 
 output_metadata = {
     'savedir': savedir,
-    'inputfiles': inputfiles,
+    'config_file': config_file,
+    'config_dict': config_dict,
     'version': version,
     'n_epochs': n_epochs,
     'save_fmt': save_fmt,
     'input_fmt': input_fmt,
     'split_year': split_year,
     'split_value': split_value,
-    'will_use_lsm': will_use_lsm,
-    'lsm_vars': lsm_vars,
 }
 ##################################################################
 # Stage-1 training
@@ -195,8 +191,8 @@ elif input_fmt == 'nc':
     ytrain_list = []
     # If before the split year, add x and y data to train lists
     for year in range(min(years), split_year):
-        xtrain_list.append(get_npy_from_netcdf(input_ds, year, x_or_y='x', use_lsm=will_use_lsm))
-        ytrain_list.append(get_npy_from_netcdf(input_ds, year, x_or_y='y', use_lsm=will_use_lsm))
+        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x'))
+        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='y'))
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -214,7 +210,8 @@ elif input_fmt == 'nc':
     print(f'Shape of yvalid: {yvalid.shape}')
 
 print('Done loading data sets for stage 1')
-# exit(0)
+if not config_dict['stage_2']:
+    exit(0)
 
 ##################################################################
 
@@ -367,7 +364,7 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
-        x_test = get_npy_from_netcdf(input_ds, year, x_or_y='x', use_lsm=will_use_lsm, lsm_vars=lsm_vars)
+        x_test = get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x')
         pred = unet.predict(x_test)
         np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
 
@@ -385,7 +382,8 @@ elif input_fmt == 'nc':
 #    np.save(savedir+'stage1_output/ypred_' + y.split('/')[-1], pred)
 
 print('Done with stage 1')
-# exit(0)
+if not config_dict['stage_2']:
+    exit(0)
 
 ##################################################################
 # Stage-2 training
@@ -411,8 +409,8 @@ elif input_fmt == 'nc':
     # If before the split year, add x and y data to train lists
     stage_2_cutoff=2013
     for year in range(stage_2_cutoff+1, split_year):
-        xtrain_list.append(get_npy_from_netcdf(input_ds, year, x_or_y='x', use_lsm=will_use_lsm))
-        ytrain_list.append(get_npy_from_netcdf(input_ds, year, x_or_y='y', use_lsm=will_use_lsm))
+        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x'))
+        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='y'))
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -482,7 +480,7 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
-        x_test = get_npy_from_netcdf(input_ds, year, x_or_y='x', use_lsm=will_use_lsm)
+        x_test = get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x')
         pred = unet.predict(x_test)
         np.save(savedir+f'stage2_output/pred_X_{year}.npy', pred)
 
