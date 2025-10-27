@@ -52,6 +52,9 @@ try:
     os.mkdir(savedir+'checkpts/')
 except FileExistsError:
     print('checkpts/ exists')
+# Write the config dictionary to a json file in the savedir
+with open(savedir+'input_config.json', 'w') as file:
+    file.write(json.dumps(config_dict, indent=4))
 
 n_epochs = 250
 save_fmt = 'both' # 'h5', 'keras', or 'both'
@@ -210,8 +213,6 @@ elif input_fmt == 'nc':
     print(f'Shape of yvalid: {yvalid.shape}')
 
 print('Done loading data sets for stage 1')
-if not config_dict['stage_2']:
-    exit(0)
 
 ##################################################################
 
