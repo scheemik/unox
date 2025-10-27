@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+import json
 
 g_lsm_vars = [
     'nox',
@@ -19,10 +20,9 @@ g_lsm_vars = [
 def get_npy_from_netcdf(
     netcdf,
     year,
+    input_config,
     x_or_y=None,
     var=None,
-    use_lsm=False,
-    lsm_vars=g_lsm_vars,
     ):
     """ 
     Extract a numpy array for a specific year (and variable if requested) from a netcdf file.
@@ -68,6 +68,15 @@ def get_npy_from_netcdf(
         raise TypeError(f'netcdf must be a file path (str) or an xarray.Dataset, got {type(netcdf)}.')
     # Verify the dataset
     # xr_dataset = udata.verify_dataset(xr_dataset)
+    # Verify the input config
+    if isinstance(input_config, type({})):
+        config_dict = input_config
+    elif isinstance(input_config, str):
+        # Load config file to a dictionary
+        with open(f"inputfiles/_input_configs/{input_config}.json", 'r') as file:
+            config_dict = json.load(file)
+    else:
+        raise TypeError(f'input_config must be a str or dict, got {type(input_config)}.')
     # Select the data for the specified year
     data_for_year = xr_dataset.sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
     if isinstance(var, type(None)):
@@ -76,34 +85,12 @@ def get_npy_from_netcdf(
             x_vars = xr_dataset.attrs.get('x_vars')
             if x_or_y == 'x':
                 x_vars = xr_dataset.attrs.get('x1_vars')
-                # x_vars = [
-                #     'no2',
-                #     'no2_tm1',
-                #     'u10',
-                #     'v10',
-                #     'blh',
-                #     'sp',
-                #     'skt',
-                #     't2m',
-                #     'ssrd',
-                # ]
             elif x_or_y == 'x2':
                 # Get the stage 2 cutoff
                 stage_2_cutoff = xr_dataset.attrs.get('stage_2_cutoff')
                 if stage_2_cutoff > year:
                     raise ValueError(f"Stage 2 data not available for year {year} (cutoff is {stage_2_cutoff}).")
                 x_vars = xr_dataset.attrs.get('x2_vars')
-                # x_vars = [
-                #     'no2_s2',
-                #     'no2_s2_tm1',
-                #     'u10',
-                #     'v10',
-                #     'blh',
-                #     'sp',
-                #     'skt',
-                #     't2m',
-                #     'ssrd',
-                # ]
             # Grab just the x variables for the dataset
             # data_for_year = data_for_year[x_vars]
             # Drop all nan values
@@ -115,15 +102,10 @@ def get_npy_from_netcdf(
                 # Skip the land-sea mask if applicable
                 if this_var == 'lsm':
                     continue
-                # Check whether to apply the land-sea mask to this variable
-                if use_lsm and this_var in lsm_vars:
-                    print(f'\tApplying land-sea mask to {this_var} for year {year}')
-                    this_use_lsm = True
-                else:
-                    this_use_lsm = False
-                this_arr = get_npy_from_netcdf(data_for_year, year, var=this_var, use_lsm=this_use_lsm)
+                # Get the numpy array for this variable
+                this_arr = get_npy_from_netcdf(data_for_year, year, config_dict, var=this_var)
                 list_of_x_arrs.append(this_arr)
-                print(f'\tLoaded {this_var} for year {year} with shape {this_arr.shape}')
+                # print(f'\tLoaded {this_var} for year {year} with shape {this_arr.shape}')
             # Stack the arrays together along a new axis in last place
             data_array = np.stack(tuple(list_of_x_arrs), axis=-1)
         elif x_or_y == 'y':
@@ -131,7 +113,7 @@ def get_npy_from_netcdf(
             y_var = xr_dataset.attrs.get('y_var')
             if y_var is None:
                 raise ValueError("The dataset does not have a 'y_var' attribute.")
-            return get_npy_from_netcdf(data_for_year, year, var=y_var, use_lsm=use_lsm)
+            return get_npy_from_netcdf(data_for_year, year, config_dict, var=y_var)
         else:
             raise ValueError(f"x_or_y must be 'x', 'y', or None, got {x_or_y}.")
     elif not isinstance(var, str):
@@ -141,13 +123,21 @@ def get_npy_from_netcdf(
         # udata.verify_var(data_for_year, var)
         if var not in data_for_year.data_vars:
             raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
+        # Get the land-sea mask variables from the configuration, if they exist
+        if 'lsm_vars' in config_dict:
+            lsm_vars = config_dict['lsm_vars']
+            use_lsm = True
+        else:
+            print(f"\tNo 'lsm_vars' found in input config: {input_config}")
+            use_lsm = False
         # Check whether to apply the land-sea mask
-        if use_lsm:
+        if use_lsm and var in lsm_vars:
             # Verify the land-sea mask exists
             # udata.verify_var(data_for_year, 'lsm')
             if 'lsm' not in data_for_year.data_vars:
                 raise ValueError(f"Variable 'lsm' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
             # Apply the land-sea mask
+            print(f'\tApplying land-sea mask to {var} for year {year}')
             data_for_year[var] = data_for_year[var]*data_for_year['lsm']
             # lsm_threshold = 1
             # data_for_year[var] = data_for_year[var].where(data_for_year['lsm'] >= lsm_threshold)
