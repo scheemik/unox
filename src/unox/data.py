@@ -13,7 +13,8 @@ DEFAULT_LAT_MIN = 11
 DEFAULT_LAT_MAX = 75
 DEFAULT_LON_MIN = -175
 DEFAULT_LON_MAX = -39
-DEFAULT_EXTENT = [DEFAULT_LAT_MIN, DEFAULT_LAT_MAX, DEFAULT_LON_MIN, DEFAULT_LON_MAX]
+# Needs to be [north, west, south, east] for the cdsapi call in download_era5.py
+DEFAULT_EXTENT = [DEFAULT_LAT_MAX, DEFAULT_LON_MIN, DEFAULT_LAT_MIN, DEFAULT_LON_MAX]
 
 def generate_lats_lons(
     dataset='datafiles/sample_data/2019u10.nc',
@@ -277,6 +278,44 @@ def print_latlon_info(
     print(f"\tLatitude resolution: {lat_res}")
     print(f"\tLongitude resolution: {lon_res}")
 
+def get_dataset(
+    set_to_get,
+    is_input_set=False,
+    **kwargs,
+):
+    """Get the given dataset.
+
+    Parameters
+    ----------
+    set_to_get : str
+        The name of the dataset to get.
+    is_input_set : bool, optional
+        If True, treat the dataset as an input set.
+    **kwargs : keyword arguments
+
+    Returns
+    -------
+    xr_dataset : xarray.Dataset or xarray.DataArray
+        The loaded and verified xarray dataset.
+    """
+    # If set_to_get is a string, load the dataset
+    if isinstance(set_to_get, str):
+        if is_input_set:
+            # Check whether a file path in the `inputfiles` directory was given
+            if 'inputfiles/' not in set_to_get:
+                # Assemble the file path
+                file_path = f'inputfiles/{set_to_get}/{set_to_get}.nc'
+        else:
+            file_path = set_to_get
+        # Load (and verify) the dataset
+        xr_dataset = load_dataset(file_path, **kwargs)
+    # If set_to_get is a xarray Dataset or DataArray, verify it
+    elif isinstance(set_to_get, xr.Dataset) or isinstance(set_to_get, xr.DataArray):
+        xr_dataset = verify_dataset(set_to_get, **kwargs)
+    else:
+        raise TypeError(f"set_to_get must be string, xr.Dataset, or xr.DataArray. Got {type(set_to_get)}.")
+    return xr_dataset
+
 def load_dataset(
     file_path,
     **kwargs,
@@ -314,7 +353,7 @@ def verify_dataset(
     check_time=True,
     shift_lons=False,
     **kwargs,
-    ):
+):
     """Verify that the given xarray dataset is valid.
 
     Checks to make sure the given dataset is of the expected type
@@ -326,14 +365,18 @@ def verify_dataset(
         The xarray data to verify.
     check_time : bool, optional
         If True, verify that the dataset has a 'time' coordinate.
-    shift_lons : bool or string, optional
+    shift_lons : bool, optional
         If True, shift the longitude values based on the PM_centered kwarg.
     **kwargs : keyword arguments
         Additional keyword arguments to pass to `shift_lon_arr()`.
     """
-    # Verify that xr_dataset is an xarray Dataset or DataArray
+    # Verify argument types
     if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
-        raise TypeError("xr_dataset must be an xarray Dataset or DataArray.")
+        raise TypeError(f"(verify_dataset) `xr_dataset` must be an xarray Dataset or DataArray. Got type: {type(xr_dataset)}.")
+    if not isinstance(check_time, bool):
+        raise TypeError(f"(verify_dataset) `check_time` must be a bool. Got type: {type(check_time)}.")
+    if not isinstance(shift_lons, bool):
+        raise TypeError(f"(verify_dataset) `shift_lons` must be a bool. Got type: {type(shift_lons)}.")
     # Standardize the coordinate names
     xr_coords = list(xr_dataset.coords)
     for coord in xr_coords:
@@ -358,6 +401,63 @@ def verify_dataset(
     if shift_lons:
         xr_dataset['lon'] = shift_lon_arr(xr_dataset['lon'], **kwargs)
     return xr_dataset
+
+def verify_var(
+    xr_dataset,
+    var,
+):
+    """Verifies that the given variable is in the given xarray dataset.
+
+    Parameters
+    ----------
+    xr_dataset : xarray.Dataset or xarray.DataArray
+        The xarray data to verify.
+    var : str
+        The variable name to verify.
+
+    Returns
+    -------
+    bool
+        True if the variable is in the dataset, otherwise raises a ValueError.
+    """
+    # Verify argument types
+    if True:
+        if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
+            raise TypeError(f"(verify_var) `xr_dataset` must be an xarray Dataset or DataArray. Got type: {type(xr_dataset)}.")
+        if not isinstance(var, str):
+            raise TypeError(f"(verify_var) `var` must be a string. Got type: {type(var)}.")
+    # Check if the variable is in the dataset
+    if var not in xr_dataset.data_vars:
+        raise ValueError(f"(verify_var) Variable '{var}' not found in the xarray dataset. Available variables are: {list(xr_dataset.data_vars)}")
+    else:
+        return True
+
+def get_years(
+    xr_dataset,
+):
+    """Get a list of unique years from the time coordinate of the given xarray dataset.
+
+    Parameters
+    ----------
+    xr_dataset : xarray.Dataset or xarray.DataArray
+        The xarray data from which to extract the years.
+
+    Returns
+    -------
+    years : list of int
+        A list of unique years in the dataset.
+    """
+    # Verify the dataset (must have time coordinate)
+    ## Note: this also verifies the argument types
+    xr_dataset = verify_dataset(xr_dataset, check_time=True)
+    # Get a list of years present in the dataset
+    years = xr_dataset['time'].dt.year.values
+    # Sort and get unique years
+    years = sorted(list(set(years)))
+    # Convert years to list of ints
+    ## to avoid TypeError: Object of type int64 is not JSON serializable
+    years = [int(year) for year in years]
+    return years
 
 def verify_number(
     value,

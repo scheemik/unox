@@ -226,6 +226,33 @@ def test_print_latlon_info():
         else:
             assert False, f"print_latlon_info did not raise an exception on invalid input: {invalid_input}"
 
+def test_get_dataset():
+    """Test the get_dataset function."""
+    # Test with sample data files
+    for datafile in sample_datafiles:
+        xr_dataset = udata.get_dataset(datafile)
+        assert isinstance(xr_dataset, xr.Dataset), f"get_dataset did not return an xarray Dataset from '{datafile}'"
+        # Check if the dataset contains expected variables
+        expected_vars = ['lat', 'lon', 'time']
+        for var in expected_vars:
+            assert var in xr_dataset.variables, f"Variable '{var}' not found in loaded dataset from '{datafile}'"
+    # Test with invalid file paths
+    invalid_inputs = [
+        'datafiles/sample_data/non_existent_file.nc',
+        'tests/data_for_tests/sample.csv',
+        'tests/data_for_tests/lats_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy',
+        'tests/data_for_tests/lons_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy',
+    ]
+    # Concatenate with invalid_datasets list
+    invalid_inputs.extend(invalid_datasets)
+    for invalid_path in invalid_inputs:
+        try:
+            xr_dataset = udata.get_dataset(invalid_path)
+        except Exception as e:
+            assert True, f"get_dataset raised an exception on invalid file path: {e}"
+        else:
+            assert False, f"get_dataset did not raise an exception on invalid file path: {invalid_path}"
+
 def test_load_dataset():
     """Test the load_dataset function."""
     # Test with sample data files
@@ -297,6 +324,7 @@ def test_verify_dataset():
     ]
     # Concatenate with invalid_datasets list
     invalid_inputs.extend(invalid_datasets)
+    # Test invalid inputs to xr_dataset argument
     for invalid_dataset in invalid_datasets:
         try:
             udata.verify_dataset(invalid_dataset, check_time=False)
@@ -304,6 +332,90 @@ def test_verify_dataset():
             assert True, f"verify_dataset raised an exception on invalid dataset: {e}"
         else:
             assert False, f"verify_dataset did not raise an exception on invalid dataset: {invalid_dataset}"
+    # Create invalid inputs list for check_time argument
+    invalid_inputs = ['invalid_string', 1234, None, 1.5, [], {}]
+    # Test invalid inputs to check_time argument
+    for invalid_check_time in invalid_inputs:
+        try:
+            udata.verify_dataset(minimal_xr0, check_time=invalid_check_time)
+        except TypeError as e:
+            assert True, f"verify_dataset raised an exception on invalid check_time argument: {e}"
+        else:
+            assert False, f"verify_dataset did not raise an exception on invalid check_time argument: {invalid_check_time}"
+    # Test invalid inputs to shift_lons argument
+    for invalid_shift_lons in invalid_inputs:
+        try:
+            udata.verify_dataset(minimal_xr0, shift_lons=invalid_shift_lons)
+        except TypeError as e:
+            assert True, f"verify_dataset raised an exception on invalid shift_lons argument: {e}"
+        else:
+            assert False, f"verify_dataset did not raise an exception on invalid shift_lons argument: {invalid_shift_lons}"
+
+def test_verify_var():
+    """Test the verify_var function."""
+    # Create lists of valid variables for the sample data files
+    valid_vars = [
+        ['u10'],                # 'datafiles/sample_data/2019u10.nc'
+        ['no2'],                # 'datafiles/sample_data/daily_42602_2019.csv'
+        ['nox'],                # 'datafiles/sample_data/nox_2019_t106_US.nc'
+        ['nox'],       # 'datafiles/sample_data/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc'
+    ]
+    # Create list of invalid variables for testing
+    invalid_vars = [
+        'invalid_var', 
+        1234, 
+        True, 
+        None,
+    ]
+    # Test each sample dataset
+    for i in range(len(valid_vars)):
+        datafile = sample_datafiles[i]
+        var_list = valid_vars[i]
+        # Load the dataset
+        xr_dataset = udata.load_dataset(datafile)
+        # Test valid variables
+        for var in var_list:
+            try:
+                udata.verify_var(xr_dataset, var)
+            except (ValueError, TypeError) as e:
+                assert False, f"verify_var raised an exception on valid variable '{var}' in '{datafile}': {e}"
+        # Test invalid variables
+        for var in invalid_vars:
+            try:
+                udata.verify_var(xr_dataset, var)
+            except (ValueError, TypeError) as e:
+                assert True, f"verify_var raised an exception on invalid variable '{var}' in '{datafile}': {e}"
+            else:
+                assert False, f"verify_var did not raise an exception on invalid variable '{var}' in '{datafile}'"
+
+def test_get_years():
+    """Test the get_years function."""
+    # Test with sample data files
+    expected_years = [
+        [2019],         # For 2019u10.nc
+        [2019],         # For daily_42602_2019.csv
+        [2019],         # For nox_2019_t106_US.nc
+        [2021],         # For TROPESS_reanalysis_mon_emi_nox_anth_2021.nc
+    ]
+    for i, datafile in enumerate(sample_datafiles):
+        xr_dataset = udata.load_dataset(datafile)
+        actual_years = udata.get_years(xr_dataset)
+        assert actual_years == expected_years[i], f"Expected years {expected_years[i]} do not match actual years {actual_years} for '{datafile}'"
+    # Test with minimal xarray DataArray
+    expected_years = [2019]
+    actual_years = udata.get_years(minimal_xr0)
+    assert actual_years == expected_years, f"Expected years {expected_years} do not match actual years {actual_years} for minimal example 0"
+    expected_years = [2009]
+    actual_years = udata.get_years(minimal_xr1)
+    assert actual_years == expected_years, f"Expected years {expected_years} do not match actual years {actual_years} for minimal example 1"
+    # Test with invalid inputs
+    for invalid_input in invalid_datasets:
+        try:
+            udata.get_years(invalid_input)
+        except (TypeError, ValueError) as e:
+            assert True, f"get_years raised an exception on invalid input: {e}"
+        else:
+            assert False, f"get_years did not raise an exception on invalid input: {invalid_input}"
 
 def test_verify_number():
     """Test the verify_number function."""

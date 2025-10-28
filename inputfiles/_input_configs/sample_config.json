@@ -1,0 +1,20 @@
+{
+    "input_set": "no2_lsm6",
+    "x_vars": [
+        "no2",
+        "no2_tm1",
+        "u10",
+        "v10",
+        "blh",
+        "sp",
+        "skt",
+        "t2m",
+        "ssrd"
+    ],
+    "stage_2": true,
+    "stage_2_cutoff": 2013,
+    "lsm_vars": [
+        "no2",
+        "no2_tm1"
+    ]
+}

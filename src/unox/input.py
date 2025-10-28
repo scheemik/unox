@@ -17,7 +17,7 @@ from unox.plot_format import pad_extent
 # era5 = ERA5 reanalysis data
 
 # Define a dictionary of the variables to be used for each model variable
-era5_vars_list = ['u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
+era5_vars_list = ['u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd', 'lsm']
 input_vars_dict = {
     'no2': {
         'x_vars': ['no2', 'no2_tm1'] + era5_vars_list,
@@ -130,7 +130,7 @@ def make_y_input_file(
         The variable to extract from the dataset. Default is 'nox'.
     emiss_dir : str, optional
         Directory where the emissions data are stored. 
-        Default is '/data/high_res/emacdonald/unet/datafiles/t106'.
+        Default is '/data/high_res/t106'.
     emiss_pre : str, optional
         Prefix for the emissions input file name. Default is 'nox_'.
     emiss_post : str, optional
@@ -381,9 +381,8 @@ def set_var_attrs(
     """
     # Verify the dataset
     xr_dataset = udata.verify_dataset(xr_dataset)
-    # Verify the variable is in the dataset
-    if var not in xr_dataset.data_vars:
-        raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+    # Verify `var` is in the dataset
+    udata.verify_var(xr_dataset, var)
     # Verify the attribute dictionary
     if not isinstance(attr_dict, dict):
         raise TypeError(f'attr_dict must be a dictionary, got {type(attr_dict)}.')
@@ -416,9 +415,8 @@ def scale_xr_var(
     """
     # Verify the dataset
     xr_dataset = udata.verify_dataset(xr_dataset)
-    # Verify the variable is in the dataset
-    if var not in xr_dataset.data_vars:
-        raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+    # Verify `var` is in the dataset
+    udata.verify_var(xr_dataset, var)
     # Note the variable attributes
     var_attrs = xr_dataset[var].attrs
     # Scale the variable
@@ -457,9 +455,8 @@ def add_tm1_var(
     """
     # Verify the dataset
     xr_dataset = udata.verify_dataset(xr_dataset)
-    # Verify the variable is in the dataset
-    if var not in xr_dataset.data_vars:
-        raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+    # Verify `var` is in the dataset
+    udata.verify_var(xr_dataset, var)
     # Note the variable attributes
     var_attrs = xr_dataset[var].attrs
     # Create name for t-1 variable
@@ -493,11 +490,11 @@ def add_tm1_var(
 def make_x_input_file(
     year,
     stage_2=True,
-    data_dir='/data/high_res/emacdonald/unet/datafiles/',
-    chemra_path='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
+    data_dir='/data/high_res',
+    chemra_path='emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
     chemra_var='no2',
-    insitu_path='US_EPA/daily_42602_',
-    era5_path='ERA5concatenated/',
+    insitu_path='US_EPA/NO2/daily_NO2/daily_42602_',
+    era5_path='ERA5concatenated',
     scale_factors={'chemra': 1e-3,
                     'sp': 1e-5,
                     'ssrd': 1e-6,
@@ -528,16 +525,16 @@ def make_x_input_file(
         Default is True.
     data_dir : str, optional
         Directory where the NOx data are stored. 
-        Default is '/data/high_res/emacdonald/unet/datafiles/'.
+        Default is '/data/high_res'.
     chemra_path : str, optional
         Path to the chemical reanalysis data files. 
-        Default is 'TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
+        Default is 'emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
     chemra_var : str, optional
         The variable to extract from the dataset. Default is 'no2'
     insitu_path : str, optional
-        Path to the insitu data files. Default is 'US_EPA/daily_42602_'.
+        Path to the insitu data files. Default is 'US_EPA/NO2/daily_NO2/daily_42602_'.
     era5_path : str, optional
-        Path to the ERA5 reanalysis data files. Default is 'ERA5concatenated/'.
+        Path to the ERA5 reanalysis data files. Default is 'ERA5concatenated'.
     scale_factors : dict, optional
         Scaling factors for the variables. Default is a dictionary with
         scaling factors for 'chemra', 'sp', 'ssrd', and 'blh'.
@@ -574,7 +571,7 @@ def make_x_input_file(
         print("level dimension detected")
         chemra = chemra.sum("lev")
     # Regularize the data depending on the source
-    if chemra_path=='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
+    if chemra_path=='emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
         # Change longitude coordinate convention to match other data
         # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
         chemra = udata.shift_lon_arr(chemra)
@@ -606,7 +603,7 @@ def make_x_input_file(
     # Find the number of days in the year
     ndays = len(chemra.coords['time'])
     # Fix the time coordinate to match the year
-    if chemra_path=='TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
+    if chemra_path=='emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
         # Save the time attributes
         time_attrs = chemra['time'].attrs
         # For an unexplained reason, the year in all TCR-2 files is always 2005.
@@ -629,12 +626,6 @@ def make_x_input_file(
     
     # Interpolate to latitude and longitude grid
     chemra = chemra.interp(lat=lats, lon=lons, method='slinear')
-    
-    # Start a list to hold datasets
-    datasets = []
-
-    # Add the chemical reanalysis data for day t (starting from the second day)
-    datasets.append(chemra[chemra_var][1::])
 
     # Get the time-shifted variable (day t-1)
     previousday = chemra.copy()
@@ -643,11 +634,6 @@ def make_x_input_file(
     # Rename t-1 variable
     chemra_var_tm1 = chemra_var+'_tm1'
     previousday = previousday.rename({chemra_var: chemra_var_tm1})
-    # Add the chemical reanalysis data for the previous day (t-1)
-    datasets.append(previousday[chemra_var_tm1][:-1])  # day t-1
-    # chemra[chemra_var_tm1] = chemra[chemra_var].shift(time=1)
-    # Drop January 1st, as the t-1 variable will have null values on that day
-    # chemra = chemra.drop_sel(time=f'{year}-01-01')
 
     # Add the chemical reanalysis data for the previous day (t-1)
     chemra = add_tm1_var(chemra, chemra_var, year)
@@ -655,7 +641,7 @@ def make_x_input_file(
     # Add the other variables from the ERA5 dataset
     for variable in era5_vars_list:
         # Assemble the file path for the ERA5 variable
-        era5_var_filepath = f'{data_dir}/{era5_path}{year}{variable}.nc'
+        era5_var_filepath = f'{data_dir}/{era5_path}/{year}{variable}.nc'
         # Verify the path
         era5_var_filepath = unox.verify_path(era5_var_filepath)
         # Load the ERA5 variable dataset
@@ -665,43 +651,60 @@ def make_x_input_file(
         era5_var = era5_var.drop_vars('number')
         # Rename coordinates to match the other datasets
         era5_var = era5_var.rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
-        # Add the variable data to the datasets list, skipping the first day
-        datasets.append(getattr(era5_var, variable)[1:])
         # Drop January 1st, as the t-1 variable will have null values on that day
         era5_var = era5_var.drop_sel(time=f'{year}-01-01')
         # Add the variable to the xarray
         ## Note: This assumes that the coordinates are the same
-        ## which is true in this case as the lat lon arrays used to interpolate
-        ## the chemra data came from the ERA5 data originally
+        ## which is true in this case as the lat lon arrays used to interpolate the
+        ## chemra data were used to interpolate the ERA5 data upon their concatenation
         chemra[variable] = era5_var[variable]
     
-    # Merge all datasets into a single xarray Dataset
-    x_data = xr.merge(datasets)
     # Convert calendar to 'noleap' to remove February 29th
-    x_data = x_data.convert_calendar('noleap')
     input_netcdf_xr = chemra.convert_calendar('noleap')
 
     # Scale some variables to make orders of magnitude more similar
     for variable in era5_vars_list:
         if variable in scale_factors.keys():
-            x_data = scale_xr_var(x_data, variable, scale_factors[variable])
             input_netcdf_xr = scale_xr_var(input_netcdf_xr, variable, scale_factors[variable])
-    # Reorder dimensions to match the expected format
-    x_data = x_data[['time', 'lat', 'lon', *list(x_data.data_vars)]]
 
     # Get a list of the variables in the dataset
-    datavars = list(x_data.data_vars)
+    datavars = list(input_netcdf_xr.data_vars)
     all_datavars = list(input_netcdf_xr.data_vars)
-    print('make_x_input_file datavars:',datavars)
+    # Remove `lsm` from the list of datavars
+    datavars.remove('lsm')
+    all_datavars.remove('lsm')
+    # Prepare data to be saved to numpy array files
+    if stage_2 and year > stage_2_cutoff:
+        # Assemble the names of the stage 2 variables
+        chemra_var_s2 = f'{chemra_var}_s2'
+        chemra_var_s2_tm1 = f'{chemra_var}_s2_tm1'
+        datavars_s2 = list(input_netcdf_xr.data_vars)
+        datavars_s2.remove('lsm')
+        datavars_s2.remove(chemra_var)
+        datavars_s2.remove(chemra_var_tm1)
+        # Prepare a separate numpy array for stage 2
+        xnp_s2 = np.ndarray([364, 56, 120, len(datavars_s2)])  # Adjust dimensions as needed
+        # Fill the numpy array with data from the xarray Dataset
+        for i in range(len(datavars_s2)):
+            xnp_s2[:, :, :, i] = input_netcdf_xr[datavars_s2[i]].values
+        # Remove stage 2 variables from the datavars list
+        datavars.remove(chemra_var_s2)
+        datavars.remove(chemra_var_s2_tm1)
+    else:
+        datavars_s2 = []
+    print('all_datavars:',all_datavars)
+    print('datavars:',datavars)
     # Create an empty numpy array to hold the data
     xnp = np.ndarray([364, 56, 120, len(datavars)])  # Adjust dimensions as needed
     # Fill the numpy array with data from the xarray Dataset
     for i in range(len(datavars)):
-        xnp[:, :, :, i] = x_data[datavars[i]]  # Put it in the numpy array
+        xnp[:, :, :, i] = input_netcdf_xr[datavars[i]].values
 
     # Create a dictionary of global attributes
     g_attr_dict={
         'x_vars': all_datavars,
+        'x1_vars': datavars,
+        'x2_vars': datavars_s2,
         'data_dir': data_dir,
         'chemra_path': chemra_path,
         'insitu_path': insitu_path,
@@ -724,7 +727,11 @@ def make_x_input_file(
                 output_filepath = f'inputfiles/{output_dir}/stage{stage}/x/X_{year}.npy'
                 # Make sure the output directory exists
                 unox.make_file_path(output_filepath)
-                np.save(output_filepath, xnp)
+                # Choose the correct array to save
+                if stage == 1:
+                    np.save(output_filepath, xnp)
+                elif stage == 2:
+                    np.save(output_filepath, xnp_s2)
                 # Output message
                 print(f"Created X input file for stage {stage} in {year}, saved to {output_filepath}")
         if write_this_year:
@@ -743,49 +750,6 @@ def make_x_input_file(
                 print(f"Saved x input data to {output_filepath}")
                 return xr.load_dataset(output_filepath), g_attr_dict
     return input_netcdf_xr, g_attr_dict
-
-def get_npy_from_netcdf(
-    netcdf,
-    var,
-    year,
- ):
-    """ 
-    Extract a numpy array for a specific variable and year from a netcdf file.
-
-    Parameters
-    ----------
-    netcdf : str or xr.Dataset
-        Path to the netcdf file or an xarray Dataset.
-    var : str
-        The variable to extract.
-    year : int
-        The year for which to extract the data.
-
-    Returns
-    -------
-    np.ndarray
-        The extracted data as a numpy array.
-    """
-    # Check if netcdf is a string (file path) or an xarray Dataset
-    if isinstance(netcdf, str):
-        # Verify the netcdf file path
-        netcdf_filepath = unox.verify_path(netcdf_filepath)
-        # Load the netcdf file
-        xr_dataset = xr.load_dataset(netcdf_filepath)
-    elif isinstance(netcdf, xr.Dataset):
-        xr_dataset = netcdf
-    else:
-        raise TypeError(f'netcdf must be a file path (str) or an xarray.Dataset, got {type(netcdf)}.')
-    # Verify the dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
-    # Verify the variable is in the dataset
-    if var not in xr_dataset.data_vars:
-        raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
-    # Select the data for the specified year
-    data_for_year = xr_dataset[var].sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
-    # Convert to numpy array
-    data_array = data_for_year.to_numpy()
-    return data_array
 
 @unox.time_this
 def fill_w_insitu(
@@ -1091,7 +1055,7 @@ def make_input_metadata_file(
             ]
         },
         "y_var": "nox",
-        "emiss_dir": "/data/high_res/emacdonald/unet/datafiles/t106",
+        "emiss_dir": "/data/high_res/t106",
         "emiss_pre": "nox_",
         "emiss_post": "_t106_US.nc",
         "nan_fill": 0,
@@ -1101,10 +1065,10 @@ def make_input_metadata_file(
             ...
             "ssrd"
         ],
-        "data_dir": "/data/high_res/emacdonald/unet/datafiles/",
-        "chemra_path": "TROPESS/TROPESS_reanalysis_2hr_no2_sfc_",
-        "insitu_path": "US_EPA/daily_42602_",
-        "era5_path": "ERA5concatenated/",
+        "data_dir": "/data/high_res",
+        "chemra_path": "emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_",
+        "insitu_path": "US_EPA/NO2/daily_NO2/daily_42602_",
+        "era5_path": "ERA5concatenated",
         "stages": [
             1,
             2
@@ -1146,14 +1110,16 @@ def make_input_metadata_file(
             },
         }
     # Get a list of years present in the dataset
-    years = xr_dataset['time'].dt.year.values
-    years = sorted(list(set(years)))
-    # Convert years to list of ints
-    ## to avoid TypeError: Object of type int64 is not JSON serializable
-    years = [int(year) for year in years]
+    years = udata.get_years(xr_dataset)
     # Check for global attributes
     if isinstance(g_attrs, type(None)):
         g_attrs = xr_dataset.attrs
+    # Check whether `lsm` is in the list of data variables
+    if 'lsm' in list(xr_dataset.data_vars):
+        # Add `lsm: True` to the global attributes
+        g_attrs['lsm'] = 'True'
+    else:
+        g_attrs['lsm'] = 'False'
     # Add select global attributes to the metadata dictionary
     for g_attr in [
         'y_var',
@@ -1170,6 +1136,7 @@ def make_input_metadata_file(
         'nan_fill',
         'stage_2_cutoff',
         'stages',
+        'lsm',
     ]:
         if g_attr in g_attrs:
             # Add to metadata dictionary
@@ -1192,3 +1159,128 @@ def make_input_metadata_file(
         with open(output_filepath, 'w') as file:
             file.write(json.dumps(metadata_dict, indent=4))
     return metadata_dict
+
+def make_input_config(
+    config_name,
+    input_set = 'no2_sample_input',
+    x_vars = [
+        'no2',
+        'no2_tm1',
+        'u10',
+        'v10',
+        'blh',
+        'sp',
+        'skt',
+        't2m',
+        'ssrd',
+    ],
+    stage_2 = True,
+    stage_2_cutoff = 2013,
+    lsm_vars = [
+        # 'nox',
+        'no2',
+        'no2_tm1',
+        # 'no2_s2',
+        # 'no2_s2_tm1',
+        # 'u10',
+        # 'v10',
+        # 'blh',
+        # 'sp',
+        # 'skt',
+        # 't2m',
+        # 'ssrd',
+    ],
+    overwrite=False,
+    **kwargs,
+):
+    """
+    Create a configuration file for using input data with the Unet model.
+
+    Parameters
+    ----------
+    config_name : str
+        Name of the configuration file to be created.
+    input_set : str or xr.Dataset, optional
+        Directory inside `inputfiles/` where the dataset is found, or the xarray Dataset.
+        Default is 'no2_sample_input'.
+    x_vars : list of str, optional
+        List of variable names to be used as input features for the model.
+        Default is a list of common meteorological and chemical variables.
+    stage_2 : bool, optional
+        Whether or not stage 2 should be run with the Unet model.
+        Default is True.
+    stage_2_cutoff : int, optional
+        Year after which stage 2 data will be used.
+        Default is 2013.
+    lsm_vars : list of str, optional
+        List of variable names that should use land-sea mask.
+        Default is ['no2', 'no2_tm1'].
+    **kwargs : dict, optional
+
+    Returns
+    -------
+    config_dict : dict
+        The configuration dictionary that was saved to the json file.
+    """
+    # Verify argument types
+    if not isinstance(config_name, str):
+        raise TypeError(f"config_name must be a string. Got type: {type(config_name)}")
+    # Verify input_set is a string or xr.Dataset
+    if isinstance(input_set, str):
+        # Check whether the given input_set exists in 'inputfiles/'
+        xr_path = f'inputfiles/{input_set}/{input_set}.nc'
+        if not os.path.exists(xr_path):
+            raise ValueError(f'File {xr_path} does not exist.')
+        # Load the dataset
+        xr_dataset = xr.load_dataset(xr_path)
+    elif isinstance(input_set, xr.Dataset):
+        xr_dataset = input_set
+    else:
+        raise TypeError(f"input_set must be a string or xarray.Dataset. Got type: {type(input_set)}")
+    if not isinstance(x_vars, list):
+        raise TypeError(f"x_vars must be a list of strings. Got type: {type(x_vars)}")
+    if not isinstance(stage_2, bool):
+        raise TypeError(f"stage_2 must be a boolean. Got type: {type(stage_2)}")
+    if not isinstance(stage_2_cutoff, int):
+        raise TypeError(f"stage_2_cutoff must be an integer. Got type: {type(stage_2_cutoff)}")
+    if not isinstance(lsm_vars, list):
+        raise TypeError(f"lsm_vars must be a list of strings. Got type: {type(lsm_vars)}")
+    if not isinstance(overwrite, bool):
+        raise TypeError(f"overwrite must be a boolean. Got type: {type(overwrite)}")
+    # Verify the dataset
+    xr_dataset = udata.verify_dataset(xr_dataset)
+    # Verify that all x_vars are in the dataset
+    for var in x_vars:
+        udata.verify_var(xr_dataset, var)
+    # Verify that stage 2 exists in the dataset
+    if not 2 in xr_dataset.attrs.get('stages', []):
+        stage_2 = False
+        print('Stage 2 not found in dataset. Setting stage_2 to False in configuration.')
+    # Verify that stage_2_cutoff is a year that exists in the dataset
+    years = udata.get_years(xr_dataset)
+    if stage_2_cutoff not in years:
+        raise ValueError(f'stage_2_cutoff {stage_2_cutoff} not found in dataset years: {years}')
+    # Verify that the lsm_vars are in the dataset
+    for var in lsm_vars:
+        udata.verify_var(xr_dataset, var)
+    # Build the dictionary
+    config_dict = {
+        'input_set': input_set,
+        'x_vars': x_vars,
+        'stage_2': stage_2,
+        'stage_2_cutoff': stage_2_cutoff,
+        'lsm_vars': lsm_vars,
+    }
+    # Check whether the configuration file already exists
+    config_filepath = f'inputfiles/_input_configs/{config_name}.json'
+    if os.path.exists(config_filepath) and overwrite == False:
+        # Ask whether to overwrite the existing file
+        overwrite = unox.interpret_user_input(input(f'Configuration file {config_filepath} already exists. Overwrite? (y/n)'))
+        if not overwrite:
+            print('Aborting configuration file creation.')
+            return
+    # Save the configuration dictionary to a json file
+    with open(config_filepath, 'w') as file:
+        file.write(json.dumps(config_dict, indent=4))
+    print(f'Saved configuration file to {config_filepath}')
+    return config_dict

@@ -279,6 +279,8 @@ def plot_npy_map(
     >>> fig, ax = pplt.subplots()
     >>> plot_npy_map(ax, npy_arr, lats, lons, title='NOx emissions')
     """
+    # Squeeze the numpy array
+    npy_arr = np.squeeze(npy_arr)
     # Verify the dimensions of the numpy array
     if npy_arr.shape != (len(lats), len(lons)):
         raise ValueError(f"npy_arr must have shape (len(lats), len(lons)). Expected: ({len(lats)}, {len(lons)}), got: {npy_arr.shape}")
@@ -529,7 +531,7 @@ def plot_stage_comp_maps(
     # Add one overall colorbar for the entire figure on the right-hand side
     cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='r', cb_extend=cbe)
     # Set the figure title
-    fig.suptitle(overall_title, fontsize=title_font_size)
+    fig.suptitle(f"HPC run: {pred_params['HPC_run']}, input set: {truth_params['input_set']} - {overall_title}", fontsize=title_font_size)
     return fig
 
 def make_colorbar(
@@ -913,62 +915,109 @@ def plot_npy_diff(
         fig.savefig(filename)
     return fig
 
-def compare_input_files(
-    year=2019,
-    stage=1,
-    var='no2',
-    old_dir='no2_sample_input',
-    new_dir='no2_input_test0',
+def compare_input_vars(
+    input_a_dict = {
+        'input_set':'no2_sample_input',
+        'year':2019,
+        'var':'u10',
+        'fmt':'nc',
+    },
+    input_b_dict = {
+        'input_set':'no2_sample_input',
+        'year':2019,
+        'var':'u10',
+        'fmt':'nc',
+    },
     abs_tolerance=2e-5,
     ):
     """
-    Compares new and old input files for the given year and stage.
+    Compares the data for two input variables.
 
     Parameters
     ----------
-    year : int
-        The year for which to compare the input files.
-    stage : int
-        The stage of the input files to compare.
-    var : str
-        The variable to pull out of the input file. Default is 'no2'. 
-        Choose from the input_vars_dict
-    old_dir : str
-        The directory containing the old input files.
-    new_dir : str
-        The directory containing the new input files.
+    input_dict_a : dict
+        Dictionary containing the parameters for the first input variable.
+        Must contain 'input_set', 'year', and 'var'. A value for 'fmt' is optional,
+        but must be either 'nc' or 'npy'. Default is 'nc'.
+    input_dict_b : dict
+        Dictionary containing the parameters for the second input variable.
+        Must contain 'input_set', 'year', and 'var'.
     abs_tolerance : float
         The absolute tolerance for comparing the input files. Default is 2e-5.
     """
-    from unox.input import x_or_y_var, get_input_index
-    # Get the x_or_y and index of the variable
-    x_or_y = x_or_y_var(var)
-    input_idx = get_input_index(var)
-    # Assemble the paths to the old and new input files
-    old_filepath = f'inputfiles/{old_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
-    new_filepath = f'inputfiles/{new_dir}/stage{stage}/{x_or_y}/'+str(x_or_y).capitalize()+f'_{year}.npy'
-    # Verify the file paths
-    old_filepath = unox.verify_path(old_filepath)
-    new_filepath = unox.verify_path(new_filepath)
-    # Load the old and new input files
-    old_input = np.load(old_filepath)
-    new_input = np.load(new_filepath)
-    # Pull out just the chosen variable from both arrays
-    old_input = old_input[..., input_idx]
-    new_input = new_input[..., input_idx]
-    # Output the shapes
-    print(f"Shape of {var} in {old_filepath}: \n\t{old_input.shape}")
-    print(f"Shape of {var} in {new_filepath}: \n\t{new_input.shape}")
+    # Verify argument types
+    if True:
+        for input_dict in [input_a_dict, input_b_dict]:
+            if not isinstance(input_dict, dict):
+                raise TypeError(f"(compare_input_vars) `input_dict` must be a dictionary. Got: {type(input_dict)}.")
+            required_keys = ['input_set', 'year', 'var']
+            for key in required_keys:
+                if key not in input_dict:
+                    raise KeyError(f"(compare_input_vars) `input_dict` must contain the key '{key}'.")
+            if not isinstance(input_dict['input_set'], str):
+                raise TypeError(f"(compare_input_vars) `input_set` must be a string, got: {type(input_dict['input_set'])}.")
+            if not udata.verify_number(input_dict['year']):
+                raise TypeError(f"(compare_input_vars) `year` must be an integer, got: {type(input_dict['year'])}.")
+            if not isinstance(input_dict['var'], str):
+                raise TypeError(f"(compare_input_vars) `var` must be a string, got: {type(input_dict['var'])}.")
+            if 'fmt' in input_dict:
+                if input_dict['fmt'] not in ['nc', 'npy']:
+                    raise ValueError(f"(compare_input_vars) `fmt` must be either 'nc' or 'npy', got: {input_dict['fmt']}.")
+        if not isinstance(abs_tolerance, float):
+            raise TypeError(f"(compare_input_vars) `abs_tolerance` must be a float, got: {type(abs_tolerance)}.")
+    # Loop over the two input dictionaries and load the data
+    for input_dict in [input_a_dict, input_b_dict]:
+        # Get the requested format, if none was given, select 'nc'
+        fmt = input_dict.get('fmt', 'nc')
+        if fmt == 'npy':
+            # Check for stage 2 variables
+            if input_dict['var'] == 'no2_s2':
+                this_stage=2
+                input_dict['var'] = 'no2'
+            elif input_dict['var'] == 'no2_s2_tm1':
+                this_stage=2
+                input_dict['var'] = 'no2_tm1'
+            else:
+                this_stage=1
+            # Load the input data from npy file
+            this_input, var_index = unox.get_one_input_var_array(
+                input_dict['var'],
+                stage=this_stage, 
+                year=input_dict['year'],
+                input_set=input_dict['input_set'],
+            )
+            # Reset the variable name if it was changed
+            if this_stage == 2:
+                if input_dict['var'] == 'no2':
+                    input_dict['var'] = 'no2_s2'
+                elif input_dict['var'] == 'no2_tm1':
+                    input_dict['var'] = 'no2_s2_tm1'
+        elif fmt == 'nc':
+            # Load the input data from netCDF
+            xr_dataset = udata.get_dataset(
+                input_dict['input_set'],
+                is_input_set=True,
+            )
+            from unox.HPC_scripts.utils.load_input import get_npy_from_netcdf
+            this_input = get_npy_from_netcdf(
+                xr_dataset,
+                year=input_dict['year'],
+                var=input_dict['var'],
+            )
+            # If nox, remove extra dimension
+            if input_dict['var'] == 'nox':
+                this_input = this_input.squeeze()
+        input_dict['data_array'] = this_input
+        print(f"Shape of {input_dict['var']} from {input_dict['input_set']}: {this_input.shape}")
     # Are the arrays different?
-    if np.array_equal(old_input, new_input):
-        print(f"The input files are the same for {var}.")
+    if np.array_equal(input_a_dict['data_array'], input_b_dict['data_array']):
+        print(f"Match found for {input_a_dict['input_set']}-{input_a_dict['year']}-{input_a_dict['var']} vs {input_b_dict['input_set']}-{input_b_dict['year']}-{input_b_dict['var']}.")
         return None
     else:
-        if np.allclose(old_input, new_input, atol=abs_tolerance):
+        if np.allclose(input_a_dict['data_array'], input_b_dict['data_array'], atol=abs_tolerance):
             print("The input files are similar within the absolute tolerance of", abs_tolerance)
         else:
             print("The input files differ more than the tolerance of",abs_tolerance)
         # Plot the differences
-        caps_x_or_y = str(x_or_y).capitalize()
-        overall_title = f'{old_filepath} (old) vs {new_filepath} (new) for {var}'
-        return plot_npy_diff(old_input, new_input, title=overall_title)
+        overall_title = f"{input_a_dict['input_set']}-{input_a_dict['year']}-{input_a_dict['var']} vs {input_b_dict['input_set']}-{input_b_dict['year']}-{input_b_dict['var']}"
+        return plot_npy_diff(input_a_dict['data_array'], input_b_dict['data_array'], title=overall_title)

@@ -212,3 +212,25 @@ def test_get_pred_data():
             assert True, f"get_pred_data raised an exception on invalid parameters {params}: {e}"
         else:
             assert False, f"get_pred_data did not raise an exception on invalid parameters {params}"
+
+def test_interpret_user_input():
+    """Test the interpret_user_input function."""
+    # Test with valid parameters
+    valid_inputs = ['y', 'yes', 'Y', 'Yes', 'YES', 
+                    'n', 'no', 'N', 'No', 'NO']
+    expected_outputs = [True, True, True, True, True,
+                        False, False, False, False, False]
+    for i in range(len(valid_inputs)):
+        user_input = valid_inputs[i]
+        expected = expected_outputs[i]
+        actual = unox.interpret_user_input(user_input)
+        assert actual == expected, f"Expected {expected} for input '{user_input}', but got {actual}"
+    # Test with invalid parameters
+    invalid_inputs = [123, None, '', 'maybe', True, False, [], {}]
+    for user_input in invalid_inputs:
+        try:
+            unox.interpret_user_input(user_input)
+        except (TypeError, ValueError) as e:
+            assert True, f"interpret_user_input raised an exception on invalid input '{user_input}': {e}"
+        else:
+            assert False, f"interpret_user_input did not raise an exception on invalid input '{user_input}'"

@@ -336,6 +336,8 @@ def get_one_input_var_array(
     -------
     var_array : numpy.ndarray
         Array of the specified variable.
+    var_index : int
+        Index of the specified variable in the input data array.
     """
     # Determine if the variable is an x or y variable
     from unox.input import x_or_y_var, input_vars_dict
@@ -431,3 +433,40 @@ def get_pred_data(
     if file_path not in data_files:
         raise FileNotFoundError(f"File {file_path} not found.")
     return file_path
+
+def interpret_user_input(
+    user_input,
+):
+    """Interprets a yes/no input from the user.
+
+    Takes input from prompting the user for a yes/no input and returns True/False appropriately.
+
+    Parameters
+    ----------
+    user_input : str
+        The input the user entered.
+
+    Returns
+    -------
+    bool
+        True if the user input is 'y' or 'yes', False if 'n' or 'no'.
+
+    Examples
+    --------
+    >>> proceed = interpret_user_input(input('Do you wish to continue? (y/n): '))
+    Do you wish to continue? (y/n): y
+    >>> proceed
+    True
+    """
+    # Verify argument types
+    if not isinstance(user_input, str):
+        raise TypeError(f"user_input must be a string. Got type: {type(user_input)}")
+    # Get user input
+    while True:
+        input_yn = user_input.strip().lower()
+        if input_yn in ['y', 'yes']:
+            return True
+        elif input_yn in ['n', 'no']:
+            return False
+        else:
+            raise ValueError(f"Invalid input: {user_input}. Please enter 'y' or 'n'.")

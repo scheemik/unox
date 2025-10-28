@@ -407,3 +407,158 @@ def test_make_input_metadata_file():
             assert True, f"make_input_metadata_file raised an exception on invalid output_dir {output_dir}: {e}"
         else:
             assert False, f"make_input_metadata_file did not raise an exception on invalid output_dir {output_dir}"
+
+def test_make_input_config():
+    """Test the make_input_config function."""
+    # Test with valid parameters
+    actual = uin.make_input_config(
+        'test_make_input_config',
+        input_set='no2_lsm6',
+        x_vars=[
+            'no2',
+            'no2_tm1',
+            'u10',
+            'v10',
+            'blh',
+            'sp',
+            'skt',
+            't2m',
+            'ssrd'
+        ],
+        stage_2=True,
+        stage_2_cutoff=2013,
+        lsm_vars=[
+            'no2',
+            'no2_tm1'
+        ]
+    )
+    expected = {
+        "input_set": "no2_lsm6",
+        "x_vars": [
+            "no2",
+            "no2_tm1",
+            "u10",
+            "v10",
+            "blh",
+            "sp",
+            "skt",
+            "t2m",
+            "ssrd"
+        ],
+        "stage_2": True,
+        "stage_2_cutoff": 2013,
+        "lsm_vars": [
+            "no2",
+            "no2_tm1"
+        ]
+    }
+    assert actual == expected, "make_input_config did not return the expected configuration dictionary."
+    # Clean up generated json file
+    if os.path.exists('inputfiles/_input_configs/test_make_input_config.json'):
+        os.remove('inputfiles/_input_configs/test_make_input_config.json')
+    # Test with invalid inputs for config name
+    for invalid_input in [None, 123, True, [], {}]:
+        try:
+            uin.make_input_config(
+                invalid_input,
+                input_set=expected['input_set'],
+                x_vars=expected['x_vars'],
+                stage_2=expected['stage_2'],
+                stage_2_cutoff=expected['stage_2_cutoff'],
+                lsm_vars=expected['lsm_vars'],
+            )
+        except TypeError as e:
+            assert True, f"make_input_config raised an exception on invalid config_name {invalid_input}: {e}"
+        else:
+            assert False, f"make_input_config did not raise an exception on invalid config_name {invalid_input}"
+    # Test with invalid inputs for input_set
+    for invalid_input in [None, '', 123, True, [], {}]:
+        try:
+            uin.make_input_config(
+                'test_make_input_config',
+                input_set=invalid_input,
+                x_vars=expected['x_vars'],
+                stage_2=expected['stage_2'],
+                stage_2_cutoff=expected['stage_2_cutoff'],
+                lsm_vars=expected['lsm_vars'],
+            )
+        except (TypeError, ValueError) as e:
+            assert True, f"make_input_config raised an exception on invalid input_set {invalid_input}: {e}"
+        else:
+            assert False, f"make_input_config did not raise an exception on invalid input_set {invalid_input}"
+    # Test with invalid inputs for x_vars
+    for invalid_input in [None, 'not_a_list', 123, True, {}, ['invalid_x_var']]:
+        try:
+            uin.make_input_config(
+                'test_make_input_config',
+                input_set=expected['input_set'],
+                x_vars=invalid_input,
+                stage_2=expected['stage_2'],
+                stage_2_cutoff=expected['stage_2_cutoff'],
+                lsm_vars=expected['lsm_vars'],
+            )
+        except (TypeError, ValueError) as e:
+            assert True, f"make_input_config raised an exception on invalid x_vars {invalid_input}: {e}"
+        else:
+            assert False, f"make_input_config did not raise an exception on invalid x_vars {invalid_input}"
+    # Test with invalid inputs for stage_2
+    for invalid_input in [None, 'not_a_bool', 123, [], {}]:
+        try:
+            uin.make_input_config(
+                'test_make_input_config',
+                input_set=expected['input_set'],
+                x_vars=expected['x_vars'],
+                stage_2=invalid_input,
+                stage_2_cutoff=expected['stage_2_cutoff'],
+                lsm_vars=expected['lsm_vars'],
+            )
+        except TypeError as e:
+            assert True, f"make_input_config raised an exception on invalid stage_2 {invalid_input}: {e}"
+        else:
+            assert False, f"make_input_config did not raise an exception on invalid stage_2 {invalid_input}"
+    # Test with invalid inputs for stage_2_cutoff
+    for invalid_input in [None, 'not_an_int', True, [], {}, 1800, 123]:
+        try:
+            uin.make_input_config(
+                'test_make_input_config',
+                input_set=expected['input_set'],
+                x_vars=expected['x_vars'],
+                stage_2=expected['stage_2'],
+                stage_2_cutoff=invalid_input,
+                lsm_vars=expected['lsm_vars'],
+            )
+        except (TypeError, ValueError) as e:
+            assert True, f"make_input_config raised an exception on invalid stage_2_cutoff {invalid_input}: {e}"
+        else:
+            assert False, f"make_input_config did not raise an exception on invalid stage_2_cutoff {invalid_input}"
+    # Test with invalid inputs for lsm_vars
+    for invalid_input in [None, 'not_a_list', 123, True, {}, ['invalid_lsm_var']]:
+        try:
+            uin.make_input_config(
+                'test_make_input_config',
+                input_set=expected['input_set'],
+                x_vars=expected['x_vars'],
+                stage_2=expected['stage_2'],
+                stage_2_cutoff=expected['stage_2_cutoff'],
+                lsm_vars=invalid_input,
+            )
+        except (TypeError, ValueError) as e:
+            assert True, f"make_input_config raised an exception on invalid lsm_vars {invalid_input}: {e}"
+        else:
+            assert False, f"make_input_config did not raise an exception on invalid lsm_vars {invalid_input}"
+    # Test with invalid inputs for overwrite
+    for invalid_input in [None, 'not_a_bool', 123, [], {}]:
+        try:
+            uin.make_input_config(
+                'test_make_input_config',
+                input_set=expected['input_set'],
+                x_vars=expected['x_vars'],
+                stage_2=expected['stage_2'],
+                stage_2_cutoff=expected['stage_2_cutoff'],
+                lsm_vars=expected['lsm_vars'],
+                overwrite=invalid_input,
+            )
+        except TypeError as e:
+            assert True, f"make_input_config raised an exception on invalid stage_2 {invalid_input}: {e}"
+        else:
+            assert False, f"make_input_config did not raise an exception on invalid stage_2 {invalid_input}"

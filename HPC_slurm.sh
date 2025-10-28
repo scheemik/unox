@@ -10,8 +10,8 @@
 # with updated versions of tensorflow and keras, which won't work on Mist. Use
 # `-v 0` to run with the versions that are compatible with Mist.
 # Takes in optional arguments:
-#	$ sbatch test_unet.sh -j <job name> 				Default: test_unet
-#                         -i <inputfiles>               Default: no2_sample_input
+#	$ sbatch HPC_slurm.sh -j <job name> 				Default: test_unet
+#                         -i <config file>              Default: no2_sample_input
 #						  -t <run type>					Default: test, other options: pred
 #                         -v <version>                  Default: 1, use updates
 #                         -c <cluster>                  Default: trillium
@@ -22,7 +22,7 @@ do
 	case "${option}"
 		in
 		j) JOBNAME=${OPTARG};;
-		i) INPUTFILES=${OPTARG};;
+		i) CONFIG_FILE=${OPTARG};;
 		t) TYPE=${OPTARG};;
 		v) VERSION=${OPTARG};;
 		c) CLUSTER=${OPTARG};;
@@ -37,12 +37,12 @@ then
 else
 	echo "-j, Name specified, using JOBNAME=$JOBNAME"
 fi
-if [ -z "$INPUTFILES" ]
+if [ -z "$CONFIG_FILE" ]
 then
-	INPUTFILES='no2_sample_input'
-	echo "-i, No input files specified, using INPUTFILES=$INPUTFILES"
+	CONFIG_FILE='no2_sample_input'
+	echo "-i, No input files specified, using CONFIG_FILE=$CONFIG_FILE"
 else
-	echo "-i, Input files specified, using INPUTFILES=$INPUTFILES"
+	echo "-i, Input files specified, using CONFIG_FILE=$CONFIG_FILE"
 fi
 if [ -z "$TYPE" ]
 then
@@ -143,9 +143,11 @@ else
 	echo "Directory for job $SAVEDIR already exists"
 fi
 
+export HDF5_USE_FILE_LOCKING=FALSE
+
 echo ""
 echo "Running $CODEFILE with savedir $SAVEDIR"
 echo ""
-python $CODEFILE $SAVEDIR $INPUTFILES $VERSION
+python $CODEFILE $SAVEDIR $CONFIG_FILE $VERSION
 
 deactivate

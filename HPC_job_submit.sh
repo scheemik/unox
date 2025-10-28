@@ -7,7 +7,7 @@
 # `-v 0` to run with the versions that are compatible with Mist.
 # Takes in optional arguments:
 #	$ bash HPC_job_submit.sh -j <job name> 			Default: test_unet
-#							 -i <inputfiles>        Default: no2_sample_input
+#							 -i <config file>       Default: sample_config
 #							 -t <run type>			Default: test, other options: pred
 #                            -v <version>           Default: 1, use updates
 #                            -c <cluster>           Default: trillium
@@ -21,7 +21,7 @@ do
 	case "${option}"
 		in
 		j) JOBNAME=${OPTARG};;
-		i) INPUTFILES=${OPTARG};;
+		i) CONFIG_FILE=${OPTARG};;
 		t) TYPE=${OPTARG};;
 		v) VERSION=${OPTARG};;
 		c) CLUSTER=${OPTARG};;
@@ -36,12 +36,12 @@ then
 else
 	echo "-j, Name specified, using JOBNAME=$JOBNAME"
 fi
-if [ -z "$INPUTFILES" ]
+if [ -z "$CONFIG_FILE" ]
 then
-	INPUTFILES='no2_sample_input'
-	echo "-i, No input files specified, using INPUTFILES=$INPUTFILES"
+	CONFIG_FILE='sample_config'
+	echo "-i, No config file specified, using CONFIG_FILE=$CONFIG_FILE"
 else
-	echo "-i, Input files specified, using INPUTFILES=$INPUTFILES"
+	echo "-i, Config files specified, using CONFIG_FILE=$CONFIG_FILE"
 fi
 if [ -z "$TYPE" ]
 then
@@ -76,6 +76,15 @@ else
     echo "-c, Using cluster: $CLUSTER"
 fi
 
+# Check to see whether the configuration file exists
+if [ ! -f "inputfiles/_input_configs/$CONFIG_FILE.json" ]
+then
+	echo "Configuration file inputfiles/_input_configs/$CONFIG_FILE.json does not exist."
+	echo "Exiting..."
+	exit 1
+else
+	echo "Configuration file inputfiles/_input_configs/$CONFIG_FILE.json found."
+fi
 # Check to see whether a directory exists for the job
 if [ ! -d "HPC_runs/$JOBNAME" ]
 then
@@ -108,4 +117,4 @@ fi
 
 ###############################################################################
 # Submit job to queue
-sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -i $INPUTFILES -t $TYPE -v $VERSION -c $CLUSTER
+sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER

@@ -1,23 +1,18 @@
 #!/bin/bash
 
+# Execute from the datafiles/ directory
 
-for year in {2008..2021}
+ERA5_DIR="era5_downloads"
+for year in {2005..2020}
 do
-  cd $year
-  for f in */
+  for f in ${ERA5_DIR}/${year}/*
   do 
-    echo $f
-    echo $f*nc
-    cp $f*nc "${f%/}.nc"
+    # echo $f
+    # If any files contain "msk", replace with "lsm"
+    if [[ $f == *"msk"* ]]; then
+      new_f=${f//msk/lsm}
+      mv "$f" "$new_f"
+      echo "Renamed $f to $new_f"
+    fi
   done 
-  cd ..
 done
-
-
-#  unzip "$f" -d "${year}/${f%.zip}"
-#  echo ${year}/${f%.zip}/
-#  unzip $f -d "${year}/${f%.zip}/" 
-#  unzip $f > "${year}/${f%.zip}.nc"
-
-
-#for f in 2013_??_*.zip; do unzip "$f" > 2013/"${f%.zip}.nc"; done
