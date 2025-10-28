@@ -531,7 +531,7 @@ def plot_stage_comp_maps(
     # Add one overall colorbar for the entire figure on the right-hand side
     cbar = make_colorbar(fig, ax[0,0].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='r', cb_extend=cbe)
     # Set the figure title
-    fig.suptitle(overall_title, fontsize=title_font_size)
+    fig.suptitle(f"HPC run: {pred_params['HPC_run']}, input set: {truth_params['input_set']} - {overall_title}", fontsize=title_font_size)
     return fig
 
 def make_colorbar(
