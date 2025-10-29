@@ -430,7 +430,10 @@ def test_make_input_config():
         lsm_vars=[
             'no2',
             'no2_tm1'
-        ]
+        ],
+        zfi_vars=[
+            't2m',
+        ],
     )
     expected = {
         "input_set": "no2_lsm6",
@@ -450,6 +453,9 @@ def test_make_input_config():
         "lsm_vars": [
             "no2",
             "no2_tm1"
+        ],
+        "zfi_vars": [
+            "t2m"
         ]
     }
     assert actual == expected, "make_input_config did not return the expected configuration dictionary."
@@ -466,6 +472,7 @@ def test_make_input_config():
                 stage_2=expected['stage_2'],
                 stage_2_cutoff=expected['stage_2_cutoff'],
                 lsm_vars=expected['lsm_vars'],
+                zfi_vars=expected['zfi_vars'],
             )
         except TypeError as e:
             assert True, f"make_input_config raised an exception on invalid config_name {invalid_input}: {e}"
@@ -481,6 +488,7 @@ def test_make_input_config():
                 stage_2=expected['stage_2'],
                 stage_2_cutoff=expected['stage_2_cutoff'],
                 lsm_vars=expected['lsm_vars'],
+                zfi_vars=expected['zfi_vars'],
             )
         except (TypeError, ValueError) as e:
             assert True, f"make_input_config raised an exception on invalid input_set {invalid_input}: {e}"
@@ -496,6 +504,7 @@ def test_make_input_config():
                 stage_2=expected['stage_2'],
                 stage_2_cutoff=expected['stage_2_cutoff'],
                 lsm_vars=expected['lsm_vars'],
+                zfi_vars=expected['zfi_vars'],
             )
         except (TypeError, ValueError) as e:
             assert True, f"make_input_config raised an exception on invalid x_vars {invalid_input}: {e}"
@@ -511,6 +520,7 @@ def test_make_input_config():
                 stage_2=invalid_input,
                 stage_2_cutoff=expected['stage_2_cutoff'],
                 lsm_vars=expected['lsm_vars'],
+                zfi_vars=expected['zfi_vars'],
             )
         except TypeError as e:
             assert True, f"make_input_config raised an exception on invalid stage_2 {invalid_input}: {e}"
@@ -526,6 +536,7 @@ def test_make_input_config():
                 stage_2=expected['stage_2'],
                 stage_2_cutoff=invalid_input,
                 lsm_vars=expected['lsm_vars'],
+                zfi_vars=expected['zfi_vars'],
             )
         except (TypeError, ValueError) as e:
             assert True, f"make_input_config raised an exception on invalid stage_2_cutoff {invalid_input}: {e}"
@@ -546,6 +557,22 @@ def test_make_input_config():
             assert True, f"make_input_config raised an exception on invalid lsm_vars {invalid_input}: {e}"
         else:
             assert False, f"make_input_config did not raise an exception on invalid lsm_vars {invalid_input}"
+    # Test with invalid inputs for zfi_vars
+    for invalid_input in [None, 'not_a_list', 123, True, {}, ['invalid_zfi_var']]:
+        try:
+            uin.make_input_config(
+                'test_make_input_config',
+                input_set=expected['input_set'],
+                x_vars=expected['x_vars'],
+                stage_2=expected['stage_2'],
+                stage_2_cutoff=expected['stage_2_cutoff'],
+                lsm_vars=['lsm_vars'],
+                zfi_vars=invalid_input,
+            )
+        except (TypeError, ValueError) as e:
+            assert True, f"make_input_config raised an exception on invalid zfi_vars {invalid_input}: {e}"
+        else:
+            assert False, f"make_input_config did not raise an exception on invalid zfi_vars {invalid_input}"
     # Test with invalid inputs for overwrite
     for invalid_input in [None, 'not_a_bool', 123, [], {}]:
         try:
