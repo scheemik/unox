@@ -2,20 +2,20 @@ import numpy as np
 import xarray as xr
 import json
 
-g_lsm_vars = [
-    'nox',
-    'no2',
-    'no2_tm1',
-    'no2_s2',
-    'no2_s2_tm1',
-    'u10',
-    'v10',
-    'blh',
-    'sp',
-    'skt',
-    't2m',
-    'ssrd',
-]
+# g_lsm_vars = [
+#     'nox',
+#     'no2',
+#     'no2_tm1',
+#     'no2_s2',
+#     'no2_s2_tm1',
+#     'u10',
+#     'v10',
+#     'blh',
+#     'sp',
+#     'skt',
+#     't2m',
+#     'ssrd',
+# ]
 
 def get_npy_from_netcdf(
     netcdf,
@@ -123,26 +123,94 @@ def get_npy_from_netcdf(
         # udata.verify_var(data_for_year, var)
         if var not in data_for_year.data_vars:
             raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
-        # Get the land-sea mask variables from the configuration, if they exist
-        if 'lsm_vars' in config_dict:
-            lsm_vars = config_dict['lsm_vars']
-            use_lsm = True
-        else:
-            print(f"\tNo 'lsm_vars' found in input config: {input_config}")
-            use_lsm = False
-        # Check whether to apply the land-sea mask
-        if use_lsm and var in lsm_vars:
-            # Verify the land-sea mask exists
-            # udata.verify_var(data_for_year, 'lsm')
-            if 'lsm' not in data_for_year.data_vars:
-                raise ValueError(f"Variable 'lsm' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
-            # Apply the land-sea mask
-            print(f'\tApplying land-sea mask to {var} for year {year}')
-            data_for_year[var] = data_for_year[var]*data_for_year['lsm']
-            # lsm_threshold = 1
-            # data_for_year[var] = data_for_year[var].where(data_for_year['lsm'] >= lsm_threshold)
+        # Apply a mask to the variable, if applicable
+        data_for_year[var] = apply_mask(data_for_year, var, config_dict)
+        # # Get the land-sea mask variables from the configuration, if they exist
+        # if 'lsm_vars' in config_dict:
+        #     lsm_vars = config_dict['lsm_vars']
+        #     use_lsm = True
+        # else:
+        #     print(f"\tNo 'lsm_vars' found in input config: {input_config}")
+        #     use_lsm = False
+        # # Check whether to apply the land-sea mask
+        # if use_lsm and var in lsm_vars:
+        #     # Verify the land-sea mask exists
+        #     # udata.verify_var(data_for_year, 'lsm')
+        #     if 'lsm' not in data_for_year.data_vars:
+        #         raise ValueError(f"Variable 'lsm' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
+        #     # Apply the land-sea mask
+        #     print(f'\tApplying land-sea mask to {var} for year {year}')
+        #     data_for_year[var] = data_for_year[var]*data_for_year['lsm']
+        #     # lsm_threshold = 1
+        #     # data_for_year[var] = data_for_year[var].where(data_for_year['lsm'] >= lsm_threshold)
         # Drop all nan values
         data_for_year = data_for_year[var].dropna(dim='time', how='all')
         # Convert to numpy array
         data_array = data_for_year.to_numpy()
     return data_array
+
+def apply_mask(
+    xr_dataset,
+    var,
+    config_dict,
+):
+    """Apply specified mask to the given variable.
+
+    Determine the mask to apply based on the configuration dictionary
+    and apply it to the specified variable in the xarray dataset.
+
+    Parameters
+    ----------
+    xr_dataset : xr.Dataset
+        The xarray dataset containing the variable to be masked.
+    var : str
+        The variable to which the mask will be applied.
+    config_dict : dict
+        Configuration dictionary specifying mask details.
+
+    Returns
+    -------
+    xr.DataArray
+        The masked variable as an xarray DataArray.
+    """
+    # Verify argument types
+    if not isinstance(xr_dataset, xr.Dataset):
+        raise TypeError(f'xr_dataset must be an xarray.Dataset, got {type(xr_dataset)}.')
+    # udata.verify_dataset(xr_dataset)
+    if not isinstance(var, str):
+        raise TypeError(f'var must be a string, got {type(var)}.')
+    # udata.verify_var(xr_dataset, var)
+    if not isinstance(config_dict, dict):
+        raise TypeError(f'config_dict must be a dict, got {type(config_dict)}.')
+    # Determine whether a mask should be applied
+    use_mask = False
+    if 'lsm_vars' in config_dict:
+        lsm_vars = config_dict['lsm_vars']
+        if var in lsm_vars:
+            use_mask = 'lsm'
+    if 'zfi_vars' in config_dict:
+        zfi_vars = config_dict['zfi_vars']
+        if use_mask == True:
+            raise ValueError(f"Cannot apply both land-sea mask and zero-fill mask to the same variable, {var}.")
+        elif var in zfi_vars:
+            use_mask = 'zfi'
+    # If no mask is to be applied, return the original variable
+    if use_mask == False:
+        return xr_dataset[var]
+    # If applying the land-sea mask
+    elif use_mask == 'lsm':
+        # Verify the land-sea mask exists
+        # udata.verify_var(xr_dataset, 'lsm')
+        if 'lsm' not in xr_dataset.data_vars:
+            raise ValueError(f"Variable 'lsm' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+        # Apply the land-sea mask
+        print(f'\tApplying land-sea mask to {var}')
+        return xr_dataset[var]*xr_dataset['lsm']
+        # lsm_threshold = 1
+        # return xr_dataset[var].where(xr_dataset['lsm'] >= lsm_threshold)
+    # If zeroing the variable for ZFI (Zeroed Feature Importance)
+    elif use_mask == 'zfi':
+        print(f'\tZeroing out {var}')
+        return xr_dataset[var]*0
+    else:
+        raise ValueError(f'Unexpected value for use_mask: {use_mask}.')
