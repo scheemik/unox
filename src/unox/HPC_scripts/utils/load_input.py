@@ -1,21 +1,7 @@
 import numpy as np
 import xarray as xr
+import os
 import json
-
-# g_lsm_vars = [
-#     'nox',
-#     'no2',
-#     'no2_tm1',
-#     'no2_s2',
-#     'no2_s2_tm1',
-#     'u10',
-#     'v10',
-#     'blh',
-#     'sp',
-#     'skt',
-#     't2m',
-#     'ssrd',
-# ]
 
 def get_npy_from_netcdf(
     netcdf,
@@ -33,6 +19,8 @@ def get_npy_from_netcdf(
         Path to the netcdf file or an xarray Dataset.
     year : int
         The year for which to extract the data.
+    input_config : str or dict
+        Path to the input configuration JSON file or a dictionary containing the configuration.
     x_or_y : str, optional
         If 'x', return the stage 1 x variables, if 'x2', return the stage 2 x variables, 
         if 'y', return the y variables. If None, return all variables.
@@ -72,8 +60,12 @@ def get_npy_from_netcdf(
     if isinstance(input_config, type({})):
         config_dict = input_config
     elif isinstance(input_config, str):
+        # Verify the input config file path
+        input_config_path = input_config
+        if not os.path.isfile(input_config_path):
+            input_config_path = f"inputfiles/_input_configs/{input_config}.json"
         # Load config file to a dictionary
-        with open(f"inputfiles/_input_configs/{input_config}.json", 'r') as file:
+        with open(input_config_path, 'r') as file:
             config_dict = json.load(file)
     else:
         raise TypeError(f'input_config must be a str or dict, got {type(input_config)}.')
