@@ -96,7 +96,7 @@ then
 	elif [ "$VERSION" = 1 ]
 	then
 		echo "-v $VERSION, using updated code"
-		# module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
+		module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
 		ENVNAME="unoxTrilliumNC"
 		ENVDIR="/home/mschee/.virtualenvs/$ENVNAME"
 	else
@@ -104,7 +104,7 @@ then
 		exit 1
 	fi
 	echo "Activating virtualenv from $ENVDIR/bin/activate"
-	# source $ENVDIR/bin/activate
+	source $ENVDIR/bin/activate
 elif [ "$CLUSTER" = "mist" ]
 then
 	echo "Loading modules for Mist HPC environment"
@@ -133,11 +133,11 @@ else
 	echo "Directory for job $SAVEDIR already exists"
 fi
 
-# export HDF5_USE_FILE_LOCKING=FALSE
+export HDF5_USE_FILE_LOCKING=FALSE
 
 echo ""
 echo "Running $CODEFILE with savedir $SAVEDIR"
 echo ""
 python $CODEFILE $SAVEDIR $CONFIG_FILE $VERSION
 
-# deactivate
+deactivate

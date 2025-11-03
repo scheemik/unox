@@ -63,8 +63,7 @@ except FileExistsError:
 if not savedir in config_path:
     with open(savedir+'input_config.json', 'w') as file:
         file.write(json.dumps(config_dict, indent=4))
-print('Done with this')
-exit(0)
+
 n_epochs = 250
 save_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
