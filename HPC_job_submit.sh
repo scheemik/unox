@@ -8,7 +8,7 @@
 # Takes in optional arguments:
 #	$ bash HPC_job_submit.sh -j <job name> 			Default: test_unet
 #							 -i <config file>       Default: sample_config
-#							 -t <run type>			Default: test, other options: pred
+#							 -t <run type>			Default: test, other options: zfi_set
 #                            -v <version>           Default: 1, use updates
 #                            -c <cluster>           Default: trillium
 
@@ -52,9 +52,10 @@ elif [ "$TYPE" = "test" ]
 then
 	echo "-t, Run type specified, using TYPE=$TYPE"
 	LAUNCHER='HPC_GPU_slurm.sh'
-elif [ "$TYPE" = "pred" ]
+elif [ "$TYPE" = "zfi_set" ]
 then
 	echo "-t, Run type specified, using TYPE=$TYPE"
+	python src/unox/HPC_scripts/set_of_runs.py $JOBNAME $CONFIG_FILE $TYPE
 	LAUNCHER='HPC_CPU_slurm.sh'
 else
 	echo "Invalid run type specified. Use 'test' or 'pred'."
@@ -117,4 +118,4 @@ fi
 
 ###############################################################################
 # Submit job to queue
-sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
+# sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
