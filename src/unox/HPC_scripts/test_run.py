@@ -27,7 +27,11 @@ except FileExistsError:
 # Load second input argument, if it exists: the config file to use
 try:
     config_file = sys.argv[2]
-    config_path = f"inputfiles/_input_configs/{config_file}.json"
+    if config_file == "default":
+        config_file = 'input_config'
+        config_path = f"{savedir}{config_file}.json"
+    else:
+        config_path = f"inputfiles/_input_configs/{config_file}.json"
 except:
     config_file = 'input_config'
     config_path = f"{savedir}{config_file}.json"
@@ -202,8 +206,8 @@ elif input_fmt == 'nc':
     ytrain_list = []
     # If before the split year, add x and y data to train lists
     for year in range(min(years), split_year):
-        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x'))
-        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='y'))
+        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x'))
+        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -373,7 +377,7 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
-        x_test = get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x')
+        x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
         pred = unet.predict(x_test)
         np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
 
@@ -418,8 +422,8 @@ elif input_fmt == 'nc':
     # If before the split year, add x and y data to train lists
     stage_2_cutoff=2013
     for year in range(stage_2_cutoff+1, split_year):
-        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x'))
-        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='y'))
+        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x'))
+        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -489,7 +493,7 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
-        x_test = get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x')
+        x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
         pred = unet.predict(x_test)
         np.save(savedir+f'stage2_output/pred_X_{year}.npy', pred)
 
