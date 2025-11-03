@@ -27,8 +27,6 @@ def get_npy_from_netcdf(
     var : str, optional
         The variable to extract from the netcdf file. Overrides the `x_or_y` argument. 
         If None, all variables are returned.
-    use_lsm : bool, optional
-        Whether to use land-sea mask when extracting data. Default is False.
 
     Returns
     -------
@@ -116,25 +114,7 @@ def get_npy_from_netcdf(
         if var not in data_for_year.data_vars:
             raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
         # Apply a mask to the variable, if applicable
-        data_for_year[var] = apply_mask(data_for_year, var, config_dict)
-        # # Get the land-sea mask variables from the configuration, if they exist
-        # if 'lsm_vars' in config_dict:
-        #     lsm_vars = config_dict['lsm_vars']
-        #     use_lsm = True
-        # else:
-        #     print(f"\tNo 'lsm_vars' found in input config: {input_config}")
-        #     use_lsm = False
-        # # Check whether to apply the land-sea mask
-        # if use_lsm and var in lsm_vars:
-        #     # Verify the land-sea mask exists
-        #     # udata.verify_var(data_for_year, 'lsm')
-        #     if 'lsm' not in data_for_year.data_vars:
-        #         raise ValueError(f"Variable 'lsm' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
-        #     # Apply the land-sea mask
-        #     print(f'\tApplying land-sea mask to {var} for year {year}')
-        #     data_for_year[var] = data_for_year[var]*data_for_year['lsm']
-        #     # lsm_threshold = 1
-        #     # data_for_year[var] = data_for_year[var].where(data_for_year['lsm'] >= lsm_threshold)
+        data_for_year[var] = apply_mask(data_for_year, var, config_dict, year)
         # Drop all nan values
         data_for_year = data_for_year[var].dropna(dim='time', how='all')
         # Convert to numpy array
@@ -145,6 +125,7 @@ def apply_mask(
     xr_dataset,
     var,
     config_dict,
+    year,
 ):
     """Apply specified mask to the given variable.
 
@@ -159,6 +140,8 @@ def apply_mask(
         The variable to which the mask will be applied.
     config_dict : dict
         Configuration dictionary specifying mask details.
+    year : int
+        The year for which the data is being processed.
 
     Returns
     -------
@@ -196,13 +179,13 @@ def apply_mask(
         if 'lsm' not in xr_dataset.data_vars:
             raise ValueError(f"Variable 'lsm' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
         # Apply the land-sea mask
-        print(f'\tApplying land-sea mask to {var}')
+        print(f'\t{year}: Applying land-sea mask to {var}')
         return xr_dataset[var]*xr_dataset['lsm']
         # lsm_threshold = 1
         # return xr_dataset[var].where(xr_dataset['lsm'] >= lsm_threshold)
     # If zeroing the variable for ZFI (Zeroed Feature Importance)
     elif use_mask == 'zfi':
-        print(f'\tZeroing out {var}')
+        print(f'\t{year}: Zeroing out {var}')
         return xr_dataset[var]*0
     else:
         raise ValueError(f'Unexpected value for use_mask: {use_mask}.')
