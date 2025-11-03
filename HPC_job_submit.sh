@@ -28,7 +28,9 @@ do
 	esac
 done
 
-# check to see if arguments were passed
+echo "===== Begin HPC_job_submit.sh ====="
+###############################################################################
+# Check which arguments were passed
 if [ -z "$JOBNAME" ]
 then
 	JOBNAME="test_unet"
@@ -43,6 +45,15 @@ then
 else
 	echo "-i, Config files specified, using CONFIG_FILE=$CONFIG_FILE"
 fi
+# Check to see whether the configuration file exists
+if [ ! -f "inputfiles/_input_configs/$CONFIG_FILE.json" ]
+then
+	echo "    Configuration file inputfiles/_input_configs/$CONFIG_FILE.json does not exist."
+	echo "    Exiting..."
+	exit 1
+else
+	echo "    Configuration file inputfiles/_input_configs/$CONFIG_FILE.json found."
+fi
 if [ -z "$TYPE" ]
 then
 	TYPE="test"
@@ -55,10 +66,10 @@ then
 elif [ "$TYPE" = "zfi_set" ]
 then
 	echo "-t, Run type specified, using TYPE=$TYPE"
-	python src/unox/HPC_scripts/set_of_runs.py $JOBNAME $CONFIG_FILE $TYPE
-	LAUNCHER='HPC_CPU_slurm.sh'
+	LAUNCHER='HPC_GPU_slurm.sh'
 else
-	echo "Invalid run type specified. Use 'test' or 'pred'."
+	echo "Invalid run type specified. Select from: "
+	echo "'test', 'zfi_set'."
 	exit 1
 fi
 echo "    Using LAUNCHER=$LAUNCHER"
@@ -77,29 +88,29 @@ else
     echo "-c, Using cluster: $CLUSTER"
 fi
 
-# Check to see whether the configuration file exists
-if [ ! -f "inputfiles/_input_configs/$CONFIG_FILE.json" ]
-then
-	echo "Configuration file inputfiles/_input_configs/$CONFIG_FILE.json does not exist."
-	echo "Exiting..."
-	exit 1
-else
-	echo "Configuration file inputfiles/_input_configs/$CONFIG_FILE.json found."
-fi
+###############################################################################
 # Check to see whether a directory exists for the job
 if [ ! -d "HPC_runs/$JOBNAME" ]
 then
-	if [ "$TYPE" = "pred" ]; then
-		echo "For prediction jobs, please ensure that the run directory (HPC_runs/$JOBNAME) already exist."
+	if [ "$TYPE" = "zfi_set" ]; then
+		python src/unox/HPC_scripts/set_of_runs.py $JOBNAME $CONFIG_FILE $TYPE
+		# Check for a "set" directory, which prepends an underscore
+		if [ ! -d "HPC_runs/_$JOBNAME" ]; then
+			echo "Directory for job HPC_runs/_$JOBNAME does not exist."
+			echo "For set of runs jobs, please ensure that the run directory (HPC_runs/_$JOBNAME) is correctly created by `set_of_runs.py`."
+			echo "Exiting..."
+			exit 1
+		fi
+	else
+		echo "Creating directory for job $JOBNAME"
+	mkdir HPC_runs/$JOBNAME
+	fi
+else
+	if [ "$TYPE" = "zfi_set" ]; then
+		echo "Directory for job HPC_runs/$JOBNAME already exists."
+		echo "Choose a different name to avoid confusion."
 		echo "Exiting..."
 		exit 1
-	fi
-	echo "Creating directory for job $JOBNAME"
-	mkdir HPC_runs/$JOBNAME
-else
-	if [ "$TYPE" = "pred" ]; then
-		echo "Directory for job HPC_runs/$JOBNAME exists"
-		echo "Proceeding..."
 	else
 		echo "Directory for job HPC_runs/$JOBNAME already exists"
 		echo "Would you like to overwrite it? (y/n)"
@@ -116,6 +127,37 @@ else
 	fi
 fi
 
+# Make sure the configuration files are copied to the job directory
+if [ "$TYPE" = "test" ]; then
+	if [ ! -f "HPC_runs/$JOBNAME/input_config.json" ]; then
+		cp inputfiles/_input_configs/$CONFIG_FILE.json HPC_runs/$JOBNAME/input_config.json
+	fi
+elif [ "$TYPE" = "zfi_set" ]; then
+	# Loop across the subdirectories in the set directory
+	for SUBDIR in HPC_runs/_$JOBNAME/*/; do
+		# Copy the configuration file to each sub directory in the set
+		if [ ! -f "$SUBDIR/input_config.json" ]; then
+			echo "No configuration file found in $SUBDIR."
+			echo "For set of runs jobs, please ensure that `set_of_runs.py` gives each sub directory in HPC_runs/_$JOBNAME an input_config.json file."
+			echo "Exiting..."
+			exit 1
+		fi
+	done
+fi
+
 ###############################################################################
 # Submit job to queue
-# sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
+if [ "$TYPE" = "test" ]; then
+	sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
+elif [ "$TYPE" = "zfi_set" ]; then
+	# Loop across the subdirectories in the set directory
+	for SUBDIR in HPC_runs/_$JOBNAME/*/; do
+		# If it is a directory, continue
+		if [ -d "$SUBDIR" ]; then
+			# Get just the subdirectory name
+			SUBDIR_NAME=$(basename "$SUBDIR")
+			# Submit a job for each sub directory in the set
+			sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME/$SUBDIR_NAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
+		fi
+	done
+fi

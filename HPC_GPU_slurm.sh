@@ -12,7 +12,7 @@
 # Takes in optional arguments:
 #  $ sbatch HPC_GPU_slurm.sh -j <job name> 			Default: test_unet
 #							 -i <config file>       Default: test_config
-#							 -t <run type>			Default: test, other options: pred
+#							 -t <run type>			Default: test, other options: zfi_set
 #                            -v <version>           Default: 1, use updates
 #                            -c <cluster>           Default: trillium
 

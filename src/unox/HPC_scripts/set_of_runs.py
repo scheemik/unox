@@ -3,20 +3,21 @@ import os
 import json
 
 # -------- Get input arguments --------
+print('Starting set_of_runs.py with arguments:')
 # Load first input argument, if it exists: the job name
 try:
     jobname = sys.argv[1]
 except:
     jobname = 'test_set_of_runs'
 savedir = f"HPC_runs/_{jobname}/"
-print('Running python script with jobname:', jobname)
+print('\targv[1], jobname:', jobname)
 
 # Load second input argument, if it exists: the config file to use
 try:
     config_file = sys.argv[2]
 except:
     config_file = 'sample_config'
-print('Running python script with config_file:', config_file)
+print('\targv[2], config_file:', config_file)
 # Load config file to a dictionary
 with open(f"inputfiles/_input_configs/{config_file}.json", 'r') as file:
     config_dict = json.load(file)
@@ -26,7 +27,7 @@ try:
     run_type = int(sys.argv[3])
 except:
     run_type = 'zfi_set'
-print('Running python script with run_type:', run_type)
+print('\targv[3], run_type:', run_type)
 # Modify the config dictionary based on the run type
 if run_type == 'zfi_set':
     # Remove any `lsm_vars` entry

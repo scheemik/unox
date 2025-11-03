@@ -7,24 +7,36 @@ import xarray as xr
 import json
 from utils.load_input import get_npy_from_netcdf
 
-print('')
-print(f'Running test_run.py from current working directory:{os.getcwd()}')
+print("")
+print(f"Running test_run.py from current working directory:{os.getcwd()}")
 
+# -------- Get input arguments --------
+print("Using input arguments:")
 # Load first input argument, if it exists: the save directory
 try:
     savedir = sys.argv[1] + '/'
 except:
     savedir = 'HPC_runs/test_unet/'  #directory to save output in
-print('Running python script with savedir:', savedir)
+print(f"\targv[1], savedir: {savedir}")
+try:
+    os.mkdir(savedir)
+    print(f"\tCreated directory: {savedir}")
+except FileExistsError:
+    print(f"\t{savedir} exists")
 
 # Load second input argument, if it exists: the config file to use
 try:
     config_file = sys.argv[2]
+    config_path = f"inputfiles/_input_configs/{config_file}.json"
 except:
-    config_file = 'sample_config'
-print('Running python script with config_file:', config_file)
+    config_file = 'input_config'
+    config_path = f"{savedir}{config_file}.json"
+print(f"\targv[2], config_file: {config_file}")
+# Make sure the config file exists
+if not os.path.exists(config_path):
+    raise FileNotFoundError(f"Config file not found: {config_path}")
 # Load config file to a dictionary
-with open(f"inputfiles/_input_configs/{config_file}.json", 'r') as file:
+with open(f"{config_path}", 'r') as file:
     config_dict = json.load(file)
     inputfiles = config_dict['input_set']
 
@@ -33,12 +45,7 @@ try:
     version = int(sys.argv[3])
 except:
     version = 1
-print('Running python script with version:', version)
-
-try:
-    os.mkdir(savedir)
-except FileExistsError:
-    print(savedir+' exists')
+print(f"\targv[3], version: {version}")
 
 try:
     os.mkdir(savedir+'stage1_output/')
@@ -53,11 +60,13 @@ try:
 except FileExistsError:
     print('checkpts/ exists')
 # Write the config dictionary to a json file in the savedir
-with open(savedir+'input_config.json', 'w') as file:
-    file.write(json.dumps(config_dict, indent=4))
-
+if not savedir in config_path:
+    with open(savedir+'input_config.json', 'w') as file:
+        file.write(json.dumps(config_dict, indent=4))
+print('Done with this')
+exit(0)
 n_epochs = 250
-save_fmt = 'both' # 'h5', 'keras', or 'both'
+save_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
 split_value = 0.9
