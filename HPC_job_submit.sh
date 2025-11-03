@@ -157,7 +157,7 @@ elif [ "$TYPE" = "zfi_set" ]; then
 			# Get just the subdirectory name
 			SUBDIR_NAME=$(basename "$SUBDIR")
 			# Submit a job for each sub directory in the set
-			sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME/$SUBDIR_NAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
+			sbatch --job-name=_$JOBNAME/$SUBDIR_NAME $LAUNCHER -j $JOBNAME/$SUBDIR_NAME -i default -t $TYPE -v $VERSION -c $CLUSTER
 		fi
 	done
 fi

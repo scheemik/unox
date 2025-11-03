@@ -4,7 +4,7 @@
 #SBATCH --time=1:00:00
 #SBATCH --mail-user=mikhail.schee@mail.utoronto.ca
 #SBATCH --mail-type=ALL
-#SBATCH --output=HPC_runs/%x/log_%x_%j.txt				# %x = job_name, %j = job_number
+#SBATCH --output=HPC_runs/%x/log_%j.txt				# %x = job_name, %j = job_number
 
 # Submit this script to a HPC with `sbatch`. Note, by default the code will run 
 # with updated versions of tensorflow and keras, which won't work on Mist. Use
@@ -42,7 +42,7 @@ fi
 SAVEDIR="HPC_runs/${JOBNAME}" #_${SLURM_JOB_ID}"
 if [ -z "$CONFIG_FILE" ]
 then
-	CONFIG_FILE='no2_sample_input'
+	CONFIG_FILE='sample_config'
 	echo "-i, No input files specified, using CONFIG_FILE=$CONFIG_FILE"
 else
 	echo "-i, Input files specified, using CONFIG_FILE=$CONFIG_FILE"
@@ -127,7 +127,7 @@ echo ""
 # Check whether a directory exists for the job
 if [ ! -d "$SAVEDIR" ]
 then
-	echo "Creating directory for job $JOBNAME"
+	echo "Creating directory for job $SAVEDIR"
 	mkdir -p $SAVEDIR
 else
 	echo "Directory for job $SAVEDIR already exists"
