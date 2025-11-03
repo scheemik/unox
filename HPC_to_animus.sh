@@ -21,7 +21,7 @@ do
 		f) FILENAMES+=("$OPTARG");;
         j) HPC_JOB=j;;
         c) CLUSTER=${OPTARG};;
-        m) MODEL=m
+        m) MODEL=m;;
 	esac
 done
 shift $((OPTIND -1))
@@ -48,10 +48,10 @@ else
 fi
 if [ "$MODEL" = m ]
 then
-	COPY_MODELS=1
+	EXCLUDES="--exclude='*checkpts/*'"
 	echo "-m, Copying model files for ${FILENAMES[*]} from $CLUSTER to Animus"
 else
-	COPY_MODELS=0
+	EXCLUDES="--exclude='*checkpts/*' --exclude='*.h5' --exclude='*.keras'"
 fi
 
 ###############################################################################
@@ -86,16 +86,10 @@ if [ "$HPC_JOB" = j ]; then
             echo "Directory .$DIR_PREFIX/$FILE does not exist, creating it."
             mkdir -p .$DIR_PREFIX/$FILE
         fi
-        # Copy the log (.txt) file, the files in `stage1_output` and `stage2_output`,
-        # and the model files
-        FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/*.txt "
-        FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/stage1_output/ "
-        FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/stage2_output/ "
-        if [ "$COPY_MODELS" = 1 ]; then
-            FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE/*_model* "
-        fi
-        # Copy the files over
-        scp -r -i $IDENTITY_FILE $USERNAME@$REMOTE_SERVER:"$FILES" .$DIR_PREFIX/$FILE
+        # Copy the directory to local, excluding the specified patterns
+        # in $EXCLUDES. Use tar over ssh to preserve directory structure
+        # while allowing excludes
+        ssh -i $IDENTITY_FILE $USERNAME@$REMOTE_SERVER "cd $PROJECT_DIR$DIR_PREFIX/$FILE && tar cf - $EXCLUDES ." | tar xf - -C .$DIR_PREFIX/$FILE
     done
 else
     # Copy files or directories from HPC to Animus
