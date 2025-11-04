@@ -1025,7 +1025,7 @@ def compare_input_vars(
         overall_title = f"{input_a_dict['input_set']}-{input_a_dict['year']}-{input_a_dict['var']} vs {input_b_dict['input_set']}-{input_b_dict['year']}-{input_b_dict['var']}"
         return plot_npy_diff(input_a_dict['data_array'], input_b_dict['data_array'], title=overall_title)
     
-def set_of_maps(
+def set_of_runs(
     set_name,
     year,
     stage=1,
@@ -1033,13 +1033,14 @@ def set_of_maps(
     avg_over=None,
     restrict_lat_lon_to=None,
     clr_bar_scale=0.5,
-    ):
-    """Plots a set of maps to summarize a set of runs.
+    maps_or_comps='maps',
+):
+    """Creates a figure to summarize a set of runs.
 
     Creates a set of 12 plots:
-    1. Summary of the set of runs
-    2. Map of the "Truth"
-    3-12. Maps of each run compared with the "Truth"
+    1. Plot of the "Truth"
+    2. Summary of the set of runs
+    3-12. Plots of each run compared with the "Truth"
 
     Parameters
     ----------
@@ -1083,6 +1084,8 @@ def set_of_maps(
             raise TypeError(f"(set_of_maps) `restrict_lat_lon_to` must be None or a string. Got: {type(restrict_lat_lon_to)}.")
         if not udata.verify_number(clr_bar_scale):
             raise TypeError(f"(set_of_maps) `clr_bar_scale` must be a number. Got: {type(clr_bar_scale)}.")
+        if maps_or_comps not in ['maps', 'comps']:
+            raise ValueError(f"(set_of_maps) `maps_or_comps` must be either 'maps' or 'comps'. Got {maps_or_comps}.")
     # Verify the set of runs exists
     set_path = unox.verify_path(f"HPC_runs/{set_name}")
     # Get a list of the runs in the set (the subdirectories of the set directory)
@@ -1119,6 +1122,7 @@ def set_of_maps(
     # Create blank lists to be filled
     input_sets = []
     config_files = []
+    pred_arrs0 = []
     # Loop across each run
     for run in runs_in_set:
         # Load the output metadata dictionary
@@ -1138,6 +1142,8 @@ def set_of_maps(
             HPC_run=f"{set_name}/{run}",
             year=year,
         ))
+        # Add prediction array to the list
+        pred_arrs0.append(run_metadicts[run]['pred_arr'])
     # Check whether there is a unique input set
     unique_input_sets = list(set(input_sets))
     if len(unique_input_sets) != 1:
@@ -1164,13 +1170,24 @@ def set_of_maps(
         this_config,
         var=y_var,
     )
+    # Get the latitude and longitude values
+    lats, lons = udata.get_lats_lons(input_dataset)
+
+    # Restrict the latitude and longitude range
+    if not isinstance(restrict_lat_lon_to, type(None)):
+        # Create a list of all map data arrays
+        data_list = pred_arrs0 + [truth]
+        # Restrict the domain of all the arrays in the list
+        data_list, lats, lons = udata.restrict_domain(data_list, lats, lons, xr.open_dataset(restrict_lat_lon_to))
+        # Put the restricted arrays back into the original variables
+        pred_arrs0 = data_list[:-1]
+        truth = data_list[-1]
+        
     # Average over a time period, if specified
     if isinstance(avg_over, type(None)):
         plt_truth = truth[start_doy, :, :]
     else:
         plt_truth = np.average(truth[start_doy:end_doy, :, :], axis=0)
-    # Get the latitude and longitude values
-    lats, lons = udata.get_lats_lons(input_dataset)
     # Plot the "truth"
     plot_npy_map(
         fig,
@@ -1181,32 +1198,34 @@ def set_of_maps(
         cmap=pplt.Colormap('Fire'),
         ax_title="truth",
     )
+    if maps_or_comps == 'comps' and isinstance(avg_over, type(None)):
+        plt_truth = truth
 
     # Create blank list to be filled
     pred_arrs = []
     # Loop across each run
-    for run in runs_in_set:
+    for i in range(len(runs_in_set)):
+        run = runs_in_set[i]
         # Select the time to plot
         if isinstance(avg_over, type(None)):
-            # Save just the specified day
-            plt_this = plt_truth - run_metadicts[run]['pred_arr'][start_doy, :, :]
+            if maps_or_comps == 'maps':
+                # Save the difference on just the specified day
+                plt_this = plt_truth - pred_arrs0[i][start_doy, :, :]
+            elif maps_or_comps == 'comps':
+                # Save all days
+                plt_this = pred_arrs0[i]
             # Add the prediction array to the list
             pred_arrs.append(plt_this)
         else:
-            # Take the difference
-            temp_diff = truth - run_metadicts[run]['pred_arr']
+            if maps_or_comps == 'maps':
+                # Take the difference
+                temp_arr = truth - pred_arrs0[i]
+            elif maps_or_comps == 'comps':
+                temp_arr = pred_arrs0[i]
             # Average over the specified time period
-            plt_this = np.average(temp_diff[start_doy:end_doy, :, :], axis=0)
+            plt_this = np.average(temp_arr[start_doy:end_doy, :, :], axis=0)
             # Add the prediction array to the list
             pred_arrs.append(plt_this)
-
-    # Create a list of all map data arrays
-    data_list = pred_arrs + [truth]
-
-    # Restrict the latitude and longitude range
-    if not isinstance(restrict_lat_lon_to, type(None)):
-        data_list, lats, lons = udata.restrict_domain(data_list, lats, lons, xr.open_dataset(restrict_lat_lon_to))
-        pred_arrs = data_list[:-1]
 
     # Get the minimum and maximum values across the truth, stage1, and stage2 arrays
     vmin, vmax = udata.get_vminmax(pred_arrs)
@@ -1238,21 +1257,35 @@ def set_of_maps(
         else:
             this_ax_title = run.replace(f"{set_name}_", "")
         # Plot this run
-        plot_npy_map(
-            fig,
-            ax[i+2],
-            pred_arrs[i],
-            lats,
-            lons,
-            c_halfrange=chr, 
-            cb_extend=cbe,
-            ax_title=this_ax_title,
-        )
+        if maps_or_comps == 'maps':
+            plot_npy_map(
+                fig,
+                ax[i+2],
+                pred_arrs[i],
+                lats,
+                lons,
+                c_halfrange=chr, 
+                cb_extend=cbe,
+                ax_title=this_ax_title,
+            )
+        elif maps_or_comps == 'comps':
+            q = plot_comparison(
+                plt_truth, 
+                pred_arrs[i],
+                label_a='truth',
+                label_b=f"Pred with {this_ax_title}",
+                ax=ax[i+2],
+                hist_params={'bins':100, 'vmax':1000, 'vmin':10},
+                cmap=pplt.Colormap('viridis'),
+                log_scale=True,
+                set_under_val=1,
+            )
+            ax[i+2].colorbar(q, loc='r', label='Count per pixel', formatter='sci')
 
     # Get the variable label and units
     var_label, var_units = uplt_fmt.get_var_label_and_units(y_var)
     # Add one overall colorbar for the entire figure on the right-hand side
-    cbar = make_colorbar(fig, ax[2].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='b', cb_extend=cbe)
+    # cbar = make_colorbar(fig, ax[2].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='b', cb_extend=cbe)
     # Set the figure title
     fig.suptitle(f"HPC run set: {set_name}, input set: {this_input_set} - {overall_title}", fontsize=title_font_size)
     return fig
