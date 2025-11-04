@@ -1190,6 +1190,20 @@ def make_input_config(
         # 't2m',
         # 'ssrd',
     ],
+    zfi_vars = [
+        # 'nox',
+        # 'no2',
+        # 'no2_tm1',
+        # 'no2_s2',
+        # 'no2_s2_tm1',
+        # 'u10',
+        # 'v10',
+        # 'blh',
+        # 'sp',
+        # 'skt',
+        't2m',
+        # 'ssrd',
+    ],
     overwrite=False,
     **kwargs,
 ):
@@ -1215,6 +1229,9 @@ def make_input_config(
     lsm_vars : list of str, optional
         List of variable names that should use land-sea mask.
         Default is ['no2', 'no2_tm1'].
+    zfi_vars : list of str, optional
+        List of variable names that should use zero-fill mask.
+        Default is ['t2m'].
     **kwargs : dict, optional
 
     Returns
@@ -1245,6 +1262,8 @@ def make_input_config(
         raise TypeError(f"stage_2_cutoff must be an integer. Got type: {type(stage_2_cutoff)}")
     if not isinstance(lsm_vars, list):
         raise TypeError(f"lsm_vars must be a list of strings. Got type: {type(lsm_vars)}")
+    if not isinstance(zfi_vars, list):
+        raise TypeError(f"zfi_vars must be a list of strings. Got type: {type(zfi_vars)}")
     if not isinstance(overwrite, bool):
         raise TypeError(f"overwrite must be a boolean. Got type: {type(overwrite)}")
     # Verify the dataset
@@ -1263,6 +1282,9 @@ def make_input_config(
     # Verify that the lsm_vars are in the dataset
     for var in lsm_vars:
         udata.verify_var(xr_dataset, var)
+    # Verify that the zfi_vars are in the dataset
+    for var in zfi_vars:
+        udata.verify_var(xr_dataset, var)
     # Build the dictionary
     config_dict = {
         'input_set': input_set,
@@ -1270,6 +1292,7 @@ def make_input_config(
         'stage_2': stage_2,
         'stage_2_cutoff': stage_2_cutoff,
         'lsm_vars': lsm_vars,
+        'zfi_vars': zfi_vars,
     }
     # Check whether the configuration file already exists
     config_filepath = f'inputfiles/_input_configs/{config_name}.json'

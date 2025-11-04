@@ -4,7 +4,7 @@
 #SBATCH --time=1:00:00
 #SBATCH --mail-user=mikhail.schee@mail.utoronto.ca
 #SBATCH --mail-type=ALL
-#SBATCH --output=HPC_runs/%x/log_%x_%j.txt				# %x = job_name, %j = job_number
+#SBATCH --output=HPC_runs/%x/log_%j.txt				# %x = job_name, %j = job_number
 
 # Submit this script to a HPC with `sbatch`. Note, by default the code will run 
 # with updated versions of tensorflow and keras, which won't work on Mist. Use
@@ -12,7 +12,7 @@
 # Takes in optional arguments:
 #	$ sbatch HPC_slurm.sh -j <job name> 				Default: test_unet
 #                         -i <config file>              Default: no2_sample_input
-#						  -t <run type>					Default: test, other options: pred
+#						  -t <run type>					Default: test, other options: zfi_set
 #                         -v <version>                  Default: 1, use updates
 #                         -c <cluster>                  Default: trillium
 
@@ -29,7 +29,9 @@ do
 	esac
 done
 
-# check to see if arguments were passed
+echo "===== Begin HPC_slurm.sh ====="
+###############################################################################
+# Check which arguments were passed
 if [ -z "$JOBNAME" ]
 then
 	JOBNAME="test_unet"
@@ -37,9 +39,10 @@ then
 else
 	echo "-j, Name specified, using JOBNAME=$JOBNAME"
 fi
+SAVEDIR="HPC_runs/${JOBNAME}" #_${SLURM_JOB_ID}"
 if [ -z "$CONFIG_FILE" ]
 then
-	CONFIG_FILE='no2_sample_input'
+	CONFIG_FILE='sample_config'
 	echo "-i, No input files specified, using CONFIG_FILE=$CONFIG_FILE"
 else
 	echo "-i, Input files specified, using CONFIG_FILE=$CONFIG_FILE"
@@ -55,26 +58,21 @@ then
 	echo "-t, Run type specified, using TYPE=$TYPE"
 	CODEFILE='src/unox/HPC_scripts/test_run.py'
 	echo "    Using CODEFILE=$CODEFILE"
-elif [ "$TYPE" = "pred" ]
+elif [ "$TYPE" = "zfi_set" ]
 then
 	echo "-t, Run type specified, using TYPE=$TYPE"
-	CODEFILE='src/unox/HPC_scripts/pred_parallel.py'
+	CODEFILE='src/unox/HPC_scripts/test_run.py'
 	echo "    Using CODEFILE=$CODEFILE"
+	SAVEDIR="HPC_runs/_${JOBNAME}"
 else
-	echo "Invalid run type specified. Use 'test' or 'pred'."
+	echo "Invalid run type specified. Select from: "
+	echo "'test', 'zfi_set'."
 	exit 1
 fi
 if [ -z "$VERSION" ]
 then
 	VERSION=1
 	echo "-v, No version specified, using VERSION=$VERSION"
-else
-	if [ "$TYPE" = "pred" ]
-	then
-		echo "-v, pred type run, using VERSION=$VERSION"
-	else
-		echo "-v, Version specified, using VERSION=$VERSION"
-	fi
 fi
 if [ -z "$CLUSTER" ]
 then
@@ -84,20 +82,14 @@ else
     echo "-c, Using cluster: $CLUSTER"
 fi
 
+echo ""
 # Load modules and activate virtual environment
 if [ "$CLUSTER" = "trillium" ]
 then
 	echo "Loading modules for Trillium HPC environment"
-	echo ""
 	if [ "$VERSION" = 0 ]
 	then
 		echo "-v $VERSION, using original code"
-		if [ "$TYPE" = "pred" ]
-		then
-			echo "Original code not supported with pred"
-			echo "Exiting..."
-			exit 1
-		fi
 		module load StdEnv/2020 gcc/9.3.0 python/3.8.10 cuda/11.4
 		ENVNAME="unoxTrillium"
 		ENVDIR="/home/mschee/.virtualenvs/$ENVNAME"
@@ -111,13 +103,11 @@ then
 		echo "Version $VERSION not recognized, exiting"
 		exit 1
 	fi
-	echo ""
 	echo "Activating virtualenv from $ENVDIR/bin/activate"
 	source $ENVDIR/bin/activate
 elif [ "$CLUSTER" = "mist" ]
 then
 	echo "Loading modules for Mist HPC environment"
-	echo ""
 	if [ "$VERSION" = 0 ]
 	then
 		echo "-v $VERSION, using original code"
@@ -132,12 +122,12 @@ else
 	echo "Cluster $CLUSTER not recognized, exiting"
 	exit 1
 fi
+echo ""
 
-SAVEDIR="HPC_runs/${JOBNAME}" #_${SLURM_JOB_ID}"
 # Check whether a directory exists for the job
 if [ ! -d "$SAVEDIR" ]
 then
-	echo "Creating directory for job $JOBNAME"
+	echo "Creating directory for job $SAVEDIR"
 	mkdir -p $SAVEDIR
 else
 	echo "Directory for job $SAVEDIR already exists"

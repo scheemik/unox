@@ -7,24 +7,40 @@ import xarray as xr
 import json
 from utils.load_input import get_npy_from_netcdf
 
-print('')
-print(f'Running test_run.py from current working directory:{os.getcwd()}')
+print("")
+print(f"Running test_run.py from current working directory:{os.getcwd()}")
 
+# -------- Get input arguments --------
+print("Using input arguments:")
 # Load first input argument, if it exists: the save directory
 try:
     savedir = sys.argv[1] + '/'
 except:
     savedir = 'HPC_runs/test_unet/'  #directory to save output in
-print('Running python script with savedir:', savedir)
+print(f"\targv[1], savedir: {savedir}")
+try:
+    os.mkdir(savedir)
+    print(f"\tCreated directory: {savedir}")
+except FileExistsError:
+    print(f"\t{savedir} exists")
 
 # Load second input argument, if it exists: the config file to use
 try:
     config_file = sys.argv[2]
+    if config_file == "default":
+        config_file = 'input_config'
+        config_path = f"{savedir}{config_file}.json"
+    else:
+        config_path = f"inputfiles/_input_configs/{config_file}.json"
 except:
-    config_file = 'sample_config'
-print('Running python script with config_file:', config_file)
+    config_file = 'input_config'
+    config_path = f"{savedir}{config_file}.json"
+print(f"\targv[2], config_file: {config_file}")
+# Make sure the config file exists
+if not os.path.exists(config_path):
+    raise FileNotFoundError(f"Config file not found: {config_path}")
 # Load config file to a dictionary
-with open(f"inputfiles/_input_configs/{config_file}.json", 'r') as file:
+with open(f"{config_path}", 'r') as file:
     config_dict = json.load(file)
     inputfiles = config_dict['input_set']
 
@@ -33,12 +49,7 @@ try:
     version = int(sys.argv[3])
 except:
     version = 1
-print('Running python script with version:', version)
-
-try:
-    os.mkdir(savedir)
-except FileExistsError:
-    print(savedir+' exists')
+print(f"\targv[3], version: {version}")
 
 try:
     os.mkdir(savedir+'stage1_output/')
@@ -53,11 +64,12 @@ try:
 except FileExistsError:
     print('checkpts/ exists')
 # Write the config dictionary to a json file in the savedir
-with open(savedir+'input_config.json', 'w') as file:
-    file.write(json.dumps(config_dict, indent=4))
+if not savedir in config_path:
+    with open(savedir+'input_config.json', 'w') as file:
+        file.write(json.dumps(config_dict, indent=4))
 
 n_epochs = 250
-save_fmt = 'both' # 'h5', 'keras', or 'both'
+save_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
 split_value = 0.9
@@ -77,6 +89,14 @@ output_metadata = {
     'input_fmt': input_fmt,
     'split_year': split_year,
     'split_value': split_value,
+    'train_years': {
+        'stage1': [],
+        'stage2': [],
+    },
+    'pred_years': {
+        'stage1': [],
+        'stage2': [],
+    },
 }
 ##################################################################
 # Stage-1 training
@@ -194,8 +214,9 @@ elif input_fmt == 'nc':
     ytrain_list = []
     # If before the split year, add x and y data to train lists
     for year in range(min(years), split_year):
-        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x'))
-        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='y'))
+        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x'))
+        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
+        output_metadata['train_years']['stage1'].append(year)
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -365,9 +386,10 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
-        x_test = get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x')
+        x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
         pred = unet.predict(x_test)
         np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
+        output_metadata['pred_years']['stage1'].append(year)
 
 # xtest_files = x_files[14:]
 # 
@@ -410,8 +432,9 @@ elif input_fmt == 'nc':
     # If before the split year, add x and y data to train lists
     stage_2_cutoff=2013
     for year in range(stage_2_cutoff+1, split_year):
-        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x'))
-        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_file, x_or_y='y'))
+        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x'))
+        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
+        output_metadata['train_years']['stage2'].append(year)
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -481,9 +504,10 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
-        x_test = get_npy_from_netcdf(input_ds, year, config_file, x_or_y='x')
+        x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
         pred = unet.predict(x_test)
         np.save(savedir+f'stage2_output/pred_X_{year}.npy', pred)
+        output_metadata['pred_years']['stage2'].append(year)
 
 # Save the output metadata dictionary to file
 print('output_metadata:', output_metadata)

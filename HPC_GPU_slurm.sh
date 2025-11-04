@@ -4,7 +4,7 @@
 #SBATCH --time=1:00:00
 #SBATCH --mail-user=mikhail.schee@mail.utoronto.ca
 #SBATCH --mail-type=ALL
-#SBATCH --output=HPC_runs/%x/log_%x_%j.txt				# %x = job_name, %j = job_number
+#SBATCH --output=HPC_runs/%x/log_%j.txt				# %x = job_name, %j = job_number
 
 # Submit this script to a HPC with `sbatch`. Note, by default the code will run 
 # with updated versions of tensorflow and keras, which won't work on Mist. Use
@@ -12,7 +12,7 @@
 # Takes in optional arguments:
 #  $ sbatch HPC_GPU_slurm.sh -j <job name> 			Default: test_unet
 #							 -i <config file>       Default: test_config
-#							 -t <run type>			Default: test, other options: pred
+#							 -t <run type>			Default: test, other options: zfi_set
 #                            -v <version>           Default: 1, use updates
 #                            -c <cluster>           Default: trillium
 
