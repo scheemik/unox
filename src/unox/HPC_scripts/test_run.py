@@ -89,6 +89,14 @@ output_metadata = {
     'input_fmt': input_fmt,
     'split_year': split_year,
     'split_value': split_value,
+    'train_years': {
+        'stage1': [],
+        'stage2': [],
+    },
+    'pred_years': {
+        'stage1': [],
+        'stage2': [],
+    },
 }
 ##################################################################
 # Stage-1 training
@@ -208,6 +216,7 @@ elif input_fmt == 'nc':
     for year in range(min(years), split_year):
         xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x'))
         ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
+        output_metadata['train_years']['stage1'].append(year)
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -380,6 +389,7 @@ elif input_fmt == 'nc':
         x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
         pred = unet.predict(x_test)
         np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
+        output_metadata['pred_years']['stage1'].append(year)
 
 # xtest_files = x_files[14:]
 # 
@@ -424,6 +434,7 @@ elif input_fmt == 'nc':
     for year in range(stage_2_cutoff+1, split_year):
         xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x'))
         ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
+        output_metadata['train_years']['stage2'].append(year)
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -496,6 +507,7 @@ elif input_fmt == 'nc':
         x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
         pred = unet.predict(x_test)
         np.save(savedir+f'stage2_output/pred_X_{year}.npy', pred)
+        output_metadata['pred_years']['stage2'].append(year)
 
 # Save the output metadata dictionary to file
 print('output_metadata:', output_metadata)
