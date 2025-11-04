@@ -6,11 +6,14 @@ import proplot as pplt
 from datetime import datetime
 import warnings
 from scipy.stats import linregress
+import json
+import os
 
 from unox import unox
 from unox import data as udata
 from unox import plot_format as uplt_fmt
 from unox.input import x_or_y_var, get_input_index
+from unox.HPC_scripts.utils.load_input import get_npy_from_netcdf
 
 title_font_size = 12
 
@@ -1021,3 +1024,235 @@ def compare_input_vars(
         # Plot the differences
         overall_title = f"{input_a_dict['input_set']}-{input_a_dict['year']}-{input_a_dict['var']} vs {input_b_dict['input_set']}-{input_b_dict['year']}-{input_b_dict['var']}"
         return plot_npy_diff(input_a_dict['data_array'], input_b_dict['data_array'], title=overall_title)
+    
+def set_of_maps(
+    set_name,
+    year,
+    stage=1,
+    this_date='2019-01-01',
+    avg_over=None,
+    restrict_lat_lon_to=None,
+    clr_bar_scale=0.5,
+    ):
+    """Plots a set of maps to summarize a set of runs.
+
+    Creates a set of 12 plots:
+    1. Summary of the set of runs
+    2. Map of the "Truth"
+    3-12. Maps of each run compared with the "Truth"
+
+    Parameters
+    ----------
+    set_name : str
+        The directory name within `HPC_runs/` containing the set of runs.
+    year : int
+        The year of the data to plot.
+    stage : int
+        The stage of the data to plot (1 or 2).
+    this_date : np.datetime64 or str
+        Date and time to select from the data file.
+        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+    avg_over : str, numpy.timedelta64, or None
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
+    restrict_lat_lon_to : str
+        Path to a netCDF file to restrict the latitude and longitude range.
+        If None, the entire dataset is used.
+    clr_bar_scale : float between 0 and 1
+        Scale factor for the color bar. If set to 1, the color bar will be scaled 
+        to the maximum absolute value of the data. Default is 0.5.
+    
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plots.
+    """
+    # Verify argument types
+    if True:
+        if not isinstance(set_name, str):
+            raise TypeError(f"(set_of_maps) `set_name` must be a string. Got: {type(set_name)}.")
+        if not udata.verify_number(year):
+            raise TypeError(f"(set_of_maps) `year` must be an integer. Got: {type(year)}.")
+        if stage not in [1, 2]:
+            raise ValueError(f"(set_of_maps) `stage` must be either 1 or 2. Got: {stage}.")
+        if not (isinstance(this_date, str) or isinstance(this_date, np.datetime64)):
+            raise TypeError(f"(set_of_maps) `this_date` must be a string or np.datetime64. Got: {type(this_date)}.")
+        if not (isinstance(avg_over, type(None)) or isinstance(avg_over, str) or udata.verify_timedelta64(avg_over)):
+            raise TypeError(f"(set_of_maps) `avg_over` must be None, a string, or a numpy.timedelta64. Got: {type(avg_over)}.")
+        if not (isinstance(restrict_lat_lon_to, type(None)) or isinstance(restrict_lat_lon_to, str)):
+            raise TypeError(f"(set_of_maps) `restrict_lat_lon_to` must be None or a string. Got: {type(restrict_lat_lon_to)}.")
+        if not udata.verify_number(clr_bar_scale):
+            raise TypeError(f"(set_of_maps) `clr_bar_scale` must be a number. Got: {type(clr_bar_scale)}.")
+    # Verify the set of runs exists
+    set_path = unox.verify_path(f"HPC_runs/{set_name}")
+    # Get a list of the runs in the set (the subdirectories of the set directory)
+    runs_in_set = os.listdir(set_path)
+    # Replace the year in `this_date` with the specified year
+    yr, mn, day = udata.get_YMD_from_date(this_date)
+    start_date = f"{year:04d}-{mn:02d}-{day:02d}"
+    start_doy = udata.get_DOY(start_date)
+    # Calculate the end date, if applicable
+    if isinstance(avg_over, type(None)):
+        # Format overall title
+        overall_title = f"stage {stage} comparisons on {start_date}"
+    else:
+        end_date = udata.add_amount_to_date(start_date, avg_over)
+        # If the year incremented, set to December 31st in specified year
+        yr, mn, day = udata.get_YMD_from_date(end_date)
+        if yr > year:
+            end_date = f"{year:04d}-12-31"
+        end_doy = udata.get_DOY(end_date)
+        # Format overall title
+        overall_title = f"stage {stage} comparisons from {start_date}-{end_date}"
+
+    # Calculate the number of rows in the figure
+    num_cols = 3
+    num_rows = len(runs_in_set)//num_cols + (1 if len(runs_in_set)%num_cols > 0 else 0)
+    # Create the figure
+    fig = pplt.figure(refwidth=4)
+    ax = fig.subplots(nrows=num_rows, ncols=num_cols, proj='cyl')
+    # Select medium resolution for features such as coastlines
+    pplt.rc.reso = 'med' 
+
+    # Create dictionary with the runs_in_set as keys
+    run_metadicts = {run: {} for run in runs_in_set}
+    # Create blank lists to be filled
+    input_sets = []
+    config_files = []
+    # Loop across each run
+    for run in runs_in_set:
+        # Load the output metadata dictionary
+        with open(f"{set_path}/{run}/output_metadata.json", 'r') as file:
+            run_metadicts[run] = json.load(file)
+        # Verify year is in the appropriate stage predictions
+        these_pred_years = run_metadicts[run]['pred_years'][f"stage{stage}"]
+        if not year in these_pred_years:
+            raise ValueError(f"(set_of_maps) Year {year} not found in stage {stage} predictions for run '{run}'. Available years: {these_pred_years}.")
+        # Add the input set to the list
+        input_sets.append(run_metadicts[run]['config_dict']['input_set'])
+        # Add config file to the list
+        config_files.append(run_metadicts[run]['config_file'])
+        # Load the prediction values for this run
+        run_metadicts[run]['pred_arr'] = np.load(unox.get_pred_data(
+            stage=stage, 
+            HPC_run=f"{set_name}/{run}",
+            year=year,
+        ))
+    # Check whether there is a unique input set
+    unique_input_sets = list(set(input_sets))
+    if len(unique_input_sets) != 1:
+        raise ValueError(f"(set_of_maps) input sets found in the set of runs contain multiple values: {unique_input_sets}. All runs must use the same input set.")
+    else:
+        this_input_set = unique_input_sets[0]
+    # Check whether there is a unique config file
+    unique_config_files = list(set(config_files))
+    if len(unique_config_files) != 1:
+        print(f"Warning: multiple values found for config files across runs: {unique_config_files}")
+        print(f"Using the first entry as config file: {unique_config_files[0]}")
+    if unique_config_files[0] == 'input_config':
+        this_config = f"{set_path}/{runs_in_set[0]}/input_config.json"
+    else:
+        this_config = unique_config_files[0]
+    # Open the input netCDF file
+    input_dataset = udata.get_dataset(this_input_set, is_input_set=True)
+    # Get the y variable
+    y_var = input_dataset.attrs['y_var']
+    # Load the "truth" array
+    truth = get_npy_from_netcdf(
+        input_dataset,
+        year,
+        this_config,
+        var=y_var,
+    )
+    # Average over a time period, if specified
+    if isinstance(avg_over, type(None)):
+        plt_truth = truth[start_doy, :, :]
+    else:
+        plt_truth = np.average(truth[start_doy:end_doy, :, :], axis=0)
+    # Get the latitude and longitude values
+    lats, lons = udata.get_lats_lons(input_dataset)
+    # Plot the "truth"
+    plot_npy_map(
+        fig,
+        ax[0],
+        plt_truth,
+        lats,
+        lons,
+        cmap=pplt.Colormap('Fire'),
+        ax_title="truth",
+    )
+
+    # Create blank list to be filled
+    pred_arrs = []
+    # Loop across each run
+    for run in runs_in_set:
+        # Select the time to plot
+        if isinstance(avg_over, type(None)):
+            # Save just the specified day
+            plt_this = plt_truth - run_metadicts[run]['pred_arr'][start_doy, :, :]
+            # Add the prediction array to the list
+            pred_arrs.append(plt_this)
+        else:
+            # Take the difference
+            temp_diff = truth - run_metadicts[run]['pred_arr']
+            # Average over the specified time period
+            plt_this = np.average(temp_diff[start_doy:end_doy, :, :], axis=0)
+            # Add the prediction array to the list
+            pred_arrs.append(plt_this)
+
+    # Create a list of all map data arrays
+    data_list = pred_arrs + [truth]
+
+    # Restrict the latitude and longitude range
+    if not isinstance(restrict_lat_lon_to, type(None)):
+        data_list, lats, lons = udata.restrict_domain(data_list, lats, lons, xr.open_dataset(restrict_lat_lon_to))
+        pred_arrs = data_list[:-1]
+
+    # Get the minimum and maximum values across the truth, stage1, and stage2 arrays
+    vmin, vmax = udata.get_vminmax(pred_arrs)
+    
+    # Get the halfrange for use with a diverging color map
+    chr = udata.get_max_abs_val([vmin, vmax])
+    # Scale the color bar
+    if clr_bar_scale < 0 or clr_bar_scale > 1:
+        warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
+        clr_bar_scale = 0.5
+    if clr_bar_scale != 1:
+        chr *= clr_bar_scale
+        cbe = 'both'
+    else:
+        cbe = 'neither'
+
+    # Loop across each run
+    for i in range(len(runs_in_set)):
+        run = runs_in_set[i]
+        # Load the prediction values for this run
+        pred_arr = np.load(unox.get_pred_data(
+            stage=stage, 
+            HPC_run=f"{set_name}/{run}",
+            year=year,
+        ))
+        # Assemble plot title
+        if set_name[0] == "_":
+            this_ax_title = run.replace(f"{set_name[1:]}_", "")
+        else:
+            this_ax_title = run.replace(f"{set_name}_", "")
+        # Plot this run
+        plot_npy_map(
+            fig,
+            ax[i+2],
+            pred_arrs[i],
+            lats,
+            lons,
+            c_halfrange=chr, 
+            cb_extend=cbe,
+            ax_title=this_ax_title,
+        )
+
+    # Get the variable label and units
+    var_label, var_units = uplt_fmt.get_var_label_and_units(y_var)
+    # Add one overall colorbar for the entire figure on the right-hand side
+    cbar = make_colorbar(fig, ax[2].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='b', cb_extend=cbe)
+    # Set the figure title
+    fig.suptitle(f"HPC run set: {set_name}, input set: {this_input_set} - {overall_title}", fontsize=title_font_size)
+    return fig
