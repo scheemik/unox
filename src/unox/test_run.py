@@ -5,7 +5,7 @@ import sys
 import os 
 import xarray as xr
 import json
-from utils.load_input import get_npy_from_netcdf
+from HPC_scripts.utils.load_input import get_npy_from_netcdf
 
 print("")
 print(f"Running test_run.py from current working directory:{os.getcwd()}")
@@ -75,7 +75,7 @@ split_year = 2019
 split_value = 0.9
 
 ##################################################################
-from utils.data_split import data_split
+from HPC_scripts.utils.data_split import data_split
 ##################################################################
 # Create output metadata dictionary
 
@@ -224,7 +224,7 @@ elif input_fmt == 'nc':
         lats = input_ds.lat.values
         lons = input_ds.lon.values
         tl_grid = xr.open_dataset('datafiles/tl_grid.nc')
-        from unox.data import restrict_domain
+        from data import restrict_domain
         xtrain_list, lat_r, lon_r = restrict_domain(
             xtrain_list,
             lats,
@@ -260,13 +260,13 @@ exit(0)
 
 # Import packages based on version
 if version == 0: # keras v2.9.0, tensorflow v2.9.2
-    from utils.functions_old import r2_keras
-    from utils.functions_old import msenonzero
-    from model.core_old import Unet
+    from HPC_scripts.utils.functions_old import r2_keras
+    from HPC_scripts.utils.functions_old import msenonzero
+    from HPC_scripts.model.core_old import Unet
 elif version == 1: # keras v3.10.0, tensorflow v2.17.0
-    from utils.functions import r2_keras
-    from utils.functions import msenonzero
-    from model.core_tl import Unet
+    from HPC_scripts.utils.functions import r2_keras
+    from HPC_scripts.utils.functions import msenonzero
+    from HPC_scripts.model.core_tl import Unet
 from tensorflow.keras.optimizers import Adam
 from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 
