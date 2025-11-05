@@ -242,6 +242,7 @@ def plot_npy_map(
     c_halfrange=None,
     cb_extend='neither',
     ax_title='',
+    padding=0.1,
     ):
     """Plots a map of the given numpy array.
 
@@ -271,6 +272,9 @@ def plot_npy_map(
         Default is 'neither'.
     ax_title : str
         The title of the plot.
+    padding : float
+        The padding (in a fraction of total extent) to add to the extent of the map. 
+        Default is 0.1 degrees.
 
     Returns
     -------
@@ -297,7 +301,9 @@ def plot_npy_map(
     else:
         raise TypeError(f'c_halfrange must be a number, got: {type(c_halfrange)}. c_halfrange value: {c_halfrange}')
     # Get the minimum and maximum latitude and longitude values
-    (p_lat_min, p_lat_max, p_lon_min, p_lon_max) = udata.get_extent(lats=lats, lons=lons)
+    this_extent = udata.get_extent(lats=lats, lons=lons)
+    # Enlarge the extent of the map by the given padding value
+    p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_fmt.pad_extent(this_extent, padding)
     # Format the map
     this_ax.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
