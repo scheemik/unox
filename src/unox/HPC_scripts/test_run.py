@@ -217,6 +217,26 @@ elif input_fmt == 'nc':
         xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x'))
         ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
         output_metadata['train_years']['stage1'].append(year)
+    # If trimming to the tl grid
+    if True:
+        # lats, lons = udata.get_lats_lons(input_ds)
+        # Get the latitude and longitude values
+        lats = input_ds.lat.values
+        lons = input_ds.lon.values
+        tl_grid = xr.open_dataset('datafiles/tl_grid.nc')
+        from unox.data import restrict_domain
+        xtrain_list, lat_r, lon_r = restrict_domain(
+            xtrain_list,
+            lats,
+            lons,
+            tl_grid,
+        )
+        ytrain_list, lat_r, lon_r = restrict_domain(
+            ytrain_list,
+            lats,
+            lons,
+            tl_grid,
+        )
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -234,6 +254,7 @@ elif input_fmt == 'nc':
     print(f'Shape of yvalid: {yvalid.shape}')
 
 print('Done loading data sets for stage 1')
+exit(0)
 
 ##################################################################
 
@@ -245,7 +266,7 @@ if version == 0: # keras v2.9.0, tensorflow v2.9.2
 elif version == 1: # keras v3.10.0, tensorflow v2.17.0
     from utils.functions import r2_keras
     from utils.functions import msenonzero
-    from model.core import Unet
+    from model.core_tl import Unet
 from tensorflow.keras.optimizers import Adam
 from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 
