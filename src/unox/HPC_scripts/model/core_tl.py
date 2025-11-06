@@ -36,12 +36,15 @@ def build_Unet():
 
     resh = Reshape( (5 , 6, 1024) , name='Block5_Reshape') (lstm)
 
-    u5 = Conv2DTranspose(512, (2, 2), strides=(2, 2), padding='same', name='Block5_UpConv') (resh)  # 10 x 12
-    u5_cropped = Lambda(lambda x: tf.slice(x, [0, 0, 0, 0], [-1, 9, 12, -1]))(u5)
-    c2_cropped = Lambda(lambda x: tf.slice(x, [0, 4, 6, 0], [-1, 9, 12, -1]))(c2)   # 10 , 12
-    u5_comb = concatenate([u5_cropped, c3, c2_cropped])  # 9 x 12
-    c5 = Conv2D(256, (3, 3), activation='softplus', padding='same', name='Block5_Conv1') (u5_comb)  # 9 x 12
-    c5 = Conv2D(256, (3, 3), activation='softplus', padding='same', name='Block5_Conv2') (c5)  # 9 x 12
+    u5 = Conv2DTranspose(512, (2, 2), strides=(2, 2), padding='same', name='Block5_UpConv') (resh) # (None, 10, 12, 512)
+    # tf.slice(input_, begin, size)
+    ## "begin is zero-based; size is one-based. If size[i] is -1, all remaining elements in dimension i are included in the slice."
+    u5_cropped = Lambda(lambda x: tf.slice(x, [0, 0, 0, 0], [-1, 9, 12, -1]), output_shape=(9, 12, 512))(u5) # (None, 9, 12, 512)
+    c2_cropped = Lambda(lambda x: tf.slice(x, [0, 4, 6, 0], [-1, 9, 12, -1]), output_shape=(9, 12, 512))(c2) # (None, 9, 12, 512)
+    # A `Concatenate` layer requires inputs with matching shapes except for the concatenation axis.
+    u5_comb = concatenate([u5_cropped, c3, c2_cropped])  # (None, 9, 12, 2048)
+    c5 = Conv2D(256, (3, 3), activation='softplus', padding='same', name='Block5_Conv1') (u5_comb)  # (None, 9, 12, 256)
+    c5 = Conv2D(256, (3, 3), activation='softplus', padding='same', name='Block5_Conv2') (c5)  # (None, 9, 12, 256)
 
     u6 = Conv2DTranspose(256, (2, 2), strides=(2, 2), padding='same', name='Block6_UpConv') (c5)  # 18 x 24
     u6_cropped = Lambda(lambda x: tf.slice(x, [0, 0, 0, 0], [-1, 18, 23, -1]))(u6)
