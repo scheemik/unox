@@ -73,6 +73,7 @@ save_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
 split_value = 0.9
+trim_tl_grid = False
 
 ##################################################################
 from HPC_scripts.utils.data_split import data_split
@@ -218,7 +219,6 @@ elif input_fmt == 'nc':
         ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
         output_metadata['train_years']['stage1'].append(year)
     # If trimming to the tl grid
-    trim_tl_grid = True
     if trim_tl_grid:
         # lats, lons = udata.get_lats_lons(input_ds)
         # Get the latitude and longitude values
@@ -266,7 +266,10 @@ if version == 0: # keras v2.9.0, tensorflow v2.9.2
 elif version == 1: # keras v3.10.0, tensorflow v2.17.0
     from HPC_scripts.utils.functions import r2_keras
     from HPC_scripts.utils.functions import msenonzero
-    from HPC_scripts.model.core_tl import Unet
+    if trim_tl_grid:
+        from HPC_scripts.model.core_tl import Unet
+    else:
+        from HPC_scripts.model.core import Unet
 from tensorflow.keras.optimizers import Adam
 from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 
@@ -416,7 +419,9 @@ elif input_fmt == 'nc':
                 lons,
                 tl_grid,
             )
-        pred = unet.predict(x_test_list[0])
+            pred = unet.predict(x_test_list[0])
+        else:
+            pred = unet.predict(x_test)
         np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
         output_metadata['pred_years']['stage1'].append(year)
 
@@ -556,7 +561,9 @@ elif input_fmt == 'nc':
                 lons,
                 tl_grid,
             )
-        pred = unet.predict(x_test_list[0])
+            pred = unet.predict(x_test_list[0])
+        else:
+            pred = unet.predict(x_test)
         np.save(savedir+f'stage2_output/pred_X_{year}.npy', pred)
         output_metadata['pred_years']['stage2'].append(year)
 
