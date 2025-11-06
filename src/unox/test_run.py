@@ -254,7 +254,6 @@ elif input_fmt == 'nc':
     print(f'Shape of yvalid: {yvalid.shape}')
 
 print('Done loading data sets for stage 1')
-exit(0)
 
 ##################################################################
 
