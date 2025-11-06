@@ -218,7 +218,8 @@ elif input_fmt == 'nc':
         ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
         output_metadata['train_years']['stage1'].append(year)
     # If trimming to the tl grid
-    if True:
+    trim_tl_grid = True
+    if trim_tl_grid:
         # lats, lons = udata.get_lats_lons(input_ds)
         # Get the latitude and longitude values
         lats = input_ds.lat.values
@@ -407,7 +408,15 @@ elif input_fmt == 'nc':
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
         x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
-        pred = unet.predict(x_test)
+        # If trimming to the tl grid
+        if trim_tl_grid:
+            x_test_list, lat_r, lon_r = restrict_domain(
+                [x_test],
+                lats,
+                lons,
+                tl_grid,
+            )
+        pred = unet.predict(x_test_list[0])
         np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
         output_metadata['pred_years']['stage1'].append(year)
 
@@ -455,6 +464,20 @@ elif input_fmt == 'nc':
         xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x'))
         ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
         output_metadata['train_years']['stage2'].append(year)
+    # If trimming to the tl grid
+    if trim_tl_grid:
+        xtrain_list, lat_r, lon_r = restrict_domain(
+            xtrain_list,
+            lats,
+            lons,
+            tl_grid,
+        )
+        ytrain_list, lat_r, lon_r = restrict_domain(
+            ytrain_list,
+            lats,
+            lons,
+            tl_grid,
+        )
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -525,7 +548,15 @@ elif input_fmt == 'nc':
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
         x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
-        pred = unet.predict(x_test)
+        # If trimming to the tl grid
+        if trim_tl_grid:
+            x_test_list, lat_r, lon_r = restrict_domain(
+                [x_test],
+                lats,
+                lons,
+                tl_grid,
+            )
+        pred = unet.predict(x_test_list[0])
         np.save(savedir+f'stage2_output/pred_X_{year}.npy', pred)
         output_metadata['pred_years']['stage2'].append(year)
 
