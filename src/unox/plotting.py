@@ -15,7 +15,13 @@ from unox import plot_format as uplt_fmt
 from unox.input import x_or_y_var, get_input_index
 from unox.HPC_scripts.utils.load_input import get_npy_from_netcdf
 
-title_font_size = 12
+# Set font sizes
+mpl.rcParams['font.size'] = 16
+mpl.rcParams['axes.labelsize'] = 18
+mpl.rcParams['xtick.labelsize'] = 12
+mpl.rcParams['ytick.labelsize'] = 12
+mpl.rcParams['legend.fontsize'] = 12
+title_font_size = 20
 
 def plot_extent(
     xr_dataset='/datafiles/nox_2019_t106_US.nc',
@@ -642,7 +648,9 @@ def plot_comparison(
     else:
         new_fig = False
     if new_fig:
-        fig, ax = pplt.subplots()
+        # Create the figure
+        fig = pplt.figure(refwidth=4)
+        ax = fig.subplots(nrows=1, ncols=1)
     # Set the values under `set_under_val` to white
     cmap.set_under('w', set_under_val)
     # Plot the data, depending on the scale
@@ -734,12 +742,19 @@ def plot_true_pred_comp(
         # Restrict range
         lats, lons = unox.load_lats_lons()
         [truth, stage1], lats, lons = udata.restrict_domain([truth, stage1], lats, lons, xr.open_dataset(restrict_lat_lon_to))
+    # Flatten the data to just one axis
     truths = truth.flatten()
     preds = stage1.flatten()
-    fig = plot_comparison(truths, preds, 
-                           label_a=f"'Truth' surface {var_label} ({var_units})",
-                           label_b=f"Stage 1 surface {var_label} ({var_units})",      
-                           hist_params=hist_params)
+    # Plot the comparison
+    fig = plot_comparison(
+        truths, 
+        preds, 
+        label_a=f"'Truth' ({var_units})",
+        label_b=f"Stage 1 ({var_units})",      
+        hist_params=hist_params
+    )
+    # Set the figure title
+    fig.suptitle(f"HPC run: {pred_data['HPC_run']}, input set: {truth_data['input_set']} - {var_label}", fontsize=title_font_size)           
     return fig
 
 def plot_npy_hist(
