@@ -100,3 +100,4 @@ else
     echo $FILES
     scp -r -i $IDENTITY_FILE $USERNAME@$REMOTE_SERVER:"$FILES" .$DIR_PREFIX
 fi
+echo "Completed file transfer to Animus"
