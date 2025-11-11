@@ -1,18 +1,74 @@
+# Data files
+
 This directory contains data files and scripts to make the input files for the Unet model for estimating North American NOx emissions. 
 
-Data sources:
-- ERA5 meteorological variables: directories 2005-2021. Files within these directories are one month of one variable over the North American domain given by the bounds of (lats.npy,lons.npy), but at 2-hourly frequency and 0.25 degree resolution.
+## Data sources summary:
+- TCR-2 NOx emissions:
+    - The surface NOx emissions used in the "y" input files for the Unet.
+- ERA5 data:
+    - 7 meteorological variables used in the "x" input files for the Unet plus the land-sea mask.
 - TCR-2 NO2: directory TROPESS.
-- TCR-2 NOx emissions: directory t106, currently only for the US. Data are not publicly available.
 - EPA ground-based NO2 measurements: directory US_EPA, currently only for the US. Canadian data will need to come from ECCC. 
 
-To download ERA5 data: 
-download_era5.py [year] [month]: get all the variables for the specified month and year.
-download_era5.sh [year]: run download_era5.py for all the months of the specified year.
-era5_loop.sh: run download_era5.sh for several years (specified in the script).
+## TCR-2 NOx emissions
 
-ERA5 data are at 2h frequency and 0.25 degree resolution. The Unet model takes daily averages on the grid given by (lats.npy,lons.npy). To do the regridding and time averaging:
-concatenate.py: regrid all the ERA5 files in data/high_res/emacdonald/[year]/ to the grid specified by (lats.npy,lons.npy), resample to daily averages, and concatenate the entire year for each variables. Save as ERA5concatenated/[year][variable].nc. These are now in the format needed to make input files for Unet (365,56,120). No longer need save_data.py or save_data.sh to do the resampling because concatenate.py now does both steps at the same time to avoid saving intermediate files.
+- Directory on Animus: `/data/high_res/emacdonald/unet/datafiles/t106/`
+- Filename convention: `nox_20XX_t106_US.nc` 
+    - where `20XX` is the year
+- Contains the variable:
+    - `nox`: Surface NOx emissions
+- Latitude extent: 24.112 to 58.878
+    - Resolution: 1.121483870967742 ± 0.0004997397866077013
+- Longitude extent: -126.0 to -59.625
+    - Resolution: 1.125
+- Daily time frequency
+
+Note: These data are not publicly available.
+
+## ERA5 Data
+
+- Directory on Animus: `/data/high_res/ERA5concatenated/`
+- Filename convention: `20XX<var>.nc` 
+    - where `20XX` is the year and `<var>` is one of the following variables:
+        - `blh`: Boundary layer height
+        - `lsm`: Land-sea mask
+        - `skt`: Skin temperature
+        - `sp`: Surface pressure
+        - `ssrd`: Surface short-wave (solar) radiation downwards
+        - `t2m`: 2 metre temperature
+        - `u10`: 10 metre U wind component
+        - `v10`: 10 metre V wind component
+- Latitude extent: 11.78 to 73.46
+    - Resolution: 1.121472716331482 ± 0.0004995913477614522
+- Longitude extent: -174.4 to -40.5
+    - Resolution: 1.125
+- Daily time frequency
+
+### Downloading ERA5 data
+
+Start with the `era5_download.sh` script which accepts arguments for the start and end years to download. For example:
+```console
+bash datafiles/dera5_download.sh 2005 2020 > datafiles/era5_download_log.txt 2>&1
+```
+That will run the `era5_download.py` script for each month within those years and send the log output of each call to the file `datafiles/era5_download_log.txt`.
+
+ERA5 data are at 2h frequency and 0.25 degree resolution. The Unet model takes daily averages on the grid given by (lats.npy,lons.npy).
+Running the `era5_concatenate.py` script will find all the downloaded ERA5 files in `unox/datafiles/era5_downloads/` and concatenate them into one file for each year which are output to `unox/datafiles/ERA5concatenated/`. 
+In that process, the ERA5 data are regridded to the the grid defined by the `lats.npy` and `lons.npy` files (I believe those values came from the `t106` files) and onto daily frequency. 
+These are now in the format needed to make input files for Unet: (365,56,120), or (366,56,120) for leap years.
+
+## TCR-2 NO2
+
+- Directory on Animus: `emacdonald/unet/datafiles/TROPESS/`
+- Filename convention: `TROPESS_reanalysis_2hr_no2_sfc_20XX.nc` 
+    - where `20XX` is the year
+- Contains the variable:
+    - `no2`: Surface NOx emissions
+- Latitude extent: 24.112 to 58.878
+    - Resolution: 1.121483870967742 ± 0.0004997397866077013
+- Longitude extent: -126.0 to -59.625
+    - Resolution: 1.125
+- Daily time frequency
 
 To make the Unet files:
 inputfiles.py: combines data from the above sources. X input files are of size (364,56,120,9), dimensions (time,lat,lon,n_variables). The variables are ordered as follows:
