@@ -8,6 +8,7 @@ import json
 import warnings
 
 import unox.unox as unox
+from unox import verify as vfy
 import unox.data as udata
 from unox.plot_format import pad_extent
 
@@ -165,7 +166,7 @@ def make_y_input_file(
     # Assemble file path
     filepath = f'{emiss_dir}/{emiss_pre}{year}{emiss_post}'
     # Verify the path
-    filepath = unox.verify_path(filepath)
+    filepath = vfy.verify_path(filepath)
     # Load data for the specified year
     y_data = xr.load_dataset(filepath)
     # If level dimension present, sum across levels
@@ -562,7 +563,7 @@ def make_x_input_file(
     # Assemble the file path for the chemical reanalysis data
     chemra_filepath = f'{data_dir}/{chemra_path}{year}.nc'
     # Verify the path
-    chemra_filepath = unox.verify_path(chemra_filepath)
+    chemra_filepath = vfy.verify_path(chemra_filepath)
     # Load chemical reanalysis data
     # chemra = xr.load_dataset(chemra_filepath)
     chemra = xr.open_dataset(chemra_filepath)
@@ -618,7 +619,7 @@ def make_x_input_file(
         # Assemble the file path for the insitu data
         epa_filepath = f'{data_dir}/{insitu_path}{year}.csv'
         # Verify the path
-        epa_filepath = unox.verify_path(epa_filepath)
+        epa_filepath = vfy.verify_path(epa_filepath)
         # Combine chemical reanalysis and insitu data
         chemra = fill_w_insitu(chemra, epa_filepath)
     else:
@@ -643,7 +644,7 @@ def make_x_input_file(
         # Assemble the file path for the ERA5 variable
         era5_var_filepath = f'{data_dir}/{era5_path}/{year}{variable}.nc'
         # Verify the path
-        era5_var_filepath = unox.verify_path(era5_var_filepath)
+        era5_var_filepath = vfy.verify_path(era5_var_filepath)
         # Load the ERA5 variable dataset
         # Note: The variable name in the dataset is assumed to be the same as `variable`
         era5_var = xr.load_dataset(era5_var_filepath)
@@ -787,7 +788,7 @@ def fill_w_insitu(
     # Save the variable attributes
     var_s2_attrs = xr_dataset[var_s2].attrs
     # Verify the insitu file path
-    insitu_filepath = unox.verify_path(insitu_filepath)
+    insitu_filepath = vfy.verify_path(insitu_filepath)
     # Load the insitu data
     ## Specific to the EPA csv format
     insitu_data = pd.read_csv(insitu_filepath, parse_dates={'Date':['Date Local']}, index_col=['Date'], usecols=['Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'])

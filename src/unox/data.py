@@ -6,7 +6,8 @@ import os
 import re
 from datetime import datetime
 
-# from unox import unox
+from unox import unox
+from unox import verify as vfy
 
 # Define the default latitude and longitude extents for this project
 DEFAULT_LAT_MIN = 11
@@ -257,7 +258,7 @@ def print_latlon_info(
     # If a filepath is provided, verify the path and load the dataset
     if isinstance(xr_dataset, str):
         output_name = str(xr_dataset)
-        xr_dataset = unox.verify_path(xr_dataset)
+        xr_dataset = vfy.verify_path(xr_dataset)
         # If it is a csv, use custom function to load
         if xr_dataset.endswith('.csv'):
             xr_dataset = csv_to_xr(xr_dataset)
@@ -338,7 +339,7 @@ def load_dataset(
         The loaded xarray dataset.
     """
     # Verify the filepath
-    file_path = unox.verify_path(file_path)
+    file_path = vfy.verify_path(file_path)
     # If it is a csv, use custom function to load
     if file_path.endswith('.csv'):
         xr_dataset = csv_to_xr(file_path, **kwargs)
@@ -837,6 +838,7 @@ def restrict_domain(
     this_extent = get_extent(restricting_data)
 
     # Find indices of lats and lons that are in the restricting data
+    ## within 0.1 degrees of the 
     latmin = np.where(np.abs(lats-np.min(lat_r))<0.1)[0][0]
     latmax = np.where(np.abs(lats-np.max(lat_r))<0.1)[0][0] + 1
     lonmin = np.where(np.abs(lons-np.min(lon_r))<0.1)[0][0]
@@ -1409,7 +1411,7 @@ def csv_to_pd(
     2019-01-11	33.553056	-86.815	    14.500000
     """
     # Verify the filepath
-    csv_filepath = unox.verify_path(csv_filepath)
+    csv_filepath = vfy.verify_path(csv_filepath)
     # Verify the file is a CSV
     if not csv_filepath.lower().endswith('.csv'):
         raise ValueError("File must be a CSV.")

@@ -10,6 +10,7 @@ import json
 import os
 
 from unox import unox
+from unox import verify as vfy
 from unox import data as udata
 from unox import plot_format as uplt_fmt
 from unox.input import x_or_y_var, get_input_index
@@ -48,7 +49,7 @@ def plot_extent(
     # Check if xr_dataset is a file path or an xarray object
     if isinstance(xr_dataset, str):
         # If it's a file path, verify the file path
-        xr_dataset = unox.verify_path(xr_dataset)
+        xr_dataset = vfy.verify_path(xr_dataset)
         # Now open the dataset
         xr_dataset = xr.open_dataset(xr_dataset)
     # Verify the xr_dataset
@@ -102,7 +103,7 @@ def plot_lats_lons(
     # Check if xr_dataset is a file path or an xarray object
     if isinstance(xr_dataset, str):
         # If it's a file path, verify the file path
-        xr_dataset = unox.verify_path(xr_dataset)
+        xr_dataset = vfy.verify_path(xr_dataset)
         # Now open the dataset
         xr_dataset = xr.open_dataset(xr_dataset)
     # Verify the xr_dataset
@@ -184,7 +185,7 @@ def plot_nc_map(
     # Check if xr_dataset is a file path or an xarray object
     if isinstance(xr_dataset, str):
         # If it's a file path, verify the file path
-        xr_dataset = unox.verify_path(xr_dataset)
+        xr_dataset = vfy.verify_path(xr_dataset)
         # Now open the dataset
         xr_dataset = xr.open_dataset(xr_dataset)
     
@@ -1108,7 +1109,7 @@ def set_of_runs(
         if maps_or_comps not in ['maps', 'comps']:
             raise ValueError(f"(set_of_maps) `maps_or_comps` must be either 'maps' or 'comps'. Got {maps_or_comps}.")
     # Verify the set of runs exists
-    set_path = unox.verify_path(f"HPC_runs/{set_name}")
+    set_path = vfy.verify_path(f"HPC_runs/{set_name}")
     # Get a list of the runs in the set (the subdirectories of the set directory)
     runs_in_set = os.listdir(set_path)
     # Replace the year in `this_date` with the specified year
