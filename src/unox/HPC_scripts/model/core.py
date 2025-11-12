@@ -12,6 +12,20 @@ def build_Unet(
     input_shape,
     n_c_fltr=128,
 ):
+    """Build the Unet.
+
+    Constructs the architecture of the Unet model based on the given parameters.
+
+    Parameters
+    ----------
+    input_shape : tuple of int
+        The shape of the input (n_lat, n_lon, n_in_vars), where n_lat is the 
+        number of latitude grid cells, n_lon is the number of longitude grid
+        cells, and n_in_vars is the number of input variables.
+    n_c_fltr : int
+        The number of filters for the initial convolutional layer. 
+    """
+    inputs = Input( input_shape, name='model_input') # (None, 56, 120, 9)
 
     # Conv2D(filters, kernel_size, **kwargs)
     ## filters is the dimension of the output space, the number of filters in the convolution
