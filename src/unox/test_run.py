@@ -407,6 +407,8 @@ def predict_and_save(
 if input_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=1)
 elif input_fmt == 'nc':
+    # Create a blank list to add predictions to
+    pred_xr_arr = []
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
@@ -421,9 +423,38 @@ elif input_fmt == 'nc':
             )
             pred = unet.predict(x_test_list[0])
         else:
+            # Get the latitude and longitude values
+            lats = input_ds.lat.values
+            lons = input_ds.lon.values
             pred = unet.predict(x_test)
+            lat_r = lats
+            lon_r = lons
+        # Save the numpy array to file
         np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
+        # Add year to the list of predictions in the metadata dictionary
         output_metadata['pred_years']['stage1'].append(year)
+
+        # Select the data for the specified year
+        data_for_year = input_ds.sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
+        # Load the output to an xarray Dataset
+        this_year_pred_xr = xr.Dataset(
+            data_vars=dict(
+                # Squeeze the predictions array to reduce dimensions 
+                # from (364, n_lat, n_lon, 1) to (364, n_lat, n_lon)
+                nox_pred=(["time", "lat", "lon"], pred.squeeze())
+            ),
+            coords={
+                "time":data_for_year["time"],
+                "lat":lat_r, 
+                "lon":lon_r,
+            },
+        )
+        print('this_year_pred_xr:')
+        print(this_year_pred_xr)
+        pred_xr_arr.append(this_year_pred_xr)
+    # Concatenate the new data with the existing dataset along the time dimension
+    pred_xarray = xr.concat(pred_xr_arr, dim='time')
+    pred_xarray.to_netcdf(f"{savedir}predictions.nc")
 
 # xtest_files = x_files[14:]
 # 
@@ -439,7 +470,7 @@ elif input_fmt == 'nc':
 #    np.save(savedir+'stage1_output/ypred_' + y.split('/')[-1], pred)
 
 print('Done with stage 1')
-if not config_dict['stage_2']:
+if config_dict['stage_2'] == False:
     exit(0)
 
 ##################################################################
