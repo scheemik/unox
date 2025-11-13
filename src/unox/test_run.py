@@ -277,6 +277,7 @@ from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 # Build and compile the Unet
 
 unet = Unet()
+unet.build((56, 120, 9))
 opt = Adam(learning_rate=1e-5) 
 
 unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
