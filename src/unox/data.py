@@ -6,8 +6,7 @@ import os
 import re
 from datetime import datetime
 
-from unox import unox
-from unox import verify as vfy
+import verify as vfy
 
 # Define the default latitude and longitude extents for this project
 DEFAULT_LAT_MIN = 11
