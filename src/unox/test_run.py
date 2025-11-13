@@ -73,7 +73,7 @@ save_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
 split_value = 0.9
-trim_tl_grid = False
+trim_tl_grid = True
 
 ##################################################################
 from HPC_scripts.utils.data_split import data_split
@@ -266,7 +266,7 @@ if version == 0: # keras v2.9.0, tensorflow v2.9.2
 elif version == 1: # keras v3.10.0, tensorflow v2.17.0
     from HPC_scripts.utils.functions import r2_keras
     from HPC_scripts.utils.functions import msenonzero
-    if trim_tl_grid:
+    if False: #trim_tl_grid:
         from HPC_scripts.model.core_tl import Unet
     else:
         from HPC_scripts.model.core import Unet
@@ -277,7 +277,8 @@ from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 # Build and compile the Unet
 
 unet = Unet()
-unet.build((56, 120, 9))
+# unet.build((56, 120, 9))
+unet.build((35, 46, 9))
 opt = Adam(learning_rate=1e-5) 
 
 unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
