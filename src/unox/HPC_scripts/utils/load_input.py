@@ -9,7 +9,7 @@ def get_npy_from_netcdf(
     input_config,
     x_or_y=None,
     var=None,
-    ):
+):
     """ 
     Extract a numpy array for a specific year (and variable if requested) from a netcdf file.
 
@@ -67,6 +67,8 @@ def get_npy_from_netcdf(
             config_dict = json.load(file)
     else:
         raise TypeError(f'input_config must be a str or dict, got {type(input_config)}.')
+    # Apply the input configuration file
+    xr_dataset = apply_config(xr_dataset, config_dict)
     # Select the data for the specified year
     data_for_year = xr_dataset.sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
     if isinstance(var, type(None)):
@@ -120,6 +122,112 @@ def get_npy_from_netcdf(
         # Convert to numpy array
         data_array = data_for_year.to_numpy()
     return data_array
+
+def apply_config(
+    input_netcdf,
+    input_config,
+):
+    """Apply the conditions in the config to the netcdf.
+
+    Based on the parameters in the input configuration, modify the xarray in the 
+    input netcdf and return the resulting xarray dataset.
+
+    Parameters
+    ----------
+    netcdf : str or xr.Dataset
+        Path to the netcdf file or an xarray Dataset.
+    year : int
+        The year for which to extract the data.
+    input_config : str or dict
+        Path to the input configuration JSON file or a dictionary containing the configuration.
+
+    Returns
+    -------
+    prepped_dataset : xr.Dataset
+        The dataset from the input netcdf with the configuration rules applied.
+    """
+    # Verify argument types
+    if isinstance(input_netcdf, str):
+        # Verify the netcdf file path
+        # netcdf_filepath = unox.verify_path(input_netcdf)
+        # Load the netcdf file
+        xr_dataset = xr.load_dataset(input_netcdf)
+    elif isinstance(input_netcdf, xr.Dataset):
+        xr_dataset = input_netcdf
+    else:
+        raise TypeError(f'netcdf must be a file path (str) or an xarray.Dataset, got {type(netcdf)}.')
+    # Verify the dataset
+    # xr_dataset = udata.verify_dataset(xr_dataset)
+    # Verify the input config
+    if isinstance(input_config, type({})):
+        config_dict = input_config
+    elif isinstance(input_config, str):
+        # Verify the input config file path
+        input_config_path = input_config
+        if not os.path.isfile(input_config_path):
+            input_config_path = f"inputfiles/_input_configs/{input_config}.json"
+        # Load config file to a dictionary
+        with open(input_config_path, 'r') as file:
+            config_dict = json.load(file)
+    else:
+        raise TypeError(f'input_config must be a str or dict, got {type(input_config)}.')
+
+    # Trim the lat-lon extent of the dataset, if applicable
+    if 'grid_size' in config_dict:
+        # Find the grid size
+        grid_size = config_dict['grid_size']
+        # print('grid_size:', grid_size)
+        # Assumes there are two numbers: number of latitude cells, number of longitude cells
+        if not len(grid_size) == 2:
+            raise TypeError(f'Expected `grid_size` to have a length of 2. Got length of {len(grid_size)}: {grid_size}')
+        else:
+            n_lats = grid_size[0]
+            n_lons = grid_size[1]
+        # Get the length of the latitude and longitude dimensions in the dataset
+        xr_n_lats = xr_dataset.sizes['lat']
+        xr_n_lons = xr_dataset.sizes['lon']
+        # Ensure that the desired grid size is not larger than the available grid
+        if n_lats > xr_n_lats:
+            raise ValueError(f'Requested length of latitude grid ({n_lats}) cannot exceed length of latitude dimension in the given netcdf ({xr_n_lats}).')
+        if n_lons > xr_n_lons:
+            raise ValueError(f'Requested length of longitude grid ({n_lons}) cannot exceed length of longitude dimension in the given netcdf ({xr_n_lons}).')
+        # If the given xarray Dataset is already the specified size, return it immediately
+        if n_lats == xr_n_lats and n_lons == xr_n_lons:
+            return xr_dataset
+        ## Find indices to use when restricting available grid to desired size
+        # Get lat-lon extent of the xarray dataset
+        # xr_extent = udata.get_extent(xr_dataset)
+        lat_min = np.unique(xr_dataset.lat.min().values)[0]
+        lat_max = np.unique(xr_dataset.lat.max().values)[0]
+        lon_min = np.unique(xr_dataset.lon.min())[0]
+        lon_max = np.unique(xr_dataset.lon.max())[0]
+        xr_extent = (lat_min, lat_max, lon_min, lon_max)
+        # Find the centre coordinate based on that extent
+        xr_centre = (
+            (xr_extent[1]-xr_extent[0])/2+xr_extent[0], 
+            (xr_extent[3]-xr_extent[2])/2+xr_extent[2]
+        )
+        # Get the latitude and longitude values from the xarray Dataset
+        lats = xr_dataset['lat'].values
+        lons = xr_dataset['lon'].values
+        # Find the indices of lats and lons closest to the centre
+        c_idx_lat = (np.abs(lats-xr_centre[0])).argmin()
+        c_idx_lon = (np.abs(lons-xr_centre[1])).argmin()
+        # Calculate the start and stop indices of the trimmed grid for lat
+        min_idx_lat = int(c_idx_lat - np.floor(n_lats/2))
+        max_idx_lat = int(c_idx_lat + np.ceil(n_lats/2))
+        lats_tr = lats[min_idx_lat:max_idx_lat]
+        # Calculate the start and stop indices of the trimmed grid for lon
+        min_idx_lon = int(c_idx_lon - np.floor(n_lons/2))
+        max_idx_lon = int(c_idx_lon + np.ceil(n_lons/2))
+        lons_tr = lons[min_idx_lon:max_idx_lon]
+        # Trim the xarray Dataset to the specified grid size
+        xr_dataset = xr_dataset.isel(
+            lat = slice(min_idx_lat, max_idx_lat),
+            lon = slice(min_idx_lon, max_idx_lon),
+            drop=True,
+        )
+    return xr_dataset
 
 def apply_mask(
     xr_dataset,
