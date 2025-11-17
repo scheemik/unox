@@ -95,7 +95,7 @@ def get_npy_from_netcdf(
                 if this_var == 'lsm':
                     continue
                 # Get the numpy array for this variable
-                this_arr = get_npy_from_netcdf(data_for_year, year, config_dict, var=this_var)
+                this_arr, in_lats, in_lons = get_npy_from_netcdf(data_for_year, year, config_dict, var=this_var)
                 list_of_x_arrs.append(this_arr)
                 # print(f'\tLoaded {this_var} for year {year} with shape {this_arr.shape}')
             # Stack the arrays together along a new axis in last place
@@ -121,7 +121,7 @@ def get_npy_from_netcdf(
         data_for_year = data_for_year[var].dropna(dim='time', how='all')
         # Convert to numpy array
         data_array = data_for_year.to_numpy()
-    return data_array
+    return data_array, data_for_year['lat'].values, data_for_year['lon'].values
 
 def apply_config(
     input_netcdf,
