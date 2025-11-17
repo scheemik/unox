@@ -193,7 +193,8 @@ def plot_nc_map(
     # this_var.nox[0].plot()
 
     # Verify the xr_dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
+    # Squeeze to remove `var` dimension, if present
+    xr_dataset = udata.verify_dataset(xr_dataset).squeeze(drop=True)
     # Find the min and max lat and lon values
     this_extent = udata.get_extent(xr_dataset)
     # Enlarge the extent of the map by the given padding value
@@ -201,7 +202,9 @@ def plot_nc_map(
     # Select the time to plot
     if isinstance(avg_over, type(None)):
         # Take just that time slice
-        var_sel_time = xr_dataset[var].sel(time=datetime)
+        # Use squeeze to drop `time` dimension as sel() only automatically drops scalar
+        # dimensions, which `time` is not
+        var_sel_time = xr_dataset[var].sel(time=datetime).squeeze(drop=True)
         # Format a string for the title
         overall_title = var_string + ' on ' + datetime.split('T')[0]
     else:
