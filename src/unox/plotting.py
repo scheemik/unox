@@ -136,8 +136,6 @@ def plot_lats_lons(
 def plot_nc_map(
     xr_dataset='../datafiles/nox_2019_t106_US.nc',
     var='nox',
-    var_string='NOx emissions',
-    var_units='kg/m2/s',
     datetime='2019-01-01T00:00:00',
     avg_over=None,
     cmap=pplt.Colormap('Fire'),
@@ -154,10 +152,7 @@ def plot_nc_map(
         Path to the netCDF data file.
     var : str
         The name of the variable to plot from the netCDF file.
-    var_string : str
-        The string to use for the variable in the plot title and colorbar label.
-    var_units : str
-        The units of the variable to use in the colorbar label.
+        Default is `nox`.
     datetime : str
         Date and time to select from the data file.
     avg_over : str, numpy.timedelta64, or None
@@ -189,25 +184,27 @@ def plot_nc_map(
         xr_dataset = vfy.verify_path(xr_dataset)
         # Now open the dataset
         xr_dataset = xr.open_dataset(xr_dataset)
-    
-    # Simplest way to plot the data
-    # this_var.nox[0].plot()
-
     # Verify the xr_dataset
     # Squeeze to remove `var` dimension, if present
     xr_dataset = udata.verify_dataset(xr_dataset).squeeze(drop=True)
+
+    # Get the long name and units of the specified variable for plot labels
+    var_name = xr_dataset[var].long_name
+    var_unit = xr_dataset[var].units
+
     # Find the min and max lat and lon values
     this_extent = udata.get_extent(xr_dataset)
     # Enlarge the extent of the map by the given padding value
     p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_fmt.pad_extent(this_extent, padding)
+
     # Select the time to plot
     if isinstance(avg_over, type(None)):
         # Take just that time slice
         # Use squeeze to drop `time` dimension as sel() only automatically drops scalar
         # dimensions, which `time` is not
         var_sel_time = xr_dataset[var].sel(time=datetime).squeeze(drop=True)
-        # Format a string for the title
-        overall_title = var_string + ' on ' + datetime.split('T')[0]
+        # Format a string for the title (just the date)
+        overall_title = datetime.split('T')[0]
     else:
         # Add the increment over which to average to the datetime
         try:
@@ -219,7 +216,7 @@ def plot_nc_map(
         # Get the value and unit of the averaging
         avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
         # Format a string for the title
-        overall_title = var_string + ' averaged over ' + str(avg_over_num) + ' ' + avg_over_unit + ' from ' + datetime.split('T')[0]
+        overall_title = f"Averaged over {avg_over_num} {avg_over_unit} from {datetime.split('T')[0]}"
 
     # Find the min and max lat and lon values
     lat_min, lat_max, lon_min, lon_max = udata.get_extent(var_sel_time, check_time=False)
@@ -243,7 +240,8 @@ def plot_nc_map(
         labels=True, gridminor=True
     )
     # Add a colorbar
-    fig.colorbar(this_var, loc='b', label=var_string + ' (' + var_units + ')')
+    clrbar_label = f"{var_name} ({var_unit})"
+    fig.colorbar(this_var, loc='b', label=clrbar_label)
     # Return the figure
     return fig
 
