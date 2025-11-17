@@ -73,7 +73,7 @@ save_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
 split_value = 0.9
-trim_tl_grid = True
+# trim_tl_grid = False
 
 ##################################################################
 from HPC_scripts.utils.data_split import data_split
@@ -219,25 +219,25 @@ elif input_fmt == 'nc':
         ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
         output_metadata['train_years']['stage1'].append(year)
     # If trimming to the tl grid
-    if trim_tl_grid:
-        # lats, lons = udata.get_lats_lons(input_ds)
-        # Get the latitude and longitude values
-        lats = input_ds.lat.values
-        lons = input_ds.lon.values
-        tl_grid = xr.open_dataset('datafiles/tl_grid.nc')
-        from data import restrict_domain
-        xtrain_list, lat_r, lon_r = restrict_domain(
-            xtrain_list,
-            lats,
-            lons,
-            tl_grid,
-        )
-        ytrain_list, lat_r, lon_r = restrict_domain(
-            ytrain_list,
-            lats,
-            lons,
-            tl_grid,
-        )
+    # if trim_tl_grid:
+    #     # lats, lons = udata.get_lats_lons(input_ds)
+    #     # Get the latitude and longitude values
+    #     lats = input_ds.lat.values
+    #     lons = input_ds.lon.values
+    #     tl_grid = xr.open_dataset('datafiles/tl_grid.nc')
+    #     from data import restrict_domain
+    #     xtrain_list, lat_r, lon_r = restrict_domain(
+    #         xtrain_list,
+    #         lats,
+    #         lons,
+    #         tl_grid,
+    #     )
+    #     ytrain_list, lat_r, lon_r = restrict_domain(
+    #         ytrain_list,
+    #         lats,
+    #         lons,
+    #         tl_grid,
+    #     )
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -283,6 +283,7 @@ opt = Adam(learning_rate=1e-5)
 
 unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
 unet.summary()
+exit(0)
 
 ##################################################################
 
@@ -416,7 +417,7 @@ elif input_fmt == 'nc':
         print(f'Generating predictions for year: {year}')
         x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
         # If trimming to the tl grid
-        if trim_tl_grid:
+        if False:#trim_tl_grid:
             x_test_list, lat_r, lon_r = restrict_domain(
                 [x_test],
                 lats,
@@ -503,19 +504,19 @@ elif input_fmt == 'nc':
         ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
         output_metadata['train_years']['stage2'].append(year)
     # If trimming to the tl grid
-    if trim_tl_grid:
-        xtrain_list, lat_r, lon_r = restrict_domain(
-            xtrain_list,
-            lats,
-            lons,
-            tl_grid,
-        )
-        ytrain_list, lat_r, lon_r = restrict_domain(
-            ytrain_list,
-            lats,
-            lons,
-            tl_grid,
-        )
+    # if trim_tl_grid:
+    #     xtrain_list, lat_r, lon_r = restrict_domain(
+    #         xtrain_list,
+    #         lats,
+    #         lons,
+    #         tl_grid,
+    #     )
+    #     ytrain_list, lat_r, lon_r = restrict_domain(
+    #         ytrain_list,
+    #         lats,
+    #         lons,
+    #         tl_grid,
+    #     )
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -587,7 +588,7 @@ elif input_fmt == 'nc':
         print(f'Generating predictions for year: {year}')
         x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
         # If trimming to the tl grid
-        if trim_tl_grid:
+        if False:#trim_tl_grid:
             x_test_list, lat_r, lon_r = restrict_domain(
                 [x_test],
                 lats,
