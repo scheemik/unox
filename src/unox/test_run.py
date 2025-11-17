@@ -73,7 +73,6 @@ save_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
 split_value = 0.9
-# trim_tl_grid = False
 
 ##################################################################
 from HPC_scripts.utils.data_split import data_split
@@ -215,30 +214,14 @@ elif input_fmt == 'nc':
     ytrain_list = []
     # If before the split year, add x and y data to train lists
     for year in range(min(years), split_year):
-        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x'))
-        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
+        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
+        xtrain_list.append(this_x_train_arr)
+        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y')
+        ytrain_list.append(this_y_train_arr)
         output_metadata['train_years']['stage1'].append(year)
-    # If trimming to the tl grid
-    # if trim_tl_grid:
-    #     # lats, lons = udata.get_lats_lons(input_ds)
-    #     # Get the latitude and longitude values
-    #     lats = input_ds.lat.values
-    #     lons = input_ds.lon.values
-    #     tl_grid = xr.open_dataset('datafiles/tl_grid.nc')
-    #     from data import restrict_domain
-    #     xtrain_list, lat_r, lon_r = restrict_domain(
-    #         xtrain_list,
-    #         lats,
-    #         lons,
-    #         tl_grid,
-    #     )
-    #     ytrain_list, lat_r, lon_r = restrict_domain(
-    #         ytrain_list,
-    #         lats,
-    #         lons,
-    #         tl_grid,
-    #     )
-    print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
+    # Check the shapes of the input arrays
+    x_input_shape = xtrain_list[0].shape
+    print(f'Shape of first xtrain file: {x_input_shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
     xtrain = np.concatenate(xtrain_list, axis=0)
@@ -266,10 +249,7 @@ if version == 0: # keras v2.9.0, tensorflow v2.9.2
 elif version == 1: # keras v3.10.0, tensorflow v2.17.0
     from HPC_scripts.utils.functions import r2_keras
     from HPC_scripts.utils.functions import msenonzero
-    if False: #trim_tl_grid:
-        from HPC_scripts.model.core_tl import Unet
-    else:
-        from HPC_scripts.model.core import Unet
+    from HPC_scripts.model.core import Unet
 from tensorflow.keras.optimizers import Adam
 from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 
@@ -277,13 +257,13 @@ from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 # Build and compile the Unet
 
 unet = Unet()
-# unet.build((56, 120, 9))
-unet.build((35, 46, 9))
+# The input shape for `build` should be [lat, lon, var]
+# i.e., omit the `time` dimension of `x_input_shape`
+unet.build(x_input_shape[1:])
 opt = Adam(learning_rate=1e-5) 
 
 unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
 unet.summary()
-exit(0)
 
 ##################################################################
 
@@ -410,28 +390,25 @@ def predict_and_save(
 if input_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=1)
 elif input_fmt == 'nc':
+    # Get the long name and units of the y variable to put in the new xarray
+    y_var = input_ds.attrs['y_var']
+    y_var_name = input_ds[y_var].long_name
+    y_var_unit = input_ds[y_var].units
+    # Create a new variable name and long name
+    pred_var = f"{y_var}_pred"
+    pred_var_name = f"Predicted {y_var_name}"
     # Create a blank list to add predictions to
     pred_xr_arr = []
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
-        x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
-        # If trimming to the tl grid
-        if False:#trim_tl_grid:
-            x_test_list, lat_r, lon_r = restrict_domain(
-                [x_test],
-                lats,
-                lons,
-                tl_grid,
-            )
-            pred = unet.predict(x_test_list[0])
-        else:
-            # Get the latitude and longitude values
-            lats = input_ds.lat.values
-            lons = input_ds.lon.values
-            pred = unet.predict(x_test)
-            lat_r = lats
-            lon_r = lons
+        x_test, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
+        # Get the latitude and longitude values
+        lats = input_ds.lat.values
+        lons = input_ds.lon.values
+        pred = unet.predict(x_test)
+        lat_r = lats
+        lon_r = lons
         # Save the numpy array to file
         np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
         # Add year to the list of predictions in the metadata dictionary
@@ -444,12 +421,12 @@ elif input_fmt == 'nc':
             data_vars=dict(
                 # Squeeze the predictions array to reduce dimensions 
                 # from (364, n_lat, n_lon, 1) to (364, n_lat, n_lon)
-                nox_pred=(["time", "lat", "lon"], pred.squeeze())
+                pred_temp=(["time", "lat", "lon"], pred.squeeze())
             ),
             coords={
                 "time":data_for_year["time"],
-                "lat":lat_r, 
-                "lon":lon_r,
+                "lat":in_lats, 
+                "lon":in_lons,
             },
         )
         print('this_year_pred_xr:')
@@ -457,6 +434,10 @@ elif input_fmt == 'nc':
         pred_xr_arr.append(this_year_pred_xr)
     # Concatenate the new data with the existing dataset along the time dimension
     pred_xarray = xr.concat(pred_xr_arr, dim='time')
+    # Rename prediction variable and add attributes
+    pred_xarray = pred_xarray.rename({'pred_temp': pred_var})
+    pred_xarray[pred_var].attrs = {'long_name': pred_var_name, 'units': y_var_unit}
+    # Save the xarray to a file
     pred_xarray.to_netcdf(f"{savedir}predictions.nc")
 
 # xtest_files = x_files[14:]
@@ -500,23 +481,11 @@ elif input_fmt == 'nc':
     # If before the split year, add x and y data to train lists
     stage_2_cutoff=2013
     for year in range(stage_2_cutoff+1, split_year):
-        xtrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x'))
-        ytrain_list.append(get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y'))
+        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
+        xtrain_list.append(this_x_train_arr)
+        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y')
+        ytrain_list.append(this_y_train_arr)
         output_metadata['train_years']['stage2'].append(year)
-    # If trimming to the tl grid
-    # if trim_tl_grid:
-    #     xtrain_list, lat_r, lon_r = restrict_domain(
-    #         xtrain_list,
-    #         lats,
-    #         lons,
-    #         tl_grid,
-    #     )
-    #     ytrain_list, lat_r, lon_r = restrict_domain(
-    #         ytrain_list,
-    #         lats,
-    #         lons,
-    #         tl_grid,
-    #     )
     print(f'Shape of first xtrain file: {xtrain_list[0].shape}')
     print(f'Shape of first ytrain file: {ytrain_list[0].shape}')
     # Concatenate training data
@@ -586,19 +555,12 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
-        x_test = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
-        # If trimming to the tl grid
-        if False:#trim_tl_grid:
-            x_test_list, lat_r, lon_r = restrict_domain(
-                [x_test],
-                lats,
-                lons,
-                tl_grid,
-            )
-            pred = unet.predict(x_test_list[0])
-        else:
-            pred = unet.predict(x_test)
+        x_test, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
+        # Make the predictions
+        pred = unet.predict(x_test)
+        # Save out the numpy array to file
         np.save(savedir+f'stage2_output/pred_X_{year}.npy', pred)
+        # Add year to the list of predictions in the metadata dictionary
         output_metadata['pred_years']['stage2'].append(year)
 
 # Save the output metadata dictionary to file
