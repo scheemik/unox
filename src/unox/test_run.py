@@ -406,9 +406,8 @@ elif input_fmt == 'nc':
         # Get the latitude and longitude values
         lats = input_ds.lat.values
         lons = input_ds.lon.values
+        # Make the predictions
         pred = unet.predict(x_test)
-        lat_r = lats
-        lon_r = lons
         # Save the numpy array to file
         np.save(savedir+f'stage1_output/pred_X_{year}.npy', pred)
         # Add year to the list of predictions in the metadata dictionary
@@ -429,8 +428,6 @@ elif input_fmt == 'nc':
                 "lon":in_lons,
             },
         )
-        print('this_year_pred_xr:')
-        print(this_year_pred_xr)
         pred_xr_arr.append(this_year_pred_xr)
     # Concatenate the new data with the existing dataset along the time dimension
     pred_xarray = xr.concat(pred_xr_arr, dim='time')
@@ -552,6 +549,11 @@ unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xva
 if input_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=2)
 elif input_fmt == 'nc':
+    # Create a new variable name and long name
+    pred_var = f"{y_var}_pred_s2"
+    pred_var_name = f"Predicted {y_var_name} (stage 2)"
+    # Create a blank list to add predictions to
+    pred_xr_arr_s2 = []
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f'Generating predictions for year: {year}')
@@ -562,6 +564,34 @@ elif input_fmt == 'nc':
         np.save(savedir+f'stage2_output/pred_X_{year}.npy', pred)
         # Add year to the list of predictions in the metadata dictionary
         output_metadata['pred_years']['stage2'].append(year)
+
+        # Select the data for the specified year
+        data_for_year = input_ds.sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
+        # Load the output to an xarray Dataset
+        this_year_pred_xr = xr.Dataset(
+            data_vars=dict(
+                # Squeeze the predictions array to reduce dimensions 
+                # from (364, n_lat, n_lon, 1) to (364, n_lat, n_lon)
+                pred_temp=(["time", "lat", "lon"], pred.squeeze())
+            ),
+            coords={
+                "time":data_for_year["time"],
+                "lat":in_lats, 
+                "lon":in_lons,
+            },
+        )
+        pred_xr_arr_s2.append(this_year_pred_xr)
+    # Concatenate the new data with the existing dataset along the time dimension
+    pred_xarray_s2 = xr.concat(pred_xr_arr_s2, dim='time')
+    # Rename prediction variable and add attributes
+    pred_xarray_s2 = pred_xarray_s2.rename({'pred_temp': pred_var})
+    pred_xarray_s2[pred_var].attrs = {'long_name': pred_var_name, 'units': y_var_unit}
+    # Add the stage 2 predictions to the stage 1 xarray
+    pred_xarray[pred_var] = pred_xarray_s2[pred_var]
+    # Merge the stage 2 predictions into the stage 1 xarray
+    # pred_xarray.merge(pred_xarray_s2)
+    # Save the xarray to a file
+    pred_xarray.to_netcdf(f"{savedir}predictions.nc")
 
 # Save the output metadata dictionary to file
 print('output_metadata:', output_metadata)
