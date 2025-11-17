@@ -141,7 +141,7 @@ def plot_nc_map(
     datetime='2019-01-01T00:00:00',
     avg_over=None,
     cmap=pplt.Colormap('Fire'),
-    cbar_max=1.2e-10,
+    cbar_max=None,
     padding=0.1,
     ):
     """Plots a map of the 'var' data in a netCDF.
@@ -166,7 +166,8 @@ def plot_nc_map(
     cmap : matplotlib.colors.Colormap
         The colormap to use for the plot. Default is pplt.cm.Fire.
     cbar_max : float
-        Maximum value for the colorbar.
+        Maximum value for the colorbar. When `None`, the colorbar max is set to the max value to plot.
+        Default is `None`.
     padding : float
         The padding (in a fraction of total extent) to add to the extent of the map. 
         Default is 0.1 degrees.
@@ -227,6 +228,11 @@ def plot_nc_map(
     axs = fig.subplots(nrows=1, proj='cyl')
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
+    # Get the maximum value for the colorbar
+    if isinstance(cbar_max, type(None)):
+        cbar_max = var_sel_time.max()
+        cbar_max = cbar_max.values
+        cbar_max = np.unique(cbar_max)[0]
     # Plot the data
     this_var = axs.pcolorfast(var_sel_time, vmin=0, vmax=cbar_max)
     # Format the map
