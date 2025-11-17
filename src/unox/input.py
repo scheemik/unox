@@ -1164,6 +1164,7 @@ def make_input_metadata_file(
 def make_input_config(
     config_name,
     input_set = 'no2_sample_input',
+    grid_size = [56, 120],
     x_vars = [
         'no2',
         'no2_tm1',
@@ -1179,8 +1180,8 @@ def make_input_config(
     stage_2_cutoff = 2013,
     lsm_vars = [
         # 'nox',
-        'no2',
-        'no2_tm1',
+        # 'no2',
+        # 'no2_tm1',
         # 'no2_s2',
         # 'no2_s2_tm1',
         # 'u10',
@@ -1202,7 +1203,7 @@ def make_input_config(
         # 'blh',
         # 'sp',
         # 'skt',
-        't2m',
+        # 't2m',
         # 'ssrd',
     ],
     overwrite=False,
@@ -1218,6 +1219,9 @@ def make_input_config(
     input_set : str or xr.Dataset, optional
         Directory inside `inputfiles/` where the dataset is found, or the xarray Dataset.
         Default is 'no2_sample_input'.
+    grid_size : list of int, optional
+        The number of grid cells to have in [latitude, longitude] when running the Unet model.
+        Default is [56, 120].
     x_vars : list of str, optional
         List of variable names to be used as input features for the model.
         Default is a list of common meteorological and chemical variables.
@@ -1255,6 +1259,8 @@ def make_input_config(
         xr_dataset = input_set
     else:
         raise TypeError(f"input_set must be a string or xarray.Dataset. Got type: {type(input_set)}")
+    if not isinstance(grid_size, list):
+        raise TypeError(f"grid_size must be a list of integers. Got type: {type(grid_size)}")
     if not isinstance(x_vars, list):
         raise TypeError(f"x_vars must be a list of strings. Got type: {type(x_vars)}")
     if not isinstance(stage_2, bool):
@@ -1269,6 +1275,25 @@ def make_input_config(
         raise TypeError(f"overwrite must be a boolean. Got type: {type(overwrite)}")
     # Verify the dataset
     xr_dataset = udata.verify_dataset(xr_dataset)
+    # Verify that grid_size has exactly 2 integers
+    if not len(grid_size) == 2:
+        raise TypeError(f'Expected `grid_size` to have a length of 2. Got length of {len(grid_size)}: {grid_size}')
+    else:
+        if isinstance(grid_size[0], int):
+            n_lats = grid_size[0]
+        else:
+            raise TypeError(f"Number of latitudes in `grid_size` must be an integer. Got type: {type(grid_size[0])}")
+        if isinstance(grid_size[1], int):
+            n_lons = grid_size[1]
+        else:
+            raise TypeError(f"Number of longitudes in `grid_size` must be an integer. Got type: {type(grid_size[1])}")
+    # Verify that `grid_size` is not larger than the lat-lon grid in xr_dataset
+    xr_n_lats = xr_dataset.sizes['lat']
+    xr_n_lons = xr_dataset.sizes['lon']
+    if n_lats > xr_n_lats:
+        raise ValueError(f'Requested length of latitude grid ({n_lats}) cannot exceed length of latitude dimension in the given netcdf ({xr_n_lats}).')
+    if n_lons > xr_n_lons:
+        raise ValueError(f'Requested length of longitude grid ({n_lons}) cannot exceed length of longitude dimension in the given netcdf ({xr_n_lons}).')
     # Verify that all x_vars are in the dataset
     for var in x_vars:
         udata.verify_var(xr_dataset, var)
@@ -1289,6 +1314,7 @@ def make_input_config(
     # Build the dictionary
     config_dict = {
         'input_set': input_set,
+        'grid_size': grid_size,
         'x_vars': x_vars,
         'stage_2': stage_2,
         'stage_2_cutoff': stage_2_cutoff,
