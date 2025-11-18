@@ -43,10 +43,6 @@ try:
     os.mkdir(f"{savedir}checkpts/")
 except FileExistsError:
     print(f"\t\tcheckpts/ exists")
-# Write the config dictionary to a json file in the savedir
-if not savedir in config_path:
-    with open(f"{savedir}input_config.json", 'w') as file:
-        file.write(json.dumps(config_dict, indent=4))
 
 # Load second input argument, if it exists: the config file to use
 try:
@@ -67,6 +63,10 @@ if not os.path.exists(config_path):
 with open(f"{config_path}", 'r') as file:
     config_dict = json.load(file)
     inputfiles = config_dict['input_set']
+# Write the config dictionary to a json file in the savedir
+if not savedir in config_path:
+    with open(f"{savedir}input_config.json", 'w') as file:
+        file.write(json.dumps(config_dict, indent=4))
 
 # Load third input argument, if it exists: the version of the code to use
 try:
