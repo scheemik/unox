@@ -594,6 +594,10 @@ elif input_fmt == 'nc':
     pred_xarray[pred_var] = pred_xarray_s2[pred_var]
     # Merge the stage 2 predictions into the stage 1 xarray
     # pred_xarray.merge(pred_xarray_s2)
+    # Copy over the attributes for the latitude and longitude
+    for coord in ['lat', 'lon']:
+        for this_attr in data_for_year[coord].attrs.keys():
+            pred_xarray[coord].attrs[this_attr] = data_for_year[coord].attrs[this_attr]
     # Save the xarray to a file
     pred_xarray.to_netcdf(f"{savedir}predictions.nc")
 
