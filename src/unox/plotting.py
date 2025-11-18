@@ -136,7 +136,7 @@ def plot_lats_lons(
 def plot_nc_map(
     xr_dataset='../datafiles/nox_2019_t106_US.nc',
     var='nox',
-    datetime='2019-01-01T00:00:00',
+    datetime='2019-01-02T00:00:00',
     avg_over=None,
     cmap=pplt.Colormap('Fire'),
     cbar_max=None,
@@ -1058,7 +1058,7 @@ def set_of_runs(
     set_name,
     year,
     stage=1,
-    this_date='2019-01-01',
+    this_date='2019-01-02',
     avg_over=None,
     restrict_lat_lon_to=None,
     clr_bar_scale=0.5,
