@@ -434,6 +434,10 @@ elif input_fmt == 'nc':
     # Rename prediction variable and add attributes
     pred_xarray = pred_xarray.rename({'pred_temp': pred_var})
     pred_xarray[pred_var].attrs = {'long_name': pred_var_name, 'units': y_var_unit}
+    # Copy over the attributes for the latitude and longitude
+    for coord in ['lat', 'lon']:
+        for this_attr in data_for_year[coord].attrs.keys():
+            pred_xarray[coord].attrs[this_attr] = data_for_year[coord].attrs[this_attr]
     # Save the xarray to a file
     pred_xarray.to_netcdf(f"{savedir}predictions.nc")
 
