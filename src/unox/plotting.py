@@ -188,6 +188,84 @@ def plot_nc_map(
     # Squeeze to remove `var` dimension, if present
     xr_dataset = udata.verify_dataset(xr_dataset).squeeze(drop=True)
 
+    # Create the figure
+    fig = pplt.figure(refwidth=10)
+    axs = fig.subplots(nrows=1, proj='cyl')
+    # Select medium resolution for features such as coastlines
+    pplt.rc.reso = 'med' 
+    
+    # Add the plot to the axis
+    this_var, clrbar_label = nc_map(
+        axs, 
+        xr_dataset, 
+        var, 
+        datetime,
+        avg_over,
+        title_fmt='date',
+        cmap=cmap,
+        cbar_max=cbar_max,
+        padding=padding,
+    )
+    # Add a colorbar
+    fig.colorbar(this_var, loc='b', label=clrbar_label)
+    # Return the figure
+    return fig
+
+def nc_map(
+    ax,
+    xr_dataset,
+    var,
+    datetime,
+    avg_over=None,
+    title_fmt='date',
+    cmap=pplt.Colormap('Fire'),
+    cbar_max=None,
+    padding=0.1,
+    ):
+    """Plots a map of the 'var' data in a netCDF.
+
+    Creates a map of the 'var' data on a map using the provided netCDF file.
+
+    Parameters
+    ----------
+    xr_dataset : str or xarray.Dataset or xarray.DataArray
+        Path to the netCDF data file.
+    var : str
+        The name of the variable to plot from the netCDF file.
+        Default is `nox`.
+    datetime : str
+        Date and time to select from the data file.
+    avg_over : str, numpy.timedelta64, or None
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
+    cmap : matplotlib.colors.Colormap
+        The colormap to use for the plot. Default is pplt.cm.Fire.
+    cbar_max : float
+        Maximum value for the colorbar. When `None`, the colorbar max is set to the max value to plot.
+        Default is `None`.
+    padding : float
+        The padding (in a fraction of total extent) to add to the extent of the map. 
+        Default is 0.1 degrees.
+    
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+    
+    Examples
+    --------
+    >>> import xarray as xr
+    >>> this_dataset = xr.open_dataset('../datafiles/sample_data/nox_2019_t106_US.nc')
+    >>> fig = plot_nc_map(xr_dataset=this_dataset)
+    """
+    # Verify argument types
+    if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
+        raise TypeError(f"(nc_map) `xr_dataset` must be an xarray Dataset or DataArray. Got type: {type(xr_dataset)}.")
+    # Verify the xr_dataset
+    xr_dataset = udata.verify_dataset(xr_dataset)
+    # Verify the variable is in xr_dataset
+    udata.verify_var(xr_dataset, var)
+
     # Get the long name and units of the specified variable for plot labels
     var_name = xr_dataset[var].long_name
     var_unit = xr_dataset[var].units
@@ -203,8 +281,11 @@ def plot_nc_map(
         # Use squeeze to drop `time` dimension as sel() only automatically drops scalar
         # dimensions, which `time` is not
         var_sel_time = xr_dataset[var].sel(time=datetime).squeeze(drop=True)
-        # Format a string for the title (just the date)
-        overall_title = datetime.split('T')[0]
+        # Format a string for the title
+        if title_fmt == 'date':
+            overall_title = datetime.split('T')[0]
+        else:
+            overall_title = var_name
     else:
         # Add the increment over which to average to the datetime
         try:
@@ -216,34 +297,31 @@ def plot_nc_map(
         # Get the value and unit of the averaging
         avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
         # Format a string for the title
-        overall_title = f"Averaged over {avg_over_num} {avg_over_unit} from {datetime.split('T')[0]}"
+        if title_fmt == 'date':
+            overall_title = f"Averaged over {avg_over_num} {avg_over_unit} from {datetime.split('T')[0]}"
+        else:
+            overall_title = var_name
 
     # Find the min and max lat and lon values
-    lat_min, lat_max, lon_min, lon_max = udata.get_extent(var_sel_time, check_time=False)
-    # Create the figure
-    fig = pplt.figure(refwidth=10)
-    axs = fig.subplots(nrows=1, proj='cyl')
-    # Select medium resolution for features such as coastlines
-    pplt.rc.reso = 'med' 
+    # lat_min, lat_max, lon_min, lon_max = udata.get_extent(var_sel_time, check_time=False)
     # Get the maximum value for the colorbar
     if isinstance(cbar_max, type(None)):
         cbar_max = var_sel_time.max()
         cbar_max = cbar_max.values
         cbar_max = np.unique(cbar_max)[0]
     # Plot the data
-    this_var = axs.pcolorfast(var_sel_time, vmin=0, vmax=cbar_max)
+    this_var = ax.pcolorfast(var_sel_time, vmin=0, vmax=cbar_max)
     # Format the map
-    axs.format(
+    ax.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
         suptitle=overall_title,
         latlines=10, lonlines=10, coast=True,
         labels=True, gridminor=True
     )
-    # Add a colorbar
+    # Assemble colorbar label
     clrbar_label = f"{var_name} ({var_unit})"
-    fig.colorbar(this_var, loc='b', label=clrbar_label)
-    # Return the figure
-    return fig
+    # Return the axis plot and colorbar label
+    return this_var, clrbar_label
 
 def plot_npy_map(
     this_fig,
