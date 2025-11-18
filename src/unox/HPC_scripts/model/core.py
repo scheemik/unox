@@ -42,7 +42,6 @@ def build_Unet(
     c1 = Conv2D(n_c_fltr*2, k_size, activation='softplus', padding='same', name='Block1_Conv2') (c1) # (None, 56, 120, 256)
     # Calculate the shape of layer c1
     c1_shape = (input_shape[0], input_shape[1], n_c_fltr*2)
-    print('c1_shape:', c1_shape)
     # MaxPooling2D(pool_size, **kwargs)
     p1 = MaxPooling2D(p_size, name='Block1_MaxPool', padding='same') (c1) # (None, 28, 60, 256)
 
@@ -51,7 +50,6 @@ def build_Unet(
     c2 = Conv2D(n_c_fltr*4, k_size, activation='softplus', padding='same', name='Block2_Conv2') (c2) # (None, 28, 60, 512)
     # Calculate the shape of layer c2
     c2_shape = (int(math.ceil(c1_shape[0]/2)), int(math.ceil(c1_shape[1]/2)), n_c_fltr*4)
-    print('c2_shape:', c2_shape)
     p2 = MaxPooling2D(p_size, name='Block2_MaxPool', padding='same') (c2) # (None, 14, 30, 512)
 
     ### Block 3
@@ -59,7 +57,6 @@ def build_Unet(
     c3 = Conv2D(n_c_fltr*8, k_size, activation='softplus', padding='same', name='Block3_Conv2') (c3) # (None, 14, 30, 1024)
     # Calculate the shape of layer c3
     c3_shape = (int(math.ceil(c2_shape[0]/2)), int(math.ceil(c2_shape[1]/2)), n_c_fltr*8)
-    print('c3_shape:', c3_shape)
     p3 = MaxPooling2D(p_size, name='Block3_MaxPool', padding='same') (c3) # (None, 7, 15, 1024)
 
     ### Block 4
@@ -67,13 +64,11 @@ def build_Unet(
     c4 = Conv2D(n_c_fltr*8, k_size, activation='softplus', padding='same', name='Block4_Conv2') (c4) # (None, 7, 15, 1024)
     # Calculate the shape of layer c4
     c4_shape = (int(math.ceil(c3_shape[0]/2)), int(math.ceil(c3_shape[1]/2)), n_c_fltr*8)
-    print('c4_shape:', c4_shape)
 
     # Prepare layer for LSTM cells
     c4 = Permute((3, 1, 2), name='Block4_Permute1') (c4) # (None, 1024, 7, 15)
     # Stack the "lat" and "lon" dimensions by combining them
     c4_reshape = c4_shape[0] * c4_shape[1]
-    print('c4_reshape:', c4_reshape)
     c4 = Reshape((-1, c4_reshape), name='Block4_Reshape') (c4) # (None, 1024, 105=7*15)
     f4 = Permute((2, 1), name='Block4_Permute2') (c4) # (None, 105, 1024)
 
@@ -91,7 +86,6 @@ def build_Unet(
     u5_cropped = Lambda(lambda x: tf.slice(x, [0, 0, 0, 0], [-1, c3_shape[0], c3_shape[1], -1]), output_shape=(c3_shape[0], c3_shape[1], n_c_fltr*4))(u5) # (None, 14, 30, 512)
     # Start 1/4 of the way through each dimension, such that you crop out half the entries, but all along the edges
     c2_crop_idx = [int(c2_shape[0]/4), int(c2_shape[1]/4)]
-    print('c2_crop_idx:',c2_crop_idx)
     c2_cropped = Lambda(lambda x: tf.slice(x, [0, c2_crop_idx[0], c2_crop_idx[1], 0], [-1, c3_shape[0], c3_shape[1], -1]), output_shape=(c3_shape[0], c3_shape[1], n_c_fltr*4))(c2) # (None, 14, 30, 512)
     # Residual learning connection
     # A `Concatenate` layer requires inputs with matching shapes except for the concatenation axis.
@@ -104,7 +98,6 @@ def build_Unet(
     u6_cropped = Lambda(lambda x: tf.slice(x, [0, 0, 0, 0], [-1, c2_shape[0], c2_shape[1], -1]))(u6) # (None, 28, 60, 256)
     # Start 1/4 of the way through each dimension, such that you crop out half the entries, but all along the edges
     c1_crop_idx = [int(c1_shape[0]/4), int(c1_shape[1]/4)]
-    print('c1_crop_idx:',c1_crop_idx)
     c1_cropped = Lambda(lambda x: tf.slice(x, [0, c1_crop_idx[0], c1_crop_idx[1], 0], [-1, c2_shape[0], c2_shape[1], -1]))(c1) # (None, 28, 60, 256)
     # Residual learning connection
     u6_comb = concatenate([u6_cropped, c2, c1_cropped]) # (None, 28, 60, 1024)
