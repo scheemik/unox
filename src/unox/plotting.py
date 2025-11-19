@@ -314,7 +314,7 @@ def nc_map(
     # Format the map
     ax.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
-        suptitle=overall_title,
+        title=overall_title,
         latlines=10, lonlines=10, coast=True,
         labels=True, gridminor=True
     )
