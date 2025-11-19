@@ -635,6 +635,143 @@ def plot_stage_comp_maps(
     fig.suptitle(f"HPC run: {pred_params['HPC_run']}, input set: {truth_params['input_set']} - {overall_title}", fontsize=title_font_size)
     return fig
 
+def plot_comp_maps(
+    HPC_run = 'no2_example_run',
+    year = 2019,
+    datetime='2019-01-02T00:00:00',
+    avg_over=None,
+    restrict_lat_lon_to=None,
+    clr_bar_scale=0.5,
+    stage1_only=False,
+    ):
+    """Plots a set of maps to compare the truth and the two stages of the model.
+
+    Creates a set of 6 maps:
+    1. Truth
+    2. Stage 1
+    3. Stage 2
+    4. Difference: Truth - Stage 1
+    5. Difference: Truth - Stage 2
+    6. Difference: Stage 1 - Stage 2
+
+    Parameters
+    ----------
+    HPC_run : str
+        The name of the HPC_run for which to make comparison maps.
+    year : int
+        The year for which to make comparisons.
+    this_date : np.datetime64 or str
+        Date and time to select from the data file.
+        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+    avg_over : str, numpy.timedelta64, or None
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
+    restrict_lat_lon_to : str
+        Path to a netCDF file to restrict the latitude and longitude range.
+        If None, the entire dataset is used.
+    clr_bar_scale : float between 0 and 1
+        Scale factor for the color bar. If set to 1, the color bar will be scaled 
+        to the maximum absolute value of the data. Default is 0.5.
+    stage1_only : bool
+        If True, produce graphs just corresponding to stage 1. If False, produce graphs
+        for stage 1 and stage 2. Default is False.
+    
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plots.
+    """
+    # Verify argument types
+    if not isinstance(HPC_run, str):
+        raise TypeError(f"(plot_comp_maps) `HPC_run` must be a string. Got type: {type(HPC_run)}.")
+    if not isinstance(year, int):
+        raise TypeError(f"(plot_comp_maps) `year` must be an integer. Got type: {type(year)}.")
+    
+    # Assemble filepath to the HPC_run predictions netcdf
+    pred_nc_path = f"HPC_runs/{HPC_run}/predictions.nc"
+    # Get and verify predictions data
+    pred_xarray = udata.get_dataset(pred_nc_path)
+    # Assemble filepath to the HPC_run configuration dictionary
+    config_path = f"HPC_runs/{HPC_run}/input_config.json"
+    # Verify the config filepath
+    config_path = vfy.verify_path(config_path)
+    # Load config file to a dictionary
+    with open(f"{config_path}", 'r') as file:
+        config_dict = json.load(file)
+    # Get the name of the input set used to make the predictions
+    input_set = config_dict['input_set']
+    # Get and verify input set
+    input_xarray = udata.get_dataset(input_set, is_input_set=True)
+
+    # Get the `y_var` name from the input dataset
+    y_var = input_xarray.attrs['y_var']
+    # Make a list for the variables to plot
+    vars_to_plot = [y_var]
+    # Verify that the prediction array has the correct variable
+    pred_var = f"{y_var}_pred"
+    udata.verify_var(pred_xarray, pred_var)
+    vars_to_plot.append(pred_var)
+    if stage1_only == False:
+        pred_var_s2 = f"{y_var}_pred_s2"
+        udata.verify_var(pred_xarray, pred_var_s2)
+        vars_to_plot.append(pred_var_s2)
+        # Set the number of rows in the figure
+        num_rows = 2
+    else:
+        # Set the number of rows in the figure
+        num_rows = 1
+    
+    # Trim the latitude and longitude extents to match
+    pred_xarray, input_xarray = udata.match_domains(pred_xarray, input_xarray)
+
+    # Add the "truth" data to the prediction array
+    pred_xarray[y_var] = input_xarray[y_var]
+    # Get the units of the y_var
+    y_var_unit = input_xarray[y_var].units
+    # Calculate the difference between the "truth" and the predictions
+    pred_xarray['y_m_st1'] = pred_xarray[y_var] - pred_xarray[pred_var]
+    pred_xarray['y_m_st1'].attrs = {'long_name': f"'Truth' - Stage 1 prediction", 'units': y_var_unit}
+    vars_to_plot.append('y_m_st1')
+    if stage1_only == False:
+        pred_xarray['y_m_st2'] = pred_xarray[y_var] - pred_xarray[pred_var_s2]
+        pred_xarray['y_m_st2'].attrs = {'long_name': f"'Truth' - Stage 2 prediction", 'units': y_var_unit}
+        vars_to_plot.append('y_m_st2')
+        pred_xarray['st1_m_st2'] = pred_xarray[pred_var] - pred_xarray[pred_var_s2]
+        pred_xarray['st1_m_st2'].attrs = {'long_name': f"Stage 1 - Stage 2", 'units': y_var_unit}
+        vars_to_plot.append('st1_m_st2')
+
+    # Create the figure
+    fig = pplt.figure(refwidth=4)
+    n_cols = 3
+    ax = fig.subplots(nrows=num_rows, ncols=n_cols, proj='cyl')
+    # Select medium resolution for features such as coastlines
+    pplt.rc.reso = 'med' 
+
+    # Get the maximum and minimum values across all variables
+    vmin = pred_xarray.min()
+    vmax = pred_xarray.max()
+    # Get the halfrange for use with a diverging color map
+    chr = udata.get_max_abs_val([vmin, vmax])
+
+    # Make blank lists to collect vars and colorbar labels
+    these_vars = [None]*(num_rows*n_cols)
+    these_cblbls = [None]*(num_rows*n_cols)
+    # Add the plots to the axes
+    for i in range(len(vars_to_plot)):
+        these_vars[i], these_cblbls[i] = nc_map(
+            ax[i], 
+            pred_xarray, 
+            vars_to_plot[i], 
+            datetime,
+            avg_over,
+            title_fmt='var',
+            # cmap,
+            # cbar_max,
+            # padding,
+        )
+
+    return fig
+
 def make_colorbar(
     fig,
     cb_ax,
