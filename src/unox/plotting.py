@@ -370,7 +370,7 @@ def nc_map(
         cbar_min = cbar_min.values
         cbar_min = np.unique(cbar_min)[0]
     # Plot the data
-    this_var = ax.pcolorfast(xr_data_arr, vmin=cbar_min, vmax=cbar_max)
+    this_var = ax.pcolormesh(xr_data_arr, vmin=cbar_min, vmax=cbar_max)
     # Format the map
     ax.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
@@ -851,6 +851,14 @@ def plot_comp_maps(
             cbar_min=-chr,
             # padding,
         )
+
+    # Determine the colorbar label
+    if len(set(these_cblbls)) == 1:
+        cb_label = these_cblbls[0]
+    else:
+        cb_label = 'Labels vary'
+    # Add one overall colorbar for the entire figure on the right-hand side
+    cbar = make_colorbar(fig, axs[0,0].get_children()[0], cb_label, num_ticks=9, cb_loc='r', cb_extend=cbe)
 
     return fig
 
