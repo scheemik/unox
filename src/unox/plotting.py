@@ -775,15 +775,16 @@ def plot_comp_maps(
         pred_var_s2 = f"{y_var}_pred_s2"
         udata.verify_var(pred_xarray, pred_var_s2)
         vars_to_plot.append(pred_var_s2)
-        # Set the number of rows in the figure
+        # Set the number of rows and columns in the figure
         num_rows = 2
+        n_cols = 3
     else:
-        # Set the number of rows in the figure
+        # Set the number of rows and columns in the figure
         num_rows = 1
+        n_cols = 3
     
     # Trim the latitude and longitude extents to match
     pred_xarray, input_xarray = udata.match_domains(pred_xarray, input_xarray)
-
     # Add the "truth" data to the prediction array
     pred_xarray[y_var] = input_xarray[y_var]
     # Select the time slice to plot
@@ -810,8 +811,7 @@ def plot_comp_maps(
 
     # Create the figure
     fig = pplt.figure(refwidth=4)
-    n_cols = 3
-    ax = fig.subplots(nrows=num_rows, ncols=n_cols, proj='cyl')
+    axs = fig.subplots(nrows=num_rows, ncols=n_cols, proj='cyl')
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
 
