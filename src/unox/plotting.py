@@ -288,8 +288,16 @@ def select_time(
     #     var_sel_time.attrs['long_name'] = var_name
     #     var_sel_time.attrs['units'] = var_unit
     return var_sel_time, overall_title
+
+def nc_map(
+    ax,
+    xr_data_arr,
+    datetime,
+    avg_over=None,
+    plt_title=None,
     cmap=pplt.Colormap('Fire'),
     cbar_max=None,
+    cbar_min=None,
     padding=0.1,
     ):
     """Plots a map of the 'var' data in a netCDF.
@@ -298,8 +306,8 @@ def select_time(
 
     Parameters
     ----------
-    xr_dataset : str or xarray.Dataset or xarray.DataArray
-        Path to the netCDF data file.
+    xr_dataset : xarray.DataArray
+        The xarray data to plot. Must not have a time dimension.
     var : str
         The name of the variable to plot from the netCDF file.
         Default is `nox`.
@@ -326,37 +334,49 @@ def select_time(
     --------
     >>> import xarray as xr
     >>> this_dataset = xr.open_dataset('../datafiles/sample_data/nox_2019_t106_US.nc')
-    >>> fig = plot_nc_map(xr_dataset=this_dataset)
+    >>> fig = plot_nc_map(xr_data_arr=this_dataset)
     """
     # Verify argument types
-    if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
-        raise TypeError(f"(nc_map) `xr_dataset` must be an xarray Dataset or DataArray. Got type: {type(xr_dataset)}.")
-    # Verify the xr_dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
-    # Verify the variable is in xr_dataset
-    udata.verify_var(xr_dataset, var)
+    if not isinstance(xr_data_arr, xr.DataArray):
+        raise TypeError(f"(nc_map) `xr_data_arr` must be an xarray DataArray. Got type: {type(xr_data_arr)}.")
+    # Verify the xr_data_arr. Assume there is no time dimension
+    xr_data_arr = udata.verify_dataset(xr_data_arr, check_time=False)
+    # Get the variable name from xr_data_arr
+    var = xr_data_arr.name
 
     # Get the long name and units of the specified variable for plot labels
-    var_name = xr_dataset[var].long_name
-    var_unit = xr_dataset[var].units
+    try:
+        var_name = xr_data_arr.long_name
+        var_unit = xr_data_arr.units
+    except:
+        var_name = 'var'
+        var_unit = 'units'
 
     # Find the min and max lat and lon values
-    this_extent = udata.get_extent(xr_dataset)
+    this_extent = udata.get_extent(xr_data_arr, check_time=False)
     # Enlarge the extent of the map by the given padding value
     p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_fmt.pad_extent(this_extent, padding)
 
+    # Check the plot title
+    if isinstance(plt_title, type(None)):
+        plt_title = var_name
 
     # Get the maximum value for the colorbar
     if isinstance(cbar_max, type(None)):
-        cbar_max = var_sel_time.max()
+        cbar_max = xr_data_arr.max()
         cbar_max = cbar_max.values
         cbar_max = np.unique(cbar_max)[0]
+    # Get the minimum value for the colorbar
+    if isinstance(cbar_min, type(None)):
+        cbar_min = xr_data_arr.min()
+        cbar_min = cbar_min.values
+        cbar_min = np.unique(cbar_min)[0]
     # Plot the data
-    this_var = ax.pcolorfast(var_sel_time, vmin=0, vmax=cbar_max)
+    this_var = ax.pcolorfast(xr_data_arr, vmin=cbar_min, vmax=cbar_max)
     # Format the map
     ax.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
-        title=overall_title,
+        title=plt_title,
         latlines=10, lonlines=10, coast=True,
         labels=True, gridminor=True
     )
