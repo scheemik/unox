@@ -815,11 +815,25 @@ def plot_comp_maps(
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
 
-    # Get the maximum and minimum values across all variables
-    vmin = pred_xarray.min()
-    vmax = pred_xarray.max()
+    # Get the maximum and minimum values for each variable
+    vmin_arr = pred_xarray.min(skipna=True)
+    vmax_arr = pred_xarray.max(skipna=True)
+    # Gather the maximum and mimum values across all variables
+    val_list = []
+    for var in vmin_arr.data_vars:
+        val_list.append(vmin_arr[var].values)
+        val_list.append(vmax_arr[var].values)
     # Get the halfrange for use with a diverging color map
-    chr = udata.get_max_abs_val([vmin, vmax])
+    chr = udata.get_max_abs_val(val_list)
+    # Scale the color bar
+    if clr_bar_scale < 0 or clr_bar_scale > 1:
+        warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
+        clr_bar_scale = 0.5
+    if clr_bar_scale != 1:
+        chr *= clr_bar_scale
+        cbe = 'both'
+    else:
+        cbe = 'neither'
 
     # Make blank lists to collect vars and colorbar labels
     these_vars = [None]*(num_rows*n_cols)
