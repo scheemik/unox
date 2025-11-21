@@ -703,6 +703,7 @@ def plot_comp_maps(
     avg_over=None,
     restrict_lat_lon_to=None,
     clr_bar_scale=0.5,
+    clr_map=pplt.Colormap('seismic'),
     stage1_only=False,
     ):
     """Plots a set of maps to compare the truth and the two stages of the model.
@@ -789,7 +790,7 @@ def plot_comp_maps(
     # Add the "truth" data to the prediction array
     pred_xarray[y_var] = input_xarray[y_var]
     # Select the time slice to plot
-    pred_xarray, overall_title = select_time(
+    pred_xarray, time_title = select_time(
         pred_xarray,
         var=None,
         datetime=datetime,
@@ -847,7 +848,7 @@ def plot_comp_maps(
             data_arr, 
             datetime,
             avg_over,
-            cmap=pplt.Colormap('seismic'),
+            cmap=clr_map,
             cbar_max=chr,
             cbar_min=-chr,
             cb_ext=cbe,
@@ -858,8 +859,11 @@ def plot_comp_maps(
         cb_label = these_cblbls[0]
     else:
         cb_label = 'Labels vary'
+        cb_label = these_cblbls[0]
     # Add one overall colorbar for the entire figure on the right-hand side
     cbar = make_colorbar(fig, these_vars[-1], cb_label, num_ticks=9, cb_loc='r', cb_extend=cbe, rows=(1, n_rows))
+    # Set the figure title
+    fig.suptitle(f"HPC run: {HPC_run}, input set: {input_set}, {time_title}", fontsize=title_font_size)
     return fig
 
 def make_colorbar(
@@ -899,7 +903,7 @@ def make_colorbar(
     >>> cbar = make_colorbar(fig, ax, cb_label='NOx emissions (kg/m2/s)')
     """
     # Add one overall colorbar for the entire figure on the right-hand side
-    cbar = fig.colorbar(cb_ax, loc=cb_loc, label=cb_label, extend=cb_extend)
+    cbar = fig.colorbar(cb_ax, loc=cb_loc, label=cb_label, extend=cb_extend, **kwargs)
     # Set ticks for the colorbar (use an odd number of ticks to have a zero tick in the middle)
     cbar.locator = mpl.ticker.LinearLocator(numticks = num_ticks)
     cbar.update_ticks()
