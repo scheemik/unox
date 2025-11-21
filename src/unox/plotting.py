@@ -618,14 +618,14 @@ def plot_stage_comp_maps(
         # Make a list of the data
         data_list = [truth, stage1]
         # Set the number of rows in the figure
-        num_rows = 1
+        n_rows = 1
     else:
         # Get the stage 2 values
         stage2 = np.load(unox.get_pred_data(stage=2, **pred_params))
         # Make a list of the data
         data_list = [truth, stage1, stage2]
         # Set the number of rows in the figure
-        num_rows = 2
+        n_rows = 2
         
     # Restrict the latitude and longitude range
     if not isinstance(restrict_lat_lon_to, type(None)):
@@ -642,7 +642,7 @@ def plot_stage_comp_maps(
 
     # Create the figure
     fig = pplt.figure(refwidth=4)
-    ax = fig.subplots(nrows=num_rows, ncols=3, proj='cyl')
+    ax = fig.subplots(nrows=n_rows, ncols=3, proj='cyl')
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
 
@@ -779,11 +779,11 @@ def plot_comp_maps(
         udata.verify_var(pred_xarray, pred_var_s2)
         vars_to_plot.append(pred_var_s2)
         # Set the number of rows and columns in the figure
-        num_rows = 2
+        n_rows = 2
         n_cols = 3
     else:
         # Set the number of rows and columns in the figure
-        num_rows = 1
+        n_rows = 1
         n_cols = 3
     
     # Trim the latitude and longitude extents to match
@@ -814,7 +814,7 @@ def plot_comp_maps(
 
     # Create the figure
     fig = pplt.figure(refwidth=4)
-    axs = fig.subplots(nrows=num_rows, ncols=n_cols, proj='cyl')
+    axs = fig.subplots(nrows=n_rows, ncols=n_cols, proj='cyl')
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
 
@@ -839,8 +839,8 @@ def plot_comp_maps(
         cbe = 'neither'
 
     # Make blank lists to collect vars and colorbar labels
-    these_vars = [None]*(num_rows*n_cols)
-    these_cblbls = [None]*(num_rows*n_cols)
+    these_vars = [None]*(n_rows*n_cols)
+    these_cblbls = [None]*(n_rows*n_cols)
     # Add the plots to the axes
     for i in range(len(vars_to_plot)):
         data_arr = pred_xarray[vars_to_plot[i]]
@@ -874,6 +874,7 @@ def make_colorbar(
     num_ticks=9,
     cb_loc='l',
     cb_extend='neither',
+    **kwargs,
     ):
     """Creates a colorbar for the given figure and axes.
 
@@ -1448,11 +1449,11 @@ def set_of_runs(
         overall_title = f"stage {stage} comparisons from {start_date}-{end_date}"
 
     # Calculate the number of rows in the figure
-    num_cols = 3
-    num_rows = len(runs_in_set)//num_cols + (1 if len(runs_in_set)%num_cols > 0 else 0)
+    n_cols = 3
+    n_rows = len(runs_in_set)//n_cols + (1 if len(runs_in_set)%n_cols > 0 else 0)
     # Create the figure
     fig = pplt.figure(refwidth=4)
-    ax = fig.subplots(nrows=num_rows, ncols=num_cols, proj='cyl')
+    ax = fig.subplots(nrows=n_rows, ncols=n_cols, proj='cyl')
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
 
