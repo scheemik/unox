@@ -187,6 +187,14 @@ def plot_nc_map(
     # Verify the xr_dataset
     # Squeeze to remove `var` dimension, if present
     xr_dataset = udata.verify_dataset(xr_dataset).squeeze(drop=True)
+    # Select the time slice to plot
+    var_sel_time, overall_title = select_time(
+        xr_dataset,
+        var,
+        datetime,
+        avg_over,
+        title_fmt='date',
+    )
 
     # Create the figure
     fig = pplt.figure(refwidth=10)
@@ -197,27 +205,90 @@ def plot_nc_map(
     # Add the plot to the axis
     this_var, clrbar_label = nc_map(
         axs, 
-        xr_dataset, 
-        var, 
+        var_sel_time, 
         datetime,
         avg_over,
-        title_fmt='date',
-        cmap=cmap,
-        cbar_max=cbar_max,
-        padding=padding,
+        plt_title=overall_title,
     )
     # Add a colorbar
     fig.colorbar(this_var, loc='b', label=clrbar_label)
     # Return the figure
     return fig
 
-def nc_map(
-    ax,
+def select_time(
     xr_dataset,
     var,
     datetime,
     avg_over=None,
     title_fmt='date',
+):
+    """Selects the time from an xarray to plot.
+
+    Either selects a single time slice or averages over a time period to result in 
+    an xarray for the specified variable without a time dimension, only lat-lon dimensions.
+
+    Parameters
+    ----------
+    xr_dataset : xarray.Dataset or xarray.DataArray
+        The xarray data to plot. Must have a time dimension.
+    var : str
+        The name of the variable to plot from the netCDF file.
+    datetime : str
+        Date and time to select from the data file.
+    avg_over : str, numpy.timedelta64, or None
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
+    title_fmt : str
+        The format of the title. Can be 'date' or 'varname'.
+
+    Returns
+    -------
+    var_sel_time : xarray.Dataset or xarray.DataArray
+        An xarray DataArray of the selected variable without a time dimension.
+    overall_title : str
+        The title string for the plot.
+    """
+    # Verify argument types
+    xr_dataset = udata.verify_dataset(xr_dataset, check_time=True)
+    if isinstance(var, type(None)):
+        # Keep all the variables and return an xarray Dataset
+        this_xarray = xr_dataset
+    else:
+        # Verify that the variable is in the dataset, if specified
+        udata.verify_var(xr_dataset, var)
+        # Save the attributes for the specified variable
+        # var_name = xr_dataset[var].long_name
+        # var_unit = xr_dataset[var].units
+        # Reduce the dataset to just the specified variable
+        this_xarray = xr_dataset[var]
+
+    # Select the time to plot
+    if isinstance(avg_over, type(None)):
+        # Take just that time slice
+        # Use squeeze to drop `time` dimension as sel() only automatically drops scalar
+        # dimensions, which `time` is not
+        var_sel_time = this_xarray.sel(time=datetime, drop=False).squeeze(drop=True)
+        # Format a string for the title
+        overall_title = datetime.split('T')[0]
+    else:
+        # Add the increment over which to average to the datetime
+        try:
+            end_date = udata.add_amount_to_date(datetime, avg_over)
+        except:
+            raise ValueError(f'Invalid avg_over value: {avg_over}')
+        # Average over the specified amount of time
+        # Maintain attributes by using `drop=False` in sel() and `keep_attrs=True` in mean()
+        var_sel_time = this_xarray.sel(time=slice(datetime, end_date), drop=False)
+        var_sel_time = var_sel_time.mean(dim='time', keep_attrs=True)
+        # Get the value and unit of the averaging
+        avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
+        # Format a string for the title
+        overall_title = f"Averaged over {avg_over_num} {avg_over_unit} from {datetime.split('T')[0]}"
+    # if not isinstance(var, type(None)):
+    #     # Add the saved attributes to the xarray DataArray
+    #     var_sel_time.attrs['long_name'] = var_name
+    #     var_sel_time.attrs['units'] = var_unit
+    return var_sel_time, overall_title
     cmap=pplt.Colormap('Fire'),
     cbar_max=None,
     padding=0.1,
@@ -275,35 +346,7 @@ def nc_map(
     # Enlarge the extent of the map by the given padding value
     p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_fmt.pad_extent(this_extent, padding)
 
-    # Select the time to plot
-    if isinstance(avg_over, type(None)):
-        # Take just that time slice
-        # Use squeeze to drop `time` dimension as sel() only automatically drops scalar
-        # dimensions, which `time` is not
-        var_sel_time = xr_dataset[var].sel(time=datetime).squeeze(drop=True)
-        # Format a string for the title
-        if title_fmt == 'date':
-            overall_title = datetime.split('T')[0]
-        else:
-            overall_title = var_name
-    else:
-        # Add the increment over which to average to the datetime
-        try:
-            end_date = udata.add_amount_to_date(datetime, avg_over)
-        except:
-            raise ValueError(f'Invalid avg_over value: {avg_over}')
-        # Average over the specified amount of time
-        var_sel_time = xr_dataset[var].sel(time=slice(datetime, end_date)).mean(dim='time')
-        # Get the value and unit of the averaging
-        avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
-        # Format a string for the title
-        if title_fmt == 'date':
-            overall_title = f"Averaged over {avg_over_num} {avg_over_unit} from {datetime.split('T')[0]}"
-        else:
-            overall_title = var_name
 
-    # Find the min and max lat and lon values
-    # lat_min, lat_max, lon_min, lon_max = udata.get_extent(var_sel_time, check_time=False)
     # Get the maximum value for the colorbar
     if isinstance(cbar_max, type(None)):
         cbar_max = var_sel_time.max()
