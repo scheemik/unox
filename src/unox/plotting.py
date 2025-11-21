@@ -296,6 +296,7 @@ def nc_map(
     cmap=pplt.Colormap('Fire'),
     cbar_max=None,
     cbar_min=None,
+    cb_ext='neither',
     padding=0.1,
     ):
     """Plots a map of the 'var' data in a netCDF.
@@ -369,8 +370,8 @@ def nc_map(
         cbar_min = xr_data_arr.min()
         cbar_min = cbar_min.values
         cbar_min = np.unique(cbar_min)[0]
-    # Plot the data
-    this_var = ax.pcolormesh(xr_data_arr, vmin=cbar_min, vmax=cbar_max)
+    # Plot the data, use `discrete=False` to set a continuous colorbar
+    this_var = ax.pcolormesh(xr_data_arr, vmin=cbar_min, vmax=cbar_max, discrete=False, extend=cb_ext)
     # Format the map
     ax.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
@@ -849,7 +850,7 @@ def plot_comp_maps(
             cmap=pplt.Colormap('seismic'),
             cbar_max=chr,
             cbar_min=-chr,
-            # padding,
+            cb_ext=cbe,
         )
 
     # Determine the colorbar label
@@ -858,8 +859,7 @@ def plot_comp_maps(
     else:
         cb_label = 'Labels vary'
     # Add one overall colorbar for the entire figure on the right-hand side
-    cbar = make_colorbar(fig, axs[0,0].get_children()[0], cb_label, num_ticks=9, cb_loc='r', cb_extend=cbe)
-
+    cbar = make_colorbar(fig, these_vars[-1], cb_label, num_ticks=9, cb_loc='r', cb_extend=cbe, rows=(1, n_rows))
     return fig
 
 def make_colorbar(
