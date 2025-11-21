@@ -138,9 +138,7 @@ def plot_nc_map(
     var='nox',
     datetime='2019-01-02T00:00:00',
     avg_over=None,
-    cmap=pplt.Colormap('Fire'),
-    cbar_max=None,
-    padding=0.1,
+    **kwargs,
     ):
     """Plots a map of the 'var' data in a netCDF.
 
@@ -209,6 +207,7 @@ def plot_nc_map(
         datetime,
         avg_over,
         plt_title=overall_title,
+        **kwargs,
     )
     # Add a colorbar
     fig.colorbar(this_var, loc='b', label=clrbar_label)
