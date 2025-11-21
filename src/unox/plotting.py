@@ -191,7 +191,6 @@ def plot_nc_map(
         var,
         datetime,
         avg_over,
-        title_fmt='date',
     )
 
     # Create the figure
@@ -219,7 +218,6 @@ def select_time(
     var,
     datetime,
     avg_over=None,
-    title_fmt='date',
 ):
     """Selects the time from an xarray to plot.
 
@@ -788,6 +786,14 @@ def plot_comp_maps(
 
     # Add the "truth" data to the prediction array
     pred_xarray[y_var] = input_xarray[y_var]
+    # Select the time slice to plot
+    pred_xarray, overall_title = select_time(
+        pred_xarray,
+        var=None,
+        datetime=datetime,
+        avg_over=avg_over,
+    )
+
     # Get the units of the y_var
     y_var_unit = input_xarray[y_var].units
     # Calculate the difference between the "truth" and the predictions
@@ -820,15 +826,15 @@ def plot_comp_maps(
     these_cblbls = [None]*(num_rows*n_cols)
     # Add the plots to the axes
     for i in range(len(vars_to_plot)):
+        data_arr = pred_xarray[vars_to_plot[i]]
         these_vars[i], these_cblbls[i] = nc_map(
-            ax[i], 
-            pred_xarray, 
-            vars_to_plot[i], 
+            axs[i], 
+            data_arr, 
             datetime,
             avg_over,
-            title_fmt='var',
-            # cmap,
-            # cbar_max,
+            cmap=pplt.Colormap('seismic'),
+            cbar_max=chr,
+            cbar_min=-chr,
             # padding,
         )
 
