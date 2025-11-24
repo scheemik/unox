@@ -697,6 +697,36 @@ def plot_stage_comp_maps(
     fig.suptitle(f"HPC run: {pred_params['HPC_run']}, input set: {truth_params['input_set']} - {overall_title}", fontsize=title_font_size)
     return fig
 
+def get_input_set(
+    HPC_run = 'no2_example_run',
+):
+    """Get the name of the input set used for the given HPC run.
+
+    Parameters
+    ----------
+    HPC_run : str
+        The name of the HPC_run for which to get the input set.
+    
+    Returns
+    -------
+    input_set : str
+        The name of the input set used for the given HPC run.
+    """
+    # Verify argument types
+    if not isinstance(HPC_run, str):
+        raise TypeError(f"(plot_comp_maps) `HPC_run` must be a string. Got type: {type(HPC_run)}.")
+
+    # Assemble filepath to the HPC_run configuration dictionary
+    config_path = f"HPC_runs/{HPC_run}/input_config.json"
+    # Verify the config filepath
+    config_path = vfy.verify_path(config_path)
+    # Load config file to a dictionary
+    with open(f"{config_path}", 'r') as file:
+        config_dict = json.load(file)
+    # Get the name of the input set used to make the predictions
+    input_set = config_dict['input_set']
+    return input_set
+
 def plot_comp_maps(
     HPC_run = 'no2_example_run',
     year = 2019,
@@ -754,15 +784,8 @@ def plot_comp_maps(
     pred_nc_path = f"HPC_runs/{HPC_run}/predictions.nc"
     # Get and verify predictions data
     pred_xarray = udata.get_dataset(pred_nc_path)
-    # Assemble filepath to the HPC_run configuration dictionary
-    config_path = f"HPC_runs/{HPC_run}/input_config.json"
-    # Verify the config filepath
-    config_path = vfy.verify_path(config_path)
-    # Load config file to a dictionary
-    with open(f"{config_path}", 'r') as file:
-        config_dict = json.load(file)
-    # Get the name of the input set used to make the predictions
-    input_set = config_dict['input_set']
+    # Get the input set used in the HPC run
+    input_set = get_input_set(HPC_run)
     # Get and verify input set
     input_xarray = udata.get_dataset(input_set, is_input_set=True)
 
