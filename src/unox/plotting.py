@@ -1037,6 +1037,131 @@ def plot_comparison(
     else:
         return q
 
+def corr_plot(
+    HPC_run = 'no2_example_run',
+    year = 2019,
+    x_ax = 'pred',
+    y_ax = 'truth',
+    restrict_lat_lon_to=None,
+    ax=None,
+    hist_params={'bins':100, 'vmax':1000, 'vmin':10},
+    cmap=pplt.Colormap('viridis'),
+    log_scale=True,
+    set_under_val=1,
+    ):
+    """
+    Plot the prediction vs truth values.
+
+    Creates a correlation plot between the prediction values of the given HPC run
+
+    Parameters
+    ----------
+    HPC_run : str
+        The name of the HPC_run for which to make a correlation plot.
+    year : int
+        The year for which to make comparisons.
+    x_ax : str
+        What to plot on the x-axis. Must be one of ['truth', 'pred', 'pred_s2'].
+    y_ax : str
+        What to plot on the y-axis. Must be one of ['truth', 'pred', 'pred_s2'].
+    restrict_lat_lon_to : str
+        Path to a netCDF file to restrict the latitude and longitude range.
+        If None, the entire dataset is used.
+    ax : matplotlib.axes.Axes or None
+        The axes on which to plot the data. If None, a new figure and axes are created.
+    hist_params : dict
+        Dictionary containing the parameters for the histogram.
+        Must contain 'bins', 'vmax', and 'vmin'.
+    cmap : matplotlib.colors.Colormap
+        The colormap to use for the histogram. Default is pplt.cm.viridis.
+    log_scale : bool
+        If True, use a logarithmic scale for the histogram. Default is True.
+    set_under_val : float
+        The value to set for the underflow in the colormap. Default is 1.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+
+    Examples
+    --------
+    >>> fig = corr_plot('no2_example_run', 2019, x_ax='pred', y_ax='truth')
+    """
+    # Verify argument types
+    if not isinstance(HPC_run, str):
+        raise TypeError(f"(corr_plot) `HPC_run` must be a string. Got type: {type(HPC_run)}.")
+    if not isinstance(year, int):
+        raise TypeError(f"(corr_plot) `year` must be an integer. Got type: {type(year)}.")
+    if not x_ax in ['truth', 'pred', 'pred_s2']:
+        raise ValueError(f"(corr_plot) `x_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {x_ax}.")
+    if not y_ax in ['truth', 'pred', 'pred_s2']:
+        raise ValueError(f"(corr_plot) `y_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {y_ax}.")
+    
+    # Assemble filepath to the HPC_run predictions netcdf
+    pred_nc_path = f"HPC_runs/{HPC_run}/predictions.nc"
+    # Get and verify predictions data
+    pred_xarray = udata.get_dataset(pred_nc_path)
+    # Get the input set used in the HPC run
+    input_set = get_input_set(HPC_run)
+    # Get and verify input set
+    input_xarray = udata.get_dataset(input_set, is_input_set=True)
+
+    # Get the `y_var` name from the input dataset
+    y_var = input_xarray.attrs['y_var']
+    # For the x and y axes, get the specified data
+    plot_data = []
+    plot_labels = []
+    for this_ax in [x_ax, y_ax]:
+        if this_ax == 'truth':
+            ax_var = y_var
+            # If not done already, add the "truth" data to the prediction xarray
+            try:
+                udata.verify_var(pred_xarray, ax_var)
+            except:
+                # Trim the latitude and longitude extents to match
+                pred_xarray, input_xarray = udata.match_domains(pred_xarray, input_xarray)
+                # Add the "truth" data to the prediction array
+                pred_xarray[ax_var] = input_xarray[ax_var]
+            # Assemble the axis label
+            var_units = pred_xarray[ax_var].attrs['units']
+            plot_labels.append(f"'Truth' ({var_units})")
+        elif this_ax in ['pred', 'pred_s2']:
+            ax_var = f"{y_var}_{this_ax}"
+            # Assemble the axis label
+            if '2' in this_ax:
+                label_mod = " for Stage 2"
+            else:
+                label_mod = ""
+            var_units = pred_xarray[ax_var].attrs['units']
+            plot_labels.append(f"Predictions{label_mod} ({var_units})")
+        else:
+            raise ValueError(f"(corr_plot) `this_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {this_ax}.")
+        # Verify that the prediction array has the correct variable
+        udata.verify_var(pred_xarray, ax_var)
+        # Add the data to plot to the list
+        plot_data.append(pred_xarray[ax_var].sel(time=str(year)).values)
+
+    # Get the long name and units of the specified variable for plot labels
+    try:
+        var_name = pred_xarray[y_var].attrs['long_name']
+    except:
+        var_name = 'var'
+    # Assemble the label
+    title_label = f"{var_name}"
+
+    # Plot the comparison
+    fig = plot_comparison(
+        plot_data[0], 
+        plot_data[1], 
+        label_a=plot_labels[0],
+        label_b=plot_labels[1],     
+        hist_params=hist_params
+    )
+    # Set the figure title
+    fig.suptitle(f"HPC run: {HPC_run}, input set: {input_set}, {title_label}", fontsize=title_font_size)         
+    return fig
+
 def plot_true_pred_comp(
     truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input_set':'sample_data'},
     pred_data={'stage':1, 'HPC_run':'no2_example_run', 'year':2019},
