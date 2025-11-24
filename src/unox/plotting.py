@@ -940,6 +940,7 @@ def plot_comparison(
     label_a='Array A',
     label_b='Array B',
     ax=None,
+    plt_title='',
     hist_params={'bins':100, 'vmax':1000, 'vmin':10},
     cmap=pplt.Colormap('viridis'),
     log_scale=True,
@@ -1029,10 +1030,13 @@ def plot_comparison(
     ax.legend()
     ax.grid()
     ax.set_xlabel(label_a)
-    ax.set_ylabel(label_b)
+    ax.set_ylabel(label_b)   
     # If new plot, return the figure
     if new_fig:
+        # Add the colorbar
         ax.colorbar(q, loc='r', label='Count per pixel', formatter='sci')
+        # Set the figure title
+        fig.suptitle(plt_title, fontsize=title_font_size) 
         return fig
     else:
         return q
@@ -1042,7 +1046,8 @@ def corr_plot(
     year = 2019,
     x_ax = 'pred',
     y_ax = 'truth',
-    restrict_lat_lon_to=None,
+    restrict_lat_lon_to = None,
+    ax = None,
     **kwargs,
     ):
     """
@@ -1063,6 +1068,8 @@ def corr_plot(
     restrict_lat_lon_to : str
         Path to a netCDF file to restrict the latitude and longitude range.
         If None, the entire dataset is used.
+    ax : matplotlib.axes.Axes or None
+        The axes on which to plot the data. If None, a new figure and axes are created.
     **kwargs : dict
         Additional keyword arguments to pass to the `plot_comparison` function.
 
@@ -1084,6 +1091,12 @@ def corr_plot(
         raise ValueError(f"(corr_plot) `x_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {x_ax}.")
     if not y_ax in ['truth', 'pred', 'pred_s2']:
         raise ValueError(f"(corr_plot) `y_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {y_ax}.")
+    
+    # Create a new figure and axis if none is provided
+    if isinstance(ax, type(None)):
+        new_fig = True
+    else:
+        new_fig = False
     
     # Assemble filepath to the HPC_run predictions netcdf
     pred_nc_path = f"HPC_runs/{HPC_run}/predictions.nc"
@@ -1134,21 +1147,20 @@ def corr_plot(
         var_name = pred_xarray[y_var].attrs['long_name']
     except:
         var_name = 'var'
-    # Assemble the label
-    title_label = f"{var_name}"
+    # Assemble the plot title
+    plt_title = f"HPC run: {HPC_run}, input set: {input_set}, {var_name}"
 
     # Plot the comparison
-    fig = plot_comparison(
-        plot_data[0], 
-        plot_data[1], 
+    fig_q = plot_comparison(
+        plot_data[0],
+        plot_data[1],
         label_a=plot_labels[0],
-        label_b=plot_labels[1],     
-        hist_params=hist_params,
+        label_b=plot_labels[1],
+        ax = ax,
+        plt_title = plt_title,
         **kwargs,
-    )
-    # Set the figure title
-    fig.suptitle(f"HPC run: {HPC_run}, input set: {input_set}, {title_label}", fontsize=title_font_size)         
-    return fig
+    )     
+    return fig_q
 
 def plot_true_pred_comp(
     truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input_set':'sample_data'},
