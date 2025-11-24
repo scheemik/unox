@@ -944,7 +944,7 @@ def plot_comparison(
     cmap=pplt.Colormap('viridis'),
     log_scale=True,
     set_under_val=1,
-    ):
+):
     """
     Plot a comparison of two numpy arrays.
 
@@ -1043,11 +1043,7 @@ def corr_plot(
     x_ax = 'pred',
     y_ax = 'truth',
     restrict_lat_lon_to=None,
-    ax=None,
-    hist_params={'bins':100, 'vmax':1000, 'vmin':10},
-    cmap=pplt.Colormap('viridis'),
-    log_scale=True,
-    set_under_val=1,
+    **kwargs,
     ):
     """
     Plot the prediction vs truth values.
@@ -1067,17 +1063,8 @@ def corr_plot(
     restrict_lat_lon_to : str
         Path to a netCDF file to restrict the latitude and longitude range.
         If None, the entire dataset is used.
-    ax : matplotlib.axes.Axes or None
-        The axes on which to plot the data. If None, a new figure and axes are created.
-    hist_params : dict
-        Dictionary containing the parameters for the histogram.
-        Must contain 'bins', 'vmax', and 'vmin'.
-    cmap : matplotlib.colors.Colormap
-        The colormap to use for the histogram. Default is pplt.cm.viridis.
-    log_scale : bool
-        If True, use a logarithmic scale for the histogram. Default is True.
-    set_under_val : float
-        The value to set for the underflow in the colormap. Default is 1.
+    **kwargs : dict
+        Additional keyword arguments to pass to the `plot_comparison` function.
 
     Returns
     -------
@@ -1156,7 +1143,8 @@ def corr_plot(
         plot_data[1], 
         label_a=plot_labels[0],
         label_b=plot_labels[1],     
-        hist_params=hist_params
+        hist_params=hist_params,
+        **kwargs,
     )
     # Set the figure title
     fig.suptitle(f"HPC run: {HPC_run}, input set: {input_set}, {title_label}", fontsize=title_font_size)         
