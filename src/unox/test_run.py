@@ -5,7 +5,7 @@ import sys
 import os 
 import xarray as xr
 import json
-from HPC_scripts.utils.load_input import get_npy_from_netcdf
+from HPC.utils.load_input import get_npy_from_netcdf
 
 print("")
 print("===== Begin test_run.py =====")
@@ -76,7 +76,7 @@ except:
 print(f"\targv[3], version: {version}")
 
 ##################################################################
-from HPC_scripts.utils.data_split import data_split
+from HPC.utils.data_split import data_split
 ##################################################################
 # Create output metadata dictionary
 
@@ -245,13 +245,13 @@ print("Done loading data sets for stage 1")
 
 # Import packages based on version
 if version == 0: # keras v2.9.0, tensorflow v2.9.2
-    from HPC_scripts.utils.functions_old import r2_keras
-    from HPC_scripts.utils.functions_old import msenonzero
-    from HPC_scripts.model.core_old import Unet
+    from HPC.utils.functions_old import r2_keras
+    from HPC.utils.functions_old import msenonzero
+    from HPC.model.core_old import Unet
 elif version == 1: # keras v3.10.0, tensorflow v2.17.0
-    from HPC_scripts.utils.functions import r2_keras
-    from HPC_scripts.utils.functions import msenonzero
-    from HPC_scripts.model.core import Unet
+    from HPC.utils.functions import r2_keras
+    from HPC.utils.functions import msenonzero
+    from HPC.model.core import Unet
 from tensorflow.keras.optimizers import Adam
 from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 

@@ -14,7 +14,7 @@ from unox import verify as vfy
 from unox import data as udata
 from unox import plot_format as uplt_fmt
 from unox.input import x_or_y_var, get_input_index
-from unox.HPC_scripts.utils.load_input import get_npy_from_netcdf
+from unox.HPC.utils.load_input import get_npy_from_netcdf
 
 # Set font sizes
 mpl.rcParams['font.size'] = 16
@@ -1638,7 +1638,7 @@ def compare_input_vars(
                 input_dict['input_set'],
                 is_input_set=True,
             )
-            from unox.HPC_scripts.utils.load_input import get_npy_from_netcdf
+            from unox.HPC.utils.load_input import get_npy_from_netcdf
             this_input = get_npy_from_netcdf(
                 xr_dataset,
                 year=input_dict['year'],

@@ -2,7 +2,7 @@ from tensorflow.keras import models
 
 from unox import verify as vfy
 # Import functions used in building models to allow for importing custom objects
-from unox.HPC_scripts.utils import functions
+from unox.HPC.utils import functions
 
 def load_model(
     model_path: str,
