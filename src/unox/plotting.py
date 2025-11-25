@@ -733,10 +733,12 @@ def plot_comp_maps(
     datetime='2019-01-02T00:00:00',
     avg_over=None,
     restrict_lat_lon_to=None,
+    add_corr_plots=False,
     clr_bar_scale=0.5,
     clr_map=pplt.Colormap('seismic'),
     stage1_only=False,
-    ):
+    **kwargs,
+):
     """Plots a set of maps to compare the truth and the two stages of the model.
 
     Creates a set of 6 maps:
@@ -797,16 +799,27 @@ def plot_comp_maps(
     pred_var = f"{y_var}_pred"
     udata.verify_var(pred_xarray, pred_var)
     vars_to_plot.append(pred_var)
+    # Decide on the number of rows and columns in the figure
     if stage1_only == False:
         pred_var_s2 = f"{y_var}_pred_s2"
         udata.verify_var(pred_xarray, pred_var_s2)
         vars_to_plot.append(pred_var_s2)
         # Set the number of rows and columns in the figure
-        n_rows = 2
+        if add_corr_plots:
+            n_rows = 3
+            n_rows_maps = 2
+        else:
+            n_rows = 2
+            n_rows_maps = 2
         n_cols = 3
     else:
         # Set the number of rows and columns in the figure
-        n_rows = 1
+        if add_corr_plots:
+            n_rows = 2
+            n_rows_maps = 1
+        else:
+            n_rows = 1
+            n_rows_maps = 1
         n_cols = 3
     
     # Trim the latitude and longitude extents to match
@@ -835,9 +848,20 @@ def plot_comp_maps(
         pred_xarray['st1_m_st2'].attrs = {'long_name': f"Stage 1 - Stage 2", 'units': y_var_unit}
         vars_to_plot.append('st1_m_st2')
 
+    # Create tuple of the projections for each subplot
+    if add_corr_plots == False:
+        # Only one projection required
+        these_projs = 'cyl'
+    else:
+        # Create a list of projections for each subplot
+        these_projs = []
+        for i in range(n_rows_maps*n_cols):
+            these_projs.append('cyl')
+        for i in range((n_rows - n_rows_maps)*n_cols):
+            these_projs.append(None)
     # Create the figure
-    fig = pplt.figure(refwidth=4)
-    axs = fig.subplots(nrows=n_rows, ncols=n_cols, proj='cyl')
+    ## Setting `share=False` to allow separate axis labels for each subplot
+    fig, axs = pplt.subplots(refwidth=4, nrows=n_rows, ncols=n_cols, proj=these_projs, share=False)
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
 
@@ -862,8 +886,8 @@ def plot_comp_maps(
         cbe = 'neither'
 
     # Make blank lists to collect vars and colorbar labels
-    these_vars = [None]*(n_rows*n_cols)
-    these_cblbls = [None]*(n_rows*n_cols)
+    these_vars = [None]*(n_rows_maps*n_cols)
+    these_cblbls = [None]*(n_rows_maps*n_cols)
     # Add the plots to the axes
     for i in range(len(vars_to_plot)):
         data_arr = pred_xarray[vars_to_plot[i]]
@@ -885,7 +909,46 @@ def plot_comp_maps(
         cb_label = 'Labels vary'
         cb_label = these_cblbls[0]
     # Add one overall colorbar for the entire figure on the right-hand side
-    cbar = make_colorbar(fig, these_vars[-1], cb_label, num_ticks=9, cb_loc='r', cb_extend=cbe, rows=(1, n_rows))
+    cbar = make_colorbar(fig, these_vars[-1], cb_label, num_ticks=9, cb_loc='r', cb_extend=cbe, rows=(1, n_rows_maps))
+
+    # Add correlation plots, if specified
+    if add_corr_plots:
+        # Create arrays to hold the plots and titles
+        fig_q_list = [None]*3
+        title_list = [None]*3
+        # Set histogram parameters
+        hist_params={'bins':100, 'vmax':10000, 'vmin':10}
+        # Add the three correlation plots to the figure
+        fig_q_list[0], title_list[0] = corr_plot(
+            HPC_run=HPC_run,
+            year=year,
+            x_ax='pred',
+            y_ax='truth',
+            ax=axs[-3],
+            hist_params=hist_params,
+            **kwargs,
+        )
+        fig_q_list[1], title_list[1] = corr_plot(
+            HPC_run=HPC_run,
+            year=year,
+            x_ax='pred_s2',
+            y_ax='truth',
+            ax=axs[-2],
+            hist_params=hist_params,
+            **kwargs,
+        )
+        fig_q_list[2], title_list[2] = corr_plot(
+            HPC_run=HPC_run,
+            year=year,
+            x_ax='pred',
+            y_ax='pred_s2',
+            ax=axs[-1],
+            hist_params=hist_params,
+            **kwargs,
+        )
+        # Add the colorbar
+        fig.colorbar(fig_q_list[0], loc='r', label='Count per pixel', extend='both', formatter='sci', rows=(n_rows_maps+1, n_rows))
+
     # Set the figure title
     fig.suptitle(f"HPC run: {HPC_run}, input set: {input_set}, {time_title}", fontsize=title_font_size)
     return fig
