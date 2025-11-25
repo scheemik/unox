@@ -414,6 +414,7 @@ def test_make_input_config():
     actual = uin.make_input_config(
         'test_make_input_config',
         input_set='no2_lsm6',
+        grid_size=[30,40],
         x_vars=[
             'no2',
             'no2_tm1',
@@ -437,6 +438,7 @@ def test_make_input_config():
     )
     expected = {
         "input_set": "no2_lsm6",
+        "grid_size": [30, 40],
         "x_vars": [
             "no2",
             "no2_tm1",
@@ -468,6 +470,7 @@ def test_make_input_config():
             uin.make_input_config(
                 invalid_input,
                 input_set=expected['input_set'],
+                grid_size=expected['grid_size'],
                 x_vars=expected['x_vars'],
                 stage_2=expected['stage_2'],
                 stage_2_cutoff=expected['stage_2_cutoff'],
@@ -484,6 +487,7 @@ def test_make_input_config():
             uin.make_input_config(
                 'test_make_input_config',
                 input_set=invalid_input,
+                grid_size=expected['grid_size'],
                 x_vars=expected['x_vars'],
                 stage_2=expected['stage_2'],
                 stage_2_cutoff=expected['stage_2_cutoff'],
@@ -494,12 +498,30 @@ def test_make_input_config():
             assert True, f"make_input_config raised an exception on invalid input_set {invalid_input}: {e}"
         else:
             assert False, f"make_input_config did not raise an exception on invalid input_set {invalid_input}"
+    # Test with invalid inputs for grid_size
+    for invalid_input in [None, 'not_a_list', 123, True, {}, ['invalid_x_var'], [10000, 10000]]:
+        try:
+            uin.make_input_config(
+                'test_make_input_config',
+                input_set=expected['input_set'],
+                grid_size=invalid_input,
+                x_vars=expected['x_vars'],
+                stage_2=expected['stage_2'],
+                stage_2_cutoff=expected['stage_2_cutoff'],
+                lsm_vars=expected['lsm_vars'],
+                zfi_vars=expected['zfi_vars'],
+            )
+        except (TypeError, ValueError) as e:
+            assert True, f"make_input_config raised an exception on invalid x_vars {invalid_input}: {e}"
+        else:
+            assert False, f"make_input_config did not raise an exception on invalid x_vars {invalid_input}"
     # Test with invalid inputs for x_vars
     for invalid_input in [None, 'not_a_list', 123, True, {}, ['invalid_x_var']]:
         try:
             uin.make_input_config(
                 'test_make_input_config',
                 input_set=expected['input_set'],
+                grid_size=expected['grid_size'],
                 x_vars=invalid_input,
                 stage_2=expected['stage_2'],
                 stage_2_cutoff=expected['stage_2_cutoff'],
@@ -516,6 +538,7 @@ def test_make_input_config():
             uin.make_input_config(
                 'test_make_input_config',
                 input_set=expected['input_set'],
+                grid_size=expected['grid_size'],
                 x_vars=expected['x_vars'],
                 stage_2=invalid_input,
                 stage_2_cutoff=expected['stage_2_cutoff'],
@@ -532,6 +555,7 @@ def test_make_input_config():
             uin.make_input_config(
                 'test_make_input_config',
                 input_set=expected['input_set'],
+                grid_size=expected['grid_size'],
                 x_vars=expected['x_vars'],
                 stage_2=expected['stage_2'],
                 stage_2_cutoff=invalid_input,
@@ -548,6 +572,7 @@ def test_make_input_config():
             uin.make_input_config(
                 'test_make_input_config',
                 input_set=expected['input_set'],
+                grid_size=expected['grid_size'],
                 x_vars=expected['x_vars'],
                 stage_2=expected['stage_2'],
                 stage_2_cutoff=expected['stage_2_cutoff'],
@@ -563,6 +588,7 @@ def test_make_input_config():
             uin.make_input_config(
                 'test_make_input_config',
                 input_set=expected['input_set'],
+                grid_size=expected['grid_size'],
                 x_vars=expected['x_vars'],
                 stage_2=expected['stage_2'],
                 stage_2_cutoff=expected['stage_2_cutoff'],
@@ -579,6 +605,7 @@ def test_make_input_config():
             uin.make_input_config(
                 'test_make_input_config',
                 input_set=expected['input_set'],
+                grid_size=expected['grid_size'],
                 x_vars=expected['x_vars'],
                 stage_2=expected['stage_2'],
                 stage_2_cutoff=expected['stage_2_cutoff'],

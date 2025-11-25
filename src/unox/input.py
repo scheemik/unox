@@ -8,6 +8,7 @@ import json
 import warnings
 
 import unox.unox as unox
+from unox import verify as vfy
 import unox.data as udata
 from unox.plot_format import pad_extent
 
@@ -165,7 +166,7 @@ def make_y_input_file(
     # Assemble file path
     filepath = f'{emiss_dir}/{emiss_pre}{year}{emiss_post}'
     # Verify the path
-    filepath = unox.verify_path(filepath)
+    filepath = vfy.verify_path(filepath)
     # Load data for the specified year
     y_data = xr.load_dataset(filepath)
     # If level dimension present, sum across levels
@@ -562,7 +563,7 @@ def make_x_input_file(
     # Assemble the file path for the chemical reanalysis data
     chemra_filepath = f'{data_dir}/{chemra_path}{year}.nc'
     # Verify the path
-    chemra_filepath = unox.verify_path(chemra_filepath)
+    chemra_filepath = vfy.verify_path(chemra_filepath)
     # Load chemical reanalysis data
     # chemra = xr.load_dataset(chemra_filepath)
     chemra = xr.open_dataset(chemra_filepath)
@@ -618,7 +619,7 @@ def make_x_input_file(
         # Assemble the file path for the insitu data
         epa_filepath = f'{data_dir}/{insitu_path}{year}.csv'
         # Verify the path
-        epa_filepath = unox.verify_path(epa_filepath)
+        epa_filepath = vfy.verify_path(epa_filepath)
         # Combine chemical reanalysis and insitu data
         chemra = fill_w_insitu(chemra, epa_filepath)
     else:
@@ -643,7 +644,7 @@ def make_x_input_file(
         # Assemble the file path for the ERA5 variable
         era5_var_filepath = f'{data_dir}/{era5_path}/{year}{variable}.nc'
         # Verify the path
-        era5_var_filepath = unox.verify_path(era5_var_filepath)
+        era5_var_filepath = vfy.verify_path(era5_var_filepath)
         # Load the ERA5 variable dataset
         # Note: The variable name in the dataset is assumed to be the same as `variable`
         era5_var = xr.load_dataset(era5_var_filepath)
@@ -787,7 +788,7 @@ def fill_w_insitu(
     # Save the variable attributes
     var_s2_attrs = xr_dataset[var_s2].attrs
     # Verify the insitu file path
-    insitu_filepath = unox.verify_path(insitu_filepath)
+    insitu_filepath = vfy.verify_path(insitu_filepath)
     # Load the insitu data
     ## Specific to the EPA csv format
     insitu_data = pd.read_csv(insitu_filepath, parse_dates={'Date':['Date Local']}, index_col=['Date'], usecols=['Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'])
@@ -1163,6 +1164,7 @@ def make_input_metadata_file(
 def make_input_config(
     config_name,
     input_set = 'no2_sample_input',
+    grid_size = [56, 120],
     x_vars = [
         'no2',
         'no2_tm1',
@@ -1178,8 +1180,8 @@ def make_input_config(
     stage_2_cutoff = 2013,
     lsm_vars = [
         # 'nox',
-        'no2',
-        'no2_tm1',
+        # 'no2',
+        # 'no2_tm1',
         # 'no2_s2',
         # 'no2_s2_tm1',
         # 'u10',
@@ -1201,7 +1203,7 @@ def make_input_config(
         # 'blh',
         # 'sp',
         # 'skt',
-        't2m',
+        # 't2m',
         # 'ssrd',
     ],
     overwrite=False,
@@ -1217,6 +1219,9 @@ def make_input_config(
     input_set : str or xr.Dataset, optional
         Directory inside `inputfiles/` where the dataset is found, or the xarray Dataset.
         Default is 'no2_sample_input'.
+    grid_size : list of int, optional
+        The number of grid cells to have in [latitude, longitude] when running the Unet model.
+        Default is [56, 120].
     x_vars : list of str, optional
         List of variable names to be used as input features for the model.
         Default is a list of common meteorological and chemical variables.
@@ -1254,6 +1259,8 @@ def make_input_config(
         xr_dataset = input_set
     else:
         raise TypeError(f"input_set must be a string or xarray.Dataset. Got type: {type(input_set)}")
+    if not isinstance(grid_size, list):
+        raise TypeError(f"grid_size must be a list of integers. Got type: {type(grid_size)}")
     if not isinstance(x_vars, list):
         raise TypeError(f"x_vars must be a list of strings. Got type: {type(x_vars)}")
     if not isinstance(stage_2, bool):
@@ -1268,6 +1275,25 @@ def make_input_config(
         raise TypeError(f"overwrite must be a boolean. Got type: {type(overwrite)}")
     # Verify the dataset
     xr_dataset = udata.verify_dataset(xr_dataset)
+    # Verify that grid_size has exactly 2 integers
+    if not len(grid_size) == 2:
+        raise TypeError(f'Expected `grid_size` to have a length of 2. Got length of {len(grid_size)}: {grid_size}')
+    else:
+        if isinstance(grid_size[0], int):
+            n_lats = grid_size[0]
+        else:
+            raise TypeError(f"Number of latitudes in `grid_size` must be an integer. Got type: {type(grid_size[0])}")
+        if isinstance(grid_size[1], int):
+            n_lons = grid_size[1]
+        else:
+            raise TypeError(f"Number of longitudes in `grid_size` must be an integer. Got type: {type(grid_size[1])}")
+    # Verify that `grid_size` is not larger than the lat-lon grid in xr_dataset
+    xr_n_lats = xr_dataset.sizes['lat']
+    xr_n_lons = xr_dataset.sizes['lon']
+    if n_lats > xr_n_lats:
+        raise ValueError(f'Requested length of latitude grid ({n_lats}) cannot exceed length of latitude dimension in the given netcdf ({xr_n_lats}).')
+    if n_lons > xr_n_lons:
+        raise ValueError(f'Requested length of longitude grid ({n_lons}) cannot exceed length of longitude dimension in the given netcdf ({xr_n_lons}).')
     # Verify that all x_vars are in the dataset
     for var in x_vars:
         udata.verify_var(xr_dataset, var)
@@ -1288,6 +1314,7 @@ def make_input_config(
     # Build the dictionary
     config_dict = {
         'input_set': input_set,
+        'grid_size': grid_size,
         'x_vars': x_vars,
         'stage_2': stage_2,
         'stage_2_cutoff': stage_2_cutoff,

@@ -6,7 +6,7 @@ import os
 import re
 from datetime import datetime
 
-from unox import unox
+import verify as vfy
 
 # Define the default latitude and longitude extents for this project
 DEFAULT_LAT_MIN = 11
@@ -257,7 +257,7 @@ def print_latlon_info(
     # If a filepath is provided, verify the path and load the dataset
     if isinstance(xr_dataset, str):
         output_name = str(xr_dataset)
-        xr_dataset = unox.verify_path(xr_dataset)
+        xr_dataset = vfy.verify_path(xr_dataset)
         # If it is a csv, use custom function to load
         if xr_dataset.endswith('.csv'):
             xr_dataset = csv_to_xr(xr_dataset)
@@ -338,7 +338,7 @@ def load_dataset(
         The loaded xarray dataset.
     """
     # Verify the filepath
-    file_path = unox.verify_path(file_path)
+    file_path = vfy.verify_path(file_path)
     # If it is a csv, use custom function to load
     if file_path.endswith('.csv'):
         xr_dataset = csv_to_xr(file_path, **kwargs)
@@ -837,6 +837,7 @@ def restrict_domain(
     this_extent = get_extent(restricting_data)
 
     # Find indices of lats and lons that are in the restricting data
+    ## within 0.1 degrees of the 
     latmin = np.where(np.abs(lats-np.min(lat_r))<0.1)[0][0]
     latmax = np.where(np.abs(lats-np.max(lat_r))<0.1)[0][0] + 1
     lonmin = np.where(np.abs(lons-np.min(lon_r))<0.1)[0][0]
@@ -847,6 +848,63 @@ def restrict_domain(
     for arr in arrs_to_restrict:
         arrs_to_return.append(arr[:,latmin:latmax,lonmin:lonmax,:])
     return arrs_to_return, lat_r, lon_r
+
+def match_domains(
+    xr_a,
+    xr_b,
+    ):
+    """Restrict the domain of the given xarray Datasets to match each other.
+
+    Finds the maximum extent covered by both given datasets and restricts both
+    to match. Requires that at least some of the actual latitude and longitude
+    values are present in both datasets.
+
+    Parameters
+    ----------
+    xr_a : xarray.Dataset or xarray.DataArray
+        The first dataset.
+    xr_b : xarray.Dataset or xarray.DataArray
+        The second dataset.
+    
+    Returns
+    -------
+    xr_a : xarray.Dataset or xarray.DataArray
+        The first dataset, with the latitude and longitude extents trimmed to match `xr_b`.
+    xr_b : xarray.Dataset or xarray.DataArray
+        The first dataset, with the latitude and longitude extents trimmed to match `xr_a`.
+    """
+    # Verify argument types
+    xr_a = verify_dataset(xr_a)
+    xr_b = verify_dataset(xr_b)
+
+    # Get the extent of xr_a
+    (a_lat_min, a_lat_max, a_lon_min, a_lon_max) = get_extent(xr_a)
+    # Get the extent of xr_b
+    (b_lat_min, b_lat_max, b_lon_min, b_lon_max) = get_extent(xr_b)
+    
+    # Find the maximum extent covered by both datasets
+    lat_min = max(a_lat_min, b_lat_min)
+    lat_max = min(a_lat_max, b_lat_max)
+    lon_min = max(a_lon_min, b_lon_min)
+    lon_max = min(a_lon_max, b_lon_max)
+    # Verify these numbers make sense
+    if lat_min > lat_max:
+        raise ValueError(f"(match_domains) `lat_min` ({lat_min}) larger than `lat_max` ({lat_max}).")
+    if lon_min > lon_max:
+        raise ValueError(f"(match_domains) `lon_min` ({lon_min}) larger than `lon_max` ({lon_max}).")
+
+    # Trim both datasets
+    tr_xr_a = xr_a.sel(lat=slice(lat_min, lat_max), lon=slice(lon_min, lon_max))
+    tr_xr_b = xr_b.sel(lat=slice(lat_min, lat_max), lon=slice(lon_min, lon_max))
+
+    # Verify these two datasets have the same latitude and longitude values
+    lats_a, lons_a = get_lats_lons(tr_xr_a)
+    lats_b, lons_b = get_lats_lons(tr_xr_b)
+    if not np.array_equal(lats_a, lats_b):
+        raise ValueError(f"(match domains) Latitude values do not match between the two datasets.")
+    if not np.array_equal(lons_a, lons_b):
+        raise ValueError(f"(match domains) Longitude values do not match between the two datasets.")
+    return tr_xr_a, tr_xr_b
 
 def verify_npy(
     array,
@@ -1409,7 +1467,7 @@ def csv_to_pd(
     2019-01-11	33.553056	-86.815	    14.500000
     """
     # Verify the filepath
-    csv_filepath = unox.verify_path(csv_filepath)
+    csv_filepath = vfy.verify_path(csv_filepath)
     # Verify the file is a CSV
     if not csv_filepath.lower().endswith('.csv'):
         raise ValueError("File must be a CSV.")

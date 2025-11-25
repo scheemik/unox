@@ -14,7 +14,6 @@
     "stage_2": true,
     "stage_2_cutoff": 2013,
     "lsm_vars": [
-        "no2",
-        "no2_tm1"
-    ]
+    ],
+    "grid_size": [35, 46]
 }

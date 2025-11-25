@@ -24,14 +24,14 @@ month = sys.argv[2]
 
 #variable short and long names
 variable_names = {
-   "u10":"10m_u_component_of_wind", 
-#    "v10":"10m_v_component_of_wind", 
-#    "t2m":"2m_temperature", 
-#    "sp":"surface_pressure",
-#    "skt":"skin_temperature", 
-#    "ssrd":"surface_solar_radiation_downwards", 
-    # "blh":"boundary_layer_height",
-   "lsm":"land_sea_mask",
+    "u10":"10m_u_component_of_wind", 
+    "v10":"10m_v_component_of_wind", 
+    "t2m":"2m_temperature", 
+    "sp":"surface_pressure",
+    "skt":"skin_temperature", 
+    "ssrd":"surface_solar_radiation_downwards", 
+    "blh":"boundary_layer_height",
+    "lsm":"land_sea_mask",
 }
 # Get the list of variable short names
 variable_short_names = list(variable_names.keys())

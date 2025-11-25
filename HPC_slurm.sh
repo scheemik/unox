@@ -51,17 +51,17 @@ if [ -z "$TYPE" ]
 then
 	TYPE="test"
 	echo "-t, No run type specified, using TYPE=$TYPE"
-	CODEFILE='src/unox/HPC_scripts/test_run.py'
+	CODEFILE='src/unox/test_run.py'
 	echo "    Using CODEFILE=$CODEFILE"
 elif [ "$TYPE" = "test" ]
 then
 	echo "-t, Run type specified, using TYPE=$TYPE"
-	CODEFILE='src/unox/HPC_scripts/test_run.py'
+	CODEFILE='src/unox/test_run.py'
 	echo "    Using CODEFILE=$CODEFILE"
 elif [ "$TYPE" = "zfi_set" ]
 then
 	echo "-t, Run type specified, using TYPE=$TYPE"
-	CODEFILE='src/unox/HPC_scripts/test_run.py'
+	CODEFILE='src/unox/test_run.py'
 	echo "    Using CODEFILE=$CODEFILE"
 	SAVEDIR="HPC_runs/_${JOBNAME}"
 else
