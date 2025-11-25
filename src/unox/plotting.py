@@ -937,8 +937,8 @@ def make_colorbar(
 def plot_comparison(
     npy_a, 
     npy_b,
-    label_a='Array A',
-    label_b='Array B',
+    label_x='Array A',
+    label_y='Array B',
     ax=None,
     plt_title='',
     hist_params={'bins':100, 'vmax':1000, 'vmin':10},
@@ -957,9 +957,9 @@ def plot_comparison(
         The first numpy array to compare.
     npy_b : numpy.ndarray
         The second numpy array to compare.
-    label_a : str
+    label_x : str
         The label for the first array in the plot.
-    label_b : str
+    label_y : str
         The label for the second array in the plot.
     ax : matplotlib.axes.Axes or None
         The axes on which to plot the data. If None, a new figure and axes are created.
@@ -1029,8 +1029,8 @@ def plot_comparison(
     ax.set_aspect(1)
     ax.legend()
     ax.grid()
-    ax.set_xlabel(label_a)
-    ax.set_ylabel(label_b)   
+    ax.set_xlabel(label_x)
+    ax.set_ylabel(label_y)   
     # If new plot, return the figure
     if new_fig:
         # Add the colorbar
@@ -1049,7 +1049,7 @@ def corr_plot(
     restrict_lat_lon_to = None,
     ax = None,
     **kwargs,
-    ):
+):
     """
     Plot the prediction vs truth values.
 
@@ -1154,8 +1154,8 @@ def corr_plot(
     fig_q = plot_comparison(
         plot_data[0],
         plot_data[1],
-        label_a=plot_labels[0],
-        label_b=plot_labels[1],
+        label_x=plot_labels[0],
+        label_y=plot_labels[1],
         ax = ax,
         plt_title = plt_title,
         **kwargs,
@@ -1216,8 +1216,8 @@ def plot_true_pred_comp(
     fig = plot_comparison(
         truths, 
         preds, 
-        label_a=f"'Truth' ({var_units})",
-        label_b=f"Stage 1 ({var_units})",      
+        label_x=f"'Truth' ({var_units})",
+        label_y=f"Stage 1 ({var_units})",      
         hist_params=hist_params
     )
     # Set the figure title
@@ -1387,8 +1387,8 @@ def plot_npy_diff(
     # Make a comparison plot
     if no_diff == False:
         q = plot_comparison(npy_a[ab_diff], npy_b[ab_diff],
-                        label_a='npy_a (where they differ)',
-                        label_b='npy_b (where they differ)',
+                        label_x='npy_a (where they differ)',
+                        label_y='npy_b (where they differ)',
                         ax=ax[5],
                         hist_params={'bins':100, 'vmax':1000, 'vmin':10},
                         cmap=pplt.Colormap('viridis'),
@@ -1760,8 +1760,8 @@ def set_of_runs(
             q = plot_comparison(
                 plt_truth, 
                 pred_arrs[i],
-                label_a='truth',
-                label_b=f"Pred with {this_ax_title}",
+                label_x='truth',
+                label_y=f"Pred with {this_ax_title}",
                 ax=ax[i+2],
                 hist_params={'bins':100, 'vmax':1000, 'vmin':10},
                 cmap=pplt.Colormap('viridis'),
