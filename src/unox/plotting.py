@@ -928,24 +928,25 @@ def plot_comp_maps(
             hist_params=hist_params,
             **kwargs,
         )
-        fig_q_list[1], title_list[1] = corr_plot(
-            HPC_run=HPC_run,
-            year=year,
-            x_ax='pred_s2',
-            y_ax='truth',
-            ax=axs[-2],
-            hist_params=hist_params,
-            **kwargs,
-        )
-        fig_q_list[2], title_list[2] = corr_plot(
-            HPC_run=HPC_run,
-            year=year,
-            x_ax='pred',
-            y_ax='pred_s2',
-            ax=axs[-1],
-            hist_params=hist_params,
-            **kwargs,
-        )
+        if stage1_only == False:
+            fig_q_list[1], title_list[1] = corr_plot(
+                HPC_run=HPC_run,
+                year=year,
+                x_ax='pred_s2',
+                y_ax='truth',
+                ax=axs[-2],
+                hist_params=hist_params,
+                **kwargs,
+            )
+            fig_q_list[2], title_list[2] = corr_plot(
+                HPC_run=HPC_run,
+                year=year,
+                x_ax='pred',
+                y_ax='pred_s2',
+                ax=axs[-1],
+                hist_params=hist_params,
+                **kwargs,
+            )
         # Add the colorbar
         fig.colorbar(fig_q_list[0], loc='r', label='Count per pixel', extend='both', formatter='sci', rows=(n_rows_maps+1, n_rows))
 
