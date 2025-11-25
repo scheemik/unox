@@ -18,7 +18,7 @@ from unox.HPC_scripts.utils.load_input import get_npy_from_netcdf
 
 # Set font sizes
 mpl.rcParams['font.size'] = 16
-mpl.rcParams['axes.labelsize'] = 18
+mpl.rcParams['axes.labelsize'] = 16
 mpl.rcParams['xtick.labelsize'] = 12
 mpl.rcParams['ytick.labelsize'] = 12
 mpl.rcParams['legend.fontsize'] = 12
@@ -1076,7 +1076,7 @@ def plot_comparison(
     axis_lim = max(max_0, max_1) * padding
     # Add line of y=x
     xx = np.arange(0, axis_lim, 1)
-    ax.plot(xx, xx, 'k--', lw=2, label='y=x')
+    ax.plot(xx, xx, 'k--', lw=2)#, label='y=x')
     # Limit the x and y axes
     ax.set_xlim((0, axis_lim))
     ax.set_ylim((0, axis_lim))
@@ -1087,13 +1087,19 @@ def plot_comparison(
     else:
         # Perform linear regression
         slope, intercept, r_value, p_value, std_err = linregress(npy_a, npy_b)
-        ax.plot(xx, slope*xx+intercept, 'r--', lw=2, label='y=%.2f x + %.2f, R^2=%.2f'%(slope, intercept, r_value**2))
+        if intercept < 0:
+            pm_str = '-'
+        else:
+            pm_str = '+'
+        ax.plot(xx, slope*xx+intercept, 'r--', lw=2, label=rf'$y=%.2fx{pm_str}%.2f$, $R^2$=%.2f'%(slope, abs(intercept), r_value**2))
     # Format the plot
     ax.set_aspect(1)
     ax.legend()
     ax.grid()
-    ax.set_xlabel(label_x)
-    ax.set_ylabel(label_y)   
+    ax.format(
+        xlabel=label_x,
+        ylabel=label_y,
+    )
     # If new plot, return the figure
     if new_fig:
         # Add the colorbar
@@ -1193,7 +1199,7 @@ def corr_plot(
             ax_var = f"{y_var}_{this_ax}"
             # Assemble the axis label
             if '2' in this_ax:
-                label_mod = " for Stage 2"
+                label_mod = r"$_{s2}$"
             else:
                 label_mod = ""
             var_units = pred_xarray[ax_var].attrs['units']
