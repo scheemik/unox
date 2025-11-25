@@ -196,10 +196,16 @@ def split_input_files(
     print(f"Shape of yvalid: {yvalid.shape}")
     return xtrain, ytrain, xvalid, yvalid
 
-if input_fmt == 'npy':
-    x_files, y_files = load_input_files(inputfiles, stage=1)
-    xtrain, ytrain, xvalid, yvalid = split_input_files(x_files, y_files, stage=1, split_value=0.9)
-elif input_fmt == 'nc':
+def prepare_input(
+    inputfiles,
+):
+    """Load input data from a NetCDF file and prepare for training and validation.
+
+    Parameters
+    ----------
+    inputfiles : str
+        The name of the input set directory inside `inputfiles/`.
+    """
     # Assemble the file path to the netcdf
     netcdf_path = f"inputfiles/{inputfiles}/{inputfiles}.nc"
     # Ensure the netcdf file exists
@@ -231,6 +237,44 @@ elif input_fmt == 'nc':
     print("After concatenation:")
     print(f"\tShape of xtrain: {xtrain.shape}")
     print(f"\tShape of ytrain: {ytrain.shape}")
+    return xtrain, ytrain
+
+if input_fmt == 'npy':
+    x_files, y_files = load_input_files(inputfiles, stage=1)
+    xtrain, ytrain, xvalid, yvalid = split_input_files(x_files, y_files, stage=1, split_value=0.9)
+elif input_fmt == 'nc':
+    # # Assemble the file path to the netcdf
+    # netcdf_path = f"inputfiles/{inputfiles}/{inputfiles}.nc"
+    # # Ensure the netcdf file exists
+    # if not os.path.exists(netcdf_path):
+    #     raise FileNotFoundError(f"NetCDF file not found: {netcdf_path}")
+    # # Load the netcdf file
+    # input_ds = xr.open_dataset(netcdf_path)
+    # print(f"Finished loading: {netcdf_path}")
+    # # Get list of years present in the `from_xr` netcdf
+    # years = input_ds['time'].dt.year.values
+    # years = sorted(list(set(years)))
+    # # Create blank lists to hold x and y training data
+    # xtrain_list = []
+    # ytrain_list = []
+    # # If before the split year, add x and y data to train lists
+    # for year in range(min(years), split_year):
+    #     this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
+    #     xtrain_list.append(this_x_train_arr)
+    #     this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y')
+    #     ytrain_list.append(this_y_train_arr)
+    #     output_metadata['train_years']['stage1'].append(year)
+    # # Check the shapes of the input arrays
+    # x_input_shape = xtrain_list[0].shape
+    # print(f"\tShape of first xtrain file: {x_input_shape}")
+    # print(f"\tShape of first ytrain file: {ytrain_list[0].shape}")
+    # # Concatenate training data
+    # xtrain = np.concatenate(xtrain_list, axis=0)
+    # ytrain = np.concatenate(ytrain_list, axis=0)
+    # print("After concatenation:")
+    # print(f"\tShape of xtrain: {xtrain.shape}")
+    # print(f"\tShape of ytrain: {ytrain.shape}")
+    xtrain, ytrain = prepare_input(inputfiles)
     # Split into training and validation sets
     xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
     print("After data split:")
