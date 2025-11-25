@@ -1165,6 +1165,7 @@ def corr_plot(
 def all_corr_plots(
     HPC_run = 'no2_example_run',
     year = 2019,
+    hist_params={'bins':100, 'vmax':10000, 'vmin':10},
     **kwargs,
 ):
     """Plot all combinations of correlation plots for the given HPC run.
@@ -1175,6 +1176,10 @@ def all_corr_plots(
         The name of the HPC_run for which to make a correlation plot.
     year : int
         The year for which to make comparisons.
+    hist_params : dict
+        Dictionary containing the parameters for the histogram.
+        Must contain 'bins', 'vmax', and 'vmin'.
+        Defined here instead of in **kwargs to insure consistency between plots.
     **kwargs : dict
         Additional keyword arguments to pass to the `corr_plot` function.
 
@@ -1207,6 +1212,7 @@ def all_corr_plots(
         x_ax='pred',
         y_ax='truth',
         ax=axs[0],
+        hist_params=hist_params,
         **kwargs,
     )
     fig_q_list[1], title_list[1] = corr_plot(
@@ -1215,6 +1221,7 @@ def all_corr_plots(
         x_ax='pred_s2',
         y_ax='truth',
         ax=axs[1],
+        hist_params=hist_params,
         **kwargs,
     )
     fig_q_list[2], title_list[2] = corr_plot(
@@ -1223,6 +1230,7 @@ def all_corr_plots(
         x_ax='pred',
         y_ax='pred_s2',
         ax=axs[2],
+        hist_params=hist_params,
         **kwargs,
     )
     # Check whether all the titles are the same
