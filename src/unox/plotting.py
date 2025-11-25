@@ -1144,7 +1144,7 @@ def corr_plot(
 
     # Get the long name and units of the specified variable for plot labels
     try:
-        var_name = pred_xarray[y_var].attrs['long_name']
+        var_name = input_xarray[y_var].attrs['long_name']
     except:
         var_name = 'var'
     # Assemble the plot title
@@ -1159,8 +1159,79 @@ def corr_plot(
         ax = ax,
         plt_title = plt_title,
         **kwargs,
-    )     
-    return fig_q
+    )
+    return fig_q, plt_title
+
+def all_corr_plots(
+    HPC_run = 'no2_example_run',
+    year = 2019,
+    **kwargs,
+):
+    """Plot all combinations of correlation plots for the given HPC run.
+
+    Parameters
+    ----------
+    HPC_run : str
+        The name of the HPC_run for which to make a correlation plot.
+    year : int
+        The year for which to make comparisons.
+    **kwargs : dict
+        Additional keyword arguments to pass to the `corr_plot` function.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+
+    Examples
+    --------
+    >>> fig = all_corr_plots('no2_example_run', 2019)
+    """
+    # Verify argument types
+    if not isinstance(HPC_run, str):
+        raise TypeError(f"(corr_plot) `HPC_run` must be a string. Got type: {type(HPC_run)}.")
+    if not isinstance(year, int):
+        raise TypeError(f"(corr_plot) `year` must be an integer. Got type: {type(year)}.")
+    
+    # Create the figure
+    ## Setting `share=False` to allow separate axis labels for each subplot
+    fig, axs = pplt.subplots(refwidth=4, nrows=1, ncols=3, share=False)
+
+    # Create arrays to hold the plots and titles
+    fig_q_list = [None]*3
+    title_list = [None]*3
+    # Add the three correlation plots to the figure
+    fig_q_list[0], title_list[0] = corr_plot(
+        HPC_run=HPC_run,
+        year=year,
+        x_ax='pred',
+        y_ax='truth',
+        ax=axs[0],
+        **kwargs,
+    )
+    fig_q_list[1], title_list[1] = corr_plot(
+        HPC_run=HPC_run,
+        year=year,
+        x_ax='pred_s2',
+        y_ax='truth',
+        ax=axs[1],
+        **kwargs,
+    )
+    fig_q_list[2], title_list[2] = corr_plot(
+        HPC_run=HPC_run,
+        year=year,
+        x_ax='pred',
+        y_ax='pred_s2',
+        ax=axs[2],
+        **kwargs,
+    )
+    # Check whether all the titles are the same
+    if len(set(title_list)) != 1:
+        warnings.warn(f"(all_corr_plots) The titles of the correlation plots are not the same: {title_list}. Using the first title for the figure title.")
+    # Set the figure super title
+    fig.suptitle(title_list[0], fontsize=title_font_size)
+    # Add the colorbar
+    fig.colorbar(fig_q_list[0], loc='r', label='Count per pixel', formatter='sci')
 
 def plot_true_pred_comp(
     truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input_set':'sample_data'},
