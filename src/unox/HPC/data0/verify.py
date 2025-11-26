@@ -1,5 +1,9 @@
 import xarray as xr
 
+# Necessary to use relative imports (starting with a dot) to avoid
+# errors when running on HPC as the `unox` package is not available
+from .latlon import shift_lon_arr
+
 def verify_dataset(
     xr_dataset,
     check_time=True,
