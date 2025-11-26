@@ -1,7 +1,8 @@
 import numpy as np
 import os
 from datetime import datetime
-from unox import verify as vfy
+
+from unox.HPC.data0.verify_path import verify_path
 
 def time_this(func):
     """
@@ -63,8 +64,8 @@ def load_lats_lons(
     >>> lats, lons = load_lats_lons()
     """
     # Verify the paths
-    lat_path = vfy.verify_path(path+'lats.npy')
-    lon_path = vfy.verify_path(path+'lons.npy')
+    lat_path = verify_path(path+'lats.npy')
+    lon_path = verify_path(path+'lons.npy')
     with open(lat_path, 'rb') as f:
         lats = np.load(f)
     with open(lon_path, 'rb') as f:
@@ -95,7 +96,7 @@ def make_file_path(
     """
     # Verify the path
     try:
-        path = vfy.verify_path(os.path.dirname(path))
+        path = verify_path(os.path.dirname(path))
     except FileNotFoundError:
         # If the path doesn't exist, create it
         pass
@@ -104,7 +105,7 @@ def make_file_path(
         # if the path (or some of the path) already exists
         os.makedirs(os.path.dirname(path), exist_ok=True)
     # Verify the path
-    path = vfy.verify_path(os.path.dirname(path))
+    path = verify_path(os.path.dirname(path))
     return path
 
 def remove_non_empty_directory(
@@ -120,7 +121,7 @@ def remove_non_empty_directory(
         Relative path to the directory to be removed.
     """
     # Verify the path
-    top = vfy.verify_path(base_dir)
+    top = verify_path(base_dir)
     # Check if the path is a directory
     if not os.path.isdir(top):
         raise ValueError(f"Path {top} is not a directory.")
@@ -166,7 +167,7 @@ def show_available_data(
      'inputfiles/no2_sample_input/stage2/x/X_2015.npy']
     """
     # Check if the path exists
-    path = vfy.verify_path(path)
+    path = verify_path(path)
     # Recursively get all files in the directory
     data_files = recursive_paths(path)
     # Print the file paths, if Verbose mode is enabled
@@ -267,7 +268,7 @@ def get_input_data(
     # Build the file path
     file_path = f'{path_prefix}inputfiles/{input_set}/stage{stage}/{x_or_y}/{x_or_y.upper()}_{year}.npy'
     # Verify the path
-    file_path = vfy.verify_path(file_path)
+    file_path = verify_path(file_path)
     # Find the available data files
     data_files = show_available_data(f'{path_prefix}inputfiles/{input_set}/')
     # Check if the file exists
@@ -384,7 +385,7 @@ def get_pred_data(
     # Build the file path
     file_path = f'{path_prefix}HPC_runs/{HPC_run}/stage{stage}_output/pred_X_{year}.npy'
     # Verify the path
-    file_path = vfy.verify_path(file_path)
+    file_path = verify_path(file_path)
     # Find the available data files
     data_files = show_available_data(f'{path_prefix}HPC_runs/')
     # Check if the file exists

@@ -2,7 +2,7 @@ import xarray as xr
 import numpy as np
 
 from unox.HPC.data0.dataset import load_dataset
-import unox.HPC.data0.verify as vfy
+import unox.HPC.data0.verify_dataset as vfy
 
 minimal_xr0 = xr.DataArray(
     data=[[[1], [2]], [[3], [4]]],
