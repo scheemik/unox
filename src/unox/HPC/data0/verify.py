@@ -57,3 +57,53 @@ def verify_dataset(
     if shift_lons:
         xr_dataset['lon'] = shift_lon_arr(xr_dataset['lon'], **kwargs)
     return xr_dataset
+
+def fuzzy_coord_match(
+    coord
+):
+    """Returns standard coordinate name for given fuzzy match.
+
+    Takes in a coordinate name which may be a variation of standard
+    coordinate names (e.g., 'lat', 'latitude', 'Latitude') and returns the
+    standard coordinate name ('lat', 'lon', 'time') for latitude, longitude,
+    and time. Also returns the dummy 'number' coordinate from ERA5 data.
+
+    Parameters
+    ----------
+    coord : str
+        The coordinate name to match.
+
+    Returns
+    -------
+    matched_coord : str
+        The standard coordinate name that matches the input coordinate.
+
+    Examples
+    --------
+    >>> fuzzy_coord_match('lat')
+    'lat' 
+    >>> fuzzy_coord_match('latitude')
+    'lat'
+    >>> fuzzy_coord_match('Latitude')
+    'lat'
+    """
+    # Convert the coordinate to lowercase for matching
+    coord = coord.lower()
+    # Define a mapping of fuzzy matches to standard coordinates
+    coord_mapping = {
+        'lat': 'lat',
+        'latitude': 'lat',
+        'lon': 'lon',
+        'longitude': 'lon',
+        'time': 'time',
+        'valid_time': 'time',
+        'datetime': 'time',
+        'date': 'time',
+        'number': 'number',  # Dummy coordinate for ERA5 data
+    }
+    # Check if the coordinate is in the mapping
+    if coord in coord_mapping:
+        return coord_mapping[coord]
+    else:
+        # If not found, raise an error
+        raise ValueError(f"Coordinate '{coord}' does not match any standard coordinate names. Expected 'lat', 'lon', or 'time'.")
