@@ -1,7 +1,7 @@
 import xarray as xr
 import pandas as pd
 
-from unox.HPC.data0 import data as udata
+from unox.HPC.data0 import dataset as udata
 
 sample_datafiles = [
     'datafiles/sample_data/2019u10.nc',

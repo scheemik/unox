@@ -1,7 +1,7 @@
 import xarray as xr
 import numpy as np
 
-from unox.HPC.data0.data import load_dataset
+from unox.HPC.data0.dataset import load_dataset
 import unox.HPC.data0.verify as vfy
 
 minimal_xr0 = xr.DataArray(
