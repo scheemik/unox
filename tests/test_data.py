@@ -226,8 +226,6 @@ def test_print_latlon_info():
         else:
             assert False, f"print_latlon_info did not raise an exception on invalid input: {invalid_input}"
 
-# def test_verify_dataset():
-
 def test_verify_var():
     """Test the verify_var function."""
     # Create lists of valid variables for the sample data files
