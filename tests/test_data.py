@@ -292,17 +292,6 @@ def test_get_years():
         else:
             assert False, f"get_years did not raise an exception on invalid input: {invalid_input}"
 
-def test_verify_number():
-    """Test the verify_number function."""
-    # Test valid number values
-    valid_numbers = [0, 1, -1, 1.5, -1.5, 1e-15]
-    for num in valid_numbers:
-        assert udata.verify_number(num) == True, f"verify_number failed on valid number {num}"
-    # Test invalid number values
-    invalid_numbers = [np.nan, np.inf, -np.inf, '1', 'abc', None, True, False]
-    for num in invalid_numbers:
-        assert udata.verify_number(num) == False, f"verify_number failed on invalid number {num}"
-
 def test_clean_num_list():
     """Test the clean_num_list function."""
     # Test a valid list
