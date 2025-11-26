@@ -1,4 +1,5 @@
 import xarray as xr
+import pandas as pd
 
 from unox.HPC.data0 import data as udata
 
@@ -68,3 +69,58 @@ def test_load_dataset():
             assert True, f"load_dataset raised an exception on invalid file path: {e}"
         else:
             assert False, f"load_dataset did not raise an exception on invalid file path: {invalid_path}"
+
+def test_csv_to_pd():
+    """Test the csv_to_pd function."""
+    
+    # Test valid CSV file
+    csv_file = 'tests/data_for_tests/sample.csv'
+    expected_df = pd.DataFrame({
+        'col1': [1, 2, 3],
+        'col2': ['a', 'b', 'c']
+    })
+    actual_df = udata.csv_to_pd(csv_file, is_US_EPA=False)
+    pd.testing.assert_frame_equal(actual_df, expected_df, check_dtype=True)
+
+    # Test US EPA csv file
+    epa_csv_file = 'datafiles/sample_data/daily_42602_2019.csv'
+    expected_cols = ['Latitude', 'Longitude', 'no2']
+    actual_cols = udata.csv_to_pd(epa_csv_file, is_US_EPA=True).columns
+    assert list(actual_cols) == expected_cols, f"Expected columns {expected_cols}, but got {list(actual_cols)}"
+
+    # Test invalid CSV file
+    invalid_csv_file = 'tests/data_for_tests/invalid.csv'
+    try:
+        udata.csv_to_pd(invalid_csv_file)
+    except FileNotFoundError as e:
+        assert True, f"csv_to_pd raised an exception on invalid input: {e}"
+    else:
+        assert False, f"csv_to_pd did not raise an exception on invalid input: {invalid_csv_file}"
+
+    # Test non-CSV file
+    non_csv_file = 12345
+    try:
+        udata.csv_to_pd(non_csv_file)
+    except TypeError as e:
+        assert True, f"csv_to_pd raised an exception on non-CSV file: {e}"
+    else:
+        assert False, f"csv_to_pd did not raise an exception on non-CSV file: {non_csv_file}"
+    
+def test_get_US_EPA_species_name():
+    """Test the get_US_EPA_species_name function."""
+    
+    # Test valid species IDs
+    valid_ids = ['44201', '42401', '88101', '42602']
+    expected_names = ['o3', 'so2', 'pm25', 'no2']
+    for id, expected_name in zip(valid_ids, expected_names):
+        actual_name = udata.get_US_EPA_species_name(id)
+        assert actual_name == expected_name, f"Expected {expected_name}, but got {actual_name}"
+    
+    # Test invalid species name
+    invalid_species = 'not_a_species'
+    try:
+        udata.get_US_EPA_species_name(invalid_species)
+    except ValueError as e:
+        assert True, f"get_US_EPA_species_name raised an exception on invalid input: {e}"
+    else:
+        assert False, f"get_US_EPA_species_name did not raise an exception on invalid input: {invalid_species}"
