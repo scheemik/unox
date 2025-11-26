@@ -8,6 +8,8 @@ import json
 
 from data0.load_input import get_npy_from_netcdf
 from data0.dataset import get_dataset
+from data0.verify_path import verify_path
+from utils.data_split import data_split
 
 print("")
 print("===== Begin test_run.py =====")
@@ -59,8 +61,7 @@ except:
     config_path = f"{savedir}{config_file}.json"
 print(f"\targv[2], config_file: {config_file}")
 # Make sure the config file exists
-if not os.path.exists(config_path):
-    raise FileNotFoundError(f"Config file not found: {config_path}")
+config_path = verify_path(config_path)
 # Load config file to a dictionary
 with open(f"{config_path}", 'r') as file:
     config_dict = json.load(file)
@@ -78,7 +79,6 @@ except:
 print(f"\targv[3], version: {version}")
 
 ##################################################################
-from utils.data_split import data_split
 ##################################################################
 # Create output metadata dictionary
 
@@ -129,10 +129,8 @@ def load_input_files(
     x_files_path = f"inputfiles/{inputfiles}/stage{stage}/x/"
     y_files_path = f"inputfiles/{inputfiles}/stage{stage}/y/"
     # Ensure the directories exist
-    if not os.path.exists(x_files_path):
-        raise FileNotFoundError(f"Directory not found: {x_files_path}")
-    if not os.path.exists(y_files_path):
-        raise FileNotFoundError(f"Directory not found: {y_files_path}")
+    x_files_path = verify_path(x_files_path)
+    y_files_path = verify_path(y_files_path)
     # Load and sort the files
     x_files = sorted(glob.glob(f"inputfiles/{inputfiles}/stage{stage}/x/X_20*.npy"))
     y_files = sorted(glob.glob(f"inputfiles/{inputfiles}/stage{stage}/y/Y_20*.npy"))
