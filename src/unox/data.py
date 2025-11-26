@@ -8,6 +8,7 @@ from datetime import datetime
 
 from unox.HPC.data0.verify_path import verify_path
 from unox.HPC.data0.latlon import shift_lon_arr
+from unox.HPC.data0.verify_dtype import verify_number
 
 # Define the default latitude and longitude extents for this project
 DEFAULT_LAT_MIN = 11
@@ -405,42 +406,6 @@ def get_years(
     ## to avoid TypeError: Object of type int64 is not JSON serializable
     years = [int(year) for year in years]
     return years
-
-def verify_number(
-    value,
-    ):
-    """Verify that the given value is a number.
-
-    If the given value is a number that can be converted to an integer
-    ut is not a string, character, or bool, return True. 
-    Otherwise, return False.
-
-    Parameters
-    ----------
-    value : any
-        The value to verify.
-
-    Returns
-    -------
-    bool
-        True if the value is a number, False otherwise.
-
-    Examples
-    --------
-    >>> value = verify_number(5)
-    True
-    >>> value = verify_number("5")
-    False
-    >>> value = verify_number(np.nan)
-    False
-    """
-    if isinstance(value, str) or isinstance(value, bytes) or isinstance(value, type(True)):
-        return False
-    try:
-        foo = int(value)
-        return True
-    except:
-        return False
 
 def clean_num_list(
     val_list,
