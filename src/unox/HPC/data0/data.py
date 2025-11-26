@@ -1,4 +1,10 @@
 import xarray as xr
+import pandas as pd
+
+# Necessary to use relative imports (starting with a dot) to avoid
+# errors when running on HPC as the `unox` package is not available
+from .verify_path import verify_path
+from .verify import verify_dataset
 
 def get_dataset(
     set_to_get,
