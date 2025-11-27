@@ -16,7 +16,7 @@ print("===== Begin test_run.py =====")
 print(f"Current working directory: {os.getcwd()}")
 
 # Set parameters
-n_epochs = 250
+n_epochs = 2#50
 save_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
@@ -197,24 +197,29 @@ def split_input_files(
     return xtrain, ytrain, xvalid, yvalid
 
 def prepare_input(
-    inputfiles,
+    input_ds,
 ):
-    """Load input data from a NetCDF file and prepare for training and validation.
+    """Prepare the input data for the model.
+
+    Get the training data from the input NetCDF dataset as numpy arrays
+    and concatenate them along the time dimension.
 
     Parameters
     ----------
-    inputfiles : str
-        The name of the input set directory inside `inputfiles/`.
+    inputfiles : xr.Dataset
+        The dataset of the input NetCDF file.
+    
+    Returns
+    -------
     """
-    # Load the input netcdf file
-    input_ds = get_dataset(inputfiles, is_input_set=True)
-    print(f"Finished loading: {inputfiles}")
-    # Get list of years present in the `from_xr` netcdf
-    years = input_ds['time'].dt.year.values
-    years = sorted(list(set(years)))
     # Create blank lists to hold x and y training data
     xtrain_list = []
     ytrain_list = []
+    # Get years
+    # years = get_years()
+    # Get list of years present in the `from_xr` netcdf
+    years = input_ds['time'].dt.year.values
+    years = sorted(list(set(years)))
     # If before the split year, add x and y data to train lists
     for year in range(min(years), split_year):
         this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
@@ -223,8 +228,7 @@ def prepare_input(
         ytrain_list.append(this_y_train_arr)
         output_metadata['train_years']['stage1'].append(year)
     # Check the shapes of the input arrays
-    x_input_shape = xtrain_list[0].shape
-    print(f"\tShape of first xtrain file: {x_input_shape}")
+    print(f"\tShape of first xtrain file: {xtrain_list[0].shape}")
     print(f"\tShape of first ytrain file: {ytrain_list[0].shape}")
     # Concatenate training data
     xtrain = np.concatenate(xtrain_list, axis=0)
@@ -238,8 +242,16 @@ if input_fmt == 'npy':
     x_files, y_files = load_input_files(inputfiles, stage=1)
     xtrain, ytrain, xvalid, yvalid = split_input_files(x_files, y_files, stage=1, split_value=0.9)
 elif input_fmt == 'nc':
+    # Load the input netcdf file
+    input_ds = get_dataset(inputfiles, is_input_set=True)
+    # Get list of years present in the `from_xr` netcdf
+    years = input_ds['time'].dt.year.values
+    years = sorted(list(set(years)))
     # Prepare the input files
-    xtrain, ytrain = prepare_input(inputfiles)
+    xtrain, ytrain = prepare_input(input_ds)
+    # Get the shape of the unet model input data
+    ## Need to get this shape from the output of prepare_input() as it might change the lat-lon grid
+    unet_build_shape = xtrain.shape[1:]  # omit the first dimension (time)
     # Split into training and validation sets
     xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
     print("After data split:")
@@ -269,8 +281,8 @@ from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 
 unet = Unet()
 # The input shape for `build` should be [lat, lon, var]
-# i.e., omit the `time` dimension of `x_input_shape`
-unet.build(x_input_shape[1:])
+print(f"\tShape of model input layer to build: ({unet_build_shape})")
+unet.build(unet_build_shape)
 opt = Adam(learning_rate=1e-5) 
 
 unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
