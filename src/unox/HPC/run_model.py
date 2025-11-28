@@ -10,6 +10,7 @@ from data0.load_input import get_npy_from_netcdf
 from data0.dataset import uarray
 from data0.verify_path import verify_path
 from utils.data_split import data_split
+import data0.run_functions as rf
 
 print("")
 print("===== Begin test_run.py =====")
@@ -196,47 +197,6 @@ def split_input_files(
     print(f"Shape of yvalid: {yvalid.shape}")
     return xtrain, ytrain, xvalid, yvalid
 
-def prepare_input(
-    uarr,
-):
-    """Prepare the input data for the model.
-
-    Get the training data from the input NetCDF dataset as numpy arrays
-    and concatenate them along the time dimension.
-
-    Parameters
-    ----------
-    uarr : unox.uarray
-        The dataset of the input NetCDF file.
-    
-    Returns
-    -------
-    """
-    # Verify the uarray object
-    uarr._verify()
-    # Get list of years present in the `from_xr` netcdf
-    years = uarr._get_years()
-    # Create blank lists to hold x and y training data
-    xtrain_list = []
-    ytrain_list = []
-    # If before the split year, add x and y data to train lists
-    for year in range(min(years), split_year):
-        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
-        xtrain_list.append(this_x_train_arr)
-        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='y')
-        ytrain_list.append(this_y_train_arr)
-        output_metadata['train_years']['stage1'].append(year)
-    # Check the shapes of the input arrays
-    print(f"\tShape of first xtrain file: {xtrain_list[0].shape}")
-    print(f"\tShape of first ytrain file: {ytrain_list[0].shape}")
-    # Concatenate training data
-    xtrain = np.concatenate(xtrain_list, axis=0)
-    ytrain = np.concatenate(ytrain_list, axis=0)
-    print("After concatenation:")
-    print(f"\tShape of xtrain: {xtrain.shape}")
-    print(f"\tShape of ytrain: {ytrain.shape}")
-    return xtrain, ytrain
-
 if input_fmt == 'npy':
     x_files, y_files = load_input_files(inputfiles, stage=1)
     xtrain, ytrain, xvalid, yvalid = split_input_files(x_files, y_files, stage=1, split_value=0.9)
@@ -244,7 +204,7 @@ elif input_fmt == 'nc':
     # Load the input netcdf file
     uarr = uarray(inputfiles, is_input_set=True)
     # Prepare the input files
-    xtrain, ytrain = prepare_input(uarr)
+    xtrain, ytrain, output_metadata = rf.prepare_input(uarr, config_path, output_metadata, split_year)
     # Get the shape of the unet model input data
     ## Need to get this shape from the output of prepare_input() as it might change the lat-lon grid
     unet_build_shape = xtrain.shape[1:]  # omit the first dimension (time)
