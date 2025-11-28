@@ -7,7 +7,7 @@ import xarray as xr
 import json
 
 from data0.load_input import get_npy_from_netcdf
-from data0.dataset import get_dataset
+from data0.dataset import uarray
 from data0.verify_path import verify_path
 from utils.data_split import data_split
 
@@ -59,7 +59,7 @@ try:
 except:
     config_file = 'input_config'
     config_path = f"{savedir}{config_file}.json"
-print(f"\targv[2], config_file: {config_file}")
+print(f"\targv[2], config_file: {config_path}")
 # Make sure the config file exists
 config_path = verify_path(config_path)
 # Load config file to a dictionary
@@ -197,7 +197,7 @@ def split_input_files(
     return xtrain, ytrain, xvalid, yvalid
 
 def prepare_input(
-    input_ds,
+    uarr,
 ):
     """Prepare the input data for the model.
 
@@ -206,25 +206,24 @@ def prepare_input(
 
     Parameters
     ----------
-    inputfiles : xr.Dataset
+    uarr : unox.uarray
         The dataset of the input NetCDF file.
     
     Returns
     -------
     """
+    # Verify the uarray object
+    uarr._verify()
+    # Get list of years present in the `from_xr` netcdf
+    years = uarr._get_years()
     # Create blank lists to hold x and y training data
     xtrain_list = []
     ytrain_list = []
-    # Get years
-    # years = get_years()
-    # Get list of years present in the `from_xr` netcdf
-    years = input_ds['time'].dt.year.values
-    years = sorted(list(set(years)))
     # If before the split year, add x and y data to train lists
     for year in range(min(years), split_year):
-        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
+        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
         xtrain_list.append(this_x_train_arr)
-        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y')
+        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='y')
         ytrain_list.append(this_y_train_arr)
         output_metadata['train_years']['stage1'].append(year)
     # Check the shapes of the input arrays
@@ -243,12 +242,9 @@ if input_fmt == 'npy':
     xtrain, ytrain, xvalid, yvalid = split_input_files(x_files, y_files, stage=1, split_value=0.9)
 elif input_fmt == 'nc':
     # Load the input netcdf file
-    input_ds = get_dataset(inputfiles, is_input_set=True)
-    # Get list of years present in the `from_xr` netcdf
-    years = input_ds['time'].dt.year.values
-    years = sorted(list(set(years)))
+    uarr = uarray(inputfiles, is_input_set=True)
     # Prepare the input files
-    xtrain, ytrain = prepare_input(input_ds)
+    xtrain, ytrain = prepare_input(uarr)
     # Get the shape of the unet model input data
     ## Need to get this shape from the output of prepare_input() as it might change the lat-lon grid
     unet_build_shape = xtrain.shape[1:]  # omit the first dimension (time)
@@ -261,6 +257,7 @@ elif input_fmt == 'nc':
     print(f"\tShape of yvalid: {yvalid.shape}")
 
 print("Done loading data sets for stage 1")
+exit(0)
 
 ##################################################################
 
@@ -414,9 +411,9 @@ if input_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=1)
 elif input_fmt == 'nc':
     # Get the long name and units of the y variable to put in the new xarray
-    y_var = input_ds.attrs['y_var']
-    y_var_name = input_ds[y_var].long_name
-    y_var_unit = input_ds[y_var].units
+    y_var = uarr.xr.attrs['y_var']
+    y_var_name = uarr.xr[y_var].long_name
+    y_var_unit = uarr.xr[y_var].units
     # Create a new variable name and long name
     pred_var = f"{y_var}_pred"
     pred_var_name = f"Predicted {y_var_name}"
@@ -425,10 +422,10 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f"Generating predictions for year: {year}")
-        x_test, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
+        x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
         # Get the latitude and longitude values
-        lats = input_ds.lat.values
-        lons = input_ds.lon.values
+        # lats = input_ds.lat.values
+        # lons = input_ds.lon.values
         # Make the predictions
         pred = unet.predict(x_test)
         # Save the numpy array to file
@@ -437,7 +434,7 @@ elif input_fmt == 'nc':
         output_metadata['pred_years']['stage1'].append(year)
 
         # Select the data for the specified year
-        data_for_year = input_ds.sel(time=slice(f"{year}-01-01", f"{year}-12-31"))
+        data_for_year = uarr._select_year(year)
         # Load the output to an xarray Dataset
         this_year_pred_xr = xr.Dataset(
             data_vars=dict(
@@ -480,11 +477,11 @@ elif input_fmt == 'nc':
     xtrain_list = []
     ytrain_list = []
     # If before the split year, add x and y data to train lists
-    stage_2_cutoff = input_ds.attrs['stage_2_cutoff']
+    stage_2_cutoff = uarr.xr.attrs['stage_2_cutoff']
     for year in range(stage_2_cutoff+1, split_year):
-        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
+        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
         xtrain_list.append(this_x_train_arr)
-        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y')
+        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='y')
         ytrain_list.append(this_y_train_arr)
         output_metadata['train_years']['stage2'].append(year)
     print(f"\tShape of first xtrain file: {xtrain_list[0].shape}")
@@ -529,7 +526,7 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f"Generating predictions for year: {year}")
-        x_test, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
+        x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
         # Make the predictions
         pred = unet.predict(x_test)
         # Save out the numpy array to file
@@ -538,7 +535,7 @@ elif input_fmt == 'nc':
         output_metadata['pred_years']['stage2'].append(year)
 
         # Select the data for the specified year
-        data_for_year = input_ds.sel(time=slice(f"{year}-01-01", f"{year}-12-31"))
+        data_for_year = uarr._select_year(year)
         # Load the output to an xarray Dataset
         this_year_pred_xr = xr.Dataset(
             data_vars=dict(

@@ -5,6 +5,51 @@ import pandas as pd
 # errors when running on HPC as the `unox` package is not available
 from .verify_path import verify_path
 from .verify_dataset import verify_dataset
+from .latlon import shift_lon_arr
+
+# Note: Subclassing from xarray is not currently supported
+# so here, the xarray is an attribute rather than the parent class
+class uarray():
+    """A wrapper class for an xarray Dataset.
+
+    A class that wraps an xarray Dataset of a format specified by `verify_dataset()`.
+    All method names start with an underscore (_) to avoid conflicts.
+
+    Attributes
+    ----------
+    xr : xarray.Dataset or xarray.DataArray
+        The xarray dataset. Expected to have lat and lon coordinates, and optionally 
+        a time coordinate.
+    years : list of int
+        A list of unique years present in the time coordinate of the dataset.
+
+    Methods
+    -------
+    verify(**kwargs)
+        Verify specified aspects of the dataset using `verify_dataset()`.
+
+    """
+    # Initialize the uarray object
+    def __init__(self, xr_array, **kwargs):
+        self.xr = get_dataset(xr_array, **kwargs)
+        self.years = None
+    # Verify aspects of the dataset
+    def _verify(self, **kwargs):
+        self.xr = verify_dataset(self.xr, **kwargs)
+    # Get aspects of the dataset
+    def _get_years(self):
+        # Check whether years have already been computed
+        if isinstance(self.years, type(None)):
+            # Get the years
+            ## Note: this also verifies the dataset time coordinate
+            self.years = get_years(self.xr)
+        return self.years
+    def _select_year(self, year):
+        self._verify(check_time=True)
+        return self.xr.sel(time=slice(f"{year}-01-01", f"{year}-12-31"))
+    # Modify aspects of the dataset
+    def _shift_lons(self, **kwargs):
+        self.xr = shift_lon_arr(self.xr, **kwargs)
 
 def get_dataset(
     set_to_get,
