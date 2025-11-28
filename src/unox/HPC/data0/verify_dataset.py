@@ -55,7 +55,7 @@ def verify_dataset(
             raise ValueError("xr_dataset must have 'time' coordinate.")
     # Shift longitude values if specified
     if shift_lons:
-        xr_dataset['lon'] = shift_lon_arr(xr_dataset['lon'], **kwargs)
+        xr_dataset = shift_lon_arr(xr_dataset, **kwargs)
     return xr_dataset
 
 def fuzzy_coord_match(
