@@ -227,3 +227,32 @@ def get_US_EPA_species_name(
         return species_mapping[ID]
     else:
         raise ValueError(f"Invalid US EPA species ID: {ID}.")
+
+def get_years(
+    dataset,
+):
+    """Get a list of unique years from the time coordinate of the given dataset.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset, xarray.DataArray
+        The dataset from which to extract the years.
+
+    Returns
+    -------
+    years : list of int
+        A list of unique years in the dataset.
+    """
+    # Verify argument types
+    if isinstance(dataset, xr.Dataset) or isinstance(dataset, xr.DataArray):
+        xr_dataset = verify_dataset(dataset, check_time=True)
+    else:
+        raise TypeError(f"(get_years) `dataset` must be an xarray Dataset or DataArray. Got type: {type(dataset)}.")
+    # Get a list of years present in the dataset
+    years = xr_dataset['time'].dt.year.values
+    # Sort and get unique years
+    years = sorted(list(set(years)))
+    # Convert years to list of ints
+    ## to avoid TypeError: Object of type int64 is not JSON serializable
+    years = [int(year) for year in years]
+    return years
