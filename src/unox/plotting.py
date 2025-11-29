@@ -10,11 +10,13 @@ import json
 import os
 
 from unox import unox
-from unox import verify as vfy
+from unox.HPC.data0.verify_path import verify_path
 from unox import data as udata
+from unox.HPC.data0.dataset import uarray
+from unox.HPC.data0.verify_dataset import verify_dataset
 from unox import plot_format as uplt_fmt
 from unox.input import x_or_y_var, get_input_index
-from unox.HPC.utils.load_input import get_npy_from_netcdf
+from unox.HPC.data0.load_input import get_npy_from_netcdf
 
 # Set font sizes
 mpl.rcParams['font.size'] = 16
@@ -49,11 +51,11 @@ def plot_extent(
     # Check if xr_dataset is a file path or an xarray object
     if isinstance(xr_dataset, str):
         # If it's a file path, verify the file path
-        xr_dataset = vfy.verify_path(xr_dataset)
+        xr_dataset = verify_path(xr_dataset)
         # Now open the dataset
         xr_dataset = xr.open_dataset(xr_dataset)
     # Verify the xr_dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
     lat_min, lat_max, lon_min, lon_max = udata.get_extent(xr_dataset)
     # Find the midpoint of the longitude values to center the map
@@ -103,11 +105,11 @@ def plot_lats_lons(
     # Check if xr_dataset is a file path or an xarray object
     if isinstance(xr_dataset, str):
         # If it's a file path, verify the file path
-        xr_dataset = vfy.verify_path(xr_dataset)
+        xr_dataset = verify_path(xr_dataset)
         # Now open the dataset
         xr_dataset = xr.open_dataset(xr_dataset)
     # Verify the xr_dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # Find the min and max lat and lon values
     this_extent = udata.get_extent(xr_dataset)
     # Enlarge the extent of the map by the given padding value
@@ -179,12 +181,12 @@ def plot_nc_map(
     # Check if xr_dataset is a file path or an xarray object
     if isinstance(xr_dataset, str):
         # If it's a file path, verify the file path
-        xr_dataset = vfy.verify_path(xr_dataset)
+        xr_dataset = verify_path(xr_dataset)
         # Now open the dataset
         xr_dataset = xr.open_dataset(xr_dataset)
     # Verify the xr_dataset
     # Squeeze to remove `var` dimension, if present
-    xr_dataset = udata.verify_dataset(xr_dataset).squeeze(drop=True)
+    xr_dataset = verify_dataset(xr_dataset).squeeze(drop=True)
     # Select the time slice to plot
     var_sel_time, overall_title = select_time(
         xr_dataset,
@@ -246,7 +248,7 @@ def select_time(
         The title string for the plot.
     """
     # Verify argument types
-    xr_dataset = udata.verify_dataset(xr_dataset, check_time=True)
+    xr_dataset = verify_dataset(xr_dataset, check_time=True)
     if isinstance(var, type(None)):
         # Keep all the variables and return an xarray Dataset
         this_xarray = xr_dataset
@@ -339,7 +341,8 @@ def nc_map(
     if not isinstance(xr_data_arr, xr.DataArray):
         raise TypeError(f"(nc_map) `xr_data_arr` must be an xarray DataArray. Got type: {type(xr_data_arr)}.")
     # Verify the xr_data_arr. Assume there is no time dimension
-    xr_data_arr = udata.verify_dataset(xr_data_arr, check_time=False)
+    xr_data_arr = verify_dataset(xr_data_arr, check_time=False)
+    # If there are any dimensions of size 1 (var, for example), squeeze them out
     # Get the variable name from xr_data_arr
     var = xr_data_arr.name
 
@@ -719,7 +722,7 @@ def get_input_set(
     # Assemble filepath to the HPC_run configuration dictionary
     config_path = f"HPC_runs/{HPC_run}/input_config.json"
     # Verify the config filepath
-    config_path = vfy.verify_path(config_path)
+    config_path = verify_path(config_path)
     # Load config file to a dictionary
     with open(f"{config_path}", 'r') as file:
         config_dict = json.load(file)
@@ -785,11 +788,11 @@ def plot_comp_maps(
     # Assemble filepath to the HPC_run predictions netcdf
     pred_nc_path = f"HPC_runs/{HPC_run}/predictions.nc"
     # Get and verify predictions data
-    pred_xarray = udata.get_dataset(pred_nc_path)
+    pred_xarray = uarray(pred_nc_path).xr
     # Get the input set used in the HPC run
     input_set = get_input_set(HPC_run)
     # Get and verify input set
-    input_xarray = udata.get_dataset(input_set, is_input_set=True)
+    input_xarray = uarray(input_set, is_input_set=True).xr
 
     # Get the `y_var` name from the input dataset
     y_var = input_xarray.attrs['y_var']
@@ -1171,11 +1174,11 @@ def corr_plot(
     # Assemble filepath to the HPC_run predictions netcdf
     pred_nc_path = f"HPC_runs/{HPC_run}/predictions.nc"
     # Get and verify predictions data
-    pred_xarray = udata.get_dataset(pred_nc_path)
+    pred_xarray = uarray(pred_nc_path).xr
     # Get the input set used in the HPC run
     input_set = get_input_set(HPC_run)
     # Get and verify input set
-    input_xarray = udata.get_dataset(input_set, is_input_set=True)
+    input_xarray = uarray(input_set, is_input_set=True).xr
 
     # Get the `y_var` name from the input dataset
     y_var = input_xarray.attrs['y_var']
@@ -1724,7 +1727,7 @@ def set_of_runs(
         if maps_or_comps not in ['maps', 'comps']:
             raise ValueError(f"(set_of_maps) `maps_or_comps` must be either 'maps' or 'comps'. Got {maps_or_comps}.")
     # Verify the set of runs exists
-    set_path = vfy.verify_path(f"HPC_runs/{set_name}")
+    set_path = verify_path(f"HPC_runs/{set_name}")
     # Get a list of the runs in the set (the subdirectories of the set directory)
     runs_in_set = os.listdir(set_path)
     # Replace the year in `this_date` with the specified year
