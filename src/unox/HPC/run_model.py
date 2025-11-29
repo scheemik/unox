@@ -203,6 +203,8 @@ if input_fmt == 'npy':
 elif input_fmt == 'nc':
     # Load the input netcdf file
     uarr = uarray(inputfiles, is_input_set=True)
+    # Get the years
+    years = uarr._get_years()
     # Prepare the input files
     xtrain, ytrain, output_metadata = rf.prepare_input(uarr, config_path, output_metadata, split_year)
     # Get the shape of the unet model input data
