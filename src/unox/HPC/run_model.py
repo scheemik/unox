@@ -11,6 +11,7 @@ from data0.dataset import uarray
 from data0.verify_path import verify_path
 from utils.data_split import data_split
 import data0.run_functions as rf
+from data0.config import get_config
 
 print("")
 print("===== Begin test_run.py =====")
@@ -52,21 +53,14 @@ except FileExistsError:
 # Load second input argument, if it exists: the config file to use
 try:
     config_file = sys.argv[2]
-    if config_file == "default":
-        config_file = 'input_config'
-        config_path = f"{savedir}{config_file}.json"
-    else:
-        config_path = f"inputfiles/_input_configs/{config_file}.json"
+    config_dict = get_config(config_file)
 except:
     config_file = 'input_config'
     config_path = f"{savedir}{config_file}.json"
-print(f"\targv[2], config_file: {config_path}")
-# Make sure the config file exists
-config_path = verify_path(config_path)
-# Load config file to a dictionary
-with open(f"{config_path}", 'r') as file:
-    config_dict = json.load(file)
-    inputfiles = config_dict['input_set']
+    config_dict = get_config(config_path)
+print(f"\targv[2], config_file: {config_file}")
+# Get the inputset from the config file
+inputfiles = config_dict['input_set']
 # Write the config dictionary to a json file in the savedir
 if not savedir in config_path:
     with open(f"{savedir}input_config.json", 'w') as file:
