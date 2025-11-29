@@ -343,6 +343,10 @@ def nc_map(
     # Verify the xr_data_arr. Assume there is no time dimension
     xr_data_arr = verify_dataset(xr_data_arr, check_time=False)
     # If there are any dimensions of size 1 (var, for example), squeeze them out
+    xr_data_arr = xr_data_arr.squeeze(drop=True)
+    # Check to ensure that `lat` and `lon` are the only remaining dimensions
+    if not set(xr_data_arr.dims).issubset({'lat', 'lon'}):
+        raise ValueError(f"(nc_map) `xr_data_arr` must have only 'lat' and 'lon' dimensions after squeezing. Got dimensions: {xr_data_arr.dims}.")
     # Get the variable name from xr_data_arr
     var = xr_data_arr.name
 
