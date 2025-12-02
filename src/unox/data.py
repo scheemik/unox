@@ -6,7 +6,7 @@ import os
 import re
 from datetime import datetime
 
-from unox.HPC.data0.verify_path import verify_path
+from unox.HPC.data0.paths import verify_path
 from unox.HPC.data0.latlon import shift_lon_arr
 from unox.HPC.data0.verify_dtype import verify_number
 from unox.HPC.data0.verify_dataset import verify_dataset
