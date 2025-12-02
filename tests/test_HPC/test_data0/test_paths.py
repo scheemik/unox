@@ -30,10 +30,10 @@ def test_remove_non_empty_directory():
     """Test the remove_non_empty_directory function."""
     # Create a temporary directory with some files and subdirectories
     temp_dir = 'test_remove_non_empty_directory'
-    os.makedirs(temp_dir, exist_ok=True)
+    os.makedirs(temp_dir, exist_ok=False)
     with open(f"{temp_dir}/file1.txt", 'w') as f:
         f.write('This is a test file.')
-    os.makedirs(f"{temp_dir}/subdir", exist_ok=True)
+    os.makedirs(f"{temp_dir}/subdir", exist_ok=False)
     with open(f"{temp_dir}/subdir/file2.txt", 'w') as f:
         f.write('This is another test file.')
     
@@ -42,6 +42,24 @@ def test_remove_non_empty_directory():
     
     # Check if the directory has been removed
     assert not os.path.exists(temp_dir), f"Directory {temp_dir} was not removed."
+
+    # Create nested directory structure
+    nested_dirs = ['a/', 'b/', 'c/', 'd/']
+    # Make the nested directories
+    full_nested_dirs = ''.join(nested_dirs)
+    os.makedirs(full_nested_dirs, exist_ok=False)
+    # Remove each directory from the deepest to the top
+    dir_to_remove = full_nested_dirs
+    for i in range(len(nested_dirs)-1, -1, -1):
+        # Remove the deepest directory
+        upath.remove_non_empty_directory(dir_to_remove)
+        # Confirm that the directory has been removed
+        assert not os.path.exists(dir_to_remove), f"Directory {dir_to_remove} was not removed."
+        # Set the directory to remove for next iteration
+        dir_to_remove = dir_to_remove.replace(nested_dirs[i], '')
+        # Confirm the rest of the directory structure exists
+        if not i == 0:
+            assert os.path.exists(dir_to_remove), f"Directory {dir_to_remove} was removed too soon."
     
     # Test with a non-directory path
     try:
