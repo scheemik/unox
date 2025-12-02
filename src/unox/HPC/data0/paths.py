@@ -93,16 +93,21 @@ def make_file_path(
     >>> make_file_path('datafiles/some/more/data/a_file.txt')
     'datafiles/some/more/data/'
     """
+    # Verify argument types
+    if not isinstance(path, str):
+        raise TypeError(f"(make_file_path) `path` must be a string. Got type: {type(path)}")
+    # Get just the directory part of the path
+    dir_path = os.path.dirname(path)
     # Verify the path
     try:
-        path = verify_path(os.path.dirname(path))
+        dir_path = verify_path(dir_path)
     except FileNotFoundError:
         # If the path doesn't exist, create it
         pass
-    if not os.path.exists(os.path.dirname(path)):
+    if not os.path.exists(dir_path):
         # Use the `exist_ok=True` argument to avoid raising an error 
         # if the path (or some of the path) already exists
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        os.makedirs(dir_path, exist_ok=True)
     # Verify the path
-    path = verify_path(os.path.dirname(path))
-    return path
+    dir_path = verify_path(dir_path)
+    return dir_path
