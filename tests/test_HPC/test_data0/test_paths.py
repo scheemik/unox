@@ -71,29 +71,37 @@ def test_remove_non_empty_directory():
 
 def test_make_file_path():
     """Test the make_file_path function."""
-    # Test with valid input
-    valid_path = 'test_make_file_path/path/to/file.txt'
-    actual = upath.make_file_path(valid_path)
-    expected = 'test_make_file_path/path/to'
-    assert actual == expected, f"Expected {expected}, but got {actual}"
-    # Delete the created directory for cleanup
-    base_dir = valid_path.split('/')[0]
-    upath.remove_non_empty_directory(base_dir)
-    # Test with valid input that already exists
-    # Remove everything after the second to last `/` in the valid path
-    partial_path = f"/".join(valid_path.split('/')[:-2])
-    print(f"Partial path: {partial_path}")
-    print(f"Valid path: {valid_path}")
-    os.makedirs(partial_path)
-    actual = upath.make_file_path(valid_path)
-    assert actual == expected, f"Expected {expected}, but got {actual}"
-    # Delete the created directory for cleanup
-    upath.remove_non_empty_directory(base_dir)
-    # Test with invalid input
-    invalid_path = 12345
-    try:
-        upath.make_file_path(invalid_path)
-    except (TypeError) as e:
-        assert True, f"make_file_path raised an exception on invalid input: {e}"
-    else:
-        assert False, f"make_file_path did not raise an exception on invalid input {invalid_path}"
+    # Test with valid inputs
+    test_cases = [
+        {
+            'input': 'test_make_file_path/path/to/file.txt',
+            'expected': 'test_make_file_path/path/to',
+        },
+        {
+            'input': 'test_make_file_path/path',
+            'expected': 'test_make_file_path',
+        },
+    ]
+    for case in test_cases:
+        actual = upath.make_file_path(case['input'])
+        assert actual == case['expected'], f"Expected {case['expected']}, but got {actual}"
+        # Confirm the directory actually exists
+        assert os.path.exists(case['expected']), f"Directory {case['expected']} was not found."
+        # Clean up by removing the created directory
+        base_dir = case['input'].split('/')[0]
+        upath.remove_non_empty_directory(base_dir)
+    # Test with invalid inputs
+    invalid_paths = [
+        12345, 
+        None,
+        True,
+        [],
+        {},
+    ]
+    for invalid_path in invalid_paths:
+        try:
+            upath.make_file_path(invalid_path)
+        except (TypeError) as e:
+            assert True, f"make_file_path raised an exception on invalid input: {e}"
+        else:
+            assert False, f"make_file_path did not raise an exception on invalid input {invalid_path}"
