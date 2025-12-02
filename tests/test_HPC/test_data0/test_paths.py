@@ -79,7 +79,11 @@ def test_make_file_path():
         },
         {
             'input': 'test_make_file_path/path',
-            'expected': 'test_make_file_path',
+            'expected': 'test_make_file_path/path',
+        },
+        {
+            'input': 'test_dir',
+            'expected': 'test_dir',
         },
     ]
     for case in test_cases:
