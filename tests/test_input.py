@@ -6,6 +6,8 @@ import pandas as pd
 import os
 import json
 
+from unox.HPC.data0.paths import verify_path
+
 # Create an example xarray Dataset for testing
 # Include dimensions of time, lat, lon, and some example variables
 n_lat = 10
@@ -87,7 +89,7 @@ def test_make_y_input_file():
     # Assemble file path to verification array
     verify_filepath = f"{verifydir}stage1/y/Y_{this_year}.npy"
     # Verify that file path
-    verify_filepath = unox.verify_path(verify_filepath)
+    verify_filepath = verify_path(verify_filepath)
     # Load the verification array
     verify_array = np.load(verify_filepath)
     # Call the function to create the y input file
@@ -253,7 +255,7 @@ def test_make_x_input_file():
         # Assemble file path to verification array
         verify_filepath = f"{verifydir}stage{this_stage}/x/X_{this_year}.npy"
         # Verify that file path
-        verify_filepath = unox.verify_path(verify_filepath)
+        verify_filepath = verify_path(verify_filepath)
         # Load the verification array
         verify_array = np.load(verify_filepath)
         # Call the function to create the x input file

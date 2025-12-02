@@ -5,7 +5,7 @@ import json
 
 # Necessary to use relative imports (starting with a dot) to avoid
 # errors when running on HPC as the `unox` package is not available
-from .verify_path import verify_path
+from .paths import verify_path
 from .verify_dataset import verify_dataset
 
 def get_npy_from_netcdf(

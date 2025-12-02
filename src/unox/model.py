@@ -1,6 +1,6 @@
 from tensorflow.keras import models
 
-from unox import verify as vfy
+from unox.HPC.data0.paths import verify_path
 # Import functions used in building models to allow for importing custom objects
 from unox.HPC.utils import functions
 
@@ -25,7 +25,7 @@ def load_model(
     >>> model.summary()
     """
     # Verify the model path
-    model_path = vfy.verify_path(model_path)
+    model_path = verify_path(model_path)
     # Vertify the path ends with .h5 or .keras
     if not (model_path.endswith('.h5') or model_path.endswith('.keras')):
         raise ValueError("Model path must end with .h5 or .keras")

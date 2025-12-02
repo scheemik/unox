@@ -10,7 +10,7 @@ import json
 import os
 
 from unox import unox
-from unox.HPC.data0.verify_path import verify_path
+from unox.HPC.data0.paths import verify_path
 from unox import data as udata
 from unox.HPC.data0.dataset import uarray
 from unox.HPC.data0.verify_dataset import verify_dataset

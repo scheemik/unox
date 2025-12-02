@@ -8,7 +8,7 @@ import json
 
 from data0.load_input import get_npy_from_netcdf
 from data0.dataset import uarray
-from data0.verify_path import verify_path
+from data0.paths import verify_path
 from utils.data_split import data_split
 import data0.run_functions as rf
 from data0.config import get_config
@@ -53,6 +53,7 @@ except FileExistsError:
 # Load second input argument, if it exists: the config file to use
 try:
     config_file = sys.argv[2]
+    config_path = config_file
     config_dict = get_config(config_file)
 except:
     config_file = 'input_config'

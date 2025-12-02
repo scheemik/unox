@@ -3,7 +3,7 @@ import pandas as pd
 
 # Necessary to use relative imports (starting with a dot) to avoid
 # errors when running on HPC as the `unox` package is not available
-from .verify_path import verify_path
+from .paths import verify_path
 from .verify_dataset import verify_dataset
 from .latlon import shift_lon_arr
 

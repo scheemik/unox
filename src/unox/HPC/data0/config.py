@@ -1,6 +1,6 @@
 import json
 
-from .verify_path import verify_path
+from .paths import verify_path
 
 def get_config(config_file):
     """Load the configuration from a JSON file.

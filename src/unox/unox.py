@@ -2,7 +2,7 @@ import numpy as np
 import os
 from datetime import datetime
 
-from unox.HPC.data0.verify_path import verify_path
+from unox.HPC.data0.paths import verify_path
 
 def time_this(func):
     """

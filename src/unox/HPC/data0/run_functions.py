@@ -1,6 +1,10 @@
 import numpy as np
 
-from data0.load_input import get_npy_from_netcdf
+# Necessary to use relative imports (starting with a dot) to avoid
+# errors when running on HPC as the `unox` package is not available
+from .paths import verify_path
+from .load_input import get_npy_from_netcdf
+
 
 def prepare_input(
     uarr,

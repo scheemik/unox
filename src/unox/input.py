@@ -8,7 +8,7 @@ import json
 import warnings
 
 import unox.unox as unox
-from unox.HPC.data0.verify_path import verify_path
+from unox.HPC.data0.paths import verify_path
 import unox.data as udata
 from unox.plot_format import pad_extent
 

@@ -1,6 +1,6 @@
 import os
 
-import unox.HPC.data0.verify_path as upath
+import unox.HPC.data0.paths as upath
 
 def test_verify_path():
     """Test the verify_path function."""
