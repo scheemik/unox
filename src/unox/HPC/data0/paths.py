@@ -96,8 +96,11 @@ def make_file_path(
     # Verify argument types
     if not isinstance(path, str):
         raise TypeError(f"(make_file_path) `path` must be a string. Got type: {type(path)}")
-    # Get just the directory part of the path
-    dir_path = os.path.dirname(path)
+    # If the path contains a file extension, remove the full file name
+    if '.' in path.split('/')[-1]:
+        dir_path = os.path.dirname(path)
+    else:
+        dir_path = path
     # Verify the path
     try:
         dir_path = verify_path(dir_path)
