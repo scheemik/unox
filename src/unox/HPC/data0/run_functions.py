@@ -98,9 +98,15 @@ def process_cmd_args(
 
     # Load the third input argument: the version of the packages to use
     try:
-        version = int(cmd_args[3])
+        version = cmd_args[3]
     except:
         version = default_version 
+    # Command line arguments are sometimes typed into a string
+    if isinstance(version, str):
+        try: 
+            version = int(version)
+        except:
+            raise ValueError(f"(process_cmd_args) `version` could not be cast to an integer. Given: {version}")
     # Verify that `version` is a number
     if not verify_number(version):
         raise TypeError(f"(process_cmd_args) `version` (`cmd_args[3]`) must be a number. Got {type(version)}")
