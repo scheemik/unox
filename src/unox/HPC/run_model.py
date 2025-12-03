@@ -12,6 +12,7 @@ from data0.paths import verify_path
 from utils.data_split import data_split
 import data0.run_functions as rf
 from data0.config import get_config
+import data0.run_functions as rf
 
 print("")
 print("===== Begin test_run.py =====")
@@ -26,53 +27,9 @@ split_value = 0.9
 
 # -------- Get input arguments --------
 print("Using input arguments:")
-# Load first input argument, if it exists: the save directory
-try:
-    savedir = sys.argv[1] + '/'
-except:
-    savedir = 'HPC_runs/test_unet/'  #directory to save output in
-print(f"\targv[1], savedir: {savedir}")
-try:
-    os.mkdir(savedir)
-    print(f"\t\tCreated directory: {savedir}")
-except FileExistsError:
-    print(f"\t\t{savedir} exists")
-try:
-    os.mkdir(f"{savedir}stage1_output/")
-except FileExistsError:
-    print(f"\t\tstage1_output/ exists")
-try:
-    os.mkdir(f"{savedir}stage2_output/")
-except FileExistsError:
-    print(f"\t\tstage2_output/ exists")
-try:
-    os.mkdir(f"{savedir}checkpts/")
-except FileExistsError:
-    print(f"\t\tcheckpts/ exists")
-
-# Load second input argument, if it exists: the config file to use
-try:
-    config_file = sys.argv[2]
-    config_path = config_file
-    config_dict = get_config(config_file)
-except:
-    config_file = 'input_config'
-    config_path = f"{savedir}{config_file}.json"
-    config_dict = get_config(config_path)
-print(f"\targv[2], config_file: {config_file}")
+savedir, config_dict, config_path, version = rf.process_cmd_args(sys.argv)
 # Get the inputset from the config file
 inputfiles = config_dict['input_set']
-# Write the config dictionary to a json file in the savedir
-if not savedir in config_path:
-    with open(f"{savedir}input_config.json", 'w') as file:
-        file.write(json.dumps(config_dict, indent=4))
-
-# Load third input argument, if it exists: the version of the code to use
-try:
-    version = int(sys.argv[3])
-except:
-    version = 1
-print(f"\targv[3], version: {version}")
 
 ##################################################################
 ##################################################################
@@ -80,7 +37,7 @@ print(f"\targv[3], version: {version}")
 
 output_metadata = {
     'savedir': savedir,
-    'config_file': config_file,
+    'config_path': config_path,
     'config_dict': config_dict,
     'version': version,
     'n_epochs': n_epochs,
