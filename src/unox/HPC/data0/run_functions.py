@@ -45,6 +45,8 @@ def process_cmd_args(
         The path to the directory in which to save model outputs.
     config_dict : dict
         The model configuration dictionary.
+    config_path : str
+        The path to the configuration file used.
     version : int
         The version of the packages to use for running the model (0 or 1).
 
@@ -120,7 +122,7 @@ def process_cmd_args(
         stage1_dir = make_file_path(f"{savedir}stage1_output/")
         stage2_dir = make_file_path(f"{savedir}stage2_output/")
     
-    return savedir, config_dict, version
+    return savedir, config_dict, config_path, version
 
 def prepare_input(
     uarr,

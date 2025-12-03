@@ -52,7 +52,7 @@ def test_process_cmd_args():
     # Test each case
     for case in test_cases:
         # Use the function directly
-        savedir, config_dict, version = rf.process_cmd_args(case['cmd_args'], verbose=False)
+        savedir, config_dict, config_file, version = rf.process_cmd_args(case['cmd_args'], verbose=False)
         assert savedir == case['expected_savedir'], f"Expected savedir {case['expected_savedir']}, got {savedir}"
         # Get the config file to compare
         expected_config = get_config(case['expected_config_file'])
@@ -87,7 +87,7 @@ def test_process_cmd_args():
             file.write(json.dumps(test_config, indent=4))
         # Use the function directly
         if i == 0:
-            savedir, config_dict, version = rf.process_cmd_args(cmd_args, verbose=False)
+            savedir, config_dict, config_file, version = rf.process_cmd_args(cmd_args, verbose=False)
             assert savedir == test_save_dir+'/', f"Expected savedir {test_save_dir}, got {savedir}"
             # Compare the configuration dictionaries
             assert config_dict == test_config, f"Expected config_dict from {test_config_file} does not match actual."
