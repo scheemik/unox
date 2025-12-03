@@ -98,7 +98,7 @@ def process_cmd_args(
 
     # Load the third input argument: the version of the packages to use
     try:
-        version = cmd_args[3]
+        version = int(cmd_args[3])
     except:
         version = default_version 
     # Verify that `version` is a number
