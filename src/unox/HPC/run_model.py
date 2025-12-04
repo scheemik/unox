@@ -20,7 +20,7 @@ print(f"Current working directory: {os.getcwd()}")
 
 # Set parameters
 n_epochs = 2#50
-save_fmt = 'keras' # 'h5', 'keras', or 'both'
+model_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
 split_value = 0.9
@@ -41,7 +41,7 @@ output_metadata = {
     'config_dict': config_dict,
     'version': version,
     'n_epochs': n_epochs,
-    'save_fmt': save_fmt,
+    'model_fmt': model_fmt,
     'input_fmt': input_fmt,
     'split_year': split_year,
     'split_value': split_value,
@@ -259,7 +259,7 @@ def begin_training(
         unet.save_model(f"{savedir}unet_stage{stage}_model.keras")
     return unet
 
-unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=save_fmt)
+unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=model_fmt)
 
 # Generate predictions for evaluation
 ### Load testing data sets
@@ -414,17 +414,17 @@ elif input_fmt == 'nc':
 print('Done loading data sets for stage 2')
 
 # Load the pre-trained model weights from stage-1
-if save_fmt in ['keras', 'both']:
+if model_fmt in ['keras', 'both']:
     unet.load_weights(f"{savedir}unet_stage1_model.keras")
-elif save_fmt in ['h5']:
+elif model_fmt in ['h5']:
     unet.load_weights(f"{savedir}unet_stage1_model.h5")
 else:
-    raise ValueError(f"save_fmt must be 'h5', 'keras', or 'both', got {save_fmt}")
+    raise ValueError(f"model_fmt must be 'h5', 'keras', or 'both', got {model_fmt}")
 
 
 # Stage-2 training of the Unet
 
-unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=save_fmt)
+unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=model_fmt)
 
 if input_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=2)
