@@ -1,6 +1,7 @@
 import numpy as np
 
 import unox.HPC.data0.load_input as uload
+# from unox.HPC.data0.config import get_config
 
 input_config = {
     "input_set": "no2_lsm6",
@@ -45,12 +46,20 @@ def test_get_npy_from_netcdf():
             'data_select': 'y',
             'expected_shape': (364, 56, 120, 1),
         },
-        {   # Test for x variables
+        {   # Test for x variables (stage 1)
+            'netcdf_file': input_file,
+            'year': 2005,
+            'config': input_config,
+            'type': 'x_or_y',
+            'data_select': 'x',
+            'expected_shape': (364, 56, 120, 9),
+        },
+        {   # Test for x variables (stage 2)
             'netcdf_file': input_file,
             'year': 2019,
             'config': input_config,
             'type': 'x_or_y',
-            'data_select': 'x',
+            'data_select': 'x2',
             'expected_shape': (364, 56, 120, 9),
         },
     ]
