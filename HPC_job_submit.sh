@@ -131,6 +131,8 @@ fi
 if [ "$TYPE" = "test" ]; then
 	if [ ! -f "HPC_runs/$JOBNAME/input_config.json" ]; then
 		cp inputfiles/_input_configs/$CONFIG_FILE.json HPC_runs/$JOBNAME/input_config.json
+		# Set the config file to `default` so the job pulls `input_config.json` from the job directory as opposed to from the `inputfiles/_input_configs/` directory
+		CONFIG_FILE='default'
 	fi
 elif [ "$TYPE" = "zfi_set" ]; then
 	# Loop across the subdirectories in the set directory
