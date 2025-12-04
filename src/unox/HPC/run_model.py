@@ -58,114 +58,23 @@ output_metadata = {
 # Stage-1 training
 ## Load stage-1 data sets
 
-def load_input_files(
-    inputfiles, 
-    stage,
-    ):
-    """Load input files for a given stage.
-
-    Parameters
-    ----------
-    inputfiles : str
-        The directory containing the input files.
-    stage : int
-        The stage number (1 or 2).
-
-    Returns
-    -------
-    x_files : list
-        List of input feature files.
-    y_files : list
-        List of target variable files.
-    """
-    # Assemble the file paths
-    x_files_path = f"inputfiles/{inputfiles}/stage{stage}/x/"
-    y_files_path = f"inputfiles/{inputfiles}/stage{stage}/y/"
-    # Ensure the directories exist
-    x_files_path = verify_path(x_files_path)
-    y_files_path = verify_path(y_files_path)
-    # Load and sort the files
-    x_files = sorted(glob.glob(f"inputfiles/{inputfiles}/stage{stage}/x/X_20*.npy"))
-    y_files = sorted(glob.glob(f"inputfiles/{inputfiles}/stage{stage}/y/Y_20*.npy"))
-    print("")
-    print(f"Number of x_files: {len(x_files)}")
-    print(f"Number of y_files: {len(y_files)}")
-    return x_files, y_files
-
-def split_input_files(
-    x_files,
-    y_files,
-    stage,
-    split_value=0.9,
-    ):
-    """Split input files into training and validation sets.
-
-    Parameters
-    ----------
-    x_files : list
-        List of input feature files.
-    y_files : list
-        List of target variable files.
-    stage : int
-        The stage number (1 or 2).
-    split_value : float, optional
-        Proportion of files to use for training.
-    
-    Returns
-    -------
-    xtrain : np.ndarray
-        Concatenated training input features.
-    ytrain : np.ndarray
-        Concatenated training target variables.
-    xvalid : np.ndarray
-        Concatenated validation input features.
-    yvalid : np.ndarray
-        Concatenated validation target variables.
-    """
-    # Decide on split index based on stage
-    if stage == 1:
-        split_index = 14
-    elif stage == 2:
-        split_index = 5
-    else:
-        raise ValueError("Stage must be 1 or 2.")
-    # Gather just the training files
-    xtrain_files, ytrain_files = x_files[:split_index], y_files[:split_index]
-    print("")
-    print(f"Shape of first xtrain file: {np.load(xtrain_files[0]).shape}")
-    print(f"Shape of first ytrain file: {np.load(ytrain_files[0]).shape}")
-    # Concatenate training data
-    xtrain = np.concatenate([ np.load(s) for s in xtrain_files], axis=0)
-    ytrain = np.concatenate([ np.load(s) for s in ytrain_files], axis=0)
-    print("After concatenation:")
-    print(f"Shape of xtrain: {xtrain.shape}")
-    print(f"Shape of ytrain: {ytrain.shape}")
-    # Split into training and validation sets
-    xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
-    print("After data split:")
-    print(f"Shape of xtrain: {xtrain.shape}")
-    print(f"Shape of ytrain: {ytrain.shape}")
-    print(f"Shape of xvalid: {xvalid.shape}")
-    print(f"Shape of yvalid: {yvalid.shape}")
-    return xtrain, ytrain, xvalid, yvalid
-
 if input_fmt == 'npy':
-    x_files, y_files = load_input_files(inputfiles, stage=1)
-    xtrain, ytrain, xvalid, yvalid = split_input_files(x_files, y_files, stage=1, split_value=0.9)
+    from legacy.run_functions_old import prepare_input
 elif input_fmt == 'nc':
-    # Load the input netcdf file
-    uarr = uarray(inputfiles, is_input_set=True)
-    # Get the years
-    years = uarr._get_years()
-    # Prepare the input files
-    xtrain, ytrain, output_metadata = rf.prepare_input(uarr, config_path, output_metadata, split_year)
-    # Split into training and validation sets
-    xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
-    print("After data split:")
-    print(f"\tShape of xtrain: {xtrain.shape}")
-    print(f"\tShape of ytrain: {ytrain.shape}")
-    print(f"\tShape of xvalid: {xvalid.shape}")
-    print(f"\tShape of yvalid: {yvalid.shape}")
+    prepare_input = rf.prepare_input
+# Load the input netcdf file
+uarr = uarray(inputfiles, is_input_set=True)
+# Get the years
+years = uarr._get_years()
+# Prepare the input files
+xtrain, ytrain, output_metadata = prepare_input(uarr, config_path, output_metadata, split_year, stage=1)
+# Split into training and validation sets
+xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
+print("After data split:")
+print(f"\tShape of xtrain: {xtrain.shape}")
+print(f"\tShape of ytrain: {ytrain.shape}")
+print(f"\tShape of xvalid: {xvalid.shape}")
+print(f"\tShape of yvalid: {yvalid.shape}")
 
 print("Done loading data sets for stage 1")
 # exit(0)
