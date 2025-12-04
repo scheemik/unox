@@ -161,7 +161,7 @@ def prepare_input(
         x_s = 'x'
         meta_stage = 'stage1'
     elif stage == 2:
-        start_year = uarr.xr.attrs['stage_2_cutoff']
+        start_year = uarr.xr.attrs['stage_2_cutoff']+1
         x_s = 'x2'
         meta_stage = 'stage2'
     else:
