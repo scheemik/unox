@@ -169,4 +169,8 @@ def prepare_input(
     print("After concatenation:")
     print(f"\tShape of xtrain: {xtrain.shape}")
     print(f"\tShape of ytrain: {ytrain.shape}")
+    # Add the shape for which to build the unet input layer
+    ## Important to note this hear as the lat-lon grid of the data 
+    ## may change after calling `get_npy_from_netcdf()`
+    output_metadata['unet_build_shape'] = xtrain.shape[1:]  # omit the first dimension (time)
     return xtrain, ytrain, output_metadata

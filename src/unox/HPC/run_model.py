@@ -159,9 +159,6 @@ elif input_fmt == 'nc':
     years = uarr._get_years()
     # Prepare the input files
     xtrain, ytrain, output_metadata = rf.prepare_input(uarr, config_path, output_metadata, split_year)
-    # Get the shape of the unet model input data
-    ## Need to get this shape from the output of prepare_input() as it might change the lat-lon grid
-    unet_build_shape = xtrain.shape[1:]  # omit the first dimension (time)
     # Split into training and validation sets
     xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
     print("After data split:")
@@ -171,7 +168,7 @@ elif input_fmt == 'nc':
     print(f"\tShape of yvalid: {yvalid.shape}")
 
 print("Done loading data sets for stage 1")
-exit(0)
+# exit(0)
 
 ##################################################################
 
@@ -192,8 +189,8 @@ from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 
 unet = Unet()
 # The input shape for `build` should be [lat, lon, var]
-print(f"\tShape of model input layer to build: ({unet_build_shape})")
-unet.build(unet_build_shape)
+print(f"\tShape of model input layer to build: ({output_metadata['unet_build_shape']})")
+unet.build(output_metadata['unet_build_shape'])
 opt = Adam(learning_rate=1e-5) 
 
 unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
