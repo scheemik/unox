@@ -141,12 +141,24 @@ def prepare_input(
     ----------
     uarr : unox.uarray
         The dataset of the input NetCDF file.
+    input_config : str or dict
+        Path to the input configuration JSON file or a dictionary containing the configuration.
+    output_metadata : dict
+        The dictionary of metadata describing the output of a model run.
     split_year : int, optional
         The year at which to split the training and validation data.
         Defaults to 2019.
+    stage : int
+        The stage of the data to plot (1 or 2).
     
     Returns
     -------
+    xtrain : np.ndarray
+        Concatenated training input features.
+    ytrain : np.ndarray
+        Concatenated training target variables.
+    output_metadata : dict
+        The dictionary of metadata describing the output of a model run with values added for `train_years` and `unet_build_shape`.
     """
     # Verify argument types
     uarr._verify()
