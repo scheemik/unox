@@ -118,7 +118,8 @@ def process_cmd_args(
         print(f"\targv[3], version: {version}")
     
     # If using the old version of the packages, create directories for staged output
-    if version == 0:
+    # if version == 0:
+    if True:
         stage1_dir = make_file_path(f"{savedir}stage1_output/")
         stage2_dir = make_file_path(f"{savedir}stage2_output/")
     
@@ -129,6 +130,7 @@ def prepare_input(
     config_path,
     output_metadata,
     split_year = 2019,
+    stage = 1,
 ):
     """Prepare the input data for the model.
 
@@ -153,13 +155,24 @@ def prepare_input(
     # Create blank lists to hold x and y training data
     xtrain_list = []
     ytrain_list = []
+    # Set parameters based on the stage
+    if stage == 1:
+        start_year = min(years)
+        x_s = 'x'
+        meta_stage = 'stage1'
+    elif stage == 2:
+        start_year = uarr.xr.attrs['stage_2_cutoff']
+        x_s = 'x2'
+        meta_stage = 'stage2'
+    else:
+        raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}")
     # If before the split year, add x and y data to train lists
-    for year in range(min(years), split_year):
-        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
+    for year in range(start_year, split_year):
+        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y=x_s)
         xtrain_list.append(this_x_train_arr)
         this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='y')
         ytrain_list.append(this_y_train_arr)
-        output_metadata['train_years']['stage1'].append(year)
+        output_metadata['train_years'][meta_stage].append(year)
     # Check the shapes of the input arrays
     print(f"\tShape of first xtrain file: {xtrain_list[0].shape}")
     print(f"\tShape of first ytrain file: {ytrain_list[0].shape}")
