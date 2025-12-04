@@ -127,7 +127,7 @@ def process_cmd_args(
 
 def prepare_input(
     uarr,
-    config_path,
+    input_config,
     output_metadata,
     split_year = 2019,
     stage = 1,
@@ -148,10 +148,24 @@ def prepare_input(
     Returns
     -------
     """
-    # Verify the uarray object
+    # Verify argument types
     uarr._verify()
-    # Get list of years present in the `from_xr` netcdf
+    # Verify input_config
+    if not isinstance(input_config, (str, type({}))):
+        raise TypeError(f"(prepare_input) `input_config` must be a str or dict. Got type: {type(input_config)}.")
+    # Verify output_metadata
+    if not isinstance(output_metadata, type({})):
+        raise TypeError(f"(prepare_input) `output_metadata` must be a dict. Got type: {type(output_metadata)}.")
+    # Verify split_year
+    if not verify_number(split_year):
+        raise TypeError(f"(get_npy_from_netcdf) `split_year` must be a number. Got type: {type(split_year)}")
+    # Verify split_year is present in the dataset
     years = uarr._get_years()
+    if split_year not in years:
+        raise ValueError(f"(get_npy_from_netcdf) `split_year` must be a year present in `uarr`. Available years: {years}")
+    if stage not in [1, 2]:
+        raise ValueError(f"(set_of_maps) `stage` must be either 1 or 2. Got: {stage}.")
+
     # Create blank lists to hold x and y training data
     xtrain_list = []
     ytrain_list = []
@@ -168,9 +182,9 @@ def prepare_input(
         raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}")
     # If before the split year, add x and y data to train lists
     for year in range(start_year, split_year):
-        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y=x_s)
+        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, input_config, x_or_y=x_s)
         xtrain_list.append(this_x_train_arr)
-        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='y')
+        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, input_config, x_or_y='y')
         ytrain_list.append(this_y_train_arr)
         output_metadata['train_years'][meta_stage].append(year)
     # Check the shapes of the input arrays
