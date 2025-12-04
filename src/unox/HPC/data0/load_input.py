@@ -38,13 +38,17 @@ def get_npy_from_netcdf(
 
     Returns
     -------
-    np.ndarray
+    data_array : numpy.ndarray
         The extracted data as a numpy array.
+    lats : numpy.ndarray
+        The latitude values of the arrays to restrict.
+    lons : numpy.ndarray
+        The longitude values of the arrays to restrict.
     
     Examples
     --------
     >>> input_set = 'my_inputs'
-    >>> arr = get_npy_from_netcdf(f'inputfiles/{input_set}/{input_set}.nc', 2019, 'x')
+    >>> arr, lats, lons = get_npy_from_netcdf(f'inputfiles/{input_set}/{input_set}.nc', 2019, 'x')
     >>> type(arr)
     <class 'numpy.ndarray'>
     >>> arr.shape
