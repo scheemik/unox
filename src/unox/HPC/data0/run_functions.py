@@ -232,7 +232,7 @@ def prepare_input(
     output_metadata : dict
         The dictionary of metadata describing the output of a model run.
     split_year : int, optional
-        The year at which to split the training and validation data.
+        The year at which to split the training and testing data.
         Defaults to 2019.
     stage : int
         The stage of the data to plot (1 or 2).
@@ -278,6 +278,9 @@ def prepare_input(
         meta_stage = 'stage2'
     else:
         raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}")
+    # Check to make sure that `split_year` is larger than `start_year`
+    if split_year <= start_year:
+        raise ValueError(f"(prepare_input) `split_year` ({split_year}) must be greater than `start_year` ({start_year})")
     # If before the split year, add x and y data to train lists
     for year in range(start_year, split_year):
         this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, input_config, x_or_y=x_s)
