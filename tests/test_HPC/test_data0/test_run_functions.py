@@ -103,3 +103,73 @@ def test_process_cmd_args():
             assert actual_stdout == expected_stdout, f"Expected stdout: \n{expected_stdout}\nGot: \n{result}"
         # Clean up the created directory
         remove_non_empty_directory(savedir)
+
+def test_make_output_metadata_dict():
+    """Test the make_output_metadata_dict function."""
+    # Define a test cases
+    test_cases = [
+        {
+            'savedir': 'HPC_runs/test_unet0/',
+            'config_path': 'tests/data_for_tests/test_config.json',
+            'config_dict': None,
+            'version': 1,
+            'n_epochs': 250,
+            'model_fmt': 'keras',
+            'input_fmt': 'nc',
+            'split_year': 2014,
+            'split_value': 0.9,
+        }
+    ]
+    # Test each case
+    for this_case in test_cases:
+        # Get the configuration dictionary
+        this_case['config_dict'] = get_config(this_case['config_path'])
+        # Add training and prediction year keys to this case's dictionary
+        this_case['train_years'] = {
+            'stage1': [],
+            'stage2': [],
+        }
+        this_case['pred_years'] = {
+            'stage1': [],
+            'stage2': [],
+        }
+        # Make the output metadata dictionary
+        output_metadata = rf.make_output_metadata_dict(
+            this_case['savedir'],
+            this_case['config_path'],
+            this_case['config_dict'],
+            this_case['version'],
+            this_case['n_epochs'],
+            this_case['model_fmt'],
+            this_case['input_fmt'],
+            this_case['split_year'],
+            this_case['split_value'],
+        )
+        # Compare to the expected value
+        assert output_metadata == this_case, f"Expected output metadata dictionary: \n{this_case}\nGot: \n{output_metadata}"
+    # Test with invalid inputs
+    invalid_inputs = {
+        'savedir': [1234, None, True, [], {}],
+        'config_path': [1234, None, True, [], {}],
+        'config_dict': ['invalid', 1234, None, True, []],
+        'version': ['invalid', None, True, [], {}],
+        'n_epochs': ['invalid', None, True, [], {}],
+        'model_fmt': [1234, None, True, [], {}],
+        'input_fmt': [1234, None, True, [], {}],
+        'split_year': ['invalid', None, True, [], {}],
+        'split_value': ['invalid', None, True, [], {}],
+    }
+    for invalid_key in invalid_inputs.keys():
+        for i_key in invalid_inputs[invalid_key]:
+            try:
+                npy_arr, lats, lons = uload.get_npy_from_netcdf(
+                    invalid_netcdf,
+                    2019,
+                    input_config,
+                    var='u10',
+                )
+            except Exception as e:
+                assert True, f"get_npy_from_netcdf raised an exception on invalid netcdf input: {e}"
+            else:
+                assert False, f"get_npy_from_netcdf(var) did not raise an exception on invalid netcdf input: {invalid_netcdf}"
+
