@@ -125,6 +125,92 @@ def process_cmd_args(
     
     return savedir, config_dict, config_path, version
 
+def make_output_metadata_dict(
+    savedir,
+    config_path,
+    config_dict,
+    version,
+    n_epochs,
+    model_fmt,
+    input_fmt,
+    split_year,
+    split_value,
+):
+    """Creates the dictionary of metadata for a run to be output to a dictionary. 
+
+    Parameters
+    ----------
+    savedir : str
+        The path to the directory in which the data for this run is saved.
+    config_path : str
+        The path to the configuration JSON file. 
+    config_dict : dict
+        The dictionary of the configuration file.
+    version : int
+        The version of the code used in this run (0 or 1).
+    n_epochs : int
+        The number of epochs the model was run over.
+    model_fmt : str
+        The format in which to output the trained model for this run.
+        Either 'h5', 'keras', or 'both'.
+    input_fmt : str
+        The format of the input data used for this run.
+        Either 'nc' or 'npy'.
+    split_year : int
+        The year at which to split the training and validation data.
+        Defaults to 2019.
+    split_value : float
+        The ratio with which the data was split between training and validation.
+        For example, a value of 0.9 would give 90% to training and 10% to validation. 
+    
+    Returns
+    -------
+    output_metadata : dict
+        The output metadata dictionary.
+
+    """
+    # Verify argument types
+    if not isinstance(savedir, str):
+        raise TypeError(f"(make_output_metadata_dict) `savedir` must be a str. Got type: {type(savedir)}.")
+    if not isinstance(config_path, str):
+        raise TypeError(f"(make_output_metadata_dict) `config_path` must be a str. Got type: {type(config_path)}.")
+    if not isinstance(config_dict, (str, type({}))):
+        raise TypeError(f"(make_output_metadata_dict) `config_dict` must be a str or dict. Got type: {type(config_dict)}.")
+    if not isinstance(version, int):
+        raise TypeError(f"(make_output_metadata_dict) `version` must be an int. Got type: {type(version)}.")
+    if not isinstance(n_epochs, int):
+        raise TypeError(f"(make_output_metadata_dict) `n_epochs` must be an int. Got type: {type(n_epochs)}.")
+    if not isinstance(model_fmt, str):
+        raise TypeError(f"(make_output_metadata_dict) `model_fmt` must be a str. Got type: {type(model_fmt)}.")
+    if not isinstance(input_fmt, str):
+        raise TypeError(f"(make_output_metadata_dict) `input_fmt` must be a str. Got type: {type(input_fmt)}.")
+    if not isinstance(split_year, int):
+        raise TypeError(f"(make_output_metadata_dict) `split_year` must be an int. Got type: {type(split_year)}.")
+    if not verify_number(split_value):
+        raise TypeError(f"(make_output_metadata_dict) `split_value` must be a number. Got type: {type(split_value)}")
+
+    # Create the metadata dictionary
+    output_metadata = {
+        'savedir': savedir,
+        'config_path': config_path,
+        'config_dict': config_dict,
+        'version': version,
+        'n_epochs': n_epochs,
+        'model_fmt': model_fmt,
+        'input_fmt': input_fmt,
+        'split_year': split_year,
+        'split_value': split_value,
+        'train_years': {
+            'stage1': [],
+            'stage2': [],
+        },
+        'pred_years': {
+            'stage1': [],
+            'stage2': [],
+        },
+    }
+    return output_metadata
+
 def prepare_input(
     uarr,
     input_config,
