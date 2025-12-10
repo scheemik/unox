@@ -4,6 +4,7 @@ import subprocess
 import unox.HPC.data0.run_functions as rf
 from unox.HPC.data0.paths import make_file_path, remove_non_empty_directory
 from unox.HPC.data0.config import get_config
+from unox.HPC.data0.dataset import uarray
 
 def test_process_cmd_args():
     """Test the process_cmd_args function."""
@@ -116,7 +117,7 @@ def test_make_output_metadata_dict():
             'n_epochs': 250,
             'model_fmt': 'keras',
             'input_fmt': 'nc',
-            'split_year': 2014,
+            'split_year': 2019,
             'split_value': 0.9,
         }
     ]
@@ -173,3 +174,136 @@ def test_make_output_metadata_dict():
             else:
                 assert False, f"get_npy_from_netcdf(var) did not raise an exception on invalid netcdf input: {invalid_netcdf}"
 
+def test_prepare_input():
+    """Test the prepare_input function."""
+    # Define a test cases
+    test_cases = [
+        {
+            'savedir': 'HPC_runs/test_unet0/',
+            'config_path': 'sample_config',
+            'version': 1,
+            'n_epochs': 250,
+            'model_fmt': 'keras',
+            'input_fmt': 'nc',
+            'split_year': 2019,
+            'split_value': 0.9,
+            'stage': 1,
+            'xtrain_shape': (5096, 56, 120, 9),
+            'ytrain_shape': (5096, 56, 120, 1),
+        },
+        {
+            'savedir': 'HPC_runs/test_unet0/',
+            'config_path': 'sample_config',
+            'version': 0,
+            'n_epochs': 5,
+            'model_fmt': 'h5',
+            'input_fmt': 'npy',
+            'split_year': 2015,
+            'split_value': 0.5,
+            'stage': 2,
+            'xtrain_shape': (364, 56, 120, 9),
+            'ytrain_shape': (364, 56, 120, 1),
+        },
+    ]
+    # Test each case
+    for this_case in test_cases:
+        # Get the configuration dictionary
+        config_dict = get_config(this_case['config_path'])
+        # Load the input netcdf file
+        uarr = uarray(config_dict['input_set'], is_input_set=True)
+        # Make the output metadata dictionary
+        output_metadata = rf.make_output_metadata_dict(
+            this_case['savedir'],
+            this_case['config_path'],
+            config_dict,
+            this_case['version'],
+            this_case['n_epochs'],
+            this_case['model_fmt'],
+            this_case['input_fmt'],
+            this_case['split_year'],
+            this_case['split_value'],
+        )
+        # Prepare the input data
+        xtrain, ytrain, actual_output_metadata = rf.prepare_input(uarr, config_dict, output_metadata, this_case['split_year'], stage=this_case['stage'])
+        # Add expected `train_years` dictionary to `output_metadata`
+        output_metadata["train_years"] = {
+            "stage1": [
+                2005,
+                2006,
+                2007,
+                2008,
+                2009,
+                2010,
+                2011,
+                2012,
+                2013,
+                2014,
+                2015,
+                2016,
+                2017,
+                2018
+            ],
+            "stage2": [
+                2014,
+                2015,
+                2016,
+                2017,
+                2018
+            ]
+        }
+        # Compare `xtrain` to the expected value
+        assert xtrain.shape == this_case['xtrain_shape'], f"Expected xtrain.shape: {this_case['xtrain_shape']}. Got: {xtrain.shape}"
+        # Compare `xtrain` to the expected value
+        assert ytrain.shape == this_case['ytrain_shape'], f"Expected ytrain.shape: {this_case['ytrain_shape']}. Got: {ytrain.shape}"
+        # Compare `output_metadata` to the expected value
+        assert output_metadata == actual_output_metadata, f"Expected output metadata dictionary: \n{output_metadata}\nGot: \n{actual_output_metadata}"
+    # Define invalid test cases
+    test_cases = [
+        {
+            'savedir': 'HPC_runs/test_unet0/',
+            'config_path': 'sample_config',
+            'version': 1,
+            'n_epochs': 250,
+            'model_fmt': 'keras',
+            'input_fmt': 'nc',
+            'split_year': 2004,         # Cannot have split_year <= start_year
+            'split_value': 0.9,
+            'stage': 1,                 # star_year for stage 1 is 2005
+        },
+        {
+            'savedir': 'HPC_runs/test_unet0/',
+            'config_path': 'sample_config',
+            'version': 0,
+            'n_epochs': 5,
+            'model_fmt': 'h5',
+            'input_fmt': 'npy',
+            'split_year': 2014,         # Cannot have split_year <= start_year
+            'split_value': 0.5,
+            'stage': 2,                 # star_year for stage 2 is 2014
+        },
+    ]
+    # Test each case
+    for this_case in test_cases:
+        # Get the configuration dictionary
+        config_dict = get_config(this_case['config_path'])
+        # Load the input netcdf file
+        uarr = uarray(config_dict['input_set'], is_input_set=True)
+        # Make the output metadata dictionary
+        output_metadata = rf.make_output_metadata_dict(
+            this_case['savedir'],
+            this_case['config_path'],
+            config_dict,
+            this_case['version'],
+            this_case['n_epochs'],
+            this_case['model_fmt'],
+            this_case['input_fmt'],
+            this_case['split_year'],
+            this_case['split_value'],
+        )
+        try:
+            # Prepare the input data
+            xtrain, ytrain, actual_output_metadata = rf.prepare_input(uarr, config_dict, output_metadata, this_case['split_year'], stage=this_case['stage'])
+        except Exception as e:
+            assert True, f"prepare_input raised an exception on invalid `split_year` and `stage` input: {e}"
+        else:
+            assert False, f"prepare_input did not raise an exception on invalid `split_year` ({this_case['split_year']}) and `stage` ({this_case['stage']}) input."
