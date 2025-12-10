@@ -35,25 +35,18 @@ inputfiles = config_dict['input_set']
 ##################################################################
 # Create output metadata dictionary
 
-output_metadata = {
-    'savedir': savedir,
-    'config_path': config_path,
-    'config_dict': config_dict,
-    'version': version,
-    'n_epochs': n_epochs,
-    'model_fmt': model_fmt,
-    'input_fmt': input_fmt,
-    'split_year': split_year,
-    'split_value': split_value,
-    'train_years': {
-        'stage1': [],
-        'stage2': [],
-    },
-    'pred_years': {
-        'stage1': [],
-        'stage2': [],
-    },
-}
+output_metadata = rf.make_output_metadata_dict(
+    savedir,
+    config_path,
+    config_dict,
+    version,
+    n_epochs,
+    model_fmt,
+    input_fmt,
+    split_year,
+    split_value,
+)
+
 ##################################################################
 # Stage-1 training
 ## Load stage-1 data sets
