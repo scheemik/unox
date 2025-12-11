@@ -7,8 +7,9 @@
 
 installation.md
 example.ipynb
+autoapi/index
 changelog.md
 CONTRIBUTING.md
 CONDUCT.md
-autoapi/index
+license.md
 ```
