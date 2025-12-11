@@ -47,16 +47,16 @@ The `unox` package was created by Mikhail Schee. It is licensed under the terms 
 
 ## Credits
 
-- The U-net model is based on Tailong He's version for Chinese NOx emissions[^1].
+- The U-net model is based on Tailong He's version for Chinese NOₓ emissions[^1].
 - Initial transition from China region to North America by Evelyn MacDonald.
 - The `unox` package was based off the `py-pkgs-cookiecutter` [template](https://github.com/py-pkgs/py-pkgs-cookiecutter) using [`cookiecutter`](https://cookiecutter.readthedocs.io/en/latest/).
 
 ### Source of data
 
-- Training stage 1 involves TCR-2 surface NO2 concentrations and NOx emissions. Both could be found from [the JPL TCR-2 website](https://tes.jpl.nasa.gov/tes/chemical-reanalysis/products/monthly-mean). Last access was on 12 March 2025. 
+- Training stage 1 involves TCR-2 surface NO2 concentrations and NOₓ emissions. Both could be found from [the JPL TCR-2 website](https://tes.jpl.nasa.gov/tes/chemical-reanalysis/products/monthly-mean). Last access was on 12 March 2025. 
 - Training stage 2 involves *in situ* daily NO2 measurements from the US Environmental Protection Agency (EPA), accessible at https://aqs.epa.gov/aqsweb/airdata/download_files.html. Canadian data will also be needed. 
 - Both stages require meteorological fields from ERA5 on [single levels](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=overview) and on [pressure levels](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-pressure-levels?tab=overview).
 - Scripts for downloading ERA5 data and creating Unet input files and more information about the input file format are in the `datafiles/` directory. Data are currently stored on animus-c.
 
-[^1]: He, T.-L.; Jones, D. B. A.; Miyazaki, K; Bowman, K. W.; Jiang, Z.; Chen, X; Li, R.; Zhang, Y; Li, K. [Inverse modeling of Chinese NOx emissions using deep learning: Integrating in situ observations with a satellite-based chemical reanalysis](https://acp.copernicus.org/preprints/acp-2022-251/). *Atmospheric Chemistry and Physics*, 2022. 
+[^1]: He, T.-L.; Jones, D. B. A.; Miyazaki, K; Bowman, K. W.; Jiang, Z.; Chen, X; Li, R.; Zhang, Y; Li, K. [Inverse modeling of Chinese NOₓ emissions using deep learning: Integrating in situ observations with a satellite-based chemical reanalysis](https://acp.copernicus.org/preprints/acp-2022-251/). *Atmospheric Chemistry and Physics*, 2022. 
 Source code is available at https://github.com/tailonghe/Unet_Chinese_NOx.
