@@ -28,6 +28,9 @@ For example, for the block above, you would enter only `pwd` into your console, 
 - [Remote connections](#connecting)
     - [Connecting to HPC](#hpc_connect)
     - [Connecting to Animus](#animus_connect)
+- [Initializing the repository](#init_repo)
+    - [Connecting to GitHub](#connect_to_github)
+    - [Cloning the GitHub repository](#clone_github_repo)
 
 ---
 <a id='connecting'></a>
@@ -43,7 +46,7 @@ For this project, we are using two different remote machines:
     - HPC cluster run by SciNet / Compute Canada / Digital Research Alliance of Canada. 
     - Used to run the model with GPU resources.
 
-Below, we detail how to connect to each of these remote machines.
+Below, we detail how to setup `ssh` connections to each of these remote machines and save their configurations to make connecting to them via VSCodium (or VSCode) easier.
 
 <a id='hpc_connect'></a>
 [back to top](#top)
@@ -67,7 +70,7 @@ username@local:~/$ ssh-keygen -t ed25519
 ```
 
 Then, as described in [this Alliance docs page](https://docs.alliancecan.ca/wiki/SSH_Keys), log in to Alliance at the [SSH authorized keys page](https://ccdb.computecanada.ca/ssh_authorized_keys). 
-Then, copy your public key by using the output of this command:
+Then, copy and paste in your public key by using the output of this command:
 ```console
 username@local:~/$ cat ~/.ssh/<id_ed25519>.pub
 ```
@@ -94,7 +97,7 @@ However, following the recommendations of SciNet, you will want to always work i
 
 You should also find your local SSH configuration file `~/.ssh/config`, or create it if it doesn't exist already, and add the following:
 ```bash
-# In username@HPC:/Users/username/.ssh/config
+# In username@local:/Users/username/.ssh/config
 HOST trillium
   HOSTNAME trillium-gpu.alliancecan.ca
   User <username>
@@ -126,9 +129,105 @@ alias animus="ssh <username>@animus-c.atmosp.physics.utoronto.ca"
 ```
 Again, as with HPC, and add the following to your SSH configuration file `~/.ssh/config`:
 ```bash
-# In username@HPC:/Users/username/.ssh/config
+# In username@local:/Users/username/.ssh/config
 HOST animus
   HOSTNAME animus-c.atmosp.physics.utoronto.ca
   User <username>
 ```
 
+---
+<a id='init_repo'></a>
+[back to top](#top)
+
+## Initializing the repository
+
+The code for this project is hosted on GitHub at [https://github.com/scheemik/unox](https://github.com/scheemik/unox).
+
+<a id='connect_to_github'></a>
+[back to top](#top)
+
+### Connecting to GitHub
+
+In order to connect to GitHub to allow cloning the code repository as well as pushing and pulling changes during development, you'll need to set up authentication keys between GitHub and each remote machine.
+This is similar to what is shown in [Connecting to HPC](#hpc_connect).
+
+GitHub has an entire series of guides on [Connecting to GitHub with SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
+If you are curious to learn more about `ssh` or are not sure whether you already have a key for GitHub, I would recommend working through those guides in order.
+
+If you know you do not already have a key for GitHub, open the guide for [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent?platform=linux). 
+In these instructions, you will be asked to enter an email address (below referred to as `<user@mail.ca>`) and select a file name for the SSH key (below referred to as `<GH_id>`, the default being `~/.ssh/id_ed25519`).
+Follow that guide, entering the suggested commands first from Trillium, then from Animus, making sure you have selected the "Linux" version of the guide as the webpage will default to the system on which you are viewing it.
+
+Next, follow the GitHub guide for [Adding a new SSH key to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
+
+Then, you can follow the guide on [Testing your SSH connection](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/testing-your-ssh-connection) to make sure you can connect to GitHub from each remote machine.
+This amounts to first activating your authentication key:
+```console
+username@<animus-c or HPC>:~/$ eval $(ssh-agent -s); ssh-add ~/.ssh/<GH_id>
+Agent pid 669646
+Enter passphrase for /home/<username>/.ssh/<GH_id>: 
+Identity added: /home/<username>/.ssh/<GH_id> (<user@mail.ca>)
+```
+Then, attempting to connect to `git@github.com`:
+```console
+username@<animus-c or HPC>:~/$ ssh git@github.com
+Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
+PTY allocation request failed on channel 0
+Hi <username>! You've successfully authenticated, but GitHub does not provide shell access.
+Connection to github.com closed.
+```
+
+If you see similar output, you are now ready to clone the repository and will be able to push and pull changes while developing the code.
+Remember to do this for both Trillium _and_ Animus!
+
+<a id='clone_github_repo'></a>
+[back to top](#top)
+
+### Cloning the GitHub repository
+
+#### Trillium
+
+According to the [Trillium Quickstart](https://docs.alliancecan.ca/wiki/Trillium_Quickstart) page:
+> "Job output must be written to the scratch file system"
+
+The code is set up to save model run output to the same directory as the repository. 
+For this reason, make sure to clone the repository into the `scratch` filesystem. 
+You may choose to create a new directory within which to clone the repository, but this is optional:
+```console
+username@HPC:~/$ cd /scratch/<username>/<optional_directory>/
+username@HPC:$ git clone git@github.com:scheemik/unox.git
+Cloning into 'unox'...
+Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
+remote: Enumerating objects: 2995, done.
+remote: Counting objects: 100% (942/942), done.
+remote: Compressing objects: 100% (466/466), done.
+remote: Total 2995 (delta 426), reused 645 (delta 366), pack-reused 2053 (from 1)
+Receiving objects: 100% (2995/2995), 194.17 MiB | 64.12 MiB/s, done.
+Resolving deltas: 100% (1768/1768), done.
+Updating files: 100% (102/102), done.
+```
+This creates a directory called `unox` and clones the contents of the repository into it.
+
+For ease of navigation, I suggest adding the following alias to your HPC `~/.bashrc`:
+```bash
+# In username@HPC:/home/username/.bashrc
+alias cdproj='cd $SCRATCH/<optional_directory>/unox/'
+```
+Then, after sourcing `~/.bashrc`, you can execute the command `cdproj` to automatically navigate to the project directory.
+
+#### Animus
+
+Navigate to a directory location in which you have write permissions (ex: your home directory) and clone the repository:
+
+```console
+username@animus-c:~/$ git clone git@github.com:scheemik/unox.git
+Cloning into 'unox'...
+Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
+remote: Enumerating objects: 2995, done.
+remote: Counting objects: 100% (942/942), done.
+remote: Compressing objects: 100% (466/466), done.
+remote: Total 2995 (delta 426), reused 645 (delta 366), pack-reused 2053 (from 1)
+Receiving objects: 100% (2995/2995), 194.17 MiB | 64.12 MiB/s, done.
+Resolving deltas: 100% (1768/1768), done.
+Updating files: 100% (102/102), done.
+```
