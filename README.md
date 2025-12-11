@@ -38,7 +38,7 @@ Examples of usage of the code are provided in `test_unet.py`, based on the noteb
 
 ## Contributing
 
-Interested in contributing? Check out the contributing guidelines. Please note that this project is released with a Code of Conduct. By contributing to this project, you agree to abide by its terms.
+Interested in contributing? Check out the [contributing guidelines](https://unox.readthedocs.io/en/latest/contributing.html). Please note that this project is released with a [Code of Conduct](https://unox.readthedocs.io/en/latest/conduct.html). By contributing to this project, you agree to abide by its terms.
 
 ## License
 
