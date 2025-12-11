@@ -427,12 +427,30 @@ xarray                  2024.3.0+computecanada
 
 ### Virtual environment on Animus
 
+This project uses a `conda` environment on Animus.
+
 <a id='animus_conda'></a>
 [back to top](#top)
 
 #### Installing `miniconda` on Animus
 
-`To be added`
+If you do not yet have `conda` installed for your user on Animus, follow the instructions below. 
+Otherwise, skip to [Creating the `conda` environment on Animus with `poetry`](#animus_poetry).
+
+There is a way to activate and use a `conda` installation in another user's directory on Animus.
+However, doing so will not allow modifications you make to the `unox` code base in your own cloned repository affect it's behavior in your `conda` environment.
+This makes development very difficult.
+
+If you need to install `conda`, I recommend using `miniconda`, which can be installed by running the following commands from your home directory:
+```console
+username@animus-c:~/$ mkdir -p ~/miniconda3
+username@animus-c:~/$ wget https://repo.anaconda.com/miniconda/Miniconda3-py39_25.1.1-2-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+username@animus-c:~/$ bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+username@animus-c:~/$ rm ~/miniconda3/miniconda.sh
+username@animus-c:~/$ source ~/miniconda3/bin/activate
+(base) username@animus-c:~/$ conda init --all
+(base) username@animus-c:~/$ conda info
+```
 
 <a id='animus_poetry'></a>
 [back to top](#top)
