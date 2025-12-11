@@ -7,6 +7,27 @@ If you are interested in simply using `unox`, refer to the installation instruct
 TLDR: Create a link to a different document by typing `{doc}`, followed by the name of the file surrounded by backticks, excluding the extension. If you would like to change the rendered text of the link, surround the desired link text in backticks, then add the name of the file in angle brackets, in the format: "{doc}`Click here <filename>`".
 In order to link to the README file as I did above, I need to actually link to the `index.html` file which is in the same directory as this current file. Linking to a file up the directory structure is difficult, but the README is included in the `index.html` file, and therefore I can link to it that way.  -->
 
+## Contents
+
+- [Introduction](#intro)
+- [Remote connections](#connecting)
+    - [Connecting to HPC](#hpc_connect)
+    - [Connecting to Animus](#animus_connect)
+- [Initializing the repository](#init_repo)
+    - [Connecting to GitHub](#connect_to_github)
+    - [Cloning the GitHub repository](#clone_github_repo)
+- [Creating virtual environments](#create_venvs)
+    - [Virtual environment on Trillium](#HPC_venv)
+    - [Virtual environment on Animus](#animus_venv)
+        - [Installing `miniconda` on Animus](#animus_conda)
+        - [Creating the `conda` environment on Animus with `poetry`](#animus_poetry)
+
+---
+<a id='intro'></a>
+[back to top](#top)
+
+## Introduction
+
 This document details the initial steps required to set up the environments necessary to develop this code base and run the model on a High-Performance Computing (HPC) cluster.
 Command line prompts that are to be entered into a terminal as part of this process are shown here in `console` blocks like this:
 ```console
@@ -22,20 +43,6 @@ Command prompts in these `console` blocks are shown on lines which start with th
 Expected output is shown on subsequent lines.
 When executing a command, only enter what is shown in prompt lines after the `$`.
 For example, for the block above, you would enter only `pwd` into your console, not `username@local:~/$ pwd`.
-
-## Contents
-
-- [Remote connections](#connecting)
-    - [Connecting to HPC](#hpc_connect)
-    - [Connecting to Animus](#animus_connect)
-- [Initializing the repository](#init_repo)
-    - [Connecting to GitHub](#connect_to_github)
-    - [Cloning the GitHub repository](#clone_github_repo)
-- [Creating virtual environments](#create_venvs)
-    - [Virtual environment on Trillium](#HPC_venv)
-    - [Virtual environment on Animus](#animus_venv)
-        - [Installing `miniconda` on Animus](#animus_conda)
-        - [Creating the `conda` environment on Animus with `poetry`](#animus_poetry)
 
 ---
 <a id='connecting'></a>
