@@ -4,7 +4,7 @@ Use machine learning to make predictions of NOₓ and other atmospheric species.
 
 This is an application of the U-net deep learning model for North American NOₓ emission estimates using the [`tensorflow`](https://www.tensorflow.org/) Python package.
 
-![model_diagram](docs/model_diagram.png)
+![model_diagram](model_diagram.png)
 <!-- In order for sphinx to be able to find images and include them in the Read the Docs page, you need to copy each image to the `docs/_build/html/_images/` directory -->
 
 ## Documentation
@@ -43,7 +43,7 @@ Interested in contributing? Check out the [contributing guidelines](https://unox
 
 ## License
 
-The `unox` package was created by Mikhail Schee. It is licensed under the terms of the MIT license.
+The `unox` package was created by Mikhail Schee. It is licensed under the terms of the [MIT license](https://unox.readthedocs.io/en/latest/license.html).
 
 ## Credits
 
