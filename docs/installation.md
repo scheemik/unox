@@ -44,6 +44,12 @@ Expected output is shown on subsequent lines.
 When executing a command, only enter what is shown in prompt lines after the `$`.
 For example, for the block above, you would enter only `pwd` into your console, not `username@local:~/$ pwd`.
 
+In some cases, it is important to have a particular virtual environment activated when executing a command. 
+This will be indicated by the name of the virtual environment appearing in parentheses before the username. For example:
+```console
+(my_venv) username@HPC:~/$ pip list
+```
+
 ---
 <a id='connecting'></a>
 [back to top](#top)
@@ -277,20 +283,144 @@ If you haven't created a virtual environment on Trillium before, this output mig
 
 The following commands will create the exact virtual environment the code expects to run in:
 ```console
-username@HPC:~/$ module load StdEnv/2023 gcc/12.3 mpi4py/4.0.0 netcdf-c++4-mpi/4.3.1 python/3.12.4 cuda/12.6
+username@HPC:~/$ module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
 username@HPC:~/$ virtualenv --no-download /home/<username>/.virtualenvs/unoxTrilliumNC
 username@HPC:~/$ source /home/<username>/.virtualenvs/unoxTrilliumNC/bin/activate
-username@HPC:~/$ pip install --no-index --upgrade pip
-username@HPC:~/$ pip install --no-index 'tensorflow==2.17.0'
-username@HPC:~/$ pip install --no-index 'xarray==2024.3.0'
-username@HPC:~/$ pip install --no-index 'netcdf4==1.7.2'
+(unoxTrilliumNC) username@HPC:~/$ pip install --no-index --upgrade pip
+(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'tensorflow==2.17.0'
+(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'xarray==2024.3.0'
+(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'netcdf4==1.7.2'
 ```
-<!-- TODO: Add the output of each command. Can I have this in a collapsible section? -->
+<!-- TODO: Add the output of each command in collapsible section. -->
 
 <!-- TODO: Add explanation of each module I load, the creation and sourcing of the venv, and for each of the packages I install and what dependencies come with them. -->
 
-Python 3.12 was selected because, at least at the time, `tensorflow` didn't support any more up-to-date version of Python. 
-The above commands set up the `unoxTrilliumNew` environment with `tensorflow` version 2.17.0 (and `keras` version 3.10.0, as a dependency), as well as `xarray` version 2024.3.0 and `netcdf4` version 1.7.2 (the versions that I know work with the environment I set up on Animus).
+<details>
+
+<summary>Expand for details and example output</summary>
+
+#### Modules
+
+Trillium, like many Alliance clusters, uses [Environment Modules](https://docs.alliancecan.ca/wiki/Utiliser_des_modules/en) to load software that has been already installed and configured. 
+The first command in creating the virtual environment above loads all the necessary modules:
+```console
+username@HPC:~/$ module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
+```
+
+The required modules are loaded in this order specifically:
+- `StdEnv/2023` 
+- `gcc/12.3 `
+- `python/3.12.4` 
+    - This determines the version of Python used to create the virtual environment.
+    - Python 3.12 was selected because, at least at the time, `tensorflow` didn't support any more up-to-date version of Python. 
+- `cuda/12.6` 
+- `hdf5/1.14.2` 
+- `netcdf/4.9.2` 
+- `mpi4py/4.0.0`
+
+#### Creating the virtual environment
+
+The next command actually creates the virtual environment:
+```console
+username@HPC:~/$ virtualenv --no-download /home/<username>/.virtualenvs/unoxTrilliumNC
+```
+
+The name of the environment, `unoxTrilliumNC` could be anything, but this is the name that is expected in the code when activating the environment in `HPC_slurm.sh`. 
+
+#### Activating the virtual environment
+
+The next command activates the virtual environment:
+```console
+username@HPC:~/$ source /home/<username>/.virtualenvs/unoxTrilliumNC/bin/activate
+```
+
+This is important to do before installing any packages as to not affect your base environment.
+After activating, the command prompt will have the name of the environment in parentheses at the beginning of the line as an indicator:
+```console
+(unoxTrilliumNC) username@HPC:~/$ 
+```
+
+#### Upgrading `pip`
+
+The default package installer for Python is [`pip`](https://pip.pypa.io/en/stable/).
+The next command ensures that the version of `pip` in the environment is up to date.
+Make sure the virtual environment is activated first:
+```console
+(unoxTrilliumNC) username@HPC:~/$ pip install --no-index --upgrade pip
+```
+
+#### Installing the packages
+
+The next commands install the packages required to run the code on Trillium.
+Make sure the virtual environment is activated first:
+```console
+(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'tensorflow==2.17.0'
+(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'xarray==2024.3.0'
+(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'netcdf4==1.7.2'
+```
+The version of `tensorflow` (2.17.0, and `keras` version 3.10.0, as a dependency), was selected as the most up-to-date version available on Trillium at the time. 
+The packages `xarray` version 2024.3.0 and `netcdf4` version 1.7.2 were selected to match the `conda` environment on Animus.
+
+These packages are installed in this order specifically. 
+This is due to the fact that `pip` will automatically upgrade packages that are dependencies for the package it is currently installing. 
+Therefore, even when specifying a specific version of a package to install using the `==` operator, there is no guarantee that package will remain at that version when subsequent packages are installed.
+This issue is solved by using a dependency manager like `poetry`. 
+Even though `poetry` is available on the Alliance systems, I have had no luck actually managing to get it to work properly. 
+
+The three packages installed explicitly above also have dependencies which get installed along with them. 
+A full list of all packages and their versions in the `unoxTrilliumNC` environment is below:
+```console
+(unoxTrilliumNC) username@HPC:~/$ pip list
+Package                 Version
+----------------------- -------------------------
+absl_py                 2.3.1+computecanada
+astunparse              1.6.3+computecanada
+certifi                 2025.10.5+computecanada
+cftime                  1.6.4.post1+computecanada
+charset_normalizer      3.4.4+computecanada
+flatbuffers             25.2.10+computecanada
+gast                    0.6.0+computecanada
+google-pasta            0.2.0+computecanada
+grpcio                  1.73.0+computecanada
+h5py                    3.13.0+computecanada
+idna                    3.11+computecanada
+keras                   3.10.0+computecanada
+libclang                14.0.1+computecanada
+markdown                3.9+computecanada
+markdown_it_py          4.0.0+computecanada
+MarkupSafe              3.0.2+computecanada
+mdurl                   0.1.2+computecanada
+ml_dtypes               0.4.0+computecanada
+namex                   0.1.0+computecanada
+netCDF4                 1.7.2+computecanada
+numpy                   1.26.4+computecanada
+opt_einsum              3.4.0+computecanada
+optree                  0.14.0+computecanada
+packaging               25.0+computecanada
+pandas                  2.3.3+computecanada
+pip                     25.2+computecanada
+protobuf                4.25.4+computecanada
+pygments                2.19.2+computecanada
+python_dateutil         2.9.0.post0+computecanada
+pytz                    2025.2+computecanada
+requests                2.32.5+computecanada
+rich                    14.2.0+computecanada
+setuptools              80.9.0+computecanada
+six                     1.17.0+computecanada
+tensorboard             2.17.1+computecanada
+tensorboard_data_server 0.7.2+computecanada
+tensorflow              2.17.0+computecanada
+termcolor               3.1.0+computecanada
+typing_extensions       4.15.0+computecanada
+tzdata                  2025.2+computecanada
+urllib3                 2.5.0+computecanada
+werkzeug                3.1.3+computecanada
+wheel                   0.45.1+computecanada
+wrapt                   1.17.3+computecanada
+xarray                  2024.3.0+computecanada
+```
+
+</details>
 
 <a id='animus_venv'></a>
 [back to top](#top)
