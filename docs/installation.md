@@ -31,6 +31,11 @@ For example, for the block above, you would enter only `pwd` into your console, 
 - [Initializing the repository](#init_repo)
     - [Connecting to GitHub](#connect_to_github)
     - [Cloning the GitHub repository](#clone_github_repo)
+- [Creating virtual environments](#create_venvs)
+    - [Virtual environment on Trillium](#HPC_venv)
+    - [Virtual environment on Animus](#animus_venv)
+        - [Installing `miniconda` on Animus](#animus_conda)
+        - [Creating the `conda` environment on Animus with `poetry`](#animus_poetry)
 
 ---
 <a id='connecting'></a>
@@ -230,4 +235,116 @@ remote: Total 2995 (delta 426), reused 645 (delta 366), pack-reused 2053 (from 1
 Receiving objects: 100% (2995/2995), 194.17 MiB | 64.12 MiB/s, done.
 Resolving deltas: 100% (1768/1768), done.
 Updating files: 100% (102/102), done.
+```
+
+---
+<a id='create_venvs'></a>
+[back to top](#top)
+
+## Creating virtual environments
+
+A virtual environment is a way to install all the correct software dependencies needed for a project in a separate, siloed environment. 
+That way, you can have multiple environments for different projects and, if you update the version of a software package in one environment, you don't need to worry about that breaking the code in a different environment.
+The two remote machines, Trillium and Animus, are used for different parts of this project and therefore have different virtual environments. 
+
+<a id='HPC_venv'></a>
+[back to top](#top)
+
+### Virtual environment on Trillium
+
+Anaconda is one way of creating virtual environments, which we will use on [Animus](#animus_venv). 
+However, Digital Alliance Canada very [explicitly asks you to not install Anaconda on their systems](https://docs.alliancecan.ca/wiki/Anaconda/en). 
+So, we will use a similar method called `virtualenv`.
+
+The Digital Alliance wiki has instructions for [Creating and using a virtual environment](https://docs.alliancecan.ca/wiki/Python#Creating_and_using_a_virtual_environment). 
+They actually suggest [Creating a virtual environment inside of your jobs](https://docs.alliancecan.ca/wiki/Python#Creating_virtual_environments_inside_of_your_jobs), however I was unable to get that to work. 
+They suggest that creating a new environment every time might actually speed up performance, but it is more important for the code to run consistently.
+
+To see what environments you have created on Trillium, run:
+```
+console
+username@HPC:~/$ ls /home/<username>/.virtualenvs/
+unoxTrillium  unoxTrilliumNC  unoxTrilliumTest
+```
+If you haven't created a virtual environment on Trillium before, this output might be empty or the `.virtualenvs/` directory might not exist yet. 
+
+The following commands will create the exact virtual environment the code expects to run in:
+```console
+username@HPC:~/$ module load StdEnv/2023 gcc/12.3 mpi4py/4.0.0 netcdf-c++4-mpi/4.3.1 python/3.12.4 cuda/12.6
+username@HPC:~/$ virtualenv --no-download /home/<username>/.virtualenvs/unoxTrilliumNC
+username@HPC:~/$ source /home/<username>/.virtualenvs/unoxTrilliumNC/bin/activate
+username@HPC:~/$ pip install --no-index --upgrade pip
+username@HPC:~/$ pip install --no-index 'tensorflow==2.17.0'
+username@HPC:~/$ pip install --no-index 'xarray==2024.3.0'
+username@HPC:~/$ pip install --no-index 'netcdf4==1.7.2'
+```
+<!-- TODO: Add the output of each command. Can I have this in a collapsible section? -->
+
+<!-- TODO: Add explanation of each module I load, the creation and sourcing of the venv, and for each of the packages I install and what dependencies come with them. -->
+
+Python 3.12 was selected because, at least at the time, `tensorflow` didn't support any more up-to-date version of Python. 
+The above commands set up the `unoxTrilliumNew` environment with `tensorflow` version 2.17.0 (and `keras` version 3.10.0, as a dependency), as well as `xarray` version 2024.3.0 and `netcdf4` version 1.7.2 (the versions that I know work with the environment I set up on Animus).
+
+<a id='animus_venv'></a>
+[back to top](#top)
+
+### Virtual environment on Animus
+
+<a id='animus_conda'></a>
+[back to top](#top)
+
+#### Installing `miniconda` on Animus
+
+`To be added`
+
+<a id='animus_poetry'></a>
+[back to top](#top)
+
+#### Creating the `conda` environment on Animus with `poetry`
+
+To see what `conda` environments you have created on Animus, run:
+```console
+username@animus-c:~/$ conda env list
+/home/<username>/miniconda3/lib/python3.12/site-packages/conda/base/context.py:891: FutureWarning: Adding the 'free' channel as it existed prior to conda 4.7. is deprecated and will be removed in 25.3. See https://docs.conda.io/projects/conda/en/stable/user-guide/configuration/free-channel.html for more details.
+  deprecated.topic(
+
+# conda environments:
+#
+base                   /home/<username>/miniconda3
+unet0                  /home/<username>/miniconda3/envs/unet0
+uplt                 * /home/<username>/miniconda3/envs/uplt
+```
+The warning has to do with having an old version of `miniconda` installed.
+If you haven't created a `conda` environment on Animus yet, you will only see the `base` environment. 
+It is highly discouraged to modify the `base` environment. 
+If you have an environment activated when running this command, that environment will have a `*` next to it's path.
+
+Create a new `conda` environment:
+```console
+username@animus-c:~/$ conda create -n <env_name> python=3.9
+```
+where `<env_name>` should be a memorable and distinct name. 
+Since this environment is primarily used to create plots, I named mine `uplt`.
+<!-- TODO: add output -->
+Then, activate this environment:
+```console
+username@animus-c:~/$ conda activate <env_name>
+```
+Make sure to activate this environment before running the code or installing / updating any packages.
+
+This project uses the Python package called `poetry` to manage the dependencies. 
+Install the version of `poetry` used in this project:
+```console
+username@animus-c:~/$ conda install -n <env_name> -c conda-forge poetry=2.1.2
+```
+
+Once `poetry` is installed, it can be used to automatically install all other dependencies of the project based on the `pyproject.toml` file. 
+First, navigate to the project directory and remove the `poetry.lock` file, if it exists:
+```console
+username@animus-c:~/$ cd unox/
+username@animus-c:~/unox$ rm poetry.lock
+```
+Then, use `poetry` to install the dependencies:
+```console
+username@animus-c:~/unox$ poetry install
 ```
