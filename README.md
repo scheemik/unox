@@ -18,27 +18,24 @@ This package is not currently available for installation with `pip`.
 $ pip install unox
 ``` -->
 
-See {doc}`installation` for instructions on how to get set up developing the code.
+See the [installation](https://unox.readthedocs.io/en/latest/example.html) guide for instructions on how to get set up developing the code.
+<!-- See {doc}`installation`  -->
 
-The following software dependencies are required.
+## Requirements
+
+There are two different sets of requirements, one for the analysis / plotting environment and one for the GPU environment. 
+For the analysis / plotting environment, dependencies are tracked using the [`poetry`](https://python-poetry.org/docs/) dependency manager and the current specified version dependencies are listed under `[tool.poetry.dependencies]` in the [`pyproject.toml`](https://github.com/scheemik/unox/blob/main/pyproject.toml) file. 
+For the GPU environment, a summary of the requirements is given in the table below:
 
 Package     | Version
 ---------   | -----------
-Python      | 3.8.13
-TensorFlow  | 2.9.2
-CUDA        | 11.4.4
-cuDNN       | 8.3.0_11.4
-Keras       | 2.9.0
-
-A detailed list of packages installed while while testing and validating the model is provided in `packagelist.txt`.
-
-The dependencies are tracked by `poetry` and can be found in `pyproject.toml`.
-
-## Usage
-
-`unox` makes use of the `tensorflow` package to run a U-net deep learning model to make estimates of NOx emissions.
-
-Examples of usage of the code are provided in `test_unet.py`, based on the notebook `example_code.ipynb`. A sample script for running on Mist is `test_unet.sh`.
+Python      | 3.12.4
+Xarray      | 2024.3.0
+NetCDF4     | 1.7.2
+TensorFlow  | 2.17.0
+Keras       | 3.10.0
+CUDA        | 12.6
+<!-- cuDNN       | 8.3.0_11.4 -->
 
 ## Contributing
 
