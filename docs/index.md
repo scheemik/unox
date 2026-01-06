@@ -5,9 +5,12 @@
 :maxdepth: 1
 :hidden:
 
+installation.md
+workflow.md
 example.ipynb
-changelog.md
-contributing.md
-conduct.md
 autoapi/index
+changelog.md
+CONTRIBUTING.md
+CONDUCT.md
+license.md
 ```

@@ -77,5 +77,4 @@ Before you submit a pull request, check that it meets these guidelines:
 
 ## Code of Conduct
 
-Please note that the `unox` project is released with a
-Code of Conduct. By contributing to this project you agree to abide by its terms.
+Please note that the `unox` project is released with a {doc}`Code of Conduct <CONDUCT>`. By contributing to this project you agree to abide by its terms.

@@ -5,253 +5,84 @@ import sys
 import os 
 import xarray as xr
 import json
-from HPC_scripts.utils.load_input import get_npy_from_netcdf
+
+from data0.load_input import get_npy_from_netcdf
+from data0.dataset import uarray
+from data0.paths import verify_path
+from utils.data_split import data_split
+import data0.run_functions as rf
+from data0.config import get_config
+import data0.run_functions as rf
 
 print("")
 print("===== Begin test_run.py =====")
 print(f"Current working directory: {os.getcwd()}")
 
 # Set parameters
-n_epochs = 250
-save_fmt = 'keras' # 'h5', 'keras', or 'both'
+n_epochs = 2#50
+model_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
 split_value = 0.9
 
 # -------- Get input arguments --------
 print("Using input arguments:")
-# Load first input argument, if it exists: the save directory
-try:
-    savedir = sys.argv[1] + '/'
-except:
-    savedir = 'HPC_runs/test_unet/'  #directory to save output in
-print(f"\targv[1], savedir: {savedir}")
-try:
-    os.mkdir(savedir)
-    print(f"\t\tCreated directory: {savedir}")
-except FileExistsError:
-    print(f"\t\t{savedir} exists")
-try:
-    os.mkdir(f"{savedir}stage1_output/")
-except FileExistsError:
-    print(f"\t\tstage1_output/ exists")
-try:
-    os.mkdir(f"{savedir}stage2_output/")
-except FileExistsError:
-    print(f"\t\tstage2_output/ exists")
-try:
-    os.mkdir(f"{savedir}checkpts/")
-except FileExistsError:
-    print(f"\t\tcheckpts/ exists")
-
-# Load second input argument, if it exists: the config file to use
-try:
-    config_file = sys.argv[2]
-    if config_file == "default":
-        config_file = 'input_config'
-        config_path = f"{savedir}{config_file}.json"
-    else:
-        config_path = f"inputfiles/_input_configs/{config_file}.json"
-except:
-    config_file = 'input_config'
-    config_path = f"{savedir}{config_file}.json"
-print(f"\targv[2], config_file: {config_file}")
-# Make sure the config file exists
-if not os.path.exists(config_path):
-    raise FileNotFoundError(f"Config file not found: {config_path}")
-# Load config file to a dictionary
-with open(f"{config_path}", 'r') as file:
-    config_dict = json.load(file)
-    inputfiles = config_dict['input_set']
-# Write the config dictionary to a json file in the savedir
-if not savedir in config_path:
-    with open(f"{savedir}input_config.json", 'w') as file:
-        file.write(json.dumps(config_dict, indent=4))
-
-# Load third input argument, if it exists: the version of the code to use
-try:
-    version = int(sys.argv[3])
-except:
-    version = 1
-print(f"\targv[3], version: {version}")
+savedir, config_dict, config_path, version = rf.process_cmd_args(sys.argv)
+# Get the inputset from the config file
+inputfiles = config_dict['input_set']
 
 ##################################################################
-from HPC_scripts.utils.data_split import data_split
 ##################################################################
 # Create output metadata dictionary
 
-output_metadata = {
-    'savedir': savedir,
-    'config_file': config_file,
-    'config_dict': config_dict,
-    'version': version,
-    'n_epochs': n_epochs,
-    'save_fmt': save_fmt,
-    'input_fmt': input_fmt,
-    'split_year': split_year,
-    'split_value': split_value,
-    'train_years': {
-        'stage1': [],
-        'stage2': [],
-    },
-    'pred_years': {
-        'stage1': [],
-        'stage2': [],
-    },
-}
+output_metadata = rf.make_output_metadata_dict(
+    savedir,
+    config_path,
+    config_dict,
+    version,
+    n_epochs,
+    model_fmt,
+    input_fmt,
+    split_year,
+    split_value,
+)
+
 ##################################################################
 # Stage-1 training
 ## Load stage-1 data sets
 
-def load_input_files(
-    inputfiles, 
-    stage,
-    ):
-    """Load input files for a given stage.
-
-    Parameters
-    ----------
-    inputfiles : str
-        The directory containing the input files.
-    stage : int
-        The stage number (1 or 2).
-
-    Returns
-    -------
-    x_files : list
-        List of input feature files.
-    y_files : list
-        List of target variable files.
-    """
-    # Assemble the file paths
-    x_files_path = f"inputfiles/{inputfiles}/stage{stage}/x/"
-    y_files_path = f"inputfiles/{inputfiles}/stage{stage}/y/"
-    # Ensure the directories exist
-    if not os.path.exists(x_files_path):
-        raise FileNotFoundError(f"Directory not found: {x_files_path}")
-    if not os.path.exists(y_files_path):
-        raise FileNotFoundError(f"Directory not found: {y_files_path}")
-    # Load and sort the files
-    x_files = sorted(glob.glob(f"inputfiles/{inputfiles}/stage{stage}/x/X_20*.npy"))
-    y_files = sorted(glob.glob(f"inputfiles/{inputfiles}/stage{stage}/y/Y_20*.npy"))
-    print("")
-    print(f"Number of x_files: {len(x_files)}")
-    print(f"Number of y_files: {len(y_files)}")
-    return x_files, y_files
-
-def split_input_files(
-    x_files,
-    y_files,
-    stage,
-    split_value=0.9,
-    ):
-    """Split input files into training and validation sets.
-
-    Parameters
-    ----------
-    x_files : list
-        List of input feature files.
-    y_files : list
-        List of target variable files.
-    stage : int
-        The stage number (1 or 2).
-    split_value : float, optional
-        Proportion of files to use for training.
-    
-    Returns
-    -------
-    xtrain : np.ndarray
-        Concatenated training input features.
-    ytrain : np.ndarray
-        Concatenated training target variables.
-    xvalid : np.ndarray
-        Concatenated validation input features.
-    yvalid : np.ndarray
-        Concatenated validation target variables.
-    """
-    # Decide on split index based on stage
-    if stage == 1:
-        split_index = 14
-    elif stage == 2:
-        split_index = 5
-    else:
-        raise ValueError("Stage must be 1 or 2.")
-    # Gather just the training files
-    xtrain_files, ytrain_files = x_files[:split_index], y_files[:split_index]
-    print("")
-    print(f"Shape of first xtrain file: {np.load(xtrain_files[0]).shape}")
-    print(f"Shape of first ytrain file: {np.load(ytrain_files[0]).shape}")
-    # Concatenate training data
-    xtrain = np.concatenate([ np.load(s) for s in xtrain_files], axis=0)
-    ytrain = np.concatenate([ np.load(s) for s in ytrain_files], axis=0)
-    print("After concatenation:")
-    print(f"Shape of xtrain: {xtrain.shape}")
-    print(f"Shape of ytrain: {ytrain.shape}")
-    # Split into training and validation sets
-    xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
-    print("After data split:")
-    print(f"Shape of xtrain: {xtrain.shape}")
-    print(f"Shape of ytrain: {ytrain.shape}")
-    print(f"Shape of xvalid: {xvalid.shape}")
-    print(f"Shape of yvalid: {yvalid.shape}")
-    return xtrain, ytrain, xvalid, yvalid
-
 if input_fmt == 'npy':
-    x_files, y_files = load_input_files(inputfiles, stage=1)
-    xtrain, ytrain, xvalid, yvalid = split_input_files(x_files, y_files, stage=1, split_value=0.9)
+    from legacy.run_functions_old import prepare_input
 elif input_fmt == 'nc':
-    # Assemble the file path to the netcdf
-    netcdf_path = f"inputfiles/{inputfiles}/{inputfiles}.nc"
-    # Ensure the netcdf file exists
-    if not os.path.exists(netcdf_path):
-        raise FileNotFoundError(f"NetCDF file not found: {netcdf_path}")
-    # Load the netcdf file
-    input_ds = xr.open_dataset(netcdf_path)
-    print(f"Finished loading: {netcdf_path}")
-    # Get list of years present in the `from_xr` netcdf
-    years = input_ds['time'].dt.year.values
-    years = sorted(list(set(years)))
-    # Create blank lists to hold x and y training data
-    xtrain_list = []
-    ytrain_list = []
-    # If before the split year, add x and y data to train lists
-    for year in range(min(years), split_year):
-        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
-        xtrain_list.append(this_x_train_arr)
-        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y')
-        ytrain_list.append(this_y_train_arr)
-        output_metadata['train_years']['stage1'].append(year)
-    # Check the shapes of the input arrays
-    x_input_shape = xtrain_list[0].shape
-    print(f"\tShape of first xtrain file: {x_input_shape}")
-    print(f"\tShape of first ytrain file: {ytrain_list[0].shape}")
-    # Concatenate training data
-    xtrain = np.concatenate(xtrain_list, axis=0)
-    ytrain = np.concatenate(ytrain_list, axis=0)
-    print("After concatenation:")
-    print(f"\tShape of xtrain: {xtrain.shape}")
-    print(f"\tShape of ytrain: {ytrain.shape}")
-    # Split into training and validation sets
-    xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
-    print("After data split:")
-    print(f"\tShape of xtrain: {xtrain.shape}")
-    print(f"\tShape of ytrain: {ytrain.shape}")
-    print(f"\tShape of xvalid: {xvalid.shape}")
-    print(f"\tShape of yvalid: {yvalid.shape}")
+    prepare_input = rf.prepare_input
+# Load the input netcdf file
+uarr = uarray(inputfiles, is_input_set=True)
+# Get the years
+years = uarr._get_years()
+# Prepare the input files
+xtrain, ytrain, output_metadata = prepare_input(uarr, config_path, output_metadata, split_year, stage=1)
+# Split into training and validation sets
+xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
+print("After data split:")
+print(f"\tShape of xtrain: {xtrain.shape}")
+print(f"\tShape of ytrain: {ytrain.shape}")
+print(f"\tShape of xvalid: {xvalid.shape}")
+print(f"\tShape of yvalid: {yvalid.shape}")
 
 print("Done loading data sets for stage 1")
+# exit(0)
 
 ##################################################################
 
 # Import packages based on version
 if version == 0: # keras v2.9.0, tensorflow v2.9.2
-    from HPC_scripts.utils.functions_old import r2_keras
-    from HPC_scripts.utils.functions_old import msenonzero
-    from HPC_scripts.model.core_old import Unet
+    from utils.functions_old import r2_keras
+    from utils.functions_old import msenonzero
+    from model.core_old import Unet
 elif version == 1: # keras v3.10.0, tensorflow v2.17.0
-    from HPC_scripts.utils.functions import r2_keras
-    from HPC_scripts.utils.functions import msenonzero
-    from HPC_scripts.model.core import Unet
+    from utils.functions import r2_keras
+    from utils.functions import msenonzero
+    from model.core import Unet
 from tensorflow.keras.optimizers import Adam
 from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 
@@ -260,8 +91,8 @@ from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 
 unet = Unet()
 # The input shape for `build` should be [lat, lon, var]
-# i.e., omit the `time` dimension of `x_input_shape`
-unet.build(x_input_shape[1:])
+print(f"\tShape of model input layer to build: ({output_metadata['unet_build_shape']})")
+unet.build(output_metadata['unet_build_shape'])
 opt = Adam(learning_rate=1e-5) 
 
 unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
@@ -330,7 +161,7 @@ def begin_training(
         unet.save_model(f"{savedir}unet_stage{stage}_model.keras")
     return unet
 
-unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=save_fmt)
+unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=model_fmt)
 
 # Generate predictions for evaluation
 ### Load testing data sets
@@ -393,9 +224,9 @@ if input_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=1)
 elif input_fmt == 'nc':
     # Get the long name and units of the y variable to put in the new xarray
-    y_var = input_ds.attrs['y_var']
-    y_var_name = input_ds[y_var].long_name
-    y_var_unit = input_ds[y_var].units
+    y_var = uarr.xr.attrs['y_var']
+    y_var_name = uarr.xr[y_var].long_name
+    y_var_unit = uarr.xr[y_var].units
     # Create a new variable name and long name
     pred_var = f"{y_var}_pred"
     pred_var_name = f"Predicted {y_var_name}"
@@ -404,10 +235,10 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f"Generating predictions for year: {year}")
-        x_test, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
+        x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
         # Get the latitude and longitude values
-        lats = input_ds.lat.values
-        lons = input_ds.lon.values
+        # lats = input_ds.lat.values
+        # lons = input_ds.lon.values
         # Make the predictions
         pred = unet.predict(x_test)
         # Save the numpy array to file
@@ -416,7 +247,7 @@ elif input_fmt == 'nc':
         output_metadata['pred_years']['stage1'].append(year)
 
         # Select the data for the specified year
-        data_for_year = input_ds.sel(time=slice(f"{year}-01-01", f"{year}-12-31"))
+        data_for_year = uarr._select_year(year)
         # Load the output to an xarray Dataset
         this_year_pred_xr = xr.Dataset(
             data_vars=dict(
@@ -454,26 +285,40 @@ if config_dict['stage_2'] == False:
 if input_fmt == 'npy':
     x_files, y_files = load_input_files(inputfiles, stage=2)
     x_train, y_train, x_valid, y_valid = split_input_files(x_files, y_files, stage=2, split_value=0.9)
+# elif input_fmt == 'nc':
+#     # Create blank lists to hold x and y training data
+#     xtrain_list = []
+#     ytrain_list = []
+#     # If before the split year, add x and y data to train lists
+#     stage_2_cutoff = uarr.xr.attrs['stage_2_cutoff']
+#     for year in range(stage_2_cutoff+1, split_year):
+#         this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x2')
+#         xtrain_list.append(this_x_train_arr)
+#         this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='y')
+#         ytrain_list.append(this_y_train_arr)
+#         output_metadata['train_years']['stage2'].append(year)
+#     print(f"\tShape of first xtrain file: {xtrain_list[0].shape}")
+#     print(f"\vShape of first ytrain file: {ytrain_list[0].shape}")
+#     # Concatenate training data
+#     xtrain = np.concatenate(xtrain_list, axis=0)
+#     ytrain = np.concatenate(ytrain_list, axis=0)
+#     print("After concatenation:")
+#     print(f"\tShape of xtrain: {xtrain.shape}")
+#     print(f"\tShape of ytrain: {ytrain.shape}")
+#     # Split into training and validation sets
+#     xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
+#     print("After data split:")
+#     print(f"\tShape of xtrain: {xtrain.shape}")
+#     print(f"\tShape of ytrain: {ytrain.shape}")
+#     print(f"\tShape of xvalid: {xvalid.shape}")
+#     print(f"\tShape of yvalid: {yvalid.shape}")
 elif input_fmt == 'nc':
-    # Create blank lists to hold x and y training data
-    xtrain_list = []
-    ytrain_list = []
-    # If before the split year, add x and y data to train lists
-    stage_2_cutoff = input_ds.attrs['stage_2_cutoff']
-    for year in range(stage_2_cutoff+1, split_year):
-        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
-        xtrain_list.append(this_x_train_arr)
-        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='y')
-        ytrain_list.append(this_y_train_arr)
-        output_metadata['train_years']['stage2'].append(year)
-    print(f"\tShape of first xtrain file: {xtrain_list[0].shape}")
-    print(f"\vShape of first ytrain file: {ytrain_list[0].shape}")
-    # Concatenate training data
-    xtrain = np.concatenate(xtrain_list, axis=0)
-    ytrain = np.concatenate(ytrain_list, axis=0)
-    print("After concatenation:")
-    print(f"\tShape of xtrain: {xtrain.shape}")
-    print(f"\tShape of ytrain: {ytrain.shape}")
+    # Load the input netcdf file
+    uarr = uarray(inputfiles, is_input_set=True)
+    # Get the years
+    years = uarr._get_years()
+    # Prepare the input files
+    xtrain, ytrain, output_metadata = rf.prepare_input(uarr, config_path, output_metadata, split_year, stage=2)
     # Split into training and validation sets
     xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
     print("After data split:")
@@ -485,17 +330,17 @@ elif input_fmt == 'nc':
 print('Done loading data sets for stage 2')
 
 # Load the pre-trained model weights from stage-1
-if save_fmt in ['keras', 'both']:
+if model_fmt in ['keras', 'both']:
     unet.load_weights(f"{savedir}unet_stage1_model.keras")
-elif save_fmt in ['h5']:
+elif model_fmt in ['h5']:
     unet.load_weights(f"{savedir}unet_stage1_model.h5")
 else:
-    raise ValueError(f"save_fmt must be 'h5', 'keras', or 'both', got {save_fmt}")
+    raise ValueError(f"model_fmt must be 'h5', 'keras', or 'both', got {model_fmt}")
 
 
 # Stage-2 training of the Unet
 
-unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=save_fmt)
+unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=model_fmt)
 
 if input_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=2)
@@ -508,7 +353,7 @@ elif input_fmt == 'nc':
     # Make predictions based on x data for years >= split_year
     for year in range(split_year, max(years)+1):
         print(f"Generating predictions for year: {year}")
-        x_test, in_lats, in_lons = get_npy_from_netcdf(input_ds, year, config_path, x_or_y='x')
+        x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
         # Make the predictions
         pred = unet.predict(x_test)
         # Save out the numpy array to file
@@ -517,7 +362,7 @@ elif input_fmt == 'nc':
         output_metadata['pred_years']['stage2'].append(year)
 
         # Select the data for the specified year
-        data_for_year = input_ds.sel(time=slice(f"{year}-01-01", f"{year}-12-31"))
+        data_for_year = uarr._select_year(year)
         # Load the output to an xarray Dataset
         this_year_pred_xr = xr.Dataset(
             data_vars=dict(

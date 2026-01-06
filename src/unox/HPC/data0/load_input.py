@@ -3,6 +3,14 @@ import xarray as xr
 import os
 import json
 
+# Necessary to use relative imports (starting with a dot) to avoid
+# errors when running on HPC as the `unox` package is not available
+from .paths import verify_path
+from .dataset import get_years
+from .verify_dataset import verify_dataset
+from .verify_dtype import verify_number
+from .config import get_config
+
 def get_npy_from_netcdf(
     netcdf,
     year,
@@ -30,51 +38,70 @@ def get_npy_from_netcdf(
 
     Returns
     -------
-    np.ndarray
+    data_array : numpy.ndarray
         The extracted data as a numpy array.
+    lats : numpy.ndarray
+        The latitude values of the arrays to restrict.
+    lons : numpy.ndarray
+        The longitude values of the arrays to restrict.
     
     Examples
     --------
     >>> input_set = 'my_inputs'
-    >>> arr = get_npy_from_netcdf(f'inputfiles/{input_set}/{input_set}.nc', 2019, 'x')
+    >>> arr, lats, lons = get_npy_from_netcdf(f'inputfiles/{input_set}/{input_set}.nc', 2019, 'x')
     >>> type(arr)
     <class 'numpy.ndarray'>
     >>> arr.shape
     (364, 56, 120, 9)
     """
-    # Check if netcdf is a string (file path) or an xarray Dataset
+    # Verify argument types
     if isinstance(netcdf, str):
         # Verify the netcdf file path
-        # netcdf_filepath = unox.verify_path(netcdf)
+        netcdf_filepath = verify_path(netcdf)
         # Load the netcdf file
         xr_dataset = xr.load_dataset(netcdf)
     elif isinstance(netcdf, xr.Dataset):
         xr_dataset = netcdf
     else:
-        raise TypeError(f'netcdf must be a file path (str) or an xarray.Dataset, got {type(netcdf)}.')
+        raise TypeError(f"(get_npy_from_netcdf) `netcdf` must be a file path (str) or an xarray.Dataset. Got type: {type(netcdf)}.")
     # Verify the dataset
-    # xr_dataset = udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
+    # Verify the year
+    if not verify_number(year):
+        raise TypeError(f"(get_npy_from_netcdf) `year` must be a number. Got type: {type(year)}")
+    # Verify year is present in the dataset
+    ds_years = get_years(xr_dataset)
+    if year not in ds_years:
+        raise ValueError(f"(get_npy_from_netcdf) `year` must be a year present in `netcdf`. Available years: {ds_years}")
     # Verify the input config
     if isinstance(input_config, type({})):
         config_dict = input_config
     elif isinstance(input_config, str):
-        # Verify the input config file path
-        input_config_path = input_config
-        if not os.path.isfile(input_config_path):
-            input_config_path = f"inputfiles/_input_configs/{input_config}.json"
-        # Load config file to a dictionary
-        with open(input_config_path, 'r') as file:
-            config_dict = json.load(file)
+        # Get the input config from file
+        ## Note: `get_config` checks whether the file exists
+        config_dict = get_config(input_config)
     else:
-        raise TypeError(f'input_config must be a str or dict, got {type(input_config)}.')
+        raise TypeError(f"(get_npy_from_netcdf) `input_config` must be a str or dict. Got type: {type(input_config)}.")
+    # Verify `x_or_y` and `var`
+    if isinstance(x_or_y, type(None)) and isinstance(var, type(None)):
+        raise ValueError(f"(get_npy_from_netcdf) Cannot have both `x_or_y` and `var` have a value of `None`.")
+    elif isinstance(x_or_y, type(None)):
+        if not isinstance(x_or_y, str):
+            TypeError(f"(get_npy_from_netcdf) `x_or_y` must be a str. Got type: {type(x_or_y)}.")
+    elif isinstance(var, type(None)):
+        if not isinstance(var, str):
+            TypeError(f"(get_npy_from_netcdf) `var` must be a str. Got type: {type(var)}.")
+
     # Apply the input configuration file
     xr_dataset = apply_config(xr_dataset, config_dict)
     # Select the data for the specified year
     data_for_year = xr_dataset.sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
+    # Check whether any data remains
+    if data_for_year.sizes['time'] == 0:
+        raise ValueError(f"No data available for year {year} in the dataset.")
     if isinstance(var, type(None)):
         if x_or_y in ['x', 'x2']:
             # Get the list of x variables from the `x_vars` attribute
-            x_vars = xr_dataset.attrs.get('x_vars')
             if x_or_y == 'x':
                 x_vars = xr_dataset.attrs.get('x1_vars')
             elif x_or_y == 'x2':
@@ -84,7 +111,7 @@ def get_npy_from_netcdf(
                     raise ValueError(f"Stage 2 data not available for year {year} (cutoff is {stage_2_cutoff}).")
                 x_vars = xr_dataset.attrs.get('x2_vars')
             # Grab just the x variables for the dataset
-            # data_for_year = data_for_year[x_vars]
+            data_for_year = data_for_year[x_vars]
             # Drop all nan values
             data_for_year = data_for_year.dropna(dim='time', how='all')
             # Convert the entire dataset to a numpy array by looping over x_vars
@@ -149,7 +176,7 @@ def apply_config(
     # Verify argument types
     if isinstance(input_netcdf, str):
         # Verify the netcdf file path
-        # netcdf_filepath = unox.verify_path(input_netcdf)
+        netcdf_filepath = verify_path(input_netcdf)
         # Load the netcdf file
         xr_dataset = xr.load_dataset(input_netcdf)
     elif isinstance(input_netcdf, xr.Dataset):
@@ -157,7 +184,7 @@ def apply_config(
     else:
         raise TypeError(f'netcdf must be a file path (str) or an xarray.Dataset, got {type(netcdf)}.')
     # Verify the dataset
-    # xr_dataset = udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # Verify the input config
     if isinstance(input_config, type({})):
         config_dict = input_config
@@ -259,7 +286,7 @@ def apply_mask(
     # Verify argument types
     if not isinstance(xr_dataset, xr.Dataset):
         raise TypeError(f'xr_dataset must be an xarray.Dataset, got {type(xr_dataset)}.')
-    # udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     if not isinstance(var, str):
         raise TypeError(f'var must be a string, got {type(var)}.')
     # udata.verify_var(xr_dataset, var)

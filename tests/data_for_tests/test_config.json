@@ -1,0 +1,19 @@
+{
+    "input_set": "this_is_a_test",
+    "x_vars": [
+        "no2",
+        "no2_tm1",
+        "u10",
+        "v10",
+        "blh",
+        "sp",
+        "skt",
+        "t2m",
+        "ssrd"
+    ],
+    "stage_2": true,
+    "stage_2_cutoff": 2013,
+    "lsm_vars": [
+    ],
+    "grid_size": [35, 46]
+}
