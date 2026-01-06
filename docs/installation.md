@@ -31,10 +31,10 @@ In order to link to the README file as I did above, I need to actually link to t
 This document details the initial steps required to set up the environments necessary to develop this code base and run the model on a High-Performance Computing (HPC) cluster.
 Command line prompts that are to be entered into a terminal as part of this process are shown here in `console` blocks like this:
 ```console
-username@local:~/$ pwd
-/Users/username
+username@local:~$ pwd
+/Users/<username>
 ```
-where `username` would correspond to the username on the `local` machine. 
+where `<username>` would correspond to the username on the `local` machine. 
 In this guide, the three machines that are referenced are `local` (the computer in front of you), `animus-c`, and `HPC` (the HPC cluster). 
 All command prompts assume a unix-based system (ex: Linux or MacOS). 
 If your local machine runs Windows, you will need to modify the `local` commands. 
@@ -42,13 +42,12 @@ The machine in each console prompt indicates where the command is supposed to be
 Command prompts in these `console` blocks are shown on lines which start with the username and the machine.
 Expected output is shown on subsequent lines.
 When executing a command, only enter what is shown in prompt lines after the `$`.
-For example, for the block above, you would enter only `pwd` into your console, not `username@local:~/$ pwd`.
+For example, for the block above, you would enter only `pwd` into your console, not `username@local:~$ pwd`.
 
 In some cases, it is important to have a particular virtual environment activated when executing a command. 
 This will be indicated by the name of the virtual environment appearing in parentheses before the username. For example:
 ```console
-(my_venv) username@HPC:~/$ pip list
-```
+(my_venv) username@HPC:~$ pip list
 
 ---
 <a id='connecting'></a>
@@ -81,16 +80,16 @@ If not, request access by going to "My Acount" -> "Apply for New Role" using you
 
 #### SSH into Trillium
 
-In order to access Trillium, you will need to create an ssh authentication key and set up 2-factor authentication. 
+In order to access Trillium, you will need to create an `ssh` authentication key and set up 2-factor authentication. 
 Following the [Alliance docs](https://docs.alliancecan.ca/wiki/Using_SSH_keys_in_Linux) (assuming you have a unix-based system), generate a key pair on your local computer with:
 ```console
-username@local:~/$ ssh-keygen -t ed25519
+username@local:~$ ssh-keygen -t ed25519
 ```
 
 Then, as described in [this Alliance docs page](https://docs.alliancecan.ca/wiki/SSH_Keys), log in to Alliance at the [SSH authorized keys page](https://ccdb.computecanada.ca/ssh_authorized_keys). 
 Then, copy and paste in your public key by using the output of this command:
 ```console
-username@local:~/$ cat ~/.ssh/<id_ed25519>.pub
+username@local:~$ cat ~/.ssh/<id_ed25519>.pub
 ```
 where `<id_ed25519>` is the name of the key you generated (default is usually just `id_ed25519.pub`). 
 It might take about 30 minutes for the changes to take place and allow you to connect via SSH.
@@ -98,13 +97,13 @@ It might take about 30 minutes for the changes to take place and allow you to co
 Next, verify that you can access Trillium through the command line. 
 Open a terminal and use the following command, replacing `<SSH_id>` with the path to your authentication file (default is `~/.ssh/id_ed25519`) and `<username>` with your user name:
 ```console
-username@local:~/$ ssh -XY -i <SSH_id> <username>@trillium-gpu.alliancecan.ca
+username@local:~$ ssh -XY -i <SSH_id> <username>@trillium-gpu.alliancecan.ca
 ```
 Be sure to log in to `trillium-gpu`, and not just `trillium` as you will need access to the GPU resources.
 
 Once that works, I suggest adding the following lines to your local `~/.bashrc` file to make an alias command:
 ```bash
-# In username@local:/Users/username/.bashrc
+# In username@local:/Users/<username>/.bashrc
 SSH_id=<SSH_id>
 alias trillium="ssh -XY -i $SSH_id <username>@trillium-gpu.alliancecan.ca"
 ```
@@ -115,7 +114,7 @@ However, following the recommendations of SciNet, you will want to always work i
 
 You should also find your local SSH configuration file `~/.ssh/config`, or create it if it doesn't exist already, and add the following:
 ```bash
-# In username@local:/Users/username/.ssh/config
+# In username@local:/Users/<username>/.ssh/config
 HOST trillium
   HOSTNAME trillium-gpu.alliancecan.ca
   User <username>
@@ -126,7 +125,7 @@ Note that the last argument is _Identity_ File, not _Identify_ File.
 This step will become important when connecting via VSCodium later. 
 But, it also allows you to connect to Trillium with the following command (in case you prefer that over the alias in `~/.bashrc` mentioned above):
 ```console
-username@local:~/$ ssh trillium
+username@local:~$ ssh trillium
 <a id='animus_connect'></a>
 [back to top](#top)
 
@@ -136,16 +135,17 @@ Your supervisor in the Physics Department will set you up with access to `animus
 Once that is done, verify that you can access `animus-c` through the command line. 
 Open a terminal and use the following command, replacing `<username>` with your user name:
 ```console
-username@local:~/$ ssh <username>@animus-c.atmosp.physics.utoronto.ca
+username@local:~$ ssh <username>@animus-c.atmosp.physics.utoronto.ca
+username@animus-c.atmosp.physics.utoronto.ca's password: 
 ```
 As with connecting to HPC, I would suggest adding the following alias to your `.bashrc`:
 ```bash
-# In username@local:/Users/username/.bashrc
+# In username@local:/Users/<username>/.bashrc
 alias animus="ssh <username>@animus-c.atmosp.physics.utoronto.ca"
 ```
 Again, as with HPC, and add the following to your SSH configuration file `~/.ssh/config`:
 ```bash
-# In username@local:/Users/username/.ssh/config
+# In username@local:/Users/<username>/.ssh/config
 HOST animus
   HOSTNAME animus-c.atmosp.physics.utoronto.ca
   User <username>
@@ -179,14 +179,14 @@ Next, follow the GitHub guide for [Adding a new SSH key to your GitHub account](
 Then, you can follow the guide on [Testing your SSH connection](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/testing-your-ssh-connection) to make sure you can connect to GitHub from each remote machine.
 This amounts to first activating your authentication key:
 ```console
-username@<animus-c or HPC>:~/$ eval $(ssh-agent -s); ssh-add ~/.ssh/<GH_id>
+username@<animus-c_or_HPC>:~$ eval $(ssh-agent -s); ssh-add ~/.ssh/<GH_id>
 Agent pid 669646
 Enter passphrase for /home/<username>/.ssh/<GH_id>: 
 Identity added: /home/<username>/.ssh/<GH_id> (<user@mail.ca>)
 ```
 Then, attempting to connect to `git@github.com`:
 ```console
-username@<animus-c or HPC>:~/$ ssh git@github.com
+username@<animus-c_or_HPC>:~$ ssh git@github.com
 Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
 PTY allocation request failed on channel 0
 Hi <username>! You've successfully authenticated, but GitHub does not provide shell access.
@@ -210,8 +210,8 @@ The code is set up to save model run output to the same directory as the reposit
 For this reason, make sure to clone the repository into the `scratch` filesystem. 
 You may choose to create a new directory within which to clone the repository, but this is optional:
 ```console
-username@HPC:~/$ cd /scratch/<username>/<optional_directory>/
-username@HPC:$ git clone git@github.com:scheemik/unox.git
+username@HPC:~$ cd /scratch/<username>/<optional_directory>/
+username@HPC:<optional_directory>$ git clone git@github.com:scheemik/unox.git
 Cloning into 'unox'...
 Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
 remote: Enumerating objects: 2995, done.
@@ -226,7 +226,7 @@ This creates a directory called `unox` and clones the contents of the repository
 
 For ease of navigation, I suggest adding the following alias to your HPC `~/.bashrc`:
 ```bash
-# In username@HPC:/home/username/.bashrc
+# In username@HPC:/home/<username>/.bashrc
 alias cdproj='cd $SCRATCH/<optional_directory>/unox/'
 ```
 Then, after sourcing `~/.bashrc`, you can execute the command `cdproj` to automatically navigate to the project directory.
@@ -236,7 +236,7 @@ Then, after sourcing `~/.bashrc`, you can execute the command `cdproj` to automa
 Navigate to a directory location in which you have write permissions (ex: your home directory) and clone the repository:
 
 ```console
-username@animus-c:~/$ git clone git@github.com:scheemik/unox.git
+username@animus-c:~$ git clone git@github.com:scheemik/unox.git
 Cloning into 'unox'...
 Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
 remote: Enumerating objects: 2995, done.
@@ -272,22 +272,21 @@ They actually suggest [Creating a virtual environment inside of your jobs](https
 They suggest that creating a new environment every time might actually speed up performance, but it is more important for the code to run consistently.
 
 To see what environments you have created on Trillium, run:
-```
-console
-username@HPC:~/$ ls /home/<username>/.virtualenvs/
+```console
+username@HPC:~$ ls /home/<username>/.virtualenvs/
 unoxTrillium  unoxTrilliumNC  unoxTrilliumTest
 ```
 If you haven't created a virtual environment on Trillium before, this output might be empty or the `.virtualenvs/` directory might not exist yet. 
 
 The following commands will create the exact virtual environment the code expects to run in:
 ```console
-username@HPC:~/$ module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
-username@HPC:~/$ virtualenv --no-download /home/<username>/.virtualenvs/unoxTrilliumNC
-username@HPC:~/$ source /home/<username>/.virtualenvs/unoxTrilliumNC/bin/activate
-(unoxTrilliumNC) username@HPC:~/$ pip install --no-index --upgrade pip
-(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'tensorflow==2.17.0'
-(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'xarray==2024.3.0'
-(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'netcdf4==1.7.2'
+username@HPC:~$ module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
+username@HPC:~$ virtualenv --no-download /home/<username>/.virtualenvs/unoxTrilliumNC
+username@HPC:~$ source /home/<username>/.virtualenvs/unoxTrilliumNC/bin/activate
+(unoxTrilliumNC) username@HPC:~$ pip install --no-index --upgrade pip
+(unoxTrilliumNC) username@HPC:~$ pip install --no-index 'tensorflow==2.17.0'
+(unoxTrilliumNC) username@HPC:~$ pip install --no-index 'xarray==2024.3.0'
+(unoxTrilliumNC) username@HPC:~$ pip install --no-index 'netcdf4==1.7.2'
 ```
 <!-- TODO: Add the output of each command in collapsible section. -->
 
@@ -302,7 +301,7 @@ username@HPC:~/$ source /home/<username>/.virtualenvs/unoxTrilliumNC/bin/activat
 Trillium, like many Alliance clusters, uses [Environment Modules](https://docs.alliancecan.ca/wiki/Utiliser_des_modules/en) to load software that has been already installed and configured. 
 The first command in creating the virtual environment above loads all the necessary modules:
 ```console
-username@HPC:~/$ module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
+username@HPC:~$ module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
 ```
 
 The required modules are loaded in this order specifically:
@@ -320,7 +319,8 @@ The required modules are loaded in this order specifically:
 
 The next command actually creates the virtual environment:
 ```console
-username@HPC:~/$ virtualenv --no-download /home/<username>/.virtualenvs/unoxTrilliumNC
+username@HPC:~$ virtualenv --no-download /home/<username>/.virtualenvs/unoxTrilliumNC
+created virtual environment CPython3.12.4.final.0-64 in 3124ms
 ```
 
 The name of the environment, `unoxTrilliumNC` could be anything, but this is the name that is expected in the code when activating the environment in `HPC_slurm.sh`. 
@@ -329,13 +329,13 @@ The name of the environment, `unoxTrilliumNC` could be anything, but this is the
 
 The next command activates the virtual environment:
 ```console
-username@HPC:~/$ source /home/<username>/.virtualenvs/unoxTrilliumNC/bin/activate
+username@HPC:~$ source /home/<username>/.virtualenvs/unoxTrilliumNC/bin/activate
 ```
 
 This is important to do before installing any packages as to not affect your base environment.
 After activating, the command prompt will have the name of the environment in parentheses at the beginning of the line as an indicator:
 ```console
-(unoxTrilliumNC) username@HPC:~/$ 
+(unoxTrilliumNC) username@HPC:~$ 
 ```
 
 #### Upgrading `pip`
@@ -344,7 +344,7 @@ The default package installer for Python is [`pip`](https://pip.pypa.io/en/stabl
 The next command ensures that the version of `pip` in the environment is up to date.
 Make sure the virtual environment is activated first:
 ```console
-(unoxTrilliumNC) username@HPC:~/$ pip install --no-index --upgrade pip
+(unoxTrilliumNC) username@HPC:~$ pip install --no-index --upgrade pip
 ```
 
 #### Installing the packages
@@ -352,9 +352,8 @@ Make sure the virtual environment is activated first:
 The next commands install the packages required to run the code on Trillium.
 Make sure the virtual environment is activated first:
 ```console
-(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'tensorflow==2.17.0'
-(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'xarray==2024.3.0'
-(unoxTrilliumNC) username@HPC:~/$ pip install --no-index 'netcdf4==1.7.2'
+(unoxTrilliumNC) username@HPC:~$ pip install --no-index 'tensorflow==2.17.0'
+Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v4, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
 ```
 The version of `tensorflow` (2.17.0, and `keras` version 3.10.0, as a dependency), was selected as the most up-to-date version available on Trillium at the time. 
 The packages `xarray` version 2024.3.0 and `netcdf4` version 1.7.2 were selected to match the `conda` environment on Animus.
@@ -368,7 +367,7 @@ Even though `poetry` is available on the Alliance systems, I have had no luck ac
 The three packages installed explicitly above also have dependencies which get installed along with them. 
 A full list of all packages and their versions in the `unoxTrilliumNC` environment is below:
 ```console
-(unoxTrilliumNC) username@HPC:~/$ pip list
+(unoxTrilliumNC) username@HPC:~$ pip list
 Package                 Version
 ----------------------- -------------------------
 absl_py                 2.3.1+computecanada
@@ -441,13 +440,13 @@ This makes development very difficult.
 
 If you need to install `conda`, I recommend using `miniconda`, which can be installed by running the following commands from your home directory:
 ```console
-username@animus-c:~/$ mkdir -p ~/miniconda3
-username@animus-c:~/$ wget https://repo.anaconda.com/miniconda/Miniconda3-py39_25.1.1-2-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-username@animus-c:~/$ bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-username@animus-c:~/$ rm ~/miniconda3/miniconda.sh
-username@animus-c:~/$ source ~/miniconda3/bin/activate
-(base) username@animus-c:~/$ conda init --all
-(base) username@animus-c:~/$ conda info
+username@animus-c:~$ mkdir -p ~/miniconda3
+username@animus-c:~$ wget https://repo.anaconda.com/miniconda/Miniconda3-py39_25.1.1-2-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+username@animus-c:~$ bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+username@animus-c:~$ rm ~/miniconda3/miniconda.sh
+username@animus-c:~$ source ~/miniconda3/bin/activate
+(base) username@animus-c:~$ conda init --all
+(base) username@animus-c:~$ conda info
 ```
 
 <a id='animus_poetry'></a>
@@ -457,15 +456,15 @@ username@animus-c:~/$ source ~/miniconda3/bin/activate
 
 To see what `conda` environments you have created on Animus, run:
 ```console
-username@animus-c:~/$ conda env list
+(base) username@animus-c:~$ conda env list
 /home/<username>/miniconda3/lib/python3.12/site-packages/conda/base/context.py:891: FutureWarning: Adding the 'free' channel as it existed prior to conda 4.7. is deprecated and will be removed in 25.3. See https://docs.conda.io/projects/conda/en/stable/user-guide/configuration/free-channel.html for more details.
   deprecated.topic(
 
 # conda environments:
 #
-base                   /home/<username>/miniconda3
-unet0                  /home/<username>/miniconda3/envs/unet0
-uplt                 * /home/<username>/miniconda3/envs/uplt
+base                 * /home/<username>/miniconda3
+unet                   /home/<username>/miniconda3/envs/unet
+uplt                   /home/<username>/miniconda3/envs/uplt
 ```
 The warning has to do with having an old version of `miniconda` installed.
 If you haven't created a `conda` environment on Animus yet, you will only see the `base` environment. 
@@ -474,30 +473,29 @@ If you have an environment activated when running this command, that environment
 
 Create a new `conda` environment:
 ```console
-username@animus-c:~/$ conda create -n <env_name> python=3.9
+username@animus-c:~$ conda create -n <env_name> python=3.9
 ```
 where `<env_name>` should be a memorable and distinct name. 
 Since this environment is primarily used to create plots, I named mine `uplt`.
 <!-- TODO: add output -->
 Then, activate this environment:
 ```console
-username@animus-c:~/$ conda activate <env_name>
+username@animus-c:~$ conda activate <env_name>
 ```
 Make sure to activate this environment before running the code or installing / updating any packages.
 
 This project uses the Python package called `poetry` to manage the dependencies. 
 Install the version of `poetry` used in this project:
 ```console
-username@animus-c:~/$ conda install -n <env_name> -c conda-forge poetry=2.1.2
+(env_name) username@animus-c:~$ conda install -n <env_name> -c conda-forge poetry=2.1.2
 ```
 
 Once `poetry` is installed, it can be used to automatically install all other dependencies of the project based on the `pyproject.toml` file. 
 First, navigate to the project directory and remove the `poetry.lock` file, if it exists:
 ```console
-username@animus-c:~/$ cd unox/
-username@animus-c:~/unox$ rm poetry.lock
+(env_name) username@animus-c:~$ cd unox/
+(env_name) username@animus-c:~unox$ rm poetry.lock
 ```
 Then, use `poetry` to install the dependencies:
 ```console
-username@animus-c:~/unox$ poetry install
-```
+(env_name) username@animus-c:~unox$ poetry install
