@@ -48,6 +48,13 @@ In some cases, it is important to have a particular virtual environment activate
 This will be indicated by the name of the virtual environment appearing in parentheses before the username. For example:
 ```console
 (my_venv) username@HPC:~$ pip list
+Package                 Version
+----------------------- -------------------------
+...
+xarray                  2024.3.0+computecanada
+```
+
+In some instances, such as above, the output has been truncated for brevity using ellipses `...`.
 
 ---
 <a id='connecting'></a>
@@ -126,6 +133,41 @@ This step will become important when connecting via VSCodium later.
 But, it also allows you to connect to Trillium with the following command (in case you prefer that over the alias in `~/.bashrc` mentioned above):
 ```console
 username@local:~$ ssh trillium
+Enter passphrase for key '/Users/<username>/.ssh/<id_ed25519>': 
+(<username>@trillium-gpu.alliancecan.ca) Duo two-factor login for <username>
+
+Enter a passcode or select one of the following options:
+
+ 1. Duo Push to <mobile device>
+
+Passcode or option (1-1): 1
+Success. Logging you in...
+Success. Logging you in...
+Last login: Thu Dec 11 15:59:49 2025 from static-68-235-46-107.cust.tzulo.com
+==============================================================================
+ _____     _ _ _ _            SciNet welcomes you to the Trillium 
+|_   _|___|_| | |_|_ _ _____  cluster at the University of Toronto!
+  | | |  _| | | | | | |     |
+  | | | | | | | | | | | | | | Docs: https://docs.alliancecan.ca/wiki/Trillium
+  |_| |_| |_|_|_|_|___|G|P|U| Help: trillium@tech.alliancecan.ca
+
+This is the GPU login node trig-login01. Use this node to develop and compile
+code, to run short tests, and to submit GPU compute jobs to the scheduler.
+==============================================================================
+
+For help with your transition to Trillium, please see:
+https://docs.alliancecan.ca/wiki/Transition_from_Niagara_to_Trillium
+
+Prefer a self-guided course instead?
+Check out: see https://scinet.courses/1389
+===============================================================================
+
+Welcome <username>, your access to this system has been logged.
+If you are not <username>, please disconnect immediately.
+
+username@HPC:~$
+```
+
 <a id='animus_connect'></a>
 [back to top](#top)
 
@@ -137,6 +179,37 @@ Open a terminal and use the following command, replacing `<username>` with your 
 ```console
 username@local:~$ ssh <username>@animus-c.atmosp.physics.utoronto.ca
 username@animus-c.atmosp.physics.utoronto.ca's password: 
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 5.15.0-164-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Tue Jan  6 09:43:04 AM EST 2026
+
+  System load:  1.15               Temperature:           32.0 C
+  Usage of /:   51.7% of 97.87GB   Processes:             524
+  Memory usage: 53%                Users logged in:       3
+  Swap usage:   23%                IPv4 address for eno1: 128.100.80.74
+
+ * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar for easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+
+Expanded Security Maintenance for Applications is not enabled.
+
+0 updates can be applied immediately.
+
+26 additional security updates can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+New release '24.04.3 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+Last login: Tue Nov 25 14:32:40 2025 from 68.235.46.14
+username@animus-c:~$
 ```
 As with connecting to HPC, I would suggest adding the following alias to your `.bashrc`:
 ```bash
@@ -321,6 +394,10 @@ The next command actually creates the virtual environment:
 ```console
 username@HPC:~$ virtualenv --no-download /home/<username>/.virtualenvs/unoxTrilliumNC
 created virtual environment CPython3.12.4.final.0-64 in 3124ms
+  creator CPython3Posix(dest=/home/<username>/.virtualenvs/unoxTrilliumNC, clear=False, no_vcs_ignore=False, global=False)
+  seeder FromAppData(download=False, pip=bundle, via=copy, app_data_dir=/home/<username>/.local/share/virtualenv)
+    added seed packages: pip==25.3
+  activators BashActivator,CShellActivator,FishActivator,NushellActivator,PowerShellActivator,PythonActivator
 ```
 
 The name of the environment, `unoxTrilliumNC` could be anything, but this is the name that is expected in the code when activating the environment in `HPC_slurm.sh`. 
@@ -345,6 +422,8 @@ The next command ensures that the version of `pip` in the environment is up to d
 Make sure the virtual environment is activated first:
 ```console
 (unoxTrilliumNC) username@HPC:~$ pip install --no-index --upgrade pip
+Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v4, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
+Requirement already satisfied: pip in /home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages (25.3)
 ```
 
 #### Installing the packages
@@ -354,6 +433,71 @@ Make sure the virtual environment is activated first:
 ```console
 (unoxTrilliumNC) username@HPC:~$ pip install --no-index 'tensorflow==2.17.0'
 Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v4, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic/tensorflow-2.17.0+computecanada-cp312-cp312-linux_x86_64.whl
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/absl_py-2.3.1+computecanada-py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/astunparse-1.6.3+computecanada-py2.py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/flatbuffers-25.9.23+computecanada-py2.py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/gast-0.7.0+computecanada-py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/google_pasta-0.2.0+computecanada-py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3/h5py-3.15.0+computecanada-cp312-cp312-linux_x86_64.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/libclang-14.0.1+computecanada-py2.py3-none-linux_x86_64.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic/ml_dtypes-0.4.0+computecanada-cp312-cp312-linux_x86_64.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/opt_einsum-3.4.0+computecanada-py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/packaging-25.0+computecanada-py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3/protobuf-4.25.4+computecanada-cp312-cp312-linux_x86_64.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/requests-2.32.5+computecanada-py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/setuptools-80.9.0+computecanada-py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/six-1.17.0+computecanada-py2.py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/termcolor-3.2.0+computecanada-py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/typing_extensions-4.15.0+computecanada-py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/wrapt-2.0.1+computecanada-cp312-cp312-linux_x86_64.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/grpcio-1.73.0+computecanada-cp312-cp312-linux_x86_64.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/tensorboard-2.17.1+computecanada-py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/keras-3.11.3+computecanada-py3-none-any.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic/numpy-1.26.4+computecanada-cp312-cp312-linux_x86_64.whl (from tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/charset_normalizer-3.4.4+computecanada-py3-none-any.whl (from requests<3,>=2.21.0->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/idna-3.11+computecanada-py3-none-any.whl (from requests<3,>=2.21.0->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/urllib3-2.6.2+computecanada-py3-none-any.whl (from requests<3,>=2.21.0->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/certifi-2025.11.12+computecanada-py3-none-any.whl (from requests<3,>=2.21.0->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/markdown-3.9+computecanada-py3-none-any.whl (from tensorboard<2.18,>=2.17->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/tensorboard_data_server-0.7.2+computecanada-py3-none-linux_x86_64.whl (from tensorboard<2.18,>=2.17->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/werkzeug-3.1.4+computecanada-py3-none-any.whl (from tensorboard<2.18,>=2.17->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/wheel-0.45.1+computecanada-py3-none-any.whl (from astunparse>=1.6.0->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/rich-14.2.0+computecanada-py3-none-any.whl (from keras>=3.2.0->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/namex-0.1.0+computecanada-py3-none-any.whl (from keras>=3.2.0->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic/optree-0.14.0+computecanada-cp312-cp312-linux_x86_64.whl (from keras>=3.2.0->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/MarkupSafe-3.0.2+computecanada-cp312-cp312-linux_x86_64.whl (from werkzeug>=1.0.1->tensorboard<2.18,>=2.17->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/markdown_it_py-4.0.0+computecanada-py3-none-any.whl (from rich->keras>=3.2.0->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/pygments-2.19.2+computecanada-py3-none-any.whl (from rich->keras>=3.2.0->tensorflow==2.17.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/mdurl-0.1.2+computecanada-py3-none-any.whl (from markdown-it-py>=2.2.0->rich->keras>=3.2.0->tensorflow==2.17.0)
+Installing collected packages: namex, libclang, flatbuffers, wrapt, wheel, urllib3, typing-extensions, termcolor, tensorboard-data-server, six, setuptools, pygments, protobuf, packaging, opt-einsum, numpy, mdurl, markupsafe, markdown, idna, grpcio, gast, charset-normalizer, certifi, absl-py, werkzeug, requests, optree, ml-dtypes, markdown-it-py, h5py, google-pasta, astunparse, tensorboard, rich, keras, tensorflow
+Successfully installed absl-py-2.3.1+computecanada astunparse-1.6.3+computecanada certifi-2025.11.12+computecanada charset-normalizer-3.4.4+computecanada flatbuffers-25.9.23+computecanada gast-0.7.0+computecanada google-pasta-0.2.0+computecanada grpcio-1.73.0+computecanada h5py-3.15.0+computecanada idna-3.11+computecanada keras-3.11.3+computecanada libclang-14.0.1+computecanada markdown-3.9+computecanada markdown-it-py-4.0.0+computecanada markupsafe-3.0.2+computecanada mdurl-0.1.2+computecanada ml-dtypes-0.4.0+computecanada namex-0.1.0+computecanada numpy-1.26.4+computecanada opt-einsum-3.4.0+computecanada optree-0.14.0+computecanada packaging-25.0+computecanada protobuf-4.25.4+computecanada pygments-2.19.2+computecanada requests-2.32.5+computecanada rich-14.2.0+computecanada setuptools-80.9.0+computecanada six-1.17.0+computecanada tensorboard-2.17.1+computecanada tensorboard-data-server-0.7.2+computecanada tensorflow-2.17.0+computecanada termcolor-3.2.0+computecanada typing-extensions-4.15.0+computecanada urllib3-2.6.2+computecanada werkzeug-3.1.4+computecanada wheel-0.45.1+computecanada wrapt-2.0.1+computecanada
+```
+
+```console
+(unoxTrilliumNC) username@HPC:~$ pip install --no-index 'xarray==2024.3.0'
+Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v4, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/xarray-2024.3.0+computecanada-py3-none-any.whl
+Requirement already satisfied: numpy>=1.23 in /home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages (from xarray==2024.3.0) (1.26.4+computecanada)
+Requirement already satisfied: packaging>=22 in /home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages (from xarray==2024.3.0) (25.0+computecanada)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3/pandas-2.3.3+computecanada-cp312-cp312-linux_x86_64.whl (from xarray==2024.3.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/python_dateutil-2.9.0.post0+computecanada-py2.py3-none-any.whl (from pandas>=1.5->xarray==2024.3.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/pytz-2025.2+computecanada-py2.py3-none-any.whl (from pandas>=1.5->xarray==2024.3.0)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/tzdata-2025.3+computecanada-py2.py3-none-any.whl (from pandas>=1.5->xarray==2024.3.0)
+Requirement already satisfied: six>=1.5 in /home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages (from python-dateutil>=2.8.2->pandas>=1.5->xarray==2024.3.0) (1.17.0+computecanada)
+Installing collected packages: pytz, tzdata, python-dateutil, pandas, xarray
+Successfully installed pandas-2.3.3+computecanada python-dateutil-2.9.0.post0+computecanada pytz-2025.2+computecanada tzdata-2025.3+computecanada xarray-2024.3.0+computecanada
+```
+
+```console
+(unoxTrilliumNC) username@HPC:~$ pip install --no-index 'netcdf4==1.7.2'
+Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v4, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3/netCDF4-1.7.2+computecanada-cp312-cp312-linux_x86_64.whl
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3/cftime-1.6.4.post1+computecanada-cp312-cp312-linux_x86_64.whl (from netcdf4==1.7.2)
+Requirement already satisfied: certifi in /home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages (from netcdf4==1.7.2) (2025.11.12+computecanada)
+Requirement already satisfied: numpy in /home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages (from netcdf4==1.7.2) (1.26.4+computecanada)
+Installing collected packages: cftime, netcdf4
+Successfully installed cftime-1.6.4.post1+computecanada netcdf4-1.7.2+computecanada
 ```
 The version of `tensorflow` (2.17.0, and `keras` version 3.10.0, as a dependency), was selected as the most up-to-date version available on Trillium at the time. 
 The packages `xarray` version 2024.3.0 and `netcdf4` version 1.7.2 were selected to match the `conda` environment on Animus.
@@ -417,6 +561,59 @@ wrapt                   1.17.3+computecanada
 xarray                  2024.3.0+computecanada
 ```
 
+<!-- 2026-01-06
+```console
+(unoxToDelete) username@HPC:~$ pip list
+Package                 Version
+----------------------- -------------------------
+absl_py                 2.3.1+computecanada
+astunparse              1.6.3+computecanada
+certifi                 2025.11.12+computecanada
+cftime                  1.6.4.post1+computecanada
+charset_normalizer      3.4.4+computecanada
+flatbuffers             25.9.23+computecanada
+gast                    0.7.0+computecanada
+google-pasta            0.2.0+computecanada
+grpcio                  1.73.0+computecanada
+h5py                    3.15.0+computecanada
+idna                    3.11+computecanada
+keras                   3.11.3+computecanada
+libclang                14.0.1+computecanada
+markdown                3.9+computecanada
+markdown_it_py          4.0.0+computecanada
+MarkupSafe              3.0.2+computecanada
+mdurl                   0.1.2+computecanada
+ml_dtypes               0.4.0+computecanada
+mpi4py                  4.0.0
+namex                   0.1.0+computecanada
+netCDF4                 1.7.2+computecanada
+numpy                   1.26.4+computecanada
+opt_einsum              3.4.0+computecanada
+optree                  0.14.0+computecanada
+packaging               25.0+computecanada
+pandas                  2.3.3+computecanada
+pip                     25.3
+protobuf                4.25.4+computecanada
+pygments                2.19.2+computecanada
+python_dateutil         2.9.0.post0+computecanada
+pytz                    2025.2+computecanada
+requests                2.32.5+computecanada
+rich                    14.2.0+computecanada
+setuptools              80.9.0+computecanada
+six                     1.17.0+computecanada
+tensorboard             2.17.1+computecanada
+tensorboard_data_server 0.7.2+computecanada
+tensorflow              2.17.0+computecanada
+termcolor               3.2.0+computecanada
+typing_extensions       4.15.0+computecanada
+tzdata                  2025.3+computecanada
+urllib3                 2.6.2+computecanada
+werkzeug                3.1.4+computecanada
+wheel                   0.45.1+computecanada
+wrapt                   2.0.1+computecanada
+xarray                  2024.3.0+computecanada
+``` -->
+
 </details>
 
 <a id='animus_venv'></a>
@@ -447,6 +644,40 @@ username@animus-c:~$ rm ~/miniconda3/miniconda.sh
 username@animus-c:~$ source ~/miniconda3/bin/activate
 (base) username@animus-c:~$ conda init --all
 (base) username@animus-c:~$ conda info
+/home/<username>/miniconda3/lib/python3.12/site-packages/conda/base/context.py:891: FutureWarning: Adding the 'free' channel as it existed prior to conda 4.7. is deprecated and will be removed in 25.3. See https://docs.conda.io/projects/conda/en/stable/user-guide/configuration/free-channel.html for more details.
+  deprecated.topic(
+
+     active environment : base
+    active env location : /home/<username>/miniconda3
+            shell level : 1
+       user config file : /home/<username>/.condarc
+ populated config files : /home/<username>/miniconda3/.condarc
+                          /home/<username>/.condarc
+          conda version : 25.1.1
+    conda-build version : not installed
+         python version : 3.12.9.final.0
+                 solver : libmamba (default)
+       virtual packages : __archspec=1=broadwell
+                          __conda=25.1.1=0
+                          __glibc=2.35=0
+                          __linux=5.15.0=0
+                          __unix=0=0
+       base environment : /home/<username>/miniconda3  (writable)
+      conda av data dir : /home/<username>/miniconda3/etc/conda
+  conda av metadata url : None
+           channel URLs : https://repo.anaconda.com/pkgs/main/linux-64
+                          https://repo.anaconda.com/pkgs/main/noarch
+                          https://repo.anaconda.com/pkgs/r/linux-64
+                          https://repo.anaconda.com/pkgs/r/noarch
+          package cache : /home/<username>/miniconda3/pkgs
+                          /home/<username>/.conda/pkgs
+       envs directories : /home/<username>/miniconda3/envs
+                          /home/<username>/.conda/envs
+               platform : linux-64
+             user-agent : conda/25.1.1 requests/2.32.3 CPython/3.12.9 Linux/5.15.0-164-generic ubuntu/22.04.5 glibc/2.35 solver/libmamba conda-libmamba-solver/25.1.1 libmambapy/2.0.5 aau/0.5.0 c/. s/. e/.
+                UID:GID : 101076:101076
+             netrc file : None
+           offline mode : False
 ```
 
 <a id='animus_poetry'></a>
@@ -477,7 +708,126 @@ username@animus-c:~$ conda create -n <env_name> python=3.9
 ```
 where `<env_name>` should be a memorable and distinct name. 
 Since this environment is primarily used to create plots, I named mine `uplt`.
-<!-- TODO: add output -->
+
+```console
+username@animus-c:~$ conda create -n <env_name> python=3.9
+/home/mschee/miniconda3/lib/python3.12/site-packages/conda/base/context.py:891: FutureWarning: Adding the 'free' channel as it existed prior to conda 4.7. is deprecated and will be removed in 25.3. See https://docs.conda.io/projects/conda/en/stable/user-guide/configuration/free-channel.html for more details.
+  deprecated.topic(
+Retrieving notices: done
+Channels:
+ - defaults
+Platform: linux-64
+Collecting package metadata (repodata.json): done
+Solving environment: done
+
+
+==> WARNING: A newer version of conda exists. <==
+    current version: 25.1.1
+    latest version: 25.11.1
+
+Please update conda by running
+
+    $ conda update -n base -c defaults conda
+
+
+
+## Package Plan ##
+
+  environment location: /home/mschee/miniconda3/envs/delete_this
+
+  added / updated specs:
+    - python=3.9
+
+
+The following packages will be downloaded:
+
+    package                    |            build
+    ---------------------------|-----------------
+    ca-certificates-2025.12.2  |       h06a4308_0         125 KB
+    expat-2.7.3                |       h7354ed3_4          25 KB
+    ld_impl_linux-64-2.44      |       h153f514_2         672 KB
+    libexpat-2.7.3             |       h7354ed3_4         121 KB
+    libgcc-15.2.0              |       h69a1729_7         806 KB
+    libgcc-ng-15.2.0           |       h166f726_7          28 KB
+    libgomp-15.2.0             |       h4751f2c_7         436 KB
+    libnsl-2.0.0               |       h5eee18b_0          31 KB
+    libstdcxx-15.2.0           |       h39759b7_7         3.7 MB
+    libstdcxx-ng-15.2.0        |       hc03a8fd_7          28 KB
+    libxcb-1.17.0              |       h9b100fa_0         430 KB
+    libzlib-1.3.1              |       hb25bd0a_0          59 KB
+    ncurses-6.5                |       h7934f7d_0         1.1 MB
+    openssl-3.0.18             |       hd6dcaed_0         4.5 MB
+    pip-25.3                   |     pyhc872135_0         1.1 MB
+    pthread-stubs-0.3          |       h0ce48e5_1           5 KB
+    python-3.9.25              |       h0dcde21_1        23.0 MB
+    readline-8.3               |       hc2a1206_0         471 KB
+    setuptools-80.9.0          |   py39h06a4308_0         1.4 MB
+    sqlite-3.51.1              |       he0a8d7e_0         1.2 MB
+    tk-8.6.15                  |       h54e0aa7_0         3.4 MB
+    xorg-libx11-1.8.12         |       h9b100fa_1         895 KB
+    xorg-libxau-1.0.12         |       h9b100fa_0          13 KB
+    xorg-libxdmcp-1.1.5        |       h9b100fa_0          19 KB
+    xorg-xorgproto-2024.1      |       h5eee18b_1         580 KB
+    zlib-1.3.1                 |       hb25bd0a_0          96 KB
+    ------------------------------------------------------------
+                                           Total:        44.2 MB
+
+The following NEW packages will be INSTALLED:
+
+  _libgcc_mutex      pkgs/main/linux-64::_libgcc_mutex-0.1-main 
+  _openmp_mutex      pkgs/main/linux-64::_openmp_mutex-5.1-1_gnu 
+  bzip2              pkgs/main/linux-64::bzip2-1.0.8-h5eee18b_6 
+  ca-certificates    pkgs/main/linux-64::ca-certificates-2025.12.2-h06a4308_0 
+  expat              pkgs/main/linux-64::expat-2.7.3-h7354ed3_4 
+  ld_impl_linux-64   pkgs/main/linux-64::ld_impl_linux-64-2.44-h153f514_2 
+  libexpat           pkgs/main/linux-64::libexpat-2.7.3-h7354ed3_4 
+  libffi             pkgs/main/linux-64::libffi-3.4.4-h6a678d5_1 
+  libgcc             pkgs/main/linux-64::libgcc-15.2.0-h69a1729_7 
+  libgcc-ng          pkgs/main/linux-64::libgcc-ng-15.2.0-h166f726_7 
+  libgomp            pkgs/main/linux-64::libgomp-15.2.0-h4751f2c_7 
+  libnsl             pkgs/main/linux-64::libnsl-2.0.0-h5eee18b_0 
+  libstdcxx          pkgs/main/linux-64::libstdcxx-15.2.0-h39759b7_7 
+  libstdcxx-ng       pkgs/main/linux-64::libstdcxx-ng-15.2.0-hc03a8fd_7 
+  libuuid            pkgs/main/linux-64::libuuid-1.41.5-h5eee18b_0 
+  libxcb             pkgs/main/linux-64::libxcb-1.17.0-h9b100fa_0 
+  libzlib            pkgs/main/linux-64::libzlib-1.3.1-hb25bd0a_0 
+  ncurses            pkgs/main/linux-64::ncurses-6.5-h7934f7d_0 
+  openssl            pkgs/main/linux-64::openssl-3.0.18-hd6dcaed_0 
+  pip                pkgs/main/noarch::pip-25.3-pyhc872135_0 
+  pthread-stubs      pkgs/main/linux-64::pthread-stubs-0.3-h0ce48e5_1 
+  python             pkgs/main/linux-64::python-3.9.25-h0dcde21_1 
+  readline           pkgs/main/linux-64::readline-8.3-hc2a1206_0 
+  setuptools         pkgs/main/linux-64::setuptools-80.9.0-py39h06a4308_0 
+  sqlite             pkgs/main/linux-64::sqlite-3.51.1-he0a8d7e_0 
+  tk                 pkgs/main/linux-64::tk-8.6.15-h54e0aa7_0 
+  tzdata             pkgs/main/noarch::tzdata-2025b-h04d1e81_0 
+  wheel              pkgs/main/linux-64::wheel-0.45.1-py39h06a4308_0 
+  xorg-libx11        pkgs/main/linux-64::xorg-libx11-1.8.12-h9b100fa_1 
+  xorg-libxau        pkgs/main/linux-64::xorg-libxau-1.0.12-h9b100fa_0 
+  xorg-libxdmcp      pkgs/main/linux-64::xorg-libxdmcp-1.1.5-h9b100fa_0 
+  xorg-xorgproto     pkgs/main/linux-64::xorg-xorgproto-2024.1-h5eee18b_1 
+  xz                 pkgs/main/linux-64::xz-5.6.4-h5eee18b_1 
+  zlib               pkgs/main/linux-64::zlib-1.3.1-hb25bd0a_0 
+
+
+Proceed ([y]/n)? 
+
+
+Downloading and Extracting Packages:
+                                                                                                                   
+Preparing transaction: done                                                                                        
+Verifying transaction: done                                                                                        
+Executing transaction: done                                                                                        
+#                                                                                                                  
+# To activate this environment, use                                                                                
+#                                                                                                                  
+#     $ conda activate delete_this                                                                                 
+#                                                                                                                  
+# To deactivate an active environment, use                                                                         
+#                                                                                                                  
+#     $ conda deactivate
+```
+
 Then, activate this environment:
 ```console
 username@animus-c:~$ conda activate <env_name>
@@ -490,6 +840,172 @@ Install the version of `poetry` used in this project:
 (env_name) username@animus-c:~$ conda install -n <env_name> -c conda-forge poetry=2.1.2
 ```
 
+```console
+(env_name) username@animus-c:~$ conda install -n <env_name> -c conda-forge poetry=2.1.2
+/home/mschee/miniconda3/lib/python3.12/site-packages/conda/base/context.py:891: FutureWarning: Adding the 'free' channel as it existed prior to conda 4.7. is deprecated and will be removed in 25.3. See https://docs.conda.io/projects/conda/en/stable/user-guide/configuration/free-channel.html for more details.                                    
+  deprecated.topic(   
+Channels:
+ - conda-forge
+ - defaults
+Platform: linux-64
+Collecting package metadata (repodata.json): done
+Solving environment: done
+
+
+==> WARNING: A newer version of conda exists. <==
+    current version: 25.1.1
+    latest version: 25.11.1
+
+Please update conda by running
+
+    $ conda update -n base -c defaults conda
+
+
+
+## Package Plan ##
+
+  environment location: /home/mschee/miniconda3/envs/delete_this
+
+  added / updated specs:
+    - poetry=2.1.2
+
+
+The following packages will be downloaded:
+
+    package                    |            build
+    ---------------------------|-----------------
+    anyio-4.10.0               |     pyhe01879c_0         132 KB  conda-forge
+    brotli-python-1.1.0        |   py39hf88036b_3         342 KB  conda-forge
+    ca-certificates-2026.1.4   |       hbd8a1cb_0         143 KB  conda-forge
+    certifi-2025.8.3           |     pyhd8ed1ab_0         155 KB  conda-forge
+    cffi-1.17.1                |   py39h15c3d72_0         236 KB  conda-forge
+    charset-normalizer-3.4.3   |     pyhd8ed1ab_0          50 KB  conda-forge
+    cryptography-45.0.6        |   py39hb2f7f84_0         1.5 MB  conda-forge
+    dbus-1.16.2                |       h3c4dab8_0         428 KB  conda-forge
+    distlib-0.4.0              |     pyhd8ed1ab_0         269 KB  conda-forge
+    dulwich-0.22.8             |   py39he612d8f_0         721 KB  conda-forge
+    filelock-3.19.1            |     pyhd8ed1ab_0          18 KB  conda-forge
+    jaraco.functools-4.3.0     |     pyhd8ed1ab_0          16 KB  conda-forge
+    libblas-3.11.0             |5_h4a7cf45_openblas          18 KB  conda-forge
+    libcblas-3.11.0            |5_h0358290_openblas          18 KB  conda-forge
+    libgfortran-15.2.0         |      h69a702a_16          27 KB  conda-forge
+    libgfortran5-15.2.0        |      h68bc16d_16         2.4 MB  conda-forge
+    libglib-2.84.4             |       h77a78f3_0         2.8 MB
+    libiconv-1.18              |       h3b78370_2         772 KB  conda-forge
+    liblapack-3.11.0           |5_h47877c9_openblas          18 KB  conda-forge
+    libopenblas-0.3.30         |pthreads_h94d23a6_4         5.7 MB  conda-forge
+    msgpack-python-1.1.1       |   py39h74842e3_0          93 KB  conda-forge
+    numpy-2.0.2                |   py39h9cb892a_1         7.6 MB  conda-forge
+    openssl-3.6.0              |       h26f9b46_0         3.0 MB  conda-forge
+    pbs-installer-2025.8.18    |     pyhd8ed1ab_0          55 KB  conda-forge
+    pcre2-10.46                |       h1321c63_0         1.2 MB  conda-forge
+    python-build-1.3.0         |     pyhff2d567_0          25 KB  conda-forge
+    python-fastjsonschema-2.21.2|     pyhe01879c_0         239 KB  conda-forge
+    rapidfuzz-3.13.0           |   py39hf88036b_0         2.1 MB  conda-forge
+    requests-2.32.5            |     pyhd8ed1ab_0          58 KB  conda-forge
+    tomli-2.2.1                |     pyhe01879c_2          21 KB  conda-forge
+    tomlkit-0.13.3             |     pyha770c72_0          38 KB  conda-forge
+    trove-classifiers-2025.8.6.13|     pyhd8ed1ab_0          19 KB  conda-forge
+    typing_extensions-4.14.1   |     pyhe01879c_0          50 KB  conda-forge
+    urllib3-2.5.0              |     pyhd8ed1ab_0          99 KB  conda-forge
+    virtualenv-20.34.0         |     pyhd8ed1ab_0         4.2 MB  conda-forge
+    zipp-3.23.0                |     pyhd8ed1ab_0          22 KB  conda-forge
+    zstandard-0.23.0           |   py39hd399759_3         466 KB  conda-forge
+    ------------------------------------------------------------
+                                           Total:        34.8 MB
+
+The following NEW packages will be INSTALLED:
+
+  anyio              conda-forge/noarch::anyio-4.10.0-pyhe01879c_0 
+  backports          conda-forge/noarch::backports-1.0-pyhd8ed1ab_5 
+  backports.tarfile  conda-forge/noarch::backports.tarfile-1.2.0-pyhd8ed1ab_1 
+  brotli-python      conda-forge/linux-64::brotli-python-1.1.0-py39hf88036b_3 
+  cachecontrol       conda-forge/noarch::cachecontrol-0.14.3-pyha770c72_0 
+  cachecontrol-with~ conda-forge/noarch::cachecontrol-with-filecache-0.14.3-pyhd8ed1ab_0 
+  certifi            conda-forge/noarch::certifi-2025.8.3-pyhd8ed1ab_0 
+  cffi               conda-forge/linux-64::cffi-1.17.1-py39h15c3d72_0 
+  charset-normalizer conda-forge/noarch::charset-normalizer-3.4.3-pyhd8ed1ab_0 
+  cleo               conda-forge/noarch::cleo-2.1.0-pyhd8ed1ab_1 
+  colorama           conda-forge/noarch::colorama-0.4.6-pyhd8ed1ab_1 
+  crashtest          conda-forge/noarch::crashtest-0.4.1-pyhd8ed1ab_1 
+  cryptography       conda-forge/linux-64::cryptography-45.0.6-py39hb2f7f84_0 
+  dbus               conda-forge/linux-64::dbus-1.16.2-h3c4dab8_0 
+  distlib            conda-forge/noarch::distlib-0.4.0-pyhd8ed1ab_0 
+  dulwich            conda-forge/linux-64::dulwich-0.22.8-py39he612d8f_0 
+  exceptiongroup     conda-forge/noarch::exceptiongroup-1.3.0-pyhd8ed1ab_0 
+  filelock           conda-forge/noarch::filelock-3.19.1-pyhd8ed1ab_0 
+  findpython         conda-forge/noarch::findpython-0.6.3-pyhff2d567_0 
+  h11                conda-forge/noarch::h11-0.16.0-pyhd8ed1ab_0 
+  h2                 conda-forge/noarch::h2-4.2.0-pyhd8ed1ab_0 
+  hpack              conda-forge/noarch::hpack-4.1.0-pyhd8ed1ab_0 
+  httpcore           conda-forge/noarch::httpcore-1.0.9-pyh29332c3_0 
+  httpx              conda-forge/noarch::httpx-0.28.1-pyhd8ed1ab_0 
+  hyperframe         conda-forge/noarch::hyperframe-6.1.0-pyhd8ed1ab_0 
+  idna               conda-forge/noarch::idna-3.10-pyhd8ed1ab_1 
+  importlib-metadata conda-forge/noarch::importlib-metadata-8.7.0-pyhe01879c_1 
+  importlib_resourc~ conda-forge/noarch::importlib_resources-6.5.2-pyhd8ed1ab_0 
+  jaraco.classes     conda-forge/noarch::jaraco.classes-3.4.0-pyhd8ed1ab_2 
+  jaraco.context     conda-forge/noarch::jaraco.context-6.0.1-pyhd8ed1ab_0 
+  jaraco.functools   conda-forge/noarch::jaraco.functools-4.3.0-pyhd8ed1ab_0 
+  jeepney            conda-forge/noarch::jeepney-0.9.0-pyhd8ed1ab_0 
+  keyring            conda-forge/noarch::keyring-25.6.0-pyha804496_0 
+  libblas            conda-forge/linux-64::libblas-3.11.0-5_h4a7cf45_openblas 
+  libcblas           conda-forge/linux-64::libcblas-3.11.0-5_h0358290_openblas 
+  libgfortran        conda-forge/linux-64::libgfortran-15.2.0-h69a702a_16 
+  libgfortran5       conda-forge/linux-64::libgfortran5-15.2.0-h68bc16d_16 
+  libglib            pkgs/main/linux-64::libglib-2.84.4-h77a78f3_0 
+  libiconv           conda-forge/linux-64::libiconv-1.18-h3b78370_2 
+  liblapack          conda-forge/linux-64::liblapack-3.11.0-5_h47877c9_openblas 
+  libopenblas        conda-forge/linux-64::libopenblas-0.3.30-pthreads_h94d23a6_4 
+  more-itertools     conda-forge/noarch::more-itertools-10.7.0-pyhd8ed1ab_0 
+  msgpack-python     conda-forge/linux-64::msgpack-python-1.1.1-py39h74842e3_0 
+  numpy              conda-forge/linux-64::numpy-2.0.2-py39h9cb892a_1 
+  packaging          conda-forge/noarch::packaging-25.0-pyh29332c3_1 
+  pbs-installer      conda-forge/noarch::pbs-installer-2025.8.18-pyhd8ed1ab_0 
+  pcre2              conda-forge/linux-64::pcre2-10.46-h1321c63_0 
+  pkginfo            conda-forge/noarch::pkginfo-1.12.1.2-pyhd8ed1ab_0 
+  platformdirs       conda-forge/noarch::platformdirs-4.3.8-pyhe01879c_0 
+  poetry             conda-forge/noarch::poetry-2.1.2-pyha804496_0 
+  poetry-core        conda-forge/noarch::poetry-core-2.1.2-pyhd8ed1ab_0 
+  pycparser          conda-forge/noarch::pycparser-2.22-pyh29332c3_1 
+  pyproject_hooks    conda-forge/noarch::pyproject_hooks-1.2.0-pyhd8ed1ab_1 
+  pysocks            conda-forge/noarch::pysocks-1.7.1-pyha55dd90_7 
+  python-build       conda-forge/noarch::python-build-1.3.0-pyhff2d567_0 
+  python-fastjsonsc~ conda-forge/noarch::python-fastjsonschema-2.21.2-pyhe01879c_0 
+  python-installer   conda-forge/noarch::python-installer-0.7.0-pyhff2d567_1 
+  python_abi         conda-forge/linux-64::python_abi-3.9-2_cp39 
+  rapidfuzz          conda-forge/linux-64::rapidfuzz-3.13.0-py39hf88036b_0 
+  requests           conda-forge/noarch::requests-2.32.5-pyhd8ed1ab_0 
+  requests-toolbelt  conda-forge/noarch::requests-toolbelt-1.0.0-pyhd8ed1ab_1 
+  secretstorage      conda-forge/linux-64::secretstorage-3.3.3-py39hf3d152e_3 
+  shellingham        conda-forge/noarch::shellingham-1.5.4-pyhd8ed1ab_1 
+  sniffio            conda-forge/noarch::sniffio-1.3.1-pyhd8ed1ab_1 
+  tomli              conda-forge/noarch::tomli-2.2.1-pyhe01879c_2 
+  tomlkit            conda-forge/noarch::tomlkit-0.13.3-pyha770c72_0 
+  trove-classifiers  conda-forge/noarch::trove-classifiers-2025.8.6.13-pyhd8ed1ab_0 
+  typing_extensions  conda-forge/noarch::typing_extensions-4.14.1-pyhe01879c_0 
+  urllib3            conda-forge/noarch::urllib3-2.5.0-pyhd8ed1ab_0 
+  virtualenv         conda-forge/noarch::virtualenv-20.34.0-pyhd8ed1ab_0 
+  zipp               conda-forge/noarch::zipp-3.23.0-pyhd8ed1ab_0 
+  zstandard          conda-forge/linux-64::zstandard-0.23.0-py39hd399759_3 
+
+The following packages will be UPDATED:
+
+  ca-certificates    pkgs/main/linux-64::ca-certificates-2~ --> conda-forge/noarch::ca-certificates-2026.1.4-hbd8a1cb_0 
+  openssl              pkgs/main::openssl-3.0.18-hd6dcaed_0 --> conda-forge::openssl-3.6.0-h26f9b46_0 
+
+
+Proceed ([y]/n)? 
+
+
+Downloading and Extracting Packages:
+                                                                                                                   
+Preparing transaction: done                                                                                        
+Verifying transaction: done                                                                                        
+Executing transaction: done 
+```
+
+
 Once `poetry` is installed, it can be used to automatically install all other dependencies of the project based on the `pyproject.toml` file. 
 First, navigate to the project directory and remove the `poetry.lock` file, if it exists:
 ```console
@@ -499,3 +1015,196 @@ First, navigate to the project directory and remove the `poetry.lock` file, if i
 Then, use `poetry` to install the dependencies:
 ```console
 (env_name) username@animus-c:~unox$ poetry install
+```
+
+
+```console
+(env_name) username@animus-c:~unox$ poetry install
+Updating dependencies                                                                                              
+Resolving dependencies... (40.5s)
+                                                                                                                   
+Package operations: 157 installs, 20 updates, 0 removals                                                           
+                                                                                                                   
+  - Installing attrs (25.4.0)
+  - Installing rpds-py (0.27.1)
+  - Updating typing-extensions (4.14.1 /home/conda/feedstock_root/build_artifacts/bld/rattler-build_typing_extensions_1751643513/work -> 4.15.0)
+  - Installing referencing (0.36.2)
+  - Installing six (1.17.0)
+  - Installing jsonschema-specifications (2025.9.1)
+  - Updating platformdirs (4.3.8 /home/conda/feedstock_root/build_artifacts/bld/rattler-build_platformdirs_1746710438/work -> 4.4.0)
+  - Installing python-dateutil (2.9.0.post0)
+  - Installing traitlets (5.14.3)
+  - Installing tzdata (2025.3)
+  - Updating zipp (3.23.0 /home/conda/feedstock_root/build_artifacts/zipp_1749421620841/work -> 3.23.0)
+  - Installing arrow (1.4.0)
+  - Updating fastjsonschema (2.21.2 /home/conda/feedstock_root/build_artifacts/bld/rattler-build_python-fastjsonschema_1755304154/work/dist -> 2.21.2)
+  - Updating importlib-metadata (8.7.0 /home/conda/feedstock_root/build_artifacts/bld/rattler-build_importlib-metadata_1747934053/work -> 8.7.1)
+  - Installing jsonschema (4.25.1)
+  - Installing jupyter-core (5.8.1)
+  - Installing lark (1.3.1)
+  - Updating pycparser (2.22 /home/conda/feedstock_root/build_artifacts/bld/rattler-build_pycparser_1733195786/work -> 2.23)
+  - Installing pyzmq (27.1.0)
+  - Installing tornado (6.5.4)
+  - Installing webencodings (0.5.1)
+  - Updating cffi (1.17.1 /home/conda/feedstock_root/build_artifacts/cffi_1725571112467/work -> 2.0.0)
+  - Installing fqdn (1.5.1)
+  - Updating idna (3.10 /home/conda/feedstock_root/build_artifacts/idna_1733211830134/work -> 3.11)
+  - Installing isoduration (20.11.0)
+  - Installing jsonpointer (3.0.0)
+  - Installing jupyter-client (8.6.3)
+  - Installing markupsafe (3.0.3)
+  - Installing nbformat (5.10.4)
+  - Installing ptyprocess (0.7.0)
+  - Installing rfc3339-validator (0.1.4)
+  - Installing rfc3986-validator (0.1.1)
+  - Installing rfc3987-syntax (1.1.0)
+  - Installing soupsieve (2.8.1)
+  - Installing tinycss2 (1.4.0)
+  - Installing uri-template (1.3.0)
+  - Installing webcolors (24.11.1)
+  - Installing argon2-cffi-bindings (25.1.0)
+  - Installing asttokens (3.0.1)
+  - Installing beautifulsoup4 (4.14.3)
+  - Installing bleach (6.2.0)
+  - Installing defusedxml (0.7.1)
+  - Updating exceptiongroup (1.3.0 /home/conda/feedstock_root/build_artifacts/exceptiongroup_1746947292760/work -> 1.3.1)
+  - Installing executing (2.2.1)
+  - Installing jinja2 (3.1.6)
+  - Installing jupyterlab-pygments (0.3.0)
+  - Installing mistune (3.2.0)
+  - Installing nbclient (0.10.2)
+  - Downgrading packaging (25.0 /home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1745345660/work -> 23.2)
+  - Installing pandocfilters (1.5.1)
+  - Installing parso (0.8.5)
+  - Installing pure-eval (0.2.3)
+  - Installing pygments (2.19.2)
+  - Installing python-json-logger (4.0.0)
+  - Installing pyyaml (6.0.3)
+  - Installing terminado (0.18.1)
+  - Installing wcwidth (0.2.14)
+  - Updating anyio (4.10.0 /home/conda/feedstock_root/build_artifacts/bld/rattler-build_anyio_1754315087/work -> 4.12.1)
+  - Installing argon2-cffi (25.1.0)
+  - Updating certifi (2025.8.3 /home/conda/feedstock_root/build_artifacts/certifi_1754231422783/work/certifi -> 2026.1.4)
+  - Updating charset-normalizer (3.4.3 /home/conda/feedstock_root/build_artifacts/charset-normalizer_1754767332901/work -> 3.4.4)
+  - Installing decorator (5.2.1)
+  - Updating h11 (0.16.0 /home/conda/feedstock_root/build_artifacts/h11_1745526374115/work -> 0.16.0)
+  - Installing jedi (0.19.2)
+  - Installing jupyter-events (0.12.0)
+  - Installing jupyter-server-terminals (0.5.3)
+  - Installing matplotlib-inline (0.2.1)
+  - Installing nbconvert (7.16.6)
+  - Installing overrides (7.7.0)
+  - Installing pexpect (4.9.0)
+  - Installing prometheus-client (0.23.1)
+  - Installing prompt-toolkit (3.0.52)
+  - Installing send2trash (2.0.0)
+  - Installing stack-data (0.6.3)
+  - Updating urllib3 (2.5.0 /home/conda/feedstock_root/build_artifacts/urllib3_1750271362675/work -> 2.6.2)
+  - Installing websocket-client (1.9.0)
+  - Installing babel (2.17.0)
+  - Installing comm (0.2.3)
+  - Installing debugpy (1.8.19)
+  - Updating httpcore (1.0.9 /home/conda/feedstock_root/build_artifacts/bld/rattler-build_httpcore_1745602916/work -> 1.0.9)
+  - Installing ipython (8.18.1)
+  - Installing json5 (0.13.0)
+  - Installing jupyter-server (2.17.0)
+  - Installing mdurl (0.1.2)
+  - Installing nest-asyncio (1.6.0)
+  - Installing psutil (7.2.1)
+  - Updating requests (2.32.5 /home/conda/feedstock_root/build_artifacts/requests_1755614211359/work -> 2.32.5)
+  - Installing alabaster (0.7.16)
+  - Installing async-lru (2.0.5)
+  - Installing docutils (0.21.2)
+  - Installing greenlet (3.2.4)
+  - Updating httpx (0.28.1 /home/conda/feedstock_root/build_artifacts/httpx_1733663348460/work -> 0.28.1)
+  - Installing imagesize (1.4.1)
+  - Installing ipykernel (6.31.0)
+  - Installing jupyter-lsp (2.3.0)
+  - Installing jupyterlab-server (2.28.0)
+  - Installing markdown-it-py (3.0.0)
+  - Installing notebook-shim (0.2.4)
+  - Downgrading numpy (2.0.2 /home/conda/feedstock_root/build_artifacts/numpy_1732314280888/work/dist/numpy-2.0.2-cp39-cp39-linux_x86_64.whl -> 1.26.4)
+  - Installing pytz (2025.2)
+  - Installing snowballstemmer (3.0.1)
+  - Installing sphinxcontrib-applehelp (2.0.0)
+  - Installing sphinxcontrib-devhelp (2.0.0)
+  - Installing sphinxcontrib-htmlhelp (2.1.0)
+  - Installing sphinxcontrib-jsmath (1.0.1)
+  - Installing sphinxcontrib-qthelp (2.0.0)
+  - Installing sphinxcontrib-serializinghtml (2.0.0)
+  - Updating tomli (2.2.1 /home/conda/feedstock_root/build_artifacts/bld/rattler-build_tomli_1753796677/work -> 2.3.0)
+  - Installing tqdm (4.67.1)
+  - Installing absl-py (2.3.1)
+  - Installing click (8.1.8)
+  - Installing cycler (0.12.1)
+  - Installing grpcio (1.76.0)
+  - Installing h5py (3.14.0)
+  - Installing iniconfig (2.1.0)
+  - Installing jupyterlab (4.5.1)
+  - Installing jupyterlab-widgets (3.0.16)
+  - Installing kiwisolver (1.4.7)
+  - Installing markdown (3.9)
+  - Installing mdit-py-plugins (0.4.2)
+  - Installing ml-dtypes (0.4.1)
+  - Installing multiurl (0.3.7)
+  - Installing namex (0.1.0)
+  - Installing optree (0.18.0)
+  - Installing pillow (11.3.0)
+  - Installing pluggy (1.6.0)
+  - Installing protobuf (4.25.8)
+  - Installing pyparsing (3.3.1)
+  - Installing rich (14.2.0)
+  - Installing sphinx (7.4.7)
+  - Installing sqlalchemy (2.0.45)
+  - Installing tabulate (0.9.0)
+  - Installing tensorboard-data-server (0.7.2)
+  - Installing werkzeug (3.1.4)
+  - Installing widgetsnbextension (4.0.15)
+  - Installing astroid (3.3.11)
+  - Installing astunparse (1.6.3)
+  - Installing basemap-data (1.3.2)
+  - Installing cftime (1.6.4.post1)
+  - Installing coverage (7.10.7)
+  - Installing ecmwf-datastores-client (0.4.1)
+  - Installing flatbuffers (25.12.19)
+  - Installing gast (0.7.0)
+  - Installing google-pasta (0.2.0)
+  - Installing ipywidgets (8.1.8)
+  - Installing jupyter-cache (1.0.1)
+  - Installing jupyter-console (6.6.3)
+  - Installing keras (3.10.0)
+  - Installing libclang (18.1.1)
+  - Installing matplotlib (3.4.3)
+  - Installing myst-parser (3.0.1)
+  - Installing notebook (7.5.1)
+  - Installing opt-einsum (3.4.0)
+  - Installing pandas (1.5.3)
+  - Installing pyproj (3.6.1)
+  - Installing pyshp (2.3.1)
+  - Installing pytest (8.4.2)
+  - Installing shapely (2.0.7)
+  - Installing sphinxcontrib-jquery (4.1)
+  - Installing stdlib-list (0.12.0)
+  - Installing tensorboard (2.17.1)
+  - Installing tensorflow-io-gcs-filesystem (0.37.1)
+  - Installing termcolor (3.1.0)
+  - Installing wrapt (2.0.1)
+  - Installing basemap (1.4.1)
+  - Installing cartopy (0.22.0)
+  - Installing cdsapi (0.7.7)
+  - Installing jupyter (1.1.1)
+  - Installing myst-nb (1.3.0)
+  - Installing netcdf4 (1.7.2)
+  - Installing proplot (0.9.7)
+  - Installing pytest-cov (6.3.0)
+  - Installing scipy (1.13.1)
+  - Installing sphinx-autoapi (3.6.1)
+  - Installing sphinx-rtd-theme (3.0.2)
+  - Installing tensorflow (2.17.0)
+  - Installing xarray (2024.3.0)
+
+Writing lock file
+
+Installing the current project: unox (0.1.1)
+```
+
