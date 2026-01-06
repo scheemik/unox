@@ -616,6 +616,8 @@ xarray                  2024.3.0+computecanada
 
 </details>
 
+<br/>
+
 <a id='animus_venv'></a>
 [back to top](#top)
 
@@ -708,6 +710,10 @@ username@animus-c:~$ conda create -n <env_name> python=3.9
 ```
 where `<env_name>` should be a memorable and distinct name. 
 Since this environment is primarily used to create plots, I named mine `uplt`.
+
+<details>
+
+<summary>Expand for output</summary>
 
 ```console
 username@animus-c:~$ conda create -n <env_name> python=3.9
@@ -828,6 +834,10 @@ Executing transaction: done
 #     $ conda deactivate
 ```
 
+</details>
+
+<br/>
+
 Then, activate this environment:
 ```console
 username@animus-c:~$ conda activate <env_name>
@@ -839,6 +849,10 @@ Install the version of `poetry` used in this project:
 ```console
 (env_name) username@animus-c:~$ conda install -n <env_name> -c conda-forge poetry=2.1.2
 ```
+
+<details>
+
+<summary>Expand for output</summary>
 
 ```console
 (env_name) username@animus-c:~$ conda install -n <env_name> -c conda-forge poetry=2.1.2
@@ -1005,6 +1019,9 @@ Verifying transaction: done
 Executing transaction: done 
 ```
 
+</details>
+
+<br/>
 
 Once `poetry` is installed, it can be used to automatically install all other dependencies of the project based on the `pyproject.toml` file. 
 First, navigate to the project directory and remove the `poetry.lock` file, if it exists:
@@ -1017,6 +1034,9 @@ Then, use `poetry` to install the dependencies:
 (env_name) username@animus-c:~unox$ poetry install
 ```
 
+<details>
+
+<summary>Expand for output</summary>
 
 ```console
 (env_name) username@animus-c:~unox$ poetry install
@@ -1207,4 +1227,8 @@ Writing lock file
 
 Installing the current project: unox (0.1.1)
 ```
+
+</details>
+
+<br/>
 
