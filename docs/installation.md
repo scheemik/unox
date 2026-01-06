@@ -1,7 +1,7 @@
 <a id='top'></a>
 # Installation
 
-The documentation below describe how to install this package to enable active development. 
+The documentation below describes how to install this package in a way that enables active development. 
 If you are interested in simply using `unox`, refer to the installation instructions in the {doc}`README <index>`.
 <!-- Note: for linking between documents, use the `doc` role defined in the [Sphinx documentation](https://docs.readthedocs.com/platform/stable/guides/cross-referencing-with-sphinx.html#the-doc-role). 
 TLDR: Create a link to a different document by typing `{doc}`, followed by the name of the file surrounded by backticks, excluding the extension. If you would like to change the rendered text of the link, surround the desired link text in backticks, then add the name of the file in angle brackets, in the format: "{doc}`Click here <filename>`".
@@ -342,7 +342,7 @@ So, we will use a similar method called `virtualenv`.
 
 The Digital Alliance wiki has instructions for [Creating and using a virtual environment](https://docs.alliancecan.ca/wiki/Python#Creating_and_using_a_virtual_environment). 
 They actually suggest [Creating a virtual environment inside of your jobs](https://docs.alliancecan.ca/wiki/Python#Creating_virtual_environments_inside_of_your_jobs), however I was unable to get that to work. 
-They suggest that creating a new environment every time might actually speed up performance, but it is more important for the code to run consistently.
+They suggest that creating a new environment every time might actually speed up performance, but I believe it is more important for the code to run consistently.
 
 To see what environments you have created on Trillium, run:
 ```console
@@ -1231,4 +1231,6 @@ Installing the current project: unox (0.1.1)
 </details>
 
 <br/>
+
+If this runs without error, you will then be able to use the `unox` code base.
 
