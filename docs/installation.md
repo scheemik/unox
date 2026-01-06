@@ -127,9 +127,7 @@ This step will become important when connecting via VSCodium later.
 But, it also allows you to connect to Trillium with the following command (in case you prefer that over the alias in `~/.bashrc` mentioned above):
 ```console
 username@local:~/$ ssh trillium
-```
-
-<a id='hpc_clone'></a>
+<a id='animus_connect'></a>
 [back to top](#top)
 
 ### Connecting to Animus
