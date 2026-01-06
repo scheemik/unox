@@ -21,6 +21,9 @@ In order to link to the README file as I did above, I need to actually link to t
     - [Virtual environment on Animus](#animus_venv)
         - [Installing `miniconda` on Animus](#animus_conda)
         - [Creating the `conda` environment on Animus with `poetry`](#animus_poetry)
+- [Configuring VSCodium](#config_vscodium)
+    - [Connecting to remote machines](#vsc_ssh)
+    - [Setting up VSCodium](#vsc_setup)
 
 ---
 <a id='intro'></a>
@@ -1234,3 +1237,95 @@ Installing the current project: unox (0.1.1)
 
 If this runs without error, you will then be able to use the `unox` code base.
 
+<a id='config_vscodium'></a>
+[back to top](#top)
+
+## Configuring VSCodium
+
+My IDE of choice is [VSCodium](https://vscodium.com/). As described on the website:
+
+> "VSCodium is a community-driven, freely-licensed binary distribution of Microsoft’s editor VS Code."
+
+Much of the functionality is the same as VS Code, but VSCodium does not send telemetry data to Microsoft. 
+
+<a id='vsc_ssh'></a>
+[back to top](#top)
+
+### Connecting to remote machines
+
+VSCodium can connect via SSH to a server and interact with code using their nice GUI, including all the extensions you might want installed, such as GitHub Copilot.
+
+First, install the ["Open Remote - SSH" extension by `jeanp413`](https://github.com/jeanp413/open-remote-ssh). It is very similar to the "Remote - SSH" extension available with VSCode, however "Remote - SSH" is written in a way that is incompatible with VSCodium.
+
+Once installed, I needed to go to the extension settings, and enable "Remote.SSH: Remote Server Listen On Socket" to get the connection to work. Your mileage may vary. 
+
+You should now have a symbol in the left-hand panel of VSCodium that looks like a monitor and the hover text is "Remote Explorer." Clicking on that should bring up a panel with "SSH Targets." Assuming you have added the code to `~/.ssh/config` that was shown above (in [SSH into Trillium](#hpc_connect) and [Connecting to Animus](#animus_connect)), you should already have the targets `trillium` and `animus` available. 
+
+Opening the `trillium` target should prompt you for a password. 
+The box to type it in will appear at the top of the VSCodium window and should show hidden characters as you type, as opposed to typing in a password in a terminal where no indication is given while typing. 
+Next, you should be able to select a folder, so look for `/scratch/<username>/<optional_directory>/unox`. 
+This will prompt you to enter your password yet again. 
+After going through this process the first time, on subsequent log-ins, a drop-down menu next to the `trillium` SSH target should allow to to directly select the `unox` directory next time you log in, meaning you should only need to type in your password once. 
+
+Now, you should be able to select the "File explorer" side panel and see all the files in the `unox` repository.
+Repeat the same process for the `animus` target, opening it in a new window.
+You should now be able to see the `unox` repository on both remote machines in VSCodium.
+
+<a id='vsc_setup'></a>
+[back to top](#top)
+
+### Setting up VSCodium
+
+If you are already familiar with VSCodium (or VSCode) you probably have a setup that you prefer. 
+If that is the case, feel free to move on to the guide on the development {doc}`workflow <workflow>`.
+Below, I list a few of the features that I find invaluable when I am coding as suggestions.
+
+#### Terminal panel
+
+You can open a panel in the VSCodium window which displays a terminal prompt by going to the "View" menu and selecting "Terminal." 
+This can also be done with the keyboard shortcut ``ctrl + ` `` (control and the backtick / tilde key). 
+The console prompt is automatically set to the home directory open in the VSCodium window, which I find very convenient. 
+
+#### Source Control panel
+
+By going to the "View" menu and selecting "Source Control", you will open a panel which displays the status of the repository source control.
+I usually put this panel on the right-hand side.
+In the panel, you can see a live-updating list of "Changes" that `git` is tracking.
+Each will have a letter on the right-hand side indicating the status of the file:
+- `M`: Modified
+    - A file which has already been added to `git` which has been changed since the last commit.
+- `U`: Untracked
+    - A file (usually a new one) which has not been added to `git`.
+- `R`: Renamed
+    - A file which has been renamed using the `git mv <file> <destination>` command.
+- `D`: Deleted
+    - A file which `git` has been tracking which has been deleted. Note: If an untracked file is deleted, it will not show up with this indicator, it will be gone.
+
+This panel will also allow you to make commits using the GUI. 
+You can click on a file under "Changes" to add it to the "Staged Changes" section.
+Then, you can add a commit message in the text box at the top (I suggest using [Angular style commit messages](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines)), and click the "Commit" button to make a commit. 
+When you are ready to push any number of commits to the remote repository on GitHub, you can do so under the "Outgoing" section. 
+
+I also appreciate the "Timeline" feature of this panel.
+When you select a particular file (that is, have it focused in your editor window), the "Timeline" will list the commits that have made changes to that file. 
+
+#### Jupyter Notebooks
+
+VSCodium can run Jupyter Notebooks by installing the `Jupyter` extension and it's extension pack which contains:
+- `Jupyter Keymap`
+- `Jupyter Notebook Renderers`
+- `Jupyter Slide Show`
+- `Jupyter Cell Tags`
+
+Once this is installed, you can load and run Jupyter Notebooks using the virtual environments installed [above](#create_venvs). 
+
+#### Live Preview
+
+The `Live Preview` extension allows you to preview how `html` pages will look. 
+I find this particularly helpful when editing the documentation files you are viewing right now. 
+If you want to edit the documentation, open the `unox/docs/_build/html/index.html` file in VSCodium and in the top right corner, there is a symbol which looks like a rectangle divided in half with a magnifying glass over it.
+This will open a live preview in a split view. 
+I find it helpful to have this preview in a separate window. 
+You can also open this preview in your browser to see how it will render by copying the URL at the top of the preview window and pasting it into your browser.
+The URL will look something like `http://127.0.0.1:3000/docs/_build/html/index.html?serverWindowId=e5e229ba-5ee5-4dbf-9a86-4ffa71911f91`. 
+For more information on editing the documentation, see `to be added`. 
