@@ -713,6 +713,9 @@ username@animus-c:~$ conda create -n <env_name> python=3.9
 ```
 where `<env_name>` should be a memorable and distinct name. 
 Since this environment is primarily used to create plots, I named mine `uplt`.
+Currently, the environment for Aniums uses Python version 3.9.21. 
+This is not as current as the Trillium environment, which uses 3.12.4. 
+I hope to update the Python version for the Animus environment to match that of Trillium. 
 
 <details>
 
@@ -1277,7 +1280,7 @@ You should now be able to see the `unox` repository on both remote machines in V
 ### Setting up VSCodium
 
 If you are already familiar with VSCodium (or VSCode) you probably have a setup that you prefer. 
-If that is the case, feel free to move on to the guide on the development {doc}`workflow <workflow>`.
+If that is the case, feel free to move on to the guide on {doc}`data <data>` the development {doc}`workflow <workflow>`.
 Below, I list a few of the features that I find invaluable when I am coding as suggestions.
 
 #### Terminal panel
