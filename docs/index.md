@@ -6,6 +6,7 @@
 :hidden:
 
 installation.md
+data.md
 workflow.md
 example.ipynb
 autoapi/index
