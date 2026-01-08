@@ -4,8 +4,13 @@ Use machine learning to make predictions of NOₓ and other atmospheric species.
 
 This is an application of the U-net deep learning model for North American NOₓ emission estimates using the [`tensorflow`](https://www.tensorflow.org/) Python package.
 
-![model_diagram](/_static/model_diagram.png)
-<!-- In order for sphinx to be able to find images and include them in the Read the Docs page, you need to copy each image to the `docs/_build/html/_images/` directory -->
+<!-- Image for Sphinx / Read the Docs only -->
+```{only} html
+![Image](/_static/model_diagram.png)
+```
+<!-- Image for GitHub only -->
+![model_diagram](docs/_static/model_diagram.png)
+<!-- In order for sphinx to be able to find images and include them in the Read the Docs page, you need to have each image within the `docs/` directory and call it using the `only` block and a relative path that assumes `docs/` is the root -->
 
 ## Documentation
 
