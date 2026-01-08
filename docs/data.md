@@ -236,7 +236,7 @@ Therefore, after spending the time to create an input file, you should be able t
 The input files are netCDFs. 
 Using `xarray` you can look at the structure of such a file by opening it.
 Below is a text representation of the output. 
-However, if the python commands are executed in a Jupyter Notebook cell, the structure becomes interactive, allowing for more exploration (see {doc}`Example usage <example>`).
+However, if the below python commands are executed in a Jupyter Notebook cell, the structure becomes interactive, allowing for more exploration (see {doc}`Example usage <example>`).
 
 ```python
 import xarray as xr
@@ -285,6 +285,7 @@ Attributes: (12/17)
 In the attributes, it is indicated which variables are "y" and which are "x".
 - "y" variable
     - The variable which the model is trying to emulate, the "target" variable.
+    - In this case, `y_var` is `nox`.
     - Note that this variable has an extra `var` dimension. This is a dummy dimension to ensure that the "y" variable data has the same number of dimensions as the "x" variables when bundled together.
 - "x" variables
     - The variables which the model combines in particular ways to create a mapping to the target "y" variable. 
@@ -298,14 +299,14 @@ For the case above, the chemical data from reanalyses that is used in Stage 1 is
 When training in Stage 2, the model is given `no2_s2` which is the same as `no2` except for locations and times for which ground-based data is available.
 
 There is also the variable `no2_tm1`.
-This represents the `no2` at "T-minus 1" day, that is the value of `no2` at the same location the day before. 
+This represents the `no2` at "T-minus 1 day", that is, the value of `no2` at the same location the day before. 
 It is for this reason that the dataset does not start on January 1st, where the value of `no2_tm1` would be from December 31st of the previous year. 
 Therefore, the dataset starts on January 2nd where the value of `no2_tm1` is the value of `no2` from January 1st.
 The variable `no2_s2_tm1` is the equivalent of `no2_tm1` for Stage 2. 
 
 Overall, for Stage 1 or 2, the number of "x" variables is equal to the number of ERA5 meteorological variables (of which there are 7 currently) plus 2 (one for `no2` and one for `no2_tm1`).
 
-The input files were originally stored as separate `.npy` files, each containing a Numpy array of either the "x" or "y" data for a particular year for a particular stage.
+The data in the input netCDF were originally stored as separate `.npy` files, each one containing a Numpy array of either the "x" or "y" data for a particular year for a particular stage.
 These contained no metadata, and so it became difficult to document which input files covered which geographical regions and contained which variables.
 I reconfigured the files to be in netCDF format so that the metadata is readily accessible and easily readable by both human and machine. 
 
@@ -314,17 +315,86 @@ I reconfigured the files to be in netCDF format so that the metadata is readily 
 
 ### Creating input files
 
-To make the U-net files:
-inputfiles.py: combines data from the above sources. X input files are of size (364,56,120,9), dimensions (time,lat,lon,n_variables). The variables are ordered as follows:
-NO2, day t 
-NO2, day t-1
-u10, day t 
-v10, day t 
-blh, day t 
-sp, day t 
-skt, day t 
-t2m, day t 
-ssrd, day t 
-Some of the variables are rescaled to make the orders of magnitude more similar. Day t starts on January 2nd so that day t-1 is January 1st. February 29th is dropped.
-For stage 1, the NO2 fields come from TCR-2/TROPESS. For stage 2, the TCR-2 and EPA NO2 data are combined into a single variable.  
-Y input files are of shape (364,56,120,1) where the last dimension is NOₓ emissions (the dependent variable). These are the same for both stages, but we use later years for stage 2.
+To create an input netCDF, use the `make_all_input_files()` function from the `input` module.
+This function has no required arguments, however it is a good idea to pass in `output_dir`, the name of the subdirectory that will be created under the `inputfiles` directory where the netCDF and corresponding `input_metadata.json` file are stored. 
+The `input_metadata.json` file contains a dictionary that is build in the process of creating the input file which contains an overview of what the netCDF contains.
+If you are working with multiple different input files, the `input_metadata.json` files offer a quick way to check which file you might want to use, whether it might span a different set of years, contain a different set of variables, or use different data sources.
+
+By default, the `make_all_input_files()` function will add all the data from 2005 through 2020 from the data sources described above associated with NOₓ, including variables for Stage 2 training. 
+However, you can pass keyword arguments to change the behavior in many ways.
+
+Note that it takes a long time, approximately an hour on Animus, to create an input netCDF, as can be seen by the timing information in the output below.
+This is largely due to the process of creating the Stage 2 data variables which involves a nested for-loop. 
+Because there is presently little need to create many input files rapidly, I have not optimized this part of the code. 
+
+```python
+from unox.input import make_all_input_files
+
+make_all_input_files(
+    output_dir='no2_sample_input',
+)
+```
+```console
+Note: It may take around an hour to generate all input files.
+Creating y input data...
+	Creating y input data for nox in 2005...
+	Creating y input data for nox in 2006...
+	Creating y input data for nox in 2007...
+	Creating y input data for nox in 2008...
+	Creating y input data for nox in 2009...
+	Creating y input data for nox in 2010...
+	Creating y input data for nox in 2011...
+	Creating y input data for nox in 2012...
+	Creating y input data for nox in 2013...
+	Creating y input data for nox in 2014...
+	Creating y input data for nox in 2015...
+	Creating y input data for nox in 2016...
+	Creating y input data for nox in 2017...
+	Creating y input data for nox in 2018...
+	Creating y input data for nox in 2019...
+	Creating y input data for nox in 2020...
+Concatenating the y datasets
+Saving y inputs to inputfiles/no2_sample_input/no2_sample_input.nc
+Creating x input data...
+	Creating x input file for 2005...
+	Creating x input file for 2006...
+	Creating x input file for 2007...
+	Creating x input file for 2008...
+	Creating x input file for 2009...
+	Creating x input file for 2010...
+	Creating x input file for 2011...
+	Creating x input file for 2012...
+	Creating x input file for 2013...
+	Creating x input file for 2014...
+	Adding stage 2 data for no2 in 2014
+	Function 'fill_w_insitu' execution time: 0:06:42.550980
+	Creating x input file for 2015...
+	Adding stage 2 data for no2 in 2015
+	Function 'fill_w_insitu' execution time: 0:06:58.153890
+	Creating x input file for 2016...
+	Adding stage 2 data for no2 in 2016
+	Function 'fill_w_insitu' execution time: 0:07:04.098303
+	Creating x input file for 2017...
+	Adding stage 2 data for no2 in 2017
+	Function 'fill_w_insitu' execution time: 0:06:56.500722
+	Creating x input file for 2018...
+	Adding stage 2 data for no2 in 2018
+	Function 'fill_w_insitu' execution time: 0:07:04.373900
+	Creating x input file for 2019...
+	Adding stage 2 data for no2 in 2019
+	Function 'fill_w_insitu' execution time: 0:07:05.905807
+	Creating x input file for 2020...
+	Adding stage 2 data for no2 in 2020
+	Function 'fill_w_insitu' execution time: 0:07:14.309329
+Concatenating the x datasets
+Saving x inputs to inputfiles/no2_sample_input/no2_sample_input.nc
+Sorting the dataset by time.
+Sorting the y data by time.
+Completed making all input files.
+	Function 'make_all_input_files' execution time: 1:10:13.798157
+```
+
+Note that, in the process of making an input file, all instances of February 29th are dropped using the method `convert_calendar('noleap')`.
+This is to make the years all the same length.
+
+Once an input file has been created, you can now go through the {doc}`workflow <workflow>` of setting up a run on Animus, transferring that to Trillium, running the U-net model, and bringing the result back to Animus for analysis.
