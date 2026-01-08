@@ -3,6 +3,7 @@
 
 Data from various sources are used in this project as input to the U-net model and for validation.
 Descriptions of each data source are found below.
+This guide assumes you have followed the instructions on the {doc}`Installation <installation>` page.
 
 ## Contents
 
@@ -16,9 +17,12 @@ Descriptions of each data source are found below.
         - [Download ERA5 data](#download_era5)
     - [USA EPA Air Quality data](#us_epa)
         - Ground-based NO₂ measurements used to supplement the TCR-2 NO₂ surface data in the "x" input files for stage 2 of the U-net.
+        - [Downloading USA EPA Air Quality data](#download_us_epa)
     - Potential future data: ECCC Air Quality data
         - Currently using ground-based measurements only over the USA. Adding data from ECCC will provide coverage for Canada in the "x" input files for stage 2 of the U-net.
-- [Creating input files for the U-net model](#make_input_files)
+- [Input files for the U-net model](#input_files)
+    - [Input file structure](#input_file_structure)
+    - [Creating input files](#make_input_files)
 
 ---
 <a id='data_sources'></a>
@@ -212,10 +216,103 @@ Downloading hourly US EPA data for species: CO from 2000 to 2005
 ```
 
 ---
+<a id='input_files'></a>
+[back to top](#top)
+
+## Input files for the U-net model
+
+When running the U-net model, the input data are loaded from a netCDF input file. 
+These files are created to have a consistent structure, with data from all the above sources interpolated onto a common grid in space and time. 
+You will generally only need to create new input files when investigating a new geographic area, a different species, or adding new variables.
+The process of creating new input files can take some time. 
+However, the model run configuration files (discussed in the {doc}`Workflow <workflow>` guide) can be used to specify exactly what data are pulled from the input netCDF files for a particular run. 
+Therefore, after spending the time to create an input file, you should be able to try many different kinds of model runs by modifying the configuration file.
+
+<a id='input_file_structure'></a>
+[back to top](#top)
+
+### Input file structure
+
+The input files are netCDFs. 
+Using `xarray` you can look at the structure of such a file by opening it.
+Below is a text representation of the output. 
+However, if the python commands are executed in a Jupyter Notebook cell, the structure becomes interactive, allowing for more exploration (see {doc}`Example usage <example>`).
+
+```python
+import xarray as xr
+
+xr.open_dataset('inputfiles/no2_sample_input/no2_sample_input.nc')
+```
+```console
+<xarray.Dataset>; Size: 4GB
+Dimensions:     (lat: 56, lon: 120, time: 5824, var: 1)
+Coordinates:
+  * lat         (lat) float32 224B 11.78 12.9 14.02 15.14 ... 71.21 72.34 73.46
+  * lon         (lon) float32 480B -174.4 -173.2 -172.1 ... -42.75 -41.62 -40.5
+  * time        (time) object 47kB 2005-01-02 00:00:00 ... 2020-12-31 00:00:00
+Dimensions without coordinates: var
+Data variables: (12/13)
+    nox         (time, lat, lon, var) float64 313MB ...
+    no2         (time, lat, lon) float64 313MB ...
+    no2_tm1     (time, lat, lon) float64 313MB ...
+    u10         (time, lat, lon) float64 313MB ...
+    v10         (time, lat, lon) float64 313MB ...
+    blh         (time, lat, lon) float64 313MB ...
+    sp          (time, lat, lon) float64 313MB ...
+    skt         (time, lat, lon) float64 313MB ...
+    t2m         (time, lat, lon) float64 313MB ...
+    ssrd        (time, lat, lon) float64 313MB ...
+    lsm         (time, lat, lon) float64 313MB ...
+    no2_s2      (time, lat, lon) float64 313MB ...
+    no2_s2_tm1  (time, lat, lon) float64 313MB ...
+Attributes: (12/17)
+    description:        Input data for the Unet model. Data for each year is ...
+    y_var:              nox
+    emiss_dir:          /data/high_res/emacdonald/unet/datafiles/t106
+    emiss_pre:          nox_
+    emiss_post:         _t106_US.nc
+    nan_fill:           0
+    ...                 ...
+    x1_vars:            ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
+    x2_vars:            ['no2_s2', 'no2_s2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd']
+    data_dir:           /data/high_res
+    chemra_path:        emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_...
+    insitu_path:        US_EPA/NO2/daily_NO2/daily_42602_
+    era5_path:          ERA5concatenated
+    stages:             [1 2]
+```
+
+In the attributes, it is indicated which variables are "y" and which are "x".
+- "y" variable
+    - The variable which the model is trying to emulate, the "target" variable.
+    - Note that this variable has an extra `var` dimension. This is a dummy dimension to ensure that the "y" variable data has the same number of dimensions as the "x" variables when bundled together.
+- "x" variables
+    - The variables which the model combines in particular ways to create a mapping to the target "y" variable. 
+    - Ideally, none of these variables should be dependent on each other.
+
+The input file contains two lists of "x" variables: `x1_vars` and `x2_vars`. 
+These correspond to the "x" variables used in Stage 1 and Stage 2 of the training. 
+In Stage 1, the ground-based data is not used, only chemical data from reanalyses. 
+In Stage 2, the pre-trained model from Stage 1 is retrained on input data which is supplemented with ground-based data.
+For the case above, the chemical data from reanalyses that is used in Stage 1 is `no2`. 
+When training in Stage 2, the model is given `no2_s2` which is the same as `no2` except for locations and times for which ground-based data is available.
+
+There is also the variable `no2_tm1`.
+This represents the `no2` at "T-minus 1" day, that is the value of `no2` at the same location the day before. 
+It is for this reason that the dataset does not start on January 1st, where the value of `no2_tm1` would be from December 31st of the previous year. 
+Therefore, the dataset starts on January 2nd where the value of `no2_tm1` is the value of `no2` from January 1st.
+The variable `no2_s2_tm1` is the equivalent of `no2_tm1` for Stage 2. 
+
+Overall, for Stage 1 or 2, the number of "x" variables is equal to the number of ERA5 meteorological variables (of which there are 7 currently) plus 2 (one for `no2` and one for `no2_tm1`).
+
+The input files were originally stored as separate `.npy` files, each containing a Numpy array of either the "x" or "y" data for a particular year for a particular stage.
+These contained no metadata, and so it became difficult to document which input files covered which geographical regions and contained which variables.
+I reconfigured the files to be in netCDF format so that the metadata is readily accessible and easily readable by both human and machine. 
+
 <a id='make_input_files'></a>
 [back to top](#top)
 
-## Creating input files for the U-net model
+### Creating input files
 
 To make the U-net files:
 inputfiles.py: combines data from the above sources. X input files are of size (364,56,120,9), dimensions (time,lat,lon,n_variables). The variables are ordered as follows:
@@ -231,5 +328,3 @@ ssrd, day t
 Some of the variables are rescaled to make the orders of magnitude more similar. Day t starts on January 2nd so that day t-1 is January 1st. February 29th is dropped.
 For stage 1, the NO2 fields come from TCR-2/TROPESS. For stage 2, the TCR-2 and EPA NO2 data are combined into a single variable.  
 Y input files are of shape (364,56,120,1) where the last dimension is NOₓ emissions (the dependent variable). These are the same for both stages, but we use later years for stage 2.
-
-
