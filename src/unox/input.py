@@ -8,7 +8,10 @@ import json
 import warnings
 
 import unox.unox as unox
-from unox.HPC.data0.paths import verify_path
+from unox.HPC.data0.paths import verify_path, make_file_path
+from unox.HPC.data0.dataset import get_years
+from unox.HPC.data0.verify_dataset import verify_dataset
+from unox.HPC.data0.latlon import shift_lon_arr
 import unox.data as udata
 from unox.plot_format import pad_extent
 
@@ -131,7 +134,7 @@ def make_y_input_file(
         The variable to extract from the dataset. Default is 'nox'.
     emiss_dir : str, optional
         Directory where the emissions data are stored. 
-        Default is '/data/high_res/t106'.
+        Default is '/data/high_res/emacdonald/unet/datafiles/t106'.
     emiss_pre : str, optional
         Prefix for the emissions input file name. Default is 'nox_'.
     emiss_post : str, optional
@@ -211,13 +214,13 @@ def make_y_input_file(
             # Assemble the file path
             output_filepath = f'inputfiles/{output_dir}/stage1/y/Y_{year}.npy'
             # Make sure the output directory exists
-            unox.make_file_path(output_filepath)
+            make_file_path(output_filepath)
             np.save(output_filepath, y_data)
             if year > stage_2_cutoff:
                 # Save in stage 2 for years later than specified
                 output_filepath_stage2 = f'inputfiles/{output_dir}/stage2/y/Y_{year}.npy'
                 # Make sure the output directory exists
-                unox.make_file_path(output_filepath_stage2)
+                make_file_path(output_filepath_stage2)
                 np.save(output_filepath_stage2, y_data)
             # Output message
             print(f"Created Y input file for {var} in {year}, saved to {output_filepath}")
@@ -274,7 +277,7 @@ def write_input_netcdf(
         # Load the existing netcdf file
         existing_ds = xr.load_dataset(output_filepath)
         # Verify the dataset
-        existing_ds = udata.verify_dataset(existing_ds)
+        existing_ds = verify_dataset(existing_ds)
         # Check if the existing dataset and the new one have the same lat/lon values
         existing_lats = existing_ds.coords['lat'].values
         existing_lons = existing_ds.coords['lon'].values
@@ -323,7 +326,7 @@ def write_input_netcdf(
     input_netcdf_xr = set_global_attrs(input_netcdf_xr, g_attr_dict)
     # Save the netcdf file
     # Make sure the output directory exists
-    unox.make_file_path(output_filepath)
+    make_file_path(output_filepath)
     input_netcdf_xr.to_netcdf(output_filepath)
     return input_netcdf_xr
 
@@ -347,7 +350,7 @@ def set_global_attrs(
         The dataset with added attributes.
     """
     # Verify the dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # Verify the attribute dictionary
     if not isinstance(attr_dict, dict):
         raise TypeError(f'attr_dict must be a dictionary, got {type(attr_dict)}.')
@@ -381,7 +384,7 @@ def set_var_attrs(
         The dataset with the variable having added attributes.
     """
     # Verify the dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # Verify `var` is in the dataset
     udata.verify_var(xr_dataset, var)
     # Verify the attribute dictionary
@@ -415,7 +418,7 @@ def scale_xr_var(
         The dataset with the scaled variable.
     """
     # Verify the dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # Verify `var` is in the dataset
     udata.verify_var(xr_dataset, var)
     # Note the variable attributes
@@ -455,7 +458,7 @@ def add_tm1_var(
         The dataset with the shifted variable.
     """
     # Verify the dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # Verify `var` is in the dataset
     udata.verify_var(xr_dataset, var)
     # Note the variable attributes
@@ -575,7 +578,7 @@ def make_x_input_file(
     if chemra_path=='emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_':
         # Change longitude coordinate convention to match other data
         # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
-        chemra = udata.shift_lon_arr(chemra)
+        chemra = shift_lon_arr(chemra)
         # Drop the `nv` dimension and the `bnds` variables
         if 'nv' in chemra.dims:
             chemra = chemra.isel(nv=0).drop_vars(['time_bnds', 'lon_bnds', 'lat_bnds'])
@@ -693,8 +696,8 @@ def make_x_input_file(
         datavars.remove(chemra_var_s2_tm1)
     else:
         datavars_s2 = []
-    print('all_datavars:',all_datavars)
-    print('datavars:',datavars)
+    # print('all_datavars:',all_datavars)
+    # print('datavars:',datavars)
     # Create an empty numpy array to hold the data
     xnp = np.ndarray([364, 56, 120, len(datavars)])  # Adjust dimensions as needed
     # Fill the numpy array with data from the xarray Dataset
@@ -727,7 +730,7 @@ def make_x_input_file(
                 # Assemble the file path
                 output_filepath = f'inputfiles/{output_dir}/stage{stage}/x/X_{year}.npy'
                 # Make sure the output directory exists
-                unox.make_file_path(output_filepath)
+                make_file_path(output_filepath)
                 # Choose the correct array to save
                 if stage == 1:
                     np.save(output_filepath, xnp)
@@ -780,7 +783,7 @@ def fill_w_insitu(
         The updated dataset with insitu data replacing the specified variable.
     """
     # Verify the dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # Make a new variable to store the stage 2 data, filled with insitu
     var_s2 = f'{var}_s2'
     # Make a deep copy so that changes to `var_s2` don't affect `var`
@@ -1088,7 +1091,7 @@ def make_input_metadata_file(
     elif isinstance(input_set, xr.Dataset):
         xr_dataset = input_set
     # Verify the dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # If the metadata file already exists, load it
     if not isinstance(output_dir, type(None)):
         # Assemble the filepath for the metadata file
@@ -1100,7 +1103,7 @@ def make_input_metadata_file(
         else:
             isNew = True
             # Make sure the output directory exists
-            unox.make_file_path(output_filepath)
+            make_file_path(output_filepath)
     else:
         isNew = True
     if isNew:
@@ -1111,7 +1114,7 @@ def make_input_metadata_file(
             },
         }
     # Get a list of years present in the dataset
-    years = udata.get_years(xr_dataset)
+    years = get_years(xr_dataset)
     # Check for global attributes
     if isinstance(g_attrs, type(None)):
         g_attrs = xr_dataset.attrs
@@ -1274,7 +1277,7 @@ def make_input_config(
     if not isinstance(overwrite, bool):
         raise TypeError(f"overwrite must be a boolean. Got type: {type(overwrite)}")
     # Verify the dataset
-    xr_dataset = udata.verify_dataset(xr_dataset)
+    xr_dataset = verify_dataset(xr_dataset)
     # Verify that grid_size has exactly 2 integers
     if not len(grid_size) == 2:
         raise TypeError(f'Expected `grid_size` to have a length of 2. Got length of {len(grid_size)}: {grid_size}')
@@ -1302,7 +1305,7 @@ def make_input_config(
         stage_2 = False
         print('Stage 2 not found in dataset. Setting stage_2 to False in configuration.')
     # Verify that stage_2_cutoff is a year that exists in the dataset
-    years = udata.get_years(xr_dataset)
+    years = get_years(xr_dataset)
     if stage_2_cutoff not in years:
         raise ValueError(f'stage_2_cutoff {stage_2_cutoff} not found in dataset years: {years}')
     # Verify that the lsm_vars are in the dataset
