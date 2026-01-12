@@ -24,6 +24,7 @@ In order to link to the README file as I did above, I need to actually link to t
 - [Configuring VSCodium](#config_vscodium)
     - [Connecting to remote machines](#vsc_ssh)
     - [Setting up VSCodium](#vsc_setup)
+    - [Configuring the testing environment](#vsc_testing)
 
 ---
 <a id='intro'></a>
@@ -144,7 +145,6 @@ Enter a passcode or select one of the following options:
  1. Duo Push to <mobile device>
 
 Passcode or option (1-1): 1
-Success. Logging you in...
 Success. Logging you in...
 Last login: Thu Dec 11 15:59:49 2025 from static-68-235-46-107.cust.tzulo.com
 ==============================================================================
@@ -323,6 +323,12 @@ Receiving objects: 100% (2995/2995), 194.17 MiB | 64.12 MiB/s, done.
 Resolving deltas: 100% (1768/1768), done.
 Updating files: 100% (102/102), done.
 ```
+
+#### Setting the HPC parameters
+
+The `HPC_params.sh` file in the repository contains parameters that will be used to facilitate transferring between the two remote systems. 
+Find this file and change the parameters to reflect those for your user accounts, especially the user names. 
+I would suggest then adding the `HPC_params.sh` file to the `gitignore` to avoid `git` tracking it's changes between different users who are using the repository. 
 
 ---
 <a id='create_venvs'></a>
