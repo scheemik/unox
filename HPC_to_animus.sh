@@ -6,7 +6,7 @@
 # To be run on Animus.
 # Takes in the following arguments:
 #	$ bash HPC_to_animus.sh -f <filename>      Ex: test_unet_601760
-#                           -j <HPC_job>       Wether to look for HPC job based on filename (default: False)
+#                           -j <HPC_job>       Whether to look for HPC job based on filename (default: False)
 #                           -c <cluster>       HPC cluster to transfer from (default: trillium)
 #                           -m <model>         Whether to copy model files (default: False)
 #

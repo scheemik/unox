@@ -6,7 +6,7 @@
 # To be run on Animus.
 # Takes in the following arguments:
 #	$ bash HPC_from_animus.sh -f <filename>      Ex: no2_sample_input
-#                             -i <HPC_job>       Look for input file directory based on filename
+#                             -i <inputfile>     Look for input file directory based on filename
 #                             -c <cluster>       HPC cluster to transfer from (default: trillium)
 #
 # Note: Each file in list must be preceded by the -f flag. Ex:
