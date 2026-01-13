@@ -4,6 +4,9 @@
 
 # Edit this script so the parameters reference your own setup
 
+# The email to use for sending HPC job notifications
+HPC_EMAIL="mikhail.schee@alumni.utoronto.ca"
+
 # The username on the HPC cluster
 HPC_USERNAME="mschee"
 
