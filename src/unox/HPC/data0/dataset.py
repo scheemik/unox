@@ -54,6 +54,7 @@ class uarray():
 def get_dataset(
     set_to_get,
     is_input_set=False,
+    is_predict=False,
     **kwargs,
 ):
     """Get the given dataset.
@@ -64,6 +65,8 @@ def get_dataset(
         The name of the dataset to get.
     is_input_set : bool, optional
         If True, treat the dataset as an input set.
+    is_predict : bool, optional
+        If True, treat the dataset as a model output prediction set.
     **kwargs : keyword arguments
 
     Returns
@@ -78,6 +81,11 @@ def get_dataset(
             if 'inputfiles/' not in set_to_get:
                 # Assemble the file path
                 file_path = f'inputfiles/{set_to_get}/{set_to_get}.nc'
+        elif is_predict:
+            # Check whether a file path in the `HPC_runs` directory was given
+            if 'HPC_runs/' not in set_to_get:
+                # Assemble the file path
+                file_path = f'HPC_runs/{set_to_get}/predictions.nc'
         else:
             file_path = set_to_get
         # Load (and verify) the dataset
