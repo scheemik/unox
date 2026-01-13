@@ -15,11 +15,11 @@ from data0.config import get_config
 import data0.run_functions as rf
 
 print("")
-print("===== Begin test_run.py =====")
+print("===== Begin run_model.py =====")
 print(f"Current working directory: {os.getcwd()}")
 
 # Set parameters
-n_epochs = 2#50
+n_epochs = 250
 model_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
@@ -70,6 +70,7 @@ print(f"\tShape of xvalid: {xvalid.shape}")
 print(f"\tShape of yvalid: {yvalid.shape}")
 
 print("Done loading data sets for stage 1")
+print(output_metadata['unet_build_shape'])
 # exit(0)
 
 ##################################################################
@@ -285,33 +286,6 @@ if config_dict['stage_2'] == False:
 if input_fmt == 'npy':
     x_files, y_files = load_input_files(inputfiles, stage=2)
     x_train, y_train, x_valid, y_valid = split_input_files(x_files, y_files, stage=2, split_value=0.9)
-# elif input_fmt == 'nc':
-#     # Create blank lists to hold x and y training data
-#     xtrain_list = []
-#     ytrain_list = []
-#     # If before the split year, add x and y data to train lists
-#     stage_2_cutoff = uarr.xr.attrs['stage_2_cutoff']
-#     for year in range(stage_2_cutoff+1, split_year):
-#         this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x2')
-#         xtrain_list.append(this_x_train_arr)
-#         this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='y')
-#         ytrain_list.append(this_y_train_arr)
-#         output_metadata['train_years']['stage2'].append(year)
-#     print(f"\tShape of first xtrain file: {xtrain_list[0].shape}")
-#     print(f"\vShape of first ytrain file: {ytrain_list[0].shape}")
-#     # Concatenate training data
-#     xtrain = np.concatenate(xtrain_list, axis=0)
-#     ytrain = np.concatenate(ytrain_list, axis=0)
-#     print("After concatenation:")
-#     print(f"\tShape of xtrain: {xtrain.shape}")
-#     print(f"\tShape of ytrain: {ytrain.shape}")
-#     # Split into training and validation sets
-#     xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
-#     print("After data split:")
-#     print(f"\tShape of xtrain: {xtrain.shape}")
-#     print(f"\tShape of ytrain: {ytrain.shape}")
-#     print(f"\tShape of xvalid: {xvalid.shape}")
-#     print(f"\tShape of yvalid: {yvalid.shape}")
 elif input_fmt == 'nc':
     # Load the input netcdf file
     uarr = uarray(inputfiles, is_input_set=True)

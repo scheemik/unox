@@ -24,6 +24,7 @@ In order to link to the README file as I did above, I need to actually link to t
 - [Configuring VSCodium](#config_vscodium)
     - [Connecting to remote machines](#vsc_ssh)
     - [Setting up VSCodium](#vsc_setup)
+    - [Configuring the testing environment](#vsc_testing)
 
 ---
 <a id='intro'></a>
@@ -144,7 +145,6 @@ Enter a passcode or select one of the following options:
  1. Duo Push to <mobile device>
 
 Passcode or option (1-1): 1
-Success. Logging you in...
 Success. Logging you in...
 Last login: Thu Dec 11 15:59:49 2025 from static-68-235-46-107.cust.tzulo.com
 ==============================================================================
@@ -323,6 +323,57 @@ Receiving objects: 100% (2995/2995), 194.17 MiB | 64.12 MiB/s, done.
 Resolving deltas: 100% (1768/1768), done.
 Updating files: 100% (102/102), done.
 ```
+
+#### Git ignore
+
+There are many files which are produced by running this code which do not need to be tracked by `git`.
+I would recommend adding these to a list for `git` to ignore, meaning it won't monitor changes.
+How this is done might depend on your version of `git`, but for me, I added the following to my `unox/git/info/exclude` file:
+
+```bash
+# git ls-files --others --exclude-from=.git/info/exclude
+# Lines that start with '#' are comments.
+# For a project mostly in C, the following would be a good set of
+# exclude patterns (uncomment them if you want to use them):
+# *.[oa]
+# *~
+*.pyc
+.vscode/*
+datafiles/era5_downloads/*
+datafiles/ERA5concatenated/*
+datafiles/GEOSChem.SpeciesConc_merged/*
+datafiles/HEMCO_diagnostics_merged/*
+HPC_runs/*
+HPC_params.sh
+sample_data/*
+outputs/*
+inputfiles/*
+!inputfiles/_input_configs/test_config.json
+input_test/*
+poetry.lock
+```
+
+The `!` at a start of a line means to specifically _include_ a file to be tracked by `git`. 
+
+#### Setting the HPC parameters
+
+The `HPC_params.sh` file in the repository contains parameters that will be used to facilitate transferring between the two remote systems. 
+Find this file and change the parameters to reflect those for your user accounts, especially the user names. 
+I would suggest then adding the `HPC_params.sh` file to the `gitignore` to avoid `git` tracking it's changes between different users who are using the repository. 
+Additionally, change the email address in the `HPC_slurm.sh` file in the `#SBATCH` options to that you are the one who receives email notifications for the model runs you submit.
+
+```bash
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --gpus-per-node=1
+#SBATCH --time=1:00:00
+#SBATCH --mail-user=<your_email@domain>
+#SBATCH --mail-type=ALL
+#SBATCH --output=HPC_runs/%x/log_%j.txt				# %x = job_name, %j = job_number
+...
+```
+
+Unfortunately, I was unable to find a way to have the `#SBATCH` notification email be pulled from the `HPC_params.sh` file and so I set it up to be the other way around. 
 
 ---
 <a id='create_venvs'></a>
@@ -713,6 +764,9 @@ username@animus-c:~$ conda create -n <env_name> python=3.9
 ```
 where `<env_name>` should be a memorable and distinct name. 
 Since this environment is primarily used to create plots, I named mine `uplt`.
+Currently, the environment for Aniums uses Python version 3.9.21. 
+This is not as current as the Trillium environment, which uses 3.12.4. 
+I hope to update the Python version for the Animus environment to match that of Trillium. 
 
 <details>
 
@@ -1277,7 +1331,7 @@ You should now be able to see the `unox` repository on both remote machines in V
 ### Setting up VSCodium
 
 If you are already familiar with VSCodium (or VSCode) you probably have a setup that you prefer. 
-If that is the case, feel free to move on to the guide on the development {doc}`workflow <workflow>`.
+If that is the case, feel free to move on to the guide on {doc}`data <data>` the development {doc}`workflow <workflow>`.
 Below, I list a few of the features that I find invaluable when I am coding as suggestions.
 
 #### Terminal panel
