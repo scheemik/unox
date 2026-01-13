@@ -15,11 +15,11 @@ from data0.config import get_config
 import data0.run_functions as rf
 
 print("")
-print("===== Begin test_run.py =====")
+print("===== Begin run_model.py =====")
 print(f"Current working directory: {os.getcwd()}")
 
 # Set parameters
-n_epochs = 2#50
+n_epochs = 250
 model_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 split_year = 2019
@@ -70,6 +70,7 @@ print(f"\tShape of xvalid: {xvalid.shape}")
 print(f"\tShape of yvalid: {yvalid.shape}")
 
 print("Done loading data sets for stage 1")
+print(output_metadata['unet_build_shape'])
 # exit(0)
 
 ##################################################################
