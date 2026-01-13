@@ -12,6 +12,8 @@ TLDR: Create a link to a different document by typing `{doc}`, followed by the n
 - [Preparing a model run](#prep_model_run)
     - [From Animus to HPC](#from_animus_to_HPC)
     - [Input configuration files](#config_files)
+- [Running the model on HPC](#run_model_HPC)
+    - [Submitting a model run](#submit_job)
 
 ---
 <a id='intro'></a>
@@ -128,4 +130,58 @@ The attributes of this file are explained below:
 When preparing for a model run, make sure the configuration file you wish to use is present on the HPC cluster in the `inputfiles/_input_configs/` directory. 
 This can be accomplished by creating a configuration file on Animus, then using the `HPC_from_animus.sh` script to transfer it. 
 Or, one can simply create a new configuration file on HPC directly, which is what I usually do.
+
+---
+<a id='run_model_HPC'></a>
+[back to top](#top)
+
+## Running the model on HPC
+
+To actually run the model, go to the HPC, in this case, Trillium. 
+
+<a id='submit_job'></a>
+[back to top](#top)
+
+### Submitting a model run
+
+I have created a script, `HPC_job_submit.sh` which handles much of the boiler-plate necessary for submitting a job to the Alliance Canada scheduler and works by taking in the following arguments:
+- `-j`: Job name
+    - The name of the job to submit, the default being `test_unet`.
+    - This should be a short and identifiable name (i.e., `grid_test0`, `grid_test1`, etc.).
+    - If a directory under `HPC_runs/` with the specified name already exists, the script will prompt you to decide whether to overwrite it.
+- `-i`: Input configuration file
+    - The name of the configuration file in the `inputfiles/_input_configs/` directory to use.
+    - The default is `sample_config`.
+- `-t`: Type of run
+    - The type of model run to use. Current options are:
+        - `test`: The default job which runs the `run_model.py` script once using the `HPC_GPU_slurm.sh` launcher. 
+        - `zfi_set`: A Zeroed Feature Importance run. This runs the `run_model.py` script a number of times equal to the number of "x" input variables using the `HPC_GPU_slurm.sh` launcher. 
+- `-v`: Version
+    - The version of the code to use, either `1` (default, current code) or `0` (legacy code).
+    - This was implemented during the transition from Mist to Trillium and is deprecated. You can safely ignore this argument if only running on Trillium.
+- `-c`: Cluster
+    - The name of the cluster to transfer to, the default being `trillium`.
+
+Here is an example of submitting a job named `example_job` to Trillium:
+
+```console
+username@HPC: unox$ bash HPC_job_submit.sh -j example_job
+===== Begin HPC_job_submit.sh =====
+-j, Name specified, using JOBNAME=example_job
+-i, No config file specified, using CONFIG_FILE=sample_config
+    Configuration file inputfiles/_input_configs/sample_config.json found.
+-t, No run type specified, using TYPE=test
+    Using LAUNCHER=HPC_GPU_slurm.sh
+-v, No version specified, using VERSION=1
+-c, Using cluster: trillium
+Directory for job HPC_runs/example_job already exists
+Would you like to overwrite it? (y/n)
+y
+Overwriting directory HPC_runs/example_job
+Sending HPC notifications to email: <your_email@domain>
+Submitted batch job 199403
+[<username>@trig-login01 unox]$ 
+```
+
+The output can be used to confirm you set the arguments as expected. 
 
