@@ -11,6 +11,7 @@ TLDR: Create a link to a different document by typing `{doc}`, followed by the n
 - [Introduction](#intro)
 - [Preparing a model run](#prep_model_run)
     - [From Animus to HPC](#from_animus_to_HPC)
+    - [Input configuration files](#config_files)
 
 ---
 <a id='intro'></a>
@@ -88,4 +89,43 @@ Note that the `.npy` files are now deprecated.
 [back to top](#top)
 
 ### Input configuration files
+
+The parameters that a model run will use are defined in "input configuration" files. 
+These are `.json` files stored in `inputfiles/_input_configs/` and follow the following format:
+
+```json
+{
+    "input_set": "no2_lsm6",
+    "x_vars": [
+        "no2",
+        "no2_tm1",
+        "u10",
+        "v10",
+        "blh",
+        "sp",
+        "skt",
+        "t2m",
+        "ssrd"
+    ],
+    "stage_2": true,
+    "stage_2_cutoff": 2013,
+    "lsm_vars": [
+    ],
+    "grid_size": [35, 46]
+}
+```
+
+The attributes of this file are explained below:
+- `input_set`: The name of the input netCDF to use.
+- `x_vars`: The list of variables to use as input to the model.
+    - See the {doc}`Data <data>` page for documentation of these variables.
+- `stage_2`: A boolean as to whether to run Stage 2 of training.
+- `stage_2_cutoff`: The cutoff year for Stage 2 training.
+    - Stage 2 training will start the year after the one specified here.
+- `lsm_vars`: A list of variables on which to apply the land-sea mask (`lsm`).
+- `grid_size`: A list of the number of grid cells to use in latitude and longitude.
+
+When preparing for a model run, make sure the configuration file you wish to use is present on the HPC cluster in the `inputfiles/_input_configs/` directory. 
+This can be accomplished by creating a configuration file on Animus, then using the `HPC_from_animus.sh` script to transfer it. 
+Or, one can simply create a new configuration file on HPC directly, which is what I usually do.
 
