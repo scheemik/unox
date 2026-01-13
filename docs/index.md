@@ -8,6 +8,7 @@
 installation.md
 data.md
 run_model.md
+analysis.ipynb
 workflow.md
 example.ipynb
 autoapi/index
