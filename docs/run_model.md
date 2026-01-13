@@ -15,6 +15,8 @@ TLDR: Create a link to a different document by typing `{doc}`, followed by the n
 - [Running the model on HPC](#run_model_HPC)
     - [Submitting a model run](#submit_job)
     - [Monitoring a job](#monitor_job)
+- [Gathering model output](#get_output)
+    - [From HPC to Animus](#from_HPC_to_animus)
 
 ---
 <a id='intro'></a>
@@ -65,7 +67,7 @@ The script `HPC_from_animus.sh` is set up to facilitate the transfer so you do n
 Here is an example of transferring the `no2_sample_input` input file from Animus to Trillium:
 
 ```console
-username@animus-c:~/unox$ bash HPC_from_animus.sh -f no2_sample_input -i 
+(uplt) username@animus-c:~/unox$ bash HPC_from_animus.sh -f no2_sample_input -i 
 -c, No cluster specified, defaulting to trillium
 -i, Copying full input file directory for no2_sample_input to trillium from Animus
 Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
@@ -564,3 +566,52 @@ JobID           JobName    Account    Elapsed  MaxVMSize     MaxRSS  SystemCPU  
 </details>
 
 The end of the log file contains the same information as in the email notification that the job finished running. 
+
+---
+<a id='get_output'></a>
+[back to top](#top)
+
+## Gathering model output
+
+Once the job has completed running sucessfully, the next step is to get the relevant output back to Animus for analysis.
+
+<a id='from_HPC_to_animus'></a>
+[back to top](#top)
+
+### From HPC to Animus
+
+The script `HPC_to_animus.sh` is set up to facilitate the transfer of job outputs so you do not need to remember how to format a `scp` command. 
+It works by taking in the following arguments:
+- `-f`: Filename
+    - The name of the file to transfer.
+    - Can be used individually, adding a `-f` flag for each file to transfer.
+- `-j`: HPC job
+    - If specified, it will look for a repository within `HPC_runs/` with the name given in the `-f` flag.
+    - This flag does not accept any input, it is just a binary.
+- `-c`: Cluster
+    - The name of the cluster to transfer to, the default being `trillium`.
+- `-m`: Model
+    - Whether to transfer the model (`.keras`) files. Note, these files are large.
+    - The default behavior will not transfer model files.
+    - This flag does not accept any input, it is just a binary.
+
+Here is an example of transferring the `example_job` model run from Animus to Trillium:
+
+```console
+(uplt) username@animus-c:~/unox$ bash HPC_to_animus.sh -f example_job -j 
+-c, No cluster specified, defaulting to trillium
+-j, Copying full HPC job directory for example_job from trillium to Animus
+Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
+(<username>@trillium.alliancecan.ca) Duo two-factor login for <username>
+
+Enter a passcode or select one of the following options:
+
+ 1. Duo Push to <mobile device>
+
+Passcode or option (1-1): 1
+Success. Logging you in...
+Completed file transfer to Animus
+```
+
+Now that the output from the model run is back on Animus, it can be analyzed.
+See the {doc}`Analysis <analysis>` page for details.
