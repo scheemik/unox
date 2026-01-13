@@ -11,6 +11,9 @@
 #
 # Note: Each file in list must be preceded by the -f flag. Ex:
 #	$ bash HPC_from_animus.sh -f test_file1 -f test_file2
+#
+# Note: To transfer inputfile, specify the input file name in the -f flag. Ex:
+#	$ bash HPC_from_animus.sh -f no2_sample_input -i
 
 # Having a ":" after a flag means an option is required to invoke that flag
 while getopts "f:ic:" option;
@@ -47,24 +50,28 @@ fi
 
 ###############################################################################
 
-# Specify the username for the remote server
-USERNAME="mschee"
+# Source parameters from file
+source HPC_params.sh
+
+# Determine remote server and project directory based on chosen cluster
 if [ "$CLUSTER" = "trillium" ]; then
     # Specify the remote server address
     REMOTE_SERVER="trillium.alliancecan.ca"
     # Specify project directory
-    PROJECT_DIR="/scratch/$USERNAME/Postdoc/unox"
+    PROJECT_DIR="$TRIL_SCRATCH/$TRIL_PROJ_DIR"
+    # Specify the identity file for SSH
+    IDENTITY_FILE="$TRIL_IDENTITY_FILE"
 elif [ "$CLUSTER" = "mist" ]; then
     # Specify the remote server address
     REMOTE_SERVER="mist.scinet.utoronto.ca"
     # Specify project directory
-    PROJECT_DIR="/scratch/d/dylan/$USERNAME/Postdoc/unox"
+    PROJECT_DIR="$MIST_SCRATCH/$MIST_PROJ_DIR"
+    # Specify the identity file for SSH
+    IDENTITY_FILE="$MIST_IDENTITY_FILE"
 else
     echo "Unknown cluster: $CLUSTER. Exiting."
     exit 1
 fi
-# Specify the identity file for SSH
-IDENTITY_FILE="~/.ssh/id_ed25519"
 
 # If copying a job, only copy the contents of `stage1_output` and 
 # `stage2_output`. Also copy the `.txt` file with the same name
@@ -81,7 +88,7 @@ if [ "$INPUT_FILES" = i ]; then
         FILES+=".$DIR_PREFIX/$FILE"
         # Copy the files over
         # echo $FILES
-        scp -r -i $IDENTITY_FILE "$FILES" $USERNAME@$REMOTE_SERVER:$PROJECT_DIR$DIR_PREFIX/
+        scp -r -i $IDENTITY_FILE "$FILES" $HPC_USERNAME@$REMOTE_SERVER:$PROJECT_DIR$DIR_PREFIX/
     done
 else
     # Copy files or directories from HPC to Animus
@@ -90,5 +97,5 @@ else
         FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE "
     done
     # echo $FILES
-    scp -r -i $IDENTITY_FILE "$FILES" $USERNAME@$REMOTE_SERVER:$PROJECT_DIR$DIR_PREFIX/
+    scp -r -i $IDENTITY_FILE "$FILES" $HPC_USERNAME@$REMOTE_SERVER:$PROJECT_DIR$DIR_PREFIX/
 fi
