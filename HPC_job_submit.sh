@@ -148,6 +148,19 @@ elif [ "$TYPE" = "zfi_set" ]; then
 fi
 
 ###############################################################################
+# Check the email to use for notifications
+source HPC_params.sh
+if [ -z "$HPC_EMAIL" ]
+then
+	echo "No email specified for HPC notifications."
+	echo "Please add your email to the \`HPC_slurm.sh\` script at the line with \`#SBATCH --mail-user=\`."
+	echo "Exiting..."
+	exit 1
+else
+	echo "Sending HPC notifications to email: $HPC_EMAIL"
+fi
+
+###############################################################################
 # Submit job to queue
 if [ "$TYPE" = "test" ]; then
 	sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
