@@ -1,7 +1,7 @@
 <a id='top'></a>
 # Running the model
 
-The documentation below describes a workflow to both run the U-net model and to actively develop the code base.
+The documentation below describes how to run the U-net model and retrieve the results. 
 This guide assumes you have followed the instructions on the {doc}`Installation <installation>` and {doc}`Data <data>` pages.
 <!-- Note: for linking between documents, use the `doc` role defined in the [Sphinx documentation](https://docs.readthedocs.com/platform/stable/guides/cross-referencing-with-sphinx.html#the-doc-role). 
 TLDR: Create a link to a different document by typing `{doc}`, followed by the name of the file surrounded by backticks, excluding the extension. If you would like to change the rendered text of the link, surround the desired link text in backticks, then add the name of the file in angle brackets, in the format: "{doc}`Click here <filename>`".  -->
@@ -25,7 +25,7 @@ Therefore, after running the model on Trillium, I transfer the output to Animus 
 Animus also holds the data used to create the inputs for the model. 
 Generally, I use Animus for all tasks related to this project except for running the model itself. 
 
-This guide details the workflow I use to prepare a model run on Animus, transfer that preparation to Trillium and run the model, then transfer the model output back to Animus. 
+This guide details how to prepare a model run on Animus, transfer that preparation to Trillium and run the model, then transfer the model output back to Animus. 
 A demonstration of how to use the analysis tools can be found in the {doc}`Example usage <example>`.
 
 ---
