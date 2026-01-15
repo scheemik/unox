@@ -146,6 +146,7 @@ def map_ax(
     cbar_min=None,
     cb_ext='neither',
     padding=0.1,
+    **kwargs,
 ):
     """Plots a map of the data in the given dataset.
 
@@ -173,6 +174,8 @@ def map_ax(
     padding : float
         The padding (in a fraction of total extent) to add to the extent of the map. 
         Default is 0.1.
+    **kwargs : keyword arguments
+        Additional keyword arguments accepted to facilitate wrapper functions.
     
     Returns
     -------
@@ -196,10 +199,10 @@ def map_ax(
         raise TypeError(f"(nc_map) `plt_title` must be a string or None. Got type: {type(plt_title)}")
     if not isinstance(cmap, mpl.colors.Colormap):
         raise TypeError(f"(nc_map) `cmap` must be a matplotlib Colormap. Got type: {type(cmap)}")
-    if not isinstance(cbar_max, type(None)) or not verify_number(cbar_max):
-        raise TypeError(f"(nc_map) `cbar_max` must be a number or None. Got type: {type(cbar_max)}")
-    if not isinstance(cbar_min, type(None)) or not verify_number(cbar_min):
-        raise TypeError(f"(nc_map) `cbar_min` must be a number or None. Got type: {type(cbar_min)}")
+    if not isinstance(cbar_max, type(None)):
+        verify_number(cbar_max)
+    if not isinstance(cbar_min, type(None)):
+        verify_number(cbar_min)
     if cb_ext not in ['neither', 'both', 'min', 'max']:
         raise ValueError(f"(nc_map) `cb_ext` must be 'neither', 'both', 'min', or 'max'. Got: {cb_ext}")
     # `padding` is verified in `pad_extent()`
