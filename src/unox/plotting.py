@@ -28,7 +28,8 @@ title_font_size = 20
 
 def plot_extent(
     xr_dataset='/datafiles/nox_2019_t106_US.nc',
-    ):
+    **kwargs,
+):
     """Plots the extent of the given xarray dataset.
 
     Creates a map with the Robin projection of the entire world
@@ -38,6 +39,8 @@ def plot_extent(
     ----------
     xr_dataset : str or xarray.Dataset or xarray.DataArray
         The xarray data for which to plot the extent or the file path to the dataset.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `uarray()`.
     
     Returns
     -------
@@ -79,7 +82,8 @@ def plot_extent(
 def plot_lats_lons(
     xr_dataset='/datafiles/nox_2019_t106_US.nc',
     padding=0.1,
-    ):
+    **kwargs,
+):
     """Plot the latitude and longitude values in the given dataset.
 
     Creates a map showing the longitude and latitude resolution of the 
@@ -92,6 +96,8 @@ def plot_lats_lons(
     padding : float
         The padding (in a fraction of total extent) to add to the extent of the map. 
         Default is 0.1 degrees.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `uarray()`.
     
     Returns
     -------
@@ -166,6 +172,8 @@ def plot_nc_map(
     padding : float
         The padding (in a fraction of total extent) to add to the extent of the map. 
         Default is 0.1 degrees.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `nc_map()`.
     
     Returns
     -------
@@ -777,6 +785,8 @@ def plot_comp_maps(
     stage1_only : bool
         If True, produce graphs just corresponding to stage 1. If False, produce graphs
         for stage 1 and stage 2. Default is False.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `corr_plot()`.
     
     Returns
     -------
@@ -987,6 +997,8 @@ def make_colorbar(
     cb_extend : str
         The extension of the colorbar. Can be 'neither', 'both', 'min', or 'max'.
         Default is 'neither'.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `colorbar()`.
 
     Returns
     -------
