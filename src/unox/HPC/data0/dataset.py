@@ -25,8 +25,14 @@ class uarray():
 
     Methods
     -------
-    verify(**kwargs)
+    _verify(**kwargs)
         Verify specified aspects of the dataset using `verify_dataset()`.
+    _get_years()
+        Get a list of unique years present in the time coordinate of the dataset.
+    _select_year(year)
+        Select data for the specified year from the dataset.
+    _shift_lons(**kwargs)
+        Shift the longitude coordinates of the dataset using `shift_lon_arr()`.
 
     """
     # Initialize the uarray object
