@@ -469,17 +469,21 @@ def add_tm1_var(
     xr_dataset[var_tm1] = xr_dataset[var].shift(time=1)
     # Add shifted_from to the attributes
     var_attrs['shifted_from'] = var
+    # Add (t-1) to the name in the attributes
+    var_attrs['long_name'] = var_attrs.get('long_name', var) + ' (t-1)'
     # Check for stage 2 variable
     var_s2 = f'{var}_s2'
     if var_s2 in xr_dataset.data_vars:
         # Note the variable attributes
-        var_s2_attrs = xr_dataset[var].attrs
+        var_s2_attrs = xr_dataset[var_s2].attrs
         # Create name for t-1 variable
         var_s2_tm1 = f'{var_s2}_tm1'
         # Create a t-1 shifted version of the variable
         xr_dataset[var_s2_tm1] = xr_dataset[var_s2].shift(time=1)
         # Add shifted_from to the attributes
         var_s2_attrs['shifted_from'] = var_s2
+        # Add (t-1) to the name in the attributes
+        var_s2_attrs['long_name'] = var_s2_attrs.get('long_name', var_s2) + ' (t-1)'
     # Drop January 1st, as the t-1 variable will have null values on that day
     try:
         xr_dataset = xr_dataset.drop_sel(time=f'{year}-01-01')
@@ -790,6 +794,8 @@ def fill_w_insitu(
     xr_dataset[var_s2]= xr_dataset[var].copy(deep=True)
     # Save the variable attributes
     var_s2_attrs = xr_dataset[var_s2].attrs
+    # Modify the long_name attribute to indicate stage 2
+    var_s2_attrs['long_name'] = var_s2_attrs.get('long_name', var_s2) + ' Stage 2'
     # Verify the insitu file path
     insitu_filepath = verify_path(insitu_filepath)
     # Load the insitu data
