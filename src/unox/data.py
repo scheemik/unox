@@ -990,9 +990,9 @@ def add_amount_to_date(
     
     Examples
     --------
-    >>> add_time_to_date('2019-12-20', '20D')
+    >>> add_amount_to_date('2019-12-20', '20D')
     '2020-01-09'
-    >>> add_time_to_date(np.datetime64('2019-12-25'), np.timedelta64(20, 'D'))
+    >>> add_amount_to_date(np.datetime64('2019-12-25'), np.timedelta64(20, 'D'))
     np.datetime64('2020-01-14')
     """
     # Make sure the inputs are of the correct type
