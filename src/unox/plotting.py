@@ -12,8 +12,9 @@ import os
 from unox import unox
 from unox.HPC.data0.paths import verify_path
 from unox import data as udata
-from unox.HPC.data0.dataset import uarray
+from unox.HPC.data0.dataset import uarray, get_dataset
 from unox.HPC.data0.verify_dataset import verify_dataset
+from unox.HPC.data0.verify_dtype import verify_number
 from unox import plot_format as uplt_fmt
 from unox.input import x_or_y_var, get_input_index
 from unox.HPC.data0.load_input import get_npy_from_netcdf
@@ -51,16 +52,13 @@ def plot_extent(
     --------
     >>> fig = plot_extent(xr_dataset)
     """
-    # Check if xr_dataset is a file path or an xarray object
-    if isinstance(xr_dataset, str):
-        # If it's a file path, verify the file path
-        xr_dataset = verify_path(xr_dataset)
-        # Now open the dataset
-        xr_dataset = xr.open_dataset(xr_dataset)
-    # Verify the xr_dataset
-    xr_dataset = verify_dataset(xr_dataset)
+    # Make `uarray` object
+    u_arr = uarray(xr_dataset, **kwargs)
+    # Verify argument types 
+    # The `verify_dataset()` function is automatically run when creating a `uarray` object
+
     # Find the min and max lat and lon values
-    lat_min, lat_max, lon_min, lon_max = udata.get_extent(xr_dataset)
+    lat_min, lat_max, lon_min, lon_max = udata.get_extent(u_arr.xr)
     # Find the midpoint of the longitude values to center the map
     lon_mid = (lon_min + lon_max) / 2
     # Create the figure
@@ -72,7 +70,7 @@ def plot_extent(
              color='red', lw=2)
     # Format the map
     axs.format(
-        suptitle='Extent of xarray dataset',
+        suptitle=f'Extent of {u_arr.name}',
         latlines=30, lonlines=30, coast=True,
         labels=True, gridminor=True
     )
@@ -108,20 +106,18 @@ def plot_lats_lons(
     --------
     >>> fig = plot_lats_lons(xr_dataset)
     """
-    # Check if xr_dataset is a file path or an xarray object
-    if isinstance(xr_dataset, str):
-        # If it's a file path, verify the file path
-        xr_dataset = verify_path(xr_dataset)
-        # Now open the dataset
-        xr_dataset = xr.open_dataset(xr_dataset)
-    # Verify the xr_dataset
-    xr_dataset = verify_dataset(xr_dataset)
+    # Make `uarray` object
+    u_arr = uarray(xr_dataset, **kwargs)
+    # Verify argument types 
+    # The `verify_dataset()` function is automatically run when creating a `uarray` object
+    # The `verify_number()` function is automatically run in `pad_extent()`
+    
     # Find the min and max lat and lon values
-    this_extent = udata.get_extent(xr_dataset)
+    this_extent = udata.get_extent(u_arr.xr)
     # Enlarge the extent of the map by the given padding value
     p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_fmt.pad_extent(this_extent, padding)
     # Make a meshgrid of the lat and lon values
-    longrid, latgrid = np.meshgrid(xr_dataset.lon.values, xr_dataset.lat.values)
+    longrid, latgrid = np.meshgrid(u_arr.xr.lon.values, u_arr.xr.lat.values)
     # Create the figure
     fig = pplt.figure(refwidth=10)
     axs = fig.subplots(nrows=1, proj='cyl')
@@ -134,7 +130,7 @@ def plot_lats_lons(
     # Format the map
     axs.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
-        suptitle='Coordinates of xarray dataset',
+        suptitle=f'Coordinates of {u_arr.name}',
         latlines=10, lonlines=10, coast=True,
         labels=True, gridminor=True
     )
