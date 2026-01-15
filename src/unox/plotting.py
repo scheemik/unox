@@ -241,7 +241,7 @@ def map_ax(
         cbar_min = cbar_min.values
         cbar_min = np.unique(cbar_min)[0]
     # Plot the data, use `discrete=False` to set a continuous colorbar
-    this_var = ax.pcolormesh(xr_data_arr, vmin=cbar_min, vmax=cbar_max, discrete=False, extend=cb_ext)
+    this_map_ax = ax.pcolormesh(xr_data_arr, vmin=cbar_min, vmax=cbar_max, discrete=False, extend=cb_ext)
     # Format the map
     ax.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
