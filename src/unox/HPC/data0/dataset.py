@@ -39,6 +39,11 @@ class uarray():
     def __init__(self, xr_array, **kwargs):
         self.xr = get_dataset(xr_array, **kwargs)
         self.years = None
+        # Add name if `xr_array` is a string
+        if isinstance(xr_array, str):
+            self.name = xr_array
+        else:
+            self.name = 'xarray dataset'
     # Verify aspects of the dataset
     def _verify(self, **kwargs):
         self.xr = verify_dataset(self.xr, **kwargs)
