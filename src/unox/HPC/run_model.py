@@ -114,7 +114,7 @@ def begin_training(
     batch_size=30,
     n_epochs=250,
     save_format='keras',
-    ):
+):
     """Begin training the Unet model.
 
     Parameters
@@ -170,7 +170,7 @@ unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xvalid=xva
 def load_test_files(
     x_files,
     stage,
-    ):
+):
     """Load test files for a given stage.
 
     Parameters
@@ -202,7 +202,7 @@ def predict_and_save(
     savedir,
     model,
     **kwargs,
-    ):
+):
     """Generate predictions using the model and save them.
 
     Parameters

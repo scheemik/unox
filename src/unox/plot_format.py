@@ -4,7 +4,7 @@ from unox.HPC.data0.verify_dtype import verify_number
 def pad_extent(
     extent, 
     padding=0.1,
-    ):
+):
     """Pads the given extent.
 
     Pads the latitude and longitude extent of a dataset by enlarging
@@ -62,7 +62,7 @@ def pad_extent(
 
 def get_var_label_and_units(
     var,
-    ):
+):
     """Get the label and units for a variable.
 
     Returns the label and units for a variable based on its name.
@@ -121,7 +121,7 @@ def make_stage_comp_arrs(
     var,
     avg_over=None,
     stage1_only=False,
-    ):
+):
     """Create arrays for stage comparison plots.
 
     Creates a dictionary of arrays for stage comparison, where each key is a stage

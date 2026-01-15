@@ -143,7 +143,7 @@ def plot_nc_map(
     datetime='2019-01-02T00:00:00',
     avg_over=None,
     **kwargs,
-    ):
+):
     """Plots a map of the 'var' data in a netCDF.
 
     Creates a map of the 'var' data on a map using the provided netCDF file.
@@ -304,7 +304,7 @@ def nc_map(
     cbar_min=None,
     cb_ext='neither',
     padding=0.1,
-    ):
+):
     """Plots a map of the 'var' data in a netCDF.
 
     Creates a map of the 'var' data on a map using the provided netCDF file.
@@ -407,7 +407,7 @@ def plot_npy_map(
     cb_extend='neither',
     ax_title='',
     padding=0.1,
-    ):
+):
     """Plots a map of the given numpy array.
 
     Creates a map of the given numpy array across the given coordinates.
@@ -489,7 +489,7 @@ def plot_input_map(
     restrict_lat_lon_to=None,
     cmap=pplt.Colormap('Fire'),
     **kwargs,
-    ):
+):
     """Plots a map of input data for the specified variable and time.
 
     Creates a map of the input data for the specified variable and time,
@@ -573,7 +573,7 @@ def plot_stage_comp_maps(
     restrict_lat_lon_to=None,
     clr_bar_scale=0.5,
     stage1_only=False,
-    ):
+):
     """Plots a set of maps to compare the truth and the two stages of the model.
 
     Creates a set of 6 maps:
@@ -975,7 +975,7 @@ def make_colorbar(
     cb_loc='l',
     cb_extend='neither',
     **kwargs,
-    ):
+):
     """Creates a colorbar for the given figure and axes.
 
     Parameters
@@ -1332,7 +1332,7 @@ def plot_true_pred_comp(
     hist_params={'bins':100, 'vmax':1000, 'vmin':10},
     restrict_lat_lon_to=None,
     var='nox',
-    ):
+):
     """Plot a comparison of the truth and predicted data.
 
     Creates a correlation plot of the stage 1 data (truth) and the
@@ -1397,7 +1397,7 @@ def plot_npy_hist(
     title=None,
     log_scale=False,
     clr='blue',
-    ):
+):
     """Plots a histogram of the given numpy array.
 
     Creates a histogram of the given numpy array on the given axis, or
@@ -1467,7 +1467,7 @@ def plot_npy_diff(
     npy_b,
     title=None,
     filename=None,
-    ):
+):
     """Plots the difference between two numpy arrays.
 
     Assuming the npy arrays have dimensions (time, lat, lon), creates a heatmap of number of differences for all time across lat vs. lon and the number of differences for all locations across time.
@@ -1584,7 +1584,7 @@ def compare_input_vars(
         'fmt':'nc',
     },
     abs_tolerance=2e-5,
-    ):
+):
     """
     Compares the data for two input variables.
 

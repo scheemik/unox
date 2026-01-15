@@ -23,7 +23,7 @@ DEFAULT_EXTENT = [DEFAULT_LAT_MAX, DEFAULT_LON_MIN, DEFAULT_LAT_MIN, DEFAULT_LON
 def generate_lats_lons(
     dataset='datafiles/sample_data/2019u10.nc',
     output_dir='datafiles/',
-    ):
+):
     """Generate latitude and longitude arrays from the given dataset.
 
     Creates the `lats.npy` and `lons.npy` files from the latitude and 
@@ -61,7 +61,7 @@ def get_extent(
     lons=None,
     shift_lons=False,
     **kwargs,
-    ):
+):
     """Get the latitude and longitude extent of the given xarray dataset.
 
     Finds the maximum and minimum latitude and longitude values in the given dataset.
@@ -131,7 +131,7 @@ def get_extent(
 def get_lats_lons(
     xr_dataset,
     **kwargs,
-    ):
+):
     """Get the latitude and longitude values from the given dataset.
 
     Loads the latitude and longitude values from the given dataset
@@ -170,7 +170,7 @@ def get_latlon_resolution(
     lats=None,
     lons=None,
     **kwargs,
-    ):
+):
     """Get the latitude and longitude resolution of the given dataset.
 
     Calculates the resolution of coordinate values in the dataset
@@ -237,7 +237,7 @@ def print_latlon_info(
     lats=None,
     lons=None,
     **kwargs,
-    ):
+):
     """Print information about the latitude and longitude values.
 
     Prints the extent and resolution of the latitude and longitude
@@ -314,7 +314,7 @@ def verify_var(
 
 def clean_num_list(
     val_list,
-    ):
+):
     """Clean the list of values that cannot be converted to a number.
 
     For each value in the list, if it cannot be converted to a number, 
@@ -350,7 +350,7 @@ def clean_num_list(
 
 def verify_lat(
     lat_val,
-    ):
+):
     """Verify that the given latitude value is valid.
 
     If the given latitude value is within the range [-90, 90],
@@ -384,7 +384,7 @@ def verify_lat(
 def verify_lon(
     lon_val,
     PM_centered=None,
-    ):
+):
     """Verify that the given longitude value is valid.
 
     If the given longitude value is within the range [-180, 180],
@@ -428,7 +428,7 @@ def verify_lon(
 
 def get_vminmax(
     arrays,
-    ):
+):
     """Get the minimum and maximum values across the given arrays.
 
     Flattens and concatenates the given arrays and returns the minimum
@@ -467,7 +467,7 @@ def get_vminmax(
 
 def get_max_abs_val(
     val_list,
-    ):
+):
     """Get the maximum absolute value from the given list.
 
     Removes invalid numbers from the given list of values, then takes the 
@@ -502,7 +502,7 @@ def restrict_domain(
     lats, 
     lons, 
     restricting_data,
-    ):
+):
     """Restrict the domain of the given arrays
 
     Restricts the domain of the given arrays to the same extent as that 
@@ -558,7 +558,7 @@ def restrict_domain(
 def match_domains(
     xr_a,
     xr_b,
-    ):
+):
     """Restrict the domain of the given xarray Datasets to match each other.
 
     Finds the maximum extent covered by both given datasets and restricts both
@@ -614,7 +614,7 @@ def match_domains(
 
 def verify_npy(
     array,
-    ):
+):
     """Determine if a variable or file holds a valid numpy array.
 
     If a numpy array or a path to a file containing a numpy array was passed,
@@ -708,7 +708,7 @@ def verify_npy(
 
 def get_num_from_string(
     str,
-    ):
+):
     """Extract numbers from a string.
 
     If the string contains numbers, return those numbers in a list.
@@ -742,7 +742,7 @@ def get_num_from_string(
 
 def get_DOY(
     date,
-    ):
+):
     """Get the day of the year from a date.
 
     Extracts the day of the year from a given date
@@ -784,7 +784,7 @@ def get_DOY(
 def increment_month(
     month, 
     increment,
-    ):
+):
     """Increment the month by a given number of months.
 
     Increments the month by the given number of months, wrapping around
@@ -850,7 +850,7 @@ def increment_month(
 
 def get_YMD_from_date(
     this_date,
-    ):
+):
     """Get the year, month, and day from a date.
 
     Extracts the year, month, and day from a given date
@@ -896,7 +896,7 @@ def get_YMD_from_date(
 
 def get_increment_info(
     increment,
-    ):
+):
     """Get the increment value and unit from a string.
 
     Parses a string that represents an increment in the format 'XD', 'XM', or 'XY',
@@ -965,7 +965,7 @@ def add_amount_to_date(
     this_date,
     increment,
     keep_within_year=False,
-    ):
+):
     """Add an amount of time to a date.
 
     Adds the given amount of time to the given date and 

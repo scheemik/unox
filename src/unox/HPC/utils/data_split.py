@@ -1,7 +1,12 @@
 import numpy as np
 import random
 
-def data_split(x, y, ratio, maskname=None):
+def data_split(
+    x, 
+    y, 
+    ratio, 
+    maskname=None
+):
     dsize = int(x.shape[0] * ratio)
     dmask = np.array(list(range(0, x.shape[0])))
     random.shuffle(dmask)

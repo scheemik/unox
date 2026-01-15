@@ -1,6 +1,6 @@
 def verify_number(
     value,
-    ):
+):
     """Verify that the given value is a number.
 
     If the given value is a number that can be converted to an integer

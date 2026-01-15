@@ -2,7 +2,9 @@ import json
 
 from .paths import verify_path
 
-def get_config(config_file):
+def get_config(
+    config_file
+):
     """Load the configuration from a JSON file.
 
     Parameters

@@ -6,7 +6,7 @@ from unox.HPC.utils import functions
 
 def load_model(
     model_path: str,
-    ):
+):
     """Load a trained model from a file.
 
     Parameters

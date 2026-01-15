@@ -4,7 +4,9 @@ from datetime import datetime
 
 from unox.HPC.data0.paths import verify_path
 
-def time_this(func):
+def time_this(
+    func
+):
     """
     A decorator which can be applied to a function to print the execution time.
 
@@ -41,7 +43,7 @@ def time_this(func):
 
 def load_lats_lons(
     path='datafiles/',
-    ):
+):
     """Load latitude and longitude data from files.
 
     Loads arrays of latitude and longitude values that cover 
@@ -75,7 +77,7 @@ def load_lats_lons(
 def show_available_data(
     path='inputfiles/no2_sample_input/', 
     verb=False,
-    ):
+):
     """Print a list of available data in the given directory.
     
     For the given path, this function will print all the files in the directory.
@@ -114,7 +116,7 @@ def show_available_data(
 
 def recursive_paths(
     path,
-    ):
+):
     """Create list recursively of all files in the given path.
 
     Calls itself recursively to get all files in the given path.
@@ -167,7 +169,7 @@ def get_input_data(
     year=2019,
     input_set='no2_sample_input',
     path_prefix='',
-    ):
+):
     """Get the path of a input data file.
 
     Builds the path to a specific input data file
@@ -215,7 +217,7 @@ def get_input_data(
 def get_one_input_var_array(
     var,
     **kwargs,
-    ):
+):
     """
     Get the array of a single input variable for a given year.
 
@@ -253,7 +255,7 @@ def get_one_t_input_var_array(
     var,
     this_date,
     **kwargs,
-    ):
+):
     """
     Get an array of a single variable at the given date from the given input file.
 
@@ -288,7 +290,7 @@ def get_pred_data(
     HPC_run='no2_example_run', 
     year=2019,
     path_prefix='',
-    ):
+):
     """Get the path of a prediction data file.
 
     Builds the path to a specific prediction data file
