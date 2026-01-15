@@ -7,6 +7,7 @@ def set_fig_row_col(
     n_subplots,
     n_rows=None,
     n_cols=None,
+    **kwargs,
 ):
     """Determine the number of rows and columns in a figure based on the number of subplots.
 
@@ -18,6 +19,8 @@ def set_fig_row_col(
         The number of rows to use in the figure. Default is `None`.
     n_cols : int or None
         The number of columns to use in the figure. Default is `None`.
+    **kwargs : keyword arguments
+        Additional keyword arguments accepted to facilitate wrapper functions.
     
     Returns
     -------
