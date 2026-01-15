@@ -10,7 +10,7 @@ import warnings
 import unox.unox as unox
 from unox.HPC.data0.paths import verify_path, make_file_path
 from unox.HPC.data0.dataset import get_years
-from unox.HPC.data0.verify_dataset import verify_dataset
+from unox.HPC.data0.verify_dataset import verify_dataset, verify_var
 from unox.HPC.data0.latlon import shift_lon_arr
 import unox.data as udata
 from unox.plot_format import pad_extent
@@ -386,7 +386,7 @@ def set_var_attrs(
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify `var` is in the dataset
-    udata.verify_var(xr_dataset, var)
+    verify_var(xr_dataset, var)
     # Verify the attribute dictionary
     if not isinstance(attr_dict, dict):
         raise TypeError(f"(set_var_attrs) `attr_dict` must be a dictionary. Got type: {type(attr_dict)}")
@@ -420,7 +420,7 @@ def scale_xr_var(
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify `var` is in the dataset
-    udata.verify_var(xr_dataset, var)
+    verify_var(xr_dataset, var)
     # Note the variable attributes
     var_attrs = xr_dataset[var].attrs
     # Scale the variable
@@ -460,7 +460,7 @@ def add_tm1_var(
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify `var` is in the dataset
-    udata.verify_var(xr_dataset, var)
+    verify_var(xr_dataset, var)
     # Note the variable attributes
     var_attrs = xr_dataset[var].attrs
     # Create name for t-1 variable
@@ -1299,7 +1299,7 @@ def make_input_config(
         raise ValueError(f"(make_input_config) Requested length of longitude grid ({n_lons}) cannot exceed length of longitude dimension in the given netcdf ({xr_n_lons}).")
     # Verify that all x_vars are in the dataset
     for var in x_vars:
-        udata.verify_var(xr_dataset, var)
+        verify_var(xr_dataset, var)
     # Verify that stage 2 exists in the dataset
     if not 2 in xr_dataset.attrs.get('stages', []):
         stage_2 = False
@@ -1310,10 +1310,10 @@ def make_input_config(
         raise ValueError(f"(make_input_config) `stage_2_cutoff` {stage_2_cutoff} not found in dataset years: {years}")
     # Verify that the lsm_vars are in the dataset
     for var in lsm_vars:
-        udata.verify_var(xr_dataset, var)
+        verify_var(xr_dataset, var)
     # Verify that the zfi_vars are in the dataset
     for var in zfi_vars:
-        udata.verify_var(xr_dataset, var)
+        verify_var(xr_dataset, var)
     # Build the dictionary
     config_dict = {
         'input_set': input_set,
