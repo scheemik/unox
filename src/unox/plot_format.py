@@ -1,5 +1,83 @@
+import numpy as np
+
 from unox import data as udata
 from unox.HPC.data0.verify_dtype import verify_number
+
+def set_fig_row_col(
+    n_subplots,
+    n_rows=None,
+    n_cols=None,
+):
+    """Determine the number of rows and columns in a figure based on the number of subplots.
+
+    Parameters
+    ----------
+    n_subplots : int
+        The total number of subplots in the figure.
+    n_rows : in or None
+        The number of rows to use in the figure. Default is `None`.
+    n_cols : int or None
+        The number of columns to use in the figure. Default is `None`.
+    
+    Returns
+    -------
+    n_rows : int
+        The number of rows in the figure.
+    n_cols : int
+        The number of columns in the figure.
+    
+    Examples
+    --------
+    >>> n_rows, n_cols = set_fig_row_col(4)
+    2, 2
+    >>> n_rows, n_cols = set_fig_row_col(6)
+    2, 3
+    >>> n_rows, n_cols = set_fig_row_col(6, n_rows=3)
+    3, 2
+    """
+    # Verify argument types
+    if not isinstance(n_subplots, int):
+        raise TypeError(f"(set_fig_row_col) `n_subplots` must be an integer. Got type: {type(n_subplots)}")
+    if not isinstance(n_rows, type(None)) and not isinstance(n_rows, int):
+        raise TypeError(f"(set_fig_row_col) `n_rows` must be an integer or `None`. Got type: {type(n_rows)}")
+    if not isinstance(n_cols, type(None)) and not isinstance(n_cols, int):
+        raise TypeError(f"(set_fig_row_col) `n_cols` must be an integer or `None`. Got type: {type(n_cols)}")
+    # Make sure none of the inputs are equal to zero or negative
+    if n_subplots <= 0:
+        raise ValueError(f"(set_fig_row_col) `n_subplots` must be a positive integer. Got: {n_subplots}")
+    if not isinstance(n_rows, type(None)) and n_rows <= 0:
+        raise ValueError(f"(set_fig_row_col) `n_rows` must be a positive integer. Got: {n_rows}")
+    if not isinstance(n_cols, type(None)) and n_cols <= 0:
+        raise ValueError(f"(set_fig_row_col) `n_cols` must be a positive integer. Got: {n_cols}")
+    # Determine the number of rows and columns
+    if not isinstance(n_rows, type(None)) and not isinstance(n_cols, type(None)):
+        # Both rows and columns are specified
+        if n_rows * n_cols < n_subplots:
+            raise ValueError(f"(set_fig_row_col) `n_rows` * `n_cols` must be greater than or equal to `n_subplots`. Got: {n_rows} * {n_cols} < {n_subplots}")
+        return n_rows, n_cols
+    elif not isinstance(n_rows, type(None)):
+        # Only rows are specified
+        n_cols = int(np.ceil(n_subplots / n_rows))
+        return n_rows, n_cols
+    elif not isinstance(n_cols, type(None)):
+        # Only columns are specified
+        n_rows = int(np.ceil(n_subplots / n_cols))
+        return n_rows, n_cols
+    else:
+        # Neither rows nor columns are specified
+        if n_subplots == 3:
+            n_rows = 1
+            n_cols = 3
+        elif n_subplots == 7:
+            n_rows = 2
+            n_cols = 4
+        elif n_subplots == 8:
+            n_rows = 2
+            n_cols = 4
+        else: # Use as close to a square layout as possible
+            n_cols = int(np.ceil(np.sqrt(n_subplots)))
+            n_rows = int(np.ceil(n_subplots / n_cols))
+        return n_rows, n_cols
 
 def pad_extent(
     extent, 
