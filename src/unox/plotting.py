@@ -310,7 +310,7 @@ def plot_var_maps(
 
     # Create the figure
     fig = pplt.figure(refwidth=10)
-    n_rows, n_cols = uplt_fmt.set_fig_row_col(len(vars))
+    n_rows, n_cols = uplt_fmt.set_fig_row_col(len(vars), **kwargs)
     axs = fig.subplots(nrows=n_rows, ncols=n_cols, proj='cyl')
     # Select medium resolution for features such as coastlines
     pplt.rc.reso = 'med' 
