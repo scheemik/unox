@@ -282,36 +282,6 @@ def print_latlon_info(
     print(f"\tLatitude resolution: {lat_res}")
     print(f"\tLongitude resolution: {lon_res}")
 
-def verify_var(
-    xr_dataset,
-    var,
-):
-    """Verifies that the given variable is in the given xarray dataset.
-
-    Parameters
-    ----------
-    xr_dataset : xarray.Dataset or xarray.DataArray
-        The xarray data to verify.
-    var : str
-        The variable name to verify.
-
-    Returns
-    -------
-    bool
-        True if the variable is in the dataset, otherwise raises a ValueError.
-    """
-    # Verify argument types
-    if True:
-        if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
-            raise TypeError(f"(verify_var) `xr_dataset` must be an xarray Dataset or DataArray. Got type: {type(xr_dataset)}")
-        if not isinstance(var, str):
-            raise TypeError(f"(verify_var) `var` must be a string. Got type: {type(var)}")
-    # Check if the variable is in the dataset
-    if var not in xr_dataset.data_vars:
-        raise ValueError(f"(verify_var) Variable '{var}' not found in the xarray dataset. Available variables are: {list(xr_dataset.data_vars)}")
-    else:
-        return True
-
 def clean_num_list(
     val_list,
 ):
