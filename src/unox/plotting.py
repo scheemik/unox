@@ -1718,24 +1718,24 @@ def plot_npy_diff(
     cbar = ax[1].colorbar(pcm, loc='t', label='Number of differences')
 
     # Plot a histograms of the both numpy arrays
-    plot_npy_hist(npy_a, ax=ax[2], title='npy_a and npy_b', log_scale=True, clr='blue')
-    plot_npy_hist(npy_b, ax=ax[2], title='npy_a and npy_b', log_scale=True, clr='red')
+    plot_npy_hist(npy_a, ax=ax[2], title='Arrays A and B', log_scale=True, clr='blue')
+    plot_npy_hist(npy_b, ax=ax[2], title='Arrays A and B', log_scale=True, clr='red')
 
     # Plot a histograms of both arrays, just where they differ
     if no_diff == False:
-        plot_npy_hist(npy_a[ab_diff], ax=ax[3], title='npy_a and npy_b, where they differ', log_scale=True, clr='blue')
-        plot_npy_hist(npy_b[ab_diff], ax=ax[3], title='npy_a and npy_b, where they differ', log_scale=True, clr='red')
+        plot_npy_hist(npy_a[ab_diff], ax=ax[3], title='Arrays A and B, where they differ', log_scale=True, clr='blue')
+        plot_npy_hist(npy_b[ab_diff], ax=ax[3], title='Arrays A and B, where they differ', log_scale=True, clr='red')
 
     # Plot a histogram of the differences between the two arrays, just where they differ
     if no_diff == False:
         delta_ab_diff = npy_a[ab_diff] - npy_b[ab_diff]
-        plot_npy_hist(delta_ab_diff, ax=ax[4], title='npy_a - npy_b, where they differ', log_scale=True, clr='red')
+        plot_npy_hist(delta_ab_diff, ax=ax[4], title='A - B, where they differ', log_scale=True, clr='red')
     
     # Make a comparison plot
     if no_diff == False:
         q = plot_comparison(npy_a[ab_diff], npy_b[ab_diff],
-                        label_x='npy_a (where they differ)',
-                        label_y='npy_b (where they differ)',
+                        label_x='A (where they differ)',
+                        label_y='B (where they differ)',
                         ax=ax[5],
                         hist_params={'bins':100, 'vmax':1000, 'vmin':10},
                         cmap=pplt.Colormap('viridis'),
