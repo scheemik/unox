@@ -279,7 +279,7 @@ def plot_var_maps(
         If provided, averages the data over the specified time period.
         If None, takes just the time slice specified in `datetime`.
     **kwargs : keyword arguments
-        Additional keyword arguments to pass to `nc_map()`.
+        Additional keyword arguments to pass to `uarray`, `set_fig_row_col()` and `map_ax()`.
     
     Returns
     -------
