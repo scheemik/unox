@@ -1,4 +1,5 @@
 from unox import data as udata
+from unox.HPC.data0.verify_dtype import verify_number
 
 def pad_extent(
     extent, 
@@ -32,7 +33,7 @@ def pad_extent(
     if not isinstance(extent, tuple) or len(extent) != 4:
         raise ValueError(f"(pad_extent) `extent` must be a tuple of the form (lat_min, lat_max, lon_min, lon_max). Got type: {type(extent)}")
     # Verify the padding is a number
-    if not udata.verify_number(padding):
+    if not verify_number(padding):
         raise TypeError(f"(pad_extent) `padding` must be a number. Got type: {type(padding)}.")
     # Unpack the extent tuple
     lat_min, lat_max, lon_min, lon_max = extent
