@@ -94,7 +94,7 @@ def get_dataset(
     elif isinstance(set_to_get, xr.Dataset) or isinstance(set_to_get, xr.DataArray):
         xr_dataset = verify_dataset(set_to_get, **kwargs)
     else:
-        raise TypeError(f"set_to_get must be string, xr.Dataset, or xr.DataArray. Got {type(set_to_get)}.")
+        raise TypeError(f"(get_dataset) `set_to_get` must be string, xr.Dataset, or xr.DataArray. Got {type(set_to_get)}.")
     return xr_dataset
 
 def load_dataset(
@@ -167,7 +167,7 @@ def csv_to_pd(
     csv_filepath = verify_path(csv_filepath)
     # Verify the file is a CSV
     if not csv_filepath.lower().endswith('.csv'):
-        raise ValueError("File must be a CSV.")
+        raise ValueError(f"(csv_to_pd) File at `csv_filepath` must be a CSV. Got: {csv_filepath}")
     # If it is from the US EPA
     if is_US_EPA:
         try:
@@ -181,12 +181,12 @@ def csv_to_pd(
             ## Rename the 'Arithmetic Mean' column
             df.rename(columns={'Arithmetic Mean': species_name}, inplace=True)
         except Exception as e:
-            raise ValueError(f"Error loading US EPA CSV file: {e}. Ensure the file has the required columns: 'Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'.")
+            raise ValueError(f"(csv_to_pd) Error loading US EPA CSV file: {e}. Ensure the file has the required columns: 'Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'.")
     else:
         try:
             df = pd.read_csv(csv_filepath)
         except Exception as e:
-            raise ValueError(f"Error loading CSV file: {e}.")
+            raise ValueError(f"(csv_to_pd) Error loading CSV file: {e}.")
     return df
 
 def csv_to_xr(
@@ -279,7 +279,7 @@ def get_US_EPA_species_name(
     if ID in species_mapping:
         return species_mapping[ID]
     else:
-        raise ValueError(f"Invalid US EPA species ID: {ID}.")
+        raise ValueError(f"(get_US_EPA_species_name) Invalid US EPA species ID: {ID}.")
 
 def get_years(
     dataset,

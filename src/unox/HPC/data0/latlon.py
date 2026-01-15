@@ -41,12 +41,12 @@ def shift_lon(
     200.0
     """
     if not verify_number(lon_value):
-        raise ValueError("Longitude value must be a number.")
+        raise ValueError(f"(shift_lon) `lon_value` value must be a number. Got type: {type(lon_value)}")
     if np.isnan(lon_value):
-        raise ValueError("Longitude value must not be NaN.")
+        raise ValueError(f"(shift_lon) `lon_value` value must not be NaN. Got: {lon_value}")
     # Check overall range
     if lon_value < -180 or lon_value > 360:
-        raise ValueError(f"Longitude value must be in the range [-180, 360], lon_value = {lon_value}.")
+        raise ValueError(f"(shift_lon) `lon_value` value must be in the range [-180, 360]. Got: {lon_value}.")
     # If using PM-centered convention
     if PM_centered==True:
         # Check if the value is in the range [180, 360]
@@ -60,7 +60,7 @@ def shift_lon(
             # Shift to [0, 360]
             return (lon_value + 360) % 360
     else:
-        raise ValueError(f"PM_centered must be True or False. Got {PM_centered}.")
+        raise ValueError(f"(shift_lon) `PM_centered` must be True or False. Got: {PM_centered}.")
     return lon_value
 
 def shift_lon_arr(
@@ -103,7 +103,7 @@ def shift_lon_arr(
         lon_array = in_array.coords['lon']
         lon_attrs = lon_array.attrs
     else:
-        raise TypeError("Input must be a numpy.ndarray or xarray.Dataset.")
+        raise TypeError(f"(shift_lon_arr) `in_array` must be a numpy.ndarray or xarray.Dataset. Got type: {type(in_array)}")
     # Map the shift_lon function to each element in the array
     shifted_lon = np.vectorize(shift_lon, excluded={1})(lon_array, **kwargs)
     # If it is an xarray Dataset, save the variable attributes

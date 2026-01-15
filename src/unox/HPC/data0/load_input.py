@@ -63,7 +63,7 @@ def get_npy_from_netcdf(
     elif isinstance(netcdf, xr.Dataset):
         xr_dataset = netcdf
     else:
-        raise TypeError(f"(get_npy_from_netcdf) `netcdf` must be a file path (str) or an xarray.Dataset. Got type: {type(netcdf)}.")
+        raise TypeError(f"(get_npy_from_netcdf) `netcdf` must be a file path (str) or an xarray.Dataset. Got type: {type(netcdf)}")
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify the year
@@ -81,16 +81,16 @@ def get_npy_from_netcdf(
         ## Note: `get_config` checks whether the file exists
         config_dict = get_config(input_config)
     else:
-        raise TypeError(f"(get_npy_from_netcdf) `input_config` must be a str or dict. Got type: {type(input_config)}.")
+        raise TypeError(f"(get_npy_from_netcdf) `input_config` must be a str or dict. Got type: {type(input_config)}")
     # Verify `x_or_y` and `var`
     if isinstance(x_or_y, type(None)) and isinstance(var, type(None)):
-        raise ValueError(f"(get_npy_from_netcdf) Cannot have both `x_or_y` and `var` have a value of `None`.")
+        raise ValueError(f"(get_npy_from_netcdf) Cannot have both `x_or_y` and `var` have a values of `None`.")
     elif isinstance(x_or_y, type(None)):
         if not isinstance(x_or_y, str):
-            TypeError(f"(get_npy_from_netcdf) `x_or_y` must be a str. Got type: {type(x_or_y)}.")
+            TypeError(f"(get_npy_from_netcdf) `x_or_y` must be a str. Got type: {type(x_or_y)}")
     elif isinstance(var, type(None)):
         if not isinstance(var, str):
-            TypeError(f"(get_npy_from_netcdf) `var` must be a str. Got type: {type(var)}.")
+            TypeError(f"(get_npy_from_netcdf) `var` must be a str. Got type: {type(var)}")
 
     # Apply the input configuration file
     xr_dataset = apply_config(xr_dataset, config_dict)
@@ -98,7 +98,7 @@ def get_npy_from_netcdf(
     data_for_year = xr_dataset.sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
     # Check whether any data remains
     if data_for_year.sizes['time'] == 0:
-        raise ValueError(f"No data available for year {year} in the dataset.")
+        raise ValueError(f"(get_npy_from_netcdf) No data available for year {year} in the dataset.")
     if isinstance(var, type(None)):
         if x_or_y in ['x', 'x2']:
             # Get the list of x variables from the `x_vars` attribute
@@ -108,7 +108,7 @@ def get_npy_from_netcdf(
                 # Get the stage 2 cutoff
                 stage_2_cutoff = xr_dataset.attrs.get('stage_2_cutoff')
                 if stage_2_cutoff > year:
-                    raise ValueError(f"Stage 2 data not available for year {year} (cutoff is {stage_2_cutoff}).")
+                    raise ValueError(f"(get_npy_from_netcdf) Stage 2 data not available for year {year} (cutoff is {stage_2_cutoff}).")
                 x_vars = xr_dataset.attrs.get('x2_vars')
             # Grab just the x variables for the dataset
             data_for_year = data_for_year[x_vars]
@@ -131,17 +131,17 @@ def get_npy_from_netcdf(
             # Get the y variable from the `y_var` attribute
             y_var = xr_dataset.attrs.get('y_var')
             if y_var is None:
-                raise ValueError("The dataset does not have a 'y_var' attribute.")
+                raise ValueError("(get_npy_from_netcdf) The dataset does not have a 'y_var' attribute.")
             return get_npy_from_netcdf(data_for_year, year, config_dict, var=y_var)
         else:
-            raise ValueError(f"x_or_y must be 'x', 'y', or None, got {x_or_y}.")
+            raise ValueError(f"(get_npy_from_netcdf) `x_or_y` must be 'x', 'y', or None. Got: {x_or_y}")
     elif not isinstance(var, str):
-        raise TypeError(f'var must be a string, got {type(var)}.')
+        raise TypeError(f"(get_npy_from_netcdf) `var` must be a string. Got type: {type(var)}")
     else:
         # Verify the variable is in the dataset
         # udata.verify_var(data_for_year, var)
         if var not in data_for_year.data_vars:
-            raise ValueError(f"Variable '{var}' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
+            raise ValueError(f"(get_npy_from_netcdf) Variable '{var}' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
         # Apply a mask to the variable, if applicable
         data_for_year[var] = apply_mask(data_for_year, var, config_dict, year)
         # Drop all nan values
@@ -182,7 +182,7 @@ def apply_config(
     elif isinstance(input_netcdf, xr.Dataset):
         xr_dataset = input_netcdf
     else:
-        raise TypeError(f'netcdf must be a file path (str) or an xarray.Dataset, got {type(netcdf)}.')
+        raise TypeError(f"(apply_config) `input_netcdf` must be a file path (str) or an xarray.Dataset. Got type: {type(netcdf)}")
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify the input config
@@ -197,7 +197,7 @@ def apply_config(
         with open(input_config_path, 'r') as file:
             config_dict = json.load(file)
     else:
-        raise TypeError(f'input_config must be a str or dict, got {type(input_config)}.')
+        raise TypeError(f"(apply_config) `input_config` must be a str or dict. Got type: {type(input_config)}")
 
     # Trim the lat-lon extent of the dataset, if applicable
     if 'grid_size' in config_dict:
@@ -206,7 +206,7 @@ def apply_config(
         # print('grid_size:', grid_size)
         # Assumes there are two numbers: number of latitude cells, number of longitude cells
         if not len(grid_size) == 2:
-            raise TypeError(f'Expected `grid_size` to have a length of 2. Got length of {len(grid_size)}: {grid_size}')
+            raise ValueError(f"(apply_config) Expected `grid_size` to have a length of 2. Got length of {len(grid_size)}: {grid_size}")
         else:
             n_lats = grid_size[0]
             n_lons = grid_size[1]
@@ -215,9 +215,9 @@ def apply_config(
         xr_n_lons = xr_dataset.sizes['lon']
         # Ensure that the desired grid size is not larger than the available grid
         if n_lats > xr_n_lats:
-            raise ValueError(f'Requested length of latitude grid ({n_lats}) cannot exceed length of latitude dimension in the given netcdf ({xr_n_lats}).')
+            raise ValueError(f"(apply_config) Requested length of latitude grid ({n_lats}) cannot exceed length of latitude dimension in the given netcdf ({xr_n_lats}).")
         if n_lons > xr_n_lons:
-            raise ValueError(f'Requested length of longitude grid ({n_lons}) cannot exceed length of longitude dimension in the given netcdf ({xr_n_lons}).')
+            raise ValueError(f"(apply_config) Requested length of longitude grid ({n_lons}) cannot exceed length of longitude dimension in the given netcdf ({xr_n_lons}).")
         # If the given xarray Dataset is already the specified size, return it immediately
         if n_lats == xr_n_lats and n_lons == xr_n_lons:
             return xr_dataset
@@ -285,13 +285,13 @@ def apply_mask(
     """
     # Verify argument types
     if not isinstance(xr_dataset, xr.Dataset):
-        raise TypeError(f'xr_dataset must be an xarray.Dataset, got {type(xr_dataset)}.')
+        raise TypeError(f"(apply_mask) `xr_dataset` must be an xarray.Dataset. Got type: {type(xr_dataset)}")
     xr_dataset = verify_dataset(xr_dataset)
     if not isinstance(var, str):
-        raise TypeError(f'var must be a string, got {type(var)}.')
+        raise TypeError(f"(apply_mask) `var` must be a string. Got type: {type(var)}")
     # udata.verify_var(xr_dataset, var)
     if not isinstance(config_dict, dict):
-        raise TypeError(f'config_dict must be a dict, got {type(config_dict)}.')
+        raise TypeError(f"(apply_mask) `config_dict` must be a dict. Got type: {type(config_dict)}")
     # Determine whether a mask should be applied
     use_mask = False
     if 'lsm_vars' in config_dict:
@@ -301,7 +301,7 @@ def apply_mask(
     if 'zfi_vars' in config_dict:
         zfi_vars = config_dict['zfi_vars']
         if use_mask == True:
-            raise ValueError(f"Cannot apply both land-sea mask and zero-fill mask to the same variable, {var}.")
+            raise ValueError(f"(apply_mask) Cannot apply both land-sea mask and zero-fill mask to the same variable, {var}.")
         elif var in zfi_vars:
             use_mask = 'zfi'
     # If no mask is to be applied, return the original variable
@@ -312,7 +312,7 @@ def apply_mask(
         # Verify the land-sea mask exists
         # udata.verify_var(xr_dataset, 'lsm')
         if 'lsm' not in xr_dataset.data_vars:
-            raise ValueError(f"Variable 'lsm' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+            raise ValueError(f"(apply_mask) Variable 'lsm' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
         # Apply the land-sea mask
         print(f'\t{year}: Applying land-sea mask to {var}')
         return xr_dataset[var]*xr_dataset['lsm']
@@ -323,4 +323,4 @@ def apply_mask(
         print(f'\t{year}: Zeroing out {var}')
         return xr_dataset[var]*0
     else:
-        raise ValueError(f'Unexpected value for use_mask: {use_mask}.')
+        raise ValueError(f"(apply_mask) Unexpected value for `use_mask`: {use_mask}")

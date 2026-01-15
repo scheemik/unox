@@ -147,7 +147,7 @@ def begin_training(
     """
     # Check the stage number
     if stage not in [1, 2]:
-        raise ValueError("Stage must be 1 or 2.")
+        raise ValueError(f"(begin_training) `stage` must be 1 or 2. Got: {stage}")
     # Set up callbacks
     csv_logger = CSVLogger(f"{savedir}unet_stage{stage}_log.csv", append=True, separator=';')
     earlystopper = EarlyStopping(patience=15, verbose=1)
@@ -191,7 +191,7 @@ def load_test_files(
     elif stage == 2:
         split_index = 5
     else:
-        raise ValueError("Stage must be 1 or 2.")
+        raise ValueError(f"(load_test_files) `stage` must be 1 or 2. Got: {stage}")
     # Gather just the testing files
     xtest_files = x_files[split_index:]
     print("")
@@ -309,7 +309,7 @@ if model_fmt in ['keras', 'both']:
 elif model_fmt in ['h5']:
     unet.load_weights(f"{savedir}unet_stage1_model.h5")
 else:
-    raise ValueError(f"model_fmt must be 'h5', 'keras', or 'both', got {model_fmt}")
+    raise ValueError(f"`model_fmt` must be 'h5', 'keras', or 'both'. Got: {model_fmt}")
 
 
 # Stage-2 training of the Unet

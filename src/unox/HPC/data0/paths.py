@@ -29,13 +29,13 @@ def verify_path(
     """
     # Verify argument types
     if not isinstance(path, str):
-        raise TypeError("Path must be a string.")
+        raise TypeError(f"(verify_path) `path` must be a string. Got type: {type(path)}")
     if not os.path.exists(path):
         path0 = '..' + path
         if not os.path.exists(path0):
             path1 = '../' + path
             if not os.path.exists(path1):
-                raise FileNotFoundError(f"Path {path} does not exist.")
+                raise FileNotFoundError(f"(verify_path) The path {path} does not exist.")
             else:
                 return path1
         else:
@@ -45,7 +45,7 @@ def verify_path(
 
 def remove_non_empty_directory(
     base_dir,
-    ):
+):
     """Remove a non-empty directory and all its contents.
 
     This function will recursively delete all files and directories in the given path.
@@ -59,7 +59,7 @@ def remove_non_empty_directory(
     top = verify_path(base_dir)
     # Check if the path is a directory
     if not os.path.isdir(top):
-        raise ValueError(f"Path {top} is not a directory.")
+        raise ValueError(f"(remove_non_empty_directory) The path {top} is not a directory.")
     # Recursively remove all files and directories in the given path
     for root, dirs, files in os.walk(top, topdown=False):
         for name in files:
@@ -73,7 +73,7 @@ def remove_non_empty_directory(
 
 def make_file_path(
     path,
-    ):
+):
     """Create a file path.
 
     If the given path doesn't exist, create the specified directory structure.

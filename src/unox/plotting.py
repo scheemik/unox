@@ -274,7 +274,7 @@ def select_time(
         try:
             end_date = udata.add_amount_to_date(datetime, avg_over)
         except:
-            raise ValueError(f'Invalid avg_over value: {avg_over}')
+            raise ValueError(f"(select_time) Invalid `avg_over` value: {avg_over}")
         # Average over the specified amount of time
         # Maintain attributes by using `drop=False` in sel() and `keep_attrs=True` in mean()
         var_sel_time = this_xarray.sel(time=slice(datetime, end_date), drop=False)
@@ -339,14 +339,14 @@ def nc_map(
     """
     # Verify argument types
     if not isinstance(xr_data_arr, xr.DataArray):
-        raise TypeError(f"(nc_map) `xr_data_arr` must be an xarray DataArray. Got type: {type(xr_data_arr)}.")
+        raise TypeError(f"(nc_map) `xr_data_arr` must be an xarray DataArray. Got type: {type(xr_data_arr)}")
     # Verify the xr_data_arr. Assume there is no time dimension
     xr_data_arr = verify_dataset(xr_data_arr, check_time=False)
     # If there are any dimensions of size 1 (var, for example), squeeze them out
     xr_data_arr = xr_data_arr.squeeze(drop=True)
     # Check to ensure that `lat` and `lon` are the only remaining dimensions
     if not set(xr_data_arr.dims).issubset({'lat', 'lon'}):
-        raise ValueError(f"(nc_map) `xr_data_arr` must have only 'lat' and 'lon' dimensions after squeezing. Got dimensions: {xr_data_arr.dims}.")
+        raise ValueError(f"(nc_map) `xr_data_arr` must have only 'lat' and 'lon' dimensions after squeezing. Got dimensions: {xr_data_arr.dims}")
     # Get the variable name from xr_data_arr
     var = xr_data_arr.name
 
@@ -450,7 +450,7 @@ def plot_npy_map(
     npy_arr = np.squeeze(npy_arr)
     # Verify the dimensions of the numpy array
     if npy_arr.shape != (len(lats), len(lons)):
-        raise ValueError(f"npy_arr must have shape (len(lats), len(lons)). Expected: ({len(lats)}, {len(lons)}), got: {npy_arr.shape}")
+        raise ValueError(f"(plot_npy_map) `npy_arr` must have shape (len(lats), len(lons)). Expected: ({len(lats)}, {len(lons)}). Got: {npy_arr.shape}")
     # Verify c_halfrange is a number
 
     # Plot the data
@@ -459,7 +459,7 @@ def plot_npy_map(
     elif udata.verify_number(c_halfrange):
         pcm = this_ax.pcolormesh(lons, lats, npy_arr, cmap=cmap, shading='auto', levels=100, vmin=-1*c_halfrange, vmax=c_halfrange, extend=cb_extend)  
     else:
-        raise TypeError(f'c_halfrange must be a number, got: {type(c_halfrange)}. c_halfrange value: {c_halfrange}')
+        raise TypeError(f"(plot_npy_map) `c_halfrange` must be a number. Got type: {type(c_halfrange)}. `c_halfrange` value: {c_halfrange}")
     # Get the minimum and maximum latitude and longitude values
     this_extent = udata.get_extent(lats=lats, lons=lons)
     # Enlarge the extent of the map by the given padding value
@@ -721,7 +721,7 @@ def get_input_set(
     """
     # Verify argument types
     if not isinstance(HPC_run, str):
-        raise TypeError(f"(plot_comp_maps) `HPC_run` must be a string. Got type: {type(HPC_run)}.")
+        raise TypeError(f"(plot_comp_maps) `HPC_run` must be a string. Got type: {type(HPC_run)}")
 
     # Assemble filepath to the HPC_run configuration dictionary
     config_path = f"HPC_runs/{HPC_run}/input_config.json"
@@ -785,9 +785,9 @@ def plot_comp_maps(
     """
     # Verify argument types
     if not isinstance(HPC_run, str):
-        raise TypeError(f"(plot_comp_maps) `HPC_run` must be a string. Got type: {type(HPC_run)}.")
+        raise TypeError(f"(plot_comp_maps) `HPC_run` must be a string. Got type: {type(HPC_run)}")
     if not isinstance(year, int):
-        raise TypeError(f"(plot_comp_maps) `year` must be an integer. Got type: {type(year)}.")
+        raise TypeError(f"(plot_comp_maps) `year` must be an integer. Got type: {type(year)}")
     
     # Assemble filepath to the HPC_run predictions netcdf
     pred_nc_path = f"HPC_runs/{HPC_run}/predictions.nc"
@@ -1161,13 +1161,13 @@ def corr_plot(
     """
     # Verify argument types
     if not isinstance(HPC_run, str):
-        raise TypeError(f"(corr_plot) `HPC_run` must be a string. Got type: {type(HPC_run)}.")
+        raise TypeError(f"(corr_plot) `HPC_run` must be a string. Got type: {type(HPC_run)}")
     if not isinstance(year, int):
-        raise TypeError(f"(corr_plot) `year` must be an integer. Got type: {type(year)}.")
+        raise TypeError(f"(corr_plot) `year` must be an integer. Got type: {type(year)}")
     if not x_ax in ['truth', 'pred', 'pred_s2']:
-        raise ValueError(f"(corr_plot) `x_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {x_ax}.")
+        raise ValueError(f"(corr_plot) `x_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {x_ax}")
     if not y_ax in ['truth', 'pred', 'pred_s2']:
-        raise ValueError(f"(corr_plot) `y_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {y_ax}.")
+        raise ValueError(f"(corr_plot) `y_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {y_ax}")
     
     # Create a new figure and axis if none is provided
     if isinstance(ax, type(None)):
@@ -1213,7 +1213,7 @@ def corr_plot(
             var_units = pred_xarray[ax_var].attrs['units']
             plot_labels.append(f"Predictions{label_mod} ({var_units})")
         else:
-            raise ValueError(f"(corr_plot) `this_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {this_ax}.")
+            raise ValueError(f"(corr_plot) `this_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {this_ax}")
         # Verify that the prediction array has the correct variable
         udata.verify_var(pred_xarray, ax_var)
         # Add the data to plot to the list
@@ -1271,9 +1271,9 @@ def all_corr_plots(
     """
     # Verify argument types
     if not isinstance(HPC_run, str):
-        raise TypeError(f"(corr_plot) `HPC_run` must be a string. Got type: {type(HPC_run)}.")
+        raise TypeError(f"(corr_plot) `HPC_run` must be a string. Got type: {type(HPC_run)}")
     if not isinstance(year, int):
-        raise TypeError(f"(corr_plot) `year` must be an integer. Got type: {type(year)}.")
+        raise TypeError(f"(corr_plot) `year` must be an integer. Got type: {type(year)}")
     
     # Create the figure
     ## Setting `share=False` to allow separate axis labels for each subplot
@@ -1489,7 +1489,7 @@ def plot_npy_diff(
     npy_b = udata.verify_npy(np.squeeze(npy_b))
     # Check if the shapes of the numpy arrays match
     if npy_a.shape != npy_b.shape:
-        raise ValueError("The shapes of the numpy arrays do not match.")
+        raise ValueError(f"(plot_npy_diff) The shapes of the numpy arrays do not match. Got: {npy_a.shape} and {npy_b.shape}")
     # Create an boolean array to tell where the two arrays differ
     ab_diff = npy_a != npy_b
     # Find total number of entries
@@ -1596,22 +1596,22 @@ def compare_input_vars(
     if True:
         for input_dict in [input_a_dict, input_b_dict]:
             if not isinstance(input_dict, dict):
-                raise TypeError(f"(compare_input_vars) `input_dict` must be a dictionary. Got: {type(input_dict)}.")
+                raise TypeError(f"(compare_input_vars) `input_dict` must be a dictionary. Got: {type(input_dict)}")
             required_keys = ['input_set', 'year', 'var']
             for key in required_keys:
                 if key not in input_dict:
                     raise KeyError(f"(compare_input_vars) `input_dict` must contain the key '{key}'.")
             if not isinstance(input_dict['input_set'], str):
-                raise TypeError(f"(compare_input_vars) `input_set` must be a string, got: {type(input_dict['input_set'])}.")
+                raise TypeError(f"(compare_input_vars) `input_set` must be a string. Got type: {type(input_dict['input_set'])}")
             if not udata.verify_number(input_dict['year']):
-                raise TypeError(f"(compare_input_vars) `year` must be an integer, got: {type(input_dict['year'])}.")
+                raise TypeError(f"(compare_input_vars) `year` must be an integer. Got type: {type(input_dict['year'])}")
             if not isinstance(input_dict['var'], str):
-                raise TypeError(f"(compare_input_vars) `var` must be a string, got: {type(input_dict['var'])}.")
+                raise TypeError(f"(compare_input_vars) `var` must be a string. Got type: {type(input_dict['var'])}")
             if 'fmt' in input_dict:
                 if input_dict['fmt'] not in ['nc', 'npy']:
-                    raise ValueError(f"(compare_input_vars) `fmt` must be either 'nc' or 'npy', got: {input_dict['fmt']}.")
+                    raise ValueError(f"(compare_input_vars) `fmt` must be either 'nc' or 'npy'. Got type: {input_dict['fmt']}")
         if not isinstance(abs_tolerance, float):
-            raise TypeError(f"(compare_input_vars) `abs_tolerance` must be a float, got: {type(abs_tolerance)}.")
+            raise TypeError(f"(compare_input_vars) `abs_tolerance` must be a float. Got type: {type(abs_tolerance)}")
     # Loop over the two input dictionaries and load the data
     for input_dict in [input_a_dict, input_b_dict]:
         # Get the requested format, if none was given, select 'nc'
@@ -1715,19 +1715,19 @@ def set_of_runs(
     # Verify argument types
     if True:
         if not isinstance(set_name, str):
-            raise TypeError(f"(set_of_maps) `set_name` must be a string. Got: {type(set_name)}.")
+            raise TypeError(f"(set_of_maps) `set_name` must be a string. Got type: {type(set_name)}")
         if not udata.verify_number(year):
-            raise TypeError(f"(set_of_maps) `year` must be an integer. Got: {type(year)}.")
+            raise TypeError(f"(set_of_maps) `year` must be an integer. Got type: {type(year)}")
         if stage not in [1, 2]:
-            raise ValueError(f"(set_of_maps) `stage` must be either 1 or 2. Got: {stage}.")
+            raise ValueError(f"(set_of_maps) `stage` must be either 1 or 2. Got: {stage}")
         if not (isinstance(this_date, str) or isinstance(this_date, np.datetime64)):
-            raise TypeError(f"(set_of_maps) `this_date` must be a string or np.datetime64. Got: {type(this_date)}.")
+            raise TypeError(f"(set_of_maps) `this_date` must be a string or np.datetime64. Got type: {type(this_date)}")
         if not (isinstance(avg_over, type(None)) or isinstance(avg_over, str) or udata.verify_timedelta64(avg_over)):
-            raise TypeError(f"(set_of_maps) `avg_over` must be None, a string, or a numpy.timedelta64. Got: {type(avg_over)}.")
+            raise TypeError(f"(set_of_maps) `avg_over` must be None, a string, or a numpy.timedelta64. Got type: {type(avg_over)}")
         if not (isinstance(restrict_lat_lon_to, type(None)) or isinstance(restrict_lat_lon_to, str)):
-            raise TypeError(f"(set_of_maps) `restrict_lat_lon_to` must be None or a string. Got: {type(restrict_lat_lon_to)}.")
+            raise TypeError(f"(set_of_maps) `restrict_lat_lon_to` must be None or a string. Got type: {type(restrict_lat_lon_to)}")
         if not udata.verify_number(clr_bar_scale):
-            raise TypeError(f"(set_of_maps) `clr_bar_scale` must be a number. Got: {type(clr_bar_scale)}.")
+            raise TypeError(f"(set_of_maps) `clr_bar_scale` must be a number. Got type: {type(clr_bar_scale)}")
         if maps_or_comps not in ['maps', 'comps']:
             raise ValueError(f"(set_of_maps) `maps_or_comps` must be either 'maps' or 'comps'. Got {maps_or_comps}.")
     # Verify the set of runs exists

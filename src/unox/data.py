@@ -97,7 +97,7 @@ def get_extent(
     # If no xarray dataset is provided, use the latitude and longitude values
     if isinstance(xr_dataset, type(None)):
         if isinstance(lats, type(None)) or isinstance(lons, type(None)):
-            raise ValueError("Either xr_dataset or both lats and lons must be provided.")
+            raise ValueError(f"(get_extent) Either `xr_dataset` or both `lats` and `lons` must be provided.")
         # Find the min and max lat and lon values
         lat_min = np.unique(np.min(lats))[0]
         lat_max = np.unique(np.max(lats))[0]
@@ -303,9 +303,9 @@ def verify_var(
     # Verify argument types
     if True:
         if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
-            raise TypeError(f"(verify_var) `xr_dataset` must be an xarray Dataset or DataArray. Got type: {type(xr_dataset)}.")
+            raise TypeError(f"(verify_var) `xr_dataset` must be an xarray Dataset or DataArray. Got type: {type(xr_dataset)}")
         if not isinstance(var, str):
-            raise TypeError(f"(verify_var) `var` must be a string. Got type: {type(var)}.")
+            raise TypeError(f"(verify_var) `var` must be a string. Got type: {type(var)}")
     # Check if the variable is in the dataset
     if var not in xr_dataset.data_vars:
         raise ValueError(f"(verify_var) Variable '{var}' not found in the xarray dataset. Available variables are: {list(xr_dataset.data_vars)}")
@@ -345,7 +345,7 @@ def clean_num_list(
             return_list.append(val)
     # If the list is empty after removing invalid numbers, raise an error
     if len(return_list) == 0:
-        raise ValueError("No valid numbers in the input list.")
+        raise ValueError("(clean_num_list) No valid numbers in the input list.")
     return return_list
 
 def verify_lat(
@@ -374,11 +374,11 @@ def verify_lat(
     ValueError: Latitude value must be in the range [-90, 90].
     """
     if not verify_number(lat_val):
-        raise ValueError("Latitude value must be a number.")
+        raise ValueError(f"(verify_lat) `lat_val` must be a number. Got type: {type(lat_val)}")
     if np.isnan(lat_val):
-        raise ValueError("Latitude value must not be NaN.")
+        raise ValueError(f"(verify_lat) `lat_val` must not be NaN.")
     if lat_val < -90 or lat_val > 90:
-        raise ValueError(f"Latitude value must be in the range [-90, 90], lat_val = {lat_val}.")
+        raise ValueError(f"(verify_lat) `lat_val` must be in the range [-90, 90]. Got: {lat_val}")
     return lat_val
 
 def verify_lon(
@@ -412,18 +412,18 @@ def verify_lon(
     ValueError: Longitude value must be in the range [-180, 180].
     """
     if not verify_number(lon_val):
-        raise ValueError("Longitude value must be a number.")
+        raise ValueError(f"(verify_lon) `lon_val` must be a number. Got type: {type(lon_val)}")
     if np.isnan(lon_val):
-        raise ValueError("Longitude value must not be NaN.")
+        raise ValueError(f"(verify_lon) `lon_val` must not be NaN.")
     if isinstance(PM_centered, type(None)):
         if lon_val < -180 or lon_val > 360:
-            raise ValueError(f"Longitude value must be in the range [-180, 360], lon_val = {lon_val}.")
+            raise ValueError(f"(verify_lon) `lon_val` must be in the range [-180, 360]. Got: {lon_val}")
     elif PM_centered:
         if lon_val < -180 or lon_val > 180:
-            raise ValueError(f"Longitude value must be in the range [-180, 180], lon_val = {lon_val}.")
+            raise ValueError(f"(verify_lon) `lon_val` must be in the range [-180, 180]. Got: {lon_val}")
     else:
         if lon_val < 0 or lon_val > 360:
-            raise ValueError(f"Longitude value must be in the range [0, 360], lon_val = {lon_val}.")
+            raise ValueError(f"(verify_lon) `lon_val` must be in the range [0, 360]. Got: {lon_val}")
     return lon_val
 
 def get_vminmax(
@@ -462,7 +462,7 @@ def get_vminmax(
             vmin = np.nanmin(flat_arrays)
             vmax = np.nanmax(flat_arrays)
         except RuntimeWarning as e:
-            raise ValueError(f"{e}. Does input array contain any non-NaN values?")
+            raise ValueError(f"(get_vminmax) {e}. Does input array contain any non-NaN values?")
     return vmin, vmax
 
 def get_max_abs_val(
@@ -676,9 +676,9 @@ def verify_npy(
     """
     if isinstance(array, str):
         if os.path.isdir(array):
-            raise FileNotFoundError("Path leads to a folder.")
+            raise FileNotFoundError(f"(verify_npy) Path {array} leads to a folder.")
         if not os.path.isfile(array):
-            raise FileNotFoundError("File does not exist.")
+            raise FileNotFoundError(f"(verify_npy) File {array} does not exist.")
         ext = os.path.splitext(array)[1].lower()
         try:
             if ext == ".npy":
@@ -687,24 +687,24 @@ def verify_npy(
                 try:
                     nparray =  np.loadtxt(array, delimiter=",")
                     if len(nparray) == 0:
-                        raise ValueError("File does not contain a readable numpy array.")
+                        raise ValueError(f"(verify_npy) File {array} does not contain a readable numpy array.")
                     return nparray
                 except Exception:
                     try:
                         nparray = np.genfromtxt(array, delimiter=",", skip_header=1)
                         if len(nparray) == 0:
-                            raise ValueError("File does not contain a readable numpy array.")
+                            raise ValueError(f"(verify_npy) File {array} does not contain a readable numpy array.")
                         return nparray
                     except Exception as e:
-                        raise ValueError("File does not contain a readable numpy array.")
+                        raise ValueError(f"(verify_npy) File {array} does not contain a readable numpy array.")
             else:
-                raise TypeError("File does not contain a readable numpy array.")
+                raise ValueError(f"(verify_npy) File {array} does not contain a readable numpy array.")
         except Exception:
-            raise ValueError("File does not contain a readable numpy array.")
+            raise ValueError(f"(verify_npy) File {array} does not contain a readable numpy array.")
     elif isinstance(array, np.ndarray):
         return array
     else:
-        raise TypeError("Not a numpy array.")
+        raise TypeError(f"(verify_npy) `array` is not a numpy array. Got type: {type(array)}")
 
 def get_num_from_string(
     str,
@@ -733,7 +733,7 @@ def get_num_from_string(
     """
     # Verify that the input is a string
     if not isinstance(str, type('')):
-        raise TypeError("Input must be a string.")
+        raise TypeError(f"(get_num_from_string) `str` must be a string. Got type: {type(str)}")
     # Find all numbers in the string using regular expressions
     nums = re.findall(r"[-+]?\d*\.\d+|\d+", str)
     # Convert the numbers to integers or floats
@@ -773,12 +773,12 @@ def get_DOY(
             try:
                 doy = datetime.strptime(date, '%Y-%m-%d').timetuple().tm_yday
             except:
-                raise ValueError(f"Invalid date format: {date}. Expected 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM:SS'.")
+                raise ValueError(f"(get_doy) Invalid date format: {date}. Expected 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM:SS'.")
     # If date is a numpy datetime64, convert it to a date and get the day of the year
     elif isinstance(date, np.datetime64):
         doy = date.astype('datetime64[D]').astype(object).timetuple().tm_yday
     else:
-        raise TypeError("date must be a np.datetime64 or str.")
+        raise TypeError(f"(get_doy) `date` must be a np.datetime64 or str. Got type: {type(date)}")
     return int(doy)
 
 def increment_month(
@@ -821,18 +821,18 @@ def increment_month(
         try:
             month = int(month)
         except:
-            raise TypeError("Month must be an integer between 1 and 12.")
+            raise TypeError(f"(increment_month) `month` must be an integer. Got type: {type(month)}")
     if not isinstance(month, int) or month < 1 or month > 12:
-        raise ValueError("Month must be an integer between 1 and 12.")
+        raise ValueError(f"(increment_month) `month` must be an integer between 1 and 12. Got: {month}")
     
     # Ensure increment is an integer
     if isinstance(increment, str):
         try:
             increment = int(increment)
         except:
-            raise TypeError("Increment must be an integer.")
+            raise TypeError(f"(increment_month) `increment` must be an integer. Got type: {type(increment)}")
     if not isinstance(increment, int):
-        raise TypeError("Increment must be an integer.")
+        raise TypeError(f"(increment_month) `increment` must be an integer. Got type: {type(increment)}")
     
     # Calculate the new month
     new_month = (month - 1 + increment) % 12 + 1
@@ -882,10 +882,10 @@ def get_YMD_from_date(
         try:
             this_date = np.datetime64(this_date)
         except ValueError:
-            raise ValueError(f"Invalid date string: {this_date}. Must be in 'YYYY-MM-DD' format.")
+            raise ValueError(f"(get_YMD_from_date) `this_date` is an invalid date string: {this_date}. Must be in 'YYYY-MM-DD' format.")
     
     if not isinstance(this_date, np.datetime64):
-        raise TypeError("this_date must be a np.datetime64 or str.")
+        raise TypeError(f"(get_YMD_from_date) `this_date` must be a np.datetime64 or str. Got type: {type(this_date)}")
     
     # Extract the year, month, and day from the date
     year = this_date.astype(object).year
@@ -948,16 +948,16 @@ def get_increment_info(
             value = increment.astype('timedelta64[Y]').astype(int)
             unit = 'Y'
         else:
-            raise ValueError("Unsupported timedelta64 type. Use days, months, or years.")
+            raise ValueError(f"(get_increment_info) Unsupported timedelta64 type for `increment.dtype`. Use days, months, or years. Got type: {increment.dtype}")
     elif isinstance(increment, str):
         # Match the string format using regex
         match = re.match(r'(\d+)([DMY])', increment)
         if not match:
-            raise ValueError(f"Invalid increment format: {increment}. Use 'XD', 'XM', or 'XY' where X is an integer and D, M, or Y are the units for days, months, or years respectively.")
+            raise ValueError(f"(get_increment_info) Invalid `increment` format: {increment}. Use 'XD', 'XM', or 'XY' where X is an integer and D, M, or Y are the units for days, months, or years respectively.")
         value, unit = match.groups()
         value = int(value)  # Convert to integer
     else:
-        raise TypeError("increment must be a np.timedelta64 or str.")
+        raise TypeError(f"(get_increment_info) `increment` must be a np.timedelta64 or str. Got type: {type(increment)}")
     
     return value, unit
 
@@ -997,9 +997,9 @@ def add_amount_to_date(
     """
     # Make sure the inputs are of the correct type
     if not isinstance(this_date, (np.datetime64, str)):
-        raise TypeError("this_date must be a np.datetime64 or str.")
+        raise TypeError(f"(add_amount_to_date) `this_date` must be a np.datetime64 or str. Got type: {type(this_date)}")
     if not isinstance(increment, (np.timedelta64, str)):
-        raise TypeError("increment must be a np.timedelta64 or str.")
+        raise TypeError(f"(add_amount_to_date) `increment` must be a np.timedelta64 or str. Got type: {type(increment)}")
     # If the date is a string, convert it to a np.datetime64
     if isinstance(this_date, str):
         this_date = np.datetime64(this_date)
@@ -1020,12 +1020,12 @@ def add_amount_to_date(
             value = increment.astype('timedelta64[Y]').astype(int)
             unit = 'Y'
         else:
-            raise ValueError("Unsupported timedelta64 type. Use days, months, or years.")
+            raise ValueError(f"(add_amount_to_date) Unsupported timedelta64 type for `increment.dtype`. Use days, months, or years. Got type: {increment.dtype}")
     elif isinstance(increment, str):
-        # If the amount is a string, convert it to np.timedelta64
+        # Match the string format using regex
         match = re.match(r'(\d+)([DMY])', increment)
         if not match:
-            raise ValueError(f"Invalid increment format: {increment}. Use 'XD', 'XM', or 'XY' where X is an integer and D, M, or Y are the units for days, months, or years respectively.")
+            raise ValueError(f"(add_amount_to_date) Invalid `increment` format: {increment}. Use 'XD', 'XM', or 'XY' where X is an integer and D, M, or Y are the units for days, months, or years respectively.")
         value, unit = match.groups()
         # Find whether to add days, or months / years
         if unit == 'D':
@@ -1033,7 +1033,7 @@ def add_amount_to_date(
         else:
             add_days = False
     else:
-        raise TypeError("increment must be a np.timedelta64 or str.")
+        raise TypeError(f"(add_amount_to_date) `increment` must be a np.timedelta64 or str. Got type: {type(increment)}")
     # If adding days
     if add_days:
         if isinstance(increment, str):

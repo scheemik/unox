@@ -58,14 +58,14 @@ def x_or_y_var(
     """
     # Verify the variable is a string
     if not isinstance(var, str):
-        raise TypeError(f'Variable must be a string, got {type(var)}.')
+        raise TypeError(f"(x_or_y_var) `var` must be a string. Got type: {type(var)}")
     # Check if the variable is in the input_vars_dict
     for key in input_vars_dict.keys():
         if var in input_vars_dict[key]['x_vars']:
             return 'x'
         elif var in input_vars_dict[key]['y_vars']:
             return 'y'
-    raise ValueError(f"Variable '{var}' not recognized. Available variables in input_vars_dict: {input_vars_dict}")
+    raise ValueError(f"(x_or_y_var) Variable '{var}' not recognized. Available variables in input_vars_dict: {input_vars_dict}")
 
 def get_input_index(
     var,
@@ -92,14 +92,14 @@ def get_input_index(
     """
     # Verify the variable is a string
     if not isinstance(var, str):
-        raise TypeError(f'Variable must be a string, got {type(var)}.')
+        raise TypeError(f"(get_input_index) Variable must be a string. Got type: {type(var)}")
     # Check if the variable is in the input_vars_dict
     for key in input_vars_dict.keys():
         if var in input_vars_dict[key]['x_vars']:
             return input_vars_dict[key]['x_vars'].index(var)
         elif var in input_vars_dict[key]['y_vars']:
             return input_vars_dict[key]['y_vars'].index(var)
-    raise ValueError(f"Variable '{var}' not recognized. Available variables in input_vars_dict: {input_vars_dict}")
+    raise ValueError(f"(get_input_index) Variable '{var}' not recognized. Available variables in input_vars_dict: {input_vars_dict}")
 
 def make_y_input_file(
     year,
@@ -284,9 +284,9 @@ def write_input_netcdf(
         new_lats = input_netcdf_xr.coords['lat'].values
         new_lons = input_netcdf_xr.coords['lon'].values
         if not np.array_equal(existing_lats, new_lats):
-            raise ValueError(f"Latitude values of the existing netcdf file and the new data do not match. \nExisting lats: \n{existing_lats} \nNew lats: \n{new_lats}")
+            raise ValueError(f"(write_input_netcdf) Latitude values of the existing netcdf file and the new data do not match. \nExisting lats: \n{existing_lats} \nNew lats: \n{new_lats}")
         if not np.array_equal(existing_lons, new_lons):
-            raise ValueError(f"Longitude values of the existing netcdf file and the new data do not match. \nExisting lons: \n{existing_lons} \nNew lons: \n{new_lons}")
+            raise ValueError(f"(write_input_netcdf) Longitude values of the existing netcdf file and the new data do not match. \nExisting lons: \n{existing_lons} \nNew lons: \n{new_lons}")
         # Get lists of variables from both datasets
         new_vars = list(input_netcdf_xr.data_vars)
         existing_vars = list(existing_ds.data_vars)
@@ -305,7 +305,7 @@ def write_input_netcdf(
                 first_overlap = pd.to_datetime(str(first_overlap)).strftime('%Y-%m-%d')
                 last_overlap = pd.to_datetime(str(last_overlap)).strftime('%Y-%m-%d')
             if overlapping_times and overwrite==False:
-                raise ValueError(f"The new data overlaps with the existing file in {output_filepath} between {first_overlap} and {last_overlap}. To overwrite, set overwrite=True.")
+                raise ValueError(f"(write_input_netcdf) The new data overlaps with the existing file in {output_filepath} between {first_overlap} and {last_overlap}. To overwrite, set overwrite=True.")
             elif overlapping_times and overwrite==True:
                 print(f"Overwriting overlapping data in {output_filepath} for times between {first_overlap} and {last_overlap}.")
                 # Remove the overlapping times from the existing dataset
@@ -353,7 +353,7 @@ def set_global_attrs(
     xr_dataset = verify_dataset(xr_dataset)
     # Verify the attribute dictionary
     if not isinstance(attr_dict, dict):
-        raise TypeError(f'attr_dict must be a dictionary, got {type(attr_dict)}.')
+        raise TypeError(f"(set_global_attrs) `attr_dict` must be a dictionary. Got type: {type(attr_dict)}")
     # Add each attribute to the dataset
     for key, value in attr_dict.items():
         xr_dataset.attrs[key] = value
@@ -389,7 +389,7 @@ def set_var_attrs(
     udata.verify_var(xr_dataset, var)
     # Verify the attribute dictionary
     if not isinstance(attr_dict, dict):
-        raise TypeError(f'attr_dict must be a dictionary, got {type(attr_dict)}.')
+        raise TypeError(f"(set_var_attrs) `attr_dict` must be a dictionary. Got type: {type(attr_dict)}")
     # Add each attribute to the variable
     for key, value in attr_dict.items():
         xr_dataset[var].attrs[key] = value
@@ -1085,7 +1085,7 @@ def make_input_metadata_file(
         # Check whether the given input_set exists in 'inputfiles/'
         xr_path = f'inputfiles/{input_set}/{input_set}.nc'
         if not os.path.exists(xr_path):
-            raise ValueError(f'File {xr_path} does not exist.')
+            raise ValueError(f"(make_input_metadata_file) File {xr_path} does not exist.")
         # Load the dataset
         xr_dataset = xr.load_dataset(xr_path)
     elif isinstance(input_set, xr.Dataset):
@@ -1249,54 +1249,54 @@ def make_input_config(
     """
     # Verify argument types
     if not isinstance(config_name, str):
-        raise TypeError(f"config_name must be a string. Got type: {type(config_name)}")
+        raise TypeError(f"(make_input_config) `config_name` must be a string. Got type: {type(config_name)}")
     # Verify input_set is a string or xr.Dataset
     if isinstance(input_set, str):
         # Check whether the given input_set exists in 'inputfiles/'
         xr_path = f'inputfiles/{input_set}/{input_set}.nc'
         if not os.path.exists(xr_path):
-            raise ValueError(f'File {xr_path} does not exist.')
+            raise ValueError(f"(make_input_config) File {xr_path} does not exist.")
         # Load the dataset
         xr_dataset = xr.load_dataset(xr_path)
     elif isinstance(input_set, xr.Dataset):
         xr_dataset = input_set
     else:
-        raise TypeError(f"input_set must be a string or xarray.Dataset. Got type: {type(input_set)}")
+        raise TypeError(f"(make_input_config) `input_set` must be a string or xarray.Dataset. Got type: {type(input_set)}")
     if not isinstance(grid_size, list):
-        raise TypeError(f"grid_size must be a list of integers. Got type: {type(grid_size)}")
+        raise TypeError(f"(make_input_config) `grid_size` must be a list of integers. Got type: {type(grid_size)}")
     if not isinstance(x_vars, list):
-        raise TypeError(f"x_vars must be a list of strings. Got type: {type(x_vars)}")
+        raise TypeError(f"(make_input_config) `x_vars` must be a list of strings. Got type: {type(x_vars)}")
     if not isinstance(stage_2, bool):
-        raise TypeError(f"stage_2 must be a boolean. Got type: {type(stage_2)}")
+        raise TypeError(f"(make_input_config) `stage_2` must be a boolean. Got type: {type(stage_2)}")
     if not isinstance(stage_2_cutoff, int):
-        raise TypeError(f"stage_2_cutoff must be an integer. Got type: {type(stage_2_cutoff)}")
+        raise TypeError(f"(make_input_config) `stage_2_cutoff` must be an integer. Got type: {type(stage_2_cutoff)}")
     if not isinstance(lsm_vars, list):
-        raise TypeError(f"lsm_vars must be a list of strings. Got type: {type(lsm_vars)}")
+        raise TypeError(f"(make_input_config) `lsm_vars` must be a list of strings. Got type: {type(lsm_vars)}")
     if not isinstance(zfi_vars, list):
-        raise TypeError(f"zfi_vars must be a list of strings. Got type: {type(zfi_vars)}")
+        raise TypeError(f"(make_input_config) `zfi_vars` must be a list of strings. Got type: {type(zfi_vars)}")
     if not isinstance(overwrite, bool):
-        raise TypeError(f"overwrite must be a boolean. Got type: {type(overwrite)}")
+        raise TypeError(f"(make_input_config) `overwrite` must be a boolean. Got type: {type(overwrite)}")
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify that grid_size has exactly 2 integers
     if not len(grid_size) == 2:
-        raise TypeError(f'Expected `grid_size` to have a length of 2. Got length of {len(grid_size)}: {grid_size}')
+        raise ValueError(f"(make_input_config) Expected `grid_size` to have a length of 2. Got length of {len(grid_size)}: {grid_size}")
     else:
         if isinstance(grid_size[0], int):
             n_lats = grid_size[0]
         else:
-            raise TypeError(f"Number of latitudes in `grid_size` must be an integer. Got type: {type(grid_size[0])}")
+            raise TypeError(f"(make_input_config) Number of latitudes in `grid_size` must be an integer. Got type: {type(grid_size[0])}")
         if isinstance(grid_size[1], int):
             n_lons = grid_size[1]
         else:
-            raise TypeError(f"Number of longitudes in `grid_size` must be an integer. Got type: {type(grid_size[1])}")
+            raise TypeError(f"(make_input_config) Number of longitudes in `grid_size` must be an integer. Got type: {type(grid_size[1])}")
     # Verify that `grid_size` is not larger than the lat-lon grid in xr_dataset
     xr_n_lats = xr_dataset.sizes['lat']
     xr_n_lons = xr_dataset.sizes['lon']
     if n_lats > xr_n_lats:
-        raise ValueError(f'Requested length of latitude grid ({n_lats}) cannot exceed length of latitude dimension in the given netcdf ({xr_n_lats}).')
+        raise ValueError(f"(make_input_config) Requested length of latitude grid ({n_lats}) cannot exceed length of latitude dimension in the given netcdf ({xr_n_lats}).")
     if n_lons > xr_n_lons:
-        raise ValueError(f'Requested length of longitude grid ({n_lons}) cannot exceed length of longitude dimension in the given netcdf ({xr_n_lons}).')
+        raise ValueError(f"(make_input_config) Requested length of longitude grid ({n_lons}) cannot exceed length of longitude dimension in the given netcdf ({xr_n_lons}).")
     # Verify that all x_vars are in the dataset
     for var in x_vars:
         udata.verify_var(xr_dataset, var)
@@ -1307,7 +1307,7 @@ def make_input_config(
     # Verify that stage_2_cutoff is a year that exists in the dataset
     years = get_years(xr_dataset)
     if stage_2_cutoff not in years:
-        raise ValueError(f'stage_2_cutoff {stage_2_cutoff} not found in dataset years: {years}')
+        raise ValueError(f"(make_input_config) `stage_2_cutoff` {stage_2_cutoff} not found in dataset years: {years}")
     # Verify that the lsm_vars are in the dataset
     for var in lsm_vars:
         udata.verify_var(xr_dataset, var)

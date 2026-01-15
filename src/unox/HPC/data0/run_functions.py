@@ -53,7 +53,7 @@ def process_cmd_args(
     """ 
     # Verify argument types
     if not isinstance(cmd_args, list):
-        raise TypeError(f"(process_cmd_args) `cmd_args` must be a list. Got {type(cmd_args)}")
+        raise TypeError(f"(process_cmd_args) `cmd_args` must be a list. Got type: {type(cmd_args)}")
     
     # Load the first input argument: the save directory
     try:
@@ -62,7 +62,7 @@ def process_cmd_args(
         savedir = default_savedir
     # Verify the savedir path
     if not isinstance(savedir, str):
-        raise TypeError(f"(process_cmd_args) `savedir` (`cmd_args[1]`) must be a string. Got {type(savedir)}")
+        raise TypeError(f"(process_cmd_args) `savedir` (`cmd_args[1]`) must be a string. Got type: {type(savedir)}")
     # Add trailing slash if not present
     if not savedir.endswith('/'):
         savedir += '/'
@@ -111,7 +111,7 @@ def process_cmd_args(
             raise ValueError(f"(process_cmd_args) `version` could not be cast to an integer. Given: {version}")
     # Verify that `version` is a number
     if not verify_number(version):
-        raise TypeError(f"(process_cmd_args) `version` (`cmd_args[3]`) must be a number. Got {type(version)}")
+        raise TypeError(f"(process_cmd_args) `version` (`cmd_args[3]`) must be a number. Got type: {type(version)}")
     else:
         version = int(version)
     if verbose:
@@ -171,21 +171,21 @@ def make_output_metadata_dict(
     """
     # Verify argument types
     if not isinstance(savedir, str):
-        raise TypeError(f"(make_output_metadata_dict) `savedir` must be a str. Got type: {type(savedir)}.")
+        raise TypeError(f"(make_output_metadata_dict) `savedir` must be a str. Got type: {type(savedir)}")
     if not isinstance(config_path, str):
-        raise TypeError(f"(make_output_metadata_dict) `config_path` must be a str. Got type: {type(config_path)}.")
+        raise TypeError(f"(make_output_metadata_dict) `config_path` must be a str. Got type: {type(config_path)}")
     if not isinstance(config_dict, (str, type({}))):
-        raise TypeError(f"(make_output_metadata_dict) `config_dict` must be a str or dict. Got type: {type(config_dict)}.")
+        raise TypeError(f"(make_output_metadata_dict) `config_dict` must be a str or dict. Got type: {type(config_dict)}")
     if not isinstance(version, int):
-        raise TypeError(f"(make_output_metadata_dict) `version` must be an int. Got type: {type(version)}.")
+        raise TypeError(f"(make_output_metadata_dict) `version` must be an int. Got type: {type(version)}")
     if not isinstance(n_epochs, int):
-        raise TypeError(f"(make_output_metadata_dict) `n_epochs` must be an int. Got type: {type(n_epochs)}.")
+        raise TypeError(f"(make_output_metadata_dict) `n_epochs` must be an int. Got type: {type(n_epochs)}")
     if not isinstance(model_fmt, str):
-        raise TypeError(f"(make_output_metadata_dict) `model_fmt` must be a str. Got type: {type(model_fmt)}.")
+        raise TypeError(f"(make_output_metadata_dict) `model_fmt` must be a str. Got type: {type(model_fmt)}")
     if not isinstance(input_fmt, str):
-        raise TypeError(f"(make_output_metadata_dict) `input_fmt` must be a str. Got type: {type(input_fmt)}.")
+        raise TypeError(f"(make_output_metadata_dict) `input_fmt` must be a str. Got type: {type(input_fmt)}")
     if not isinstance(split_year, int):
-        raise TypeError(f"(make_output_metadata_dict) `split_year` must be an int. Got type: {type(split_year)}.")
+        raise TypeError(f"(make_output_metadata_dict) `split_year` must be an int. Got type: {type(split_year)}")
     if not verify_number(split_value):
         raise TypeError(f"(make_output_metadata_dict) `split_value` must be a number. Got type: {type(split_value)}")
 

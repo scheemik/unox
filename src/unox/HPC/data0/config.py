@@ -34,4 +34,4 @@ def get_config(config_file):
             config_dict = json.load(file)
             return config_dict
     else:
-        raise TypeError(f"(get_config) `config_file` must be a string or dictionary. Got {type(config_file)}.")
+        raise TypeError(f"(get_config) `config_file` must be a string or dictionary. Got type: {type(config_file)}.")

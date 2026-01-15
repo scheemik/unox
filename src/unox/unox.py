@@ -198,9 +198,9 @@ def get_input_data(
     """
     # Verify the stage and x_or_y values
     if stage not in [1, 2]:
-        raise ValueError("Stage must be 1 or 2.")
+        raise ValueError(f"(get_input_data) `stage` must be 1 or 2. Got: {stage}")
     if x_or_y not in ['x', 'y']:
-        raise ValueError("x_or_y must be 'x' or 'y'.")
+        raise ValueError(f"(get_input_data) `x_or_y` must be 'x' or 'y'. Got type: {type(x_or_y)}")
     # Build the file path
     file_path = f'{path_prefix}inputfiles/{input_set}/stage{stage}/{x_or_y}/{x_or_y.upper()}_{year}.npy'
     # Verify the path
@@ -209,7 +209,7 @@ def get_input_data(
     data_files = show_available_data(f'{path_prefix}inputfiles/{input_set}/')
     # Check if the file exists
     if file_path not in data_files:
-        raise FileNotFoundError(f"File {file_path} not found.")
+        raise FileNotFoundError(f"(get_input_data) File {file_path} not found.")
     return file_path
 
 def get_one_input_var_array(
@@ -247,7 +247,7 @@ def get_one_input_var_array(
             var_index = input_vars_dict[key][f'{x_or_y}_vars'].index(var)
             var_array = input_array[:, :, :, var_index]
             return var_array, var_index
-    raise ValueError(f"Variable '{var}' not found in input_vars_dict: {input_vars_dict}")
+    raise ValueError(f"(get_one_input_var_array) Variable '{var}' not found in input_vars_dict: {input_vars_dict}")
 
 def get_one_t_input_var_array(
     var,
@@ -317,7 +317,7 @@ def get_pred_data(
     """
     # Verify the stage value
     if stage not in [1, 2]:
-        raise ValueError("Stage must be 1 or 2.")
+        raise ValueError(f"(get_pred_data) `stage` must be 1 or 2. Got: {stage}")
     # Build the file path
     file_path = f'{path_prefix}HPC_runs/{HPC_run}/stage{stage}_output/pred_X_{year}.npy'
     # Verify the path
@@ -326,7 +326,7 @@ def get_pred_data(
     data_files = show_available_data(f'{path_prefix}HPC_runs/')
     # Check if the file exists
     if file_path not in data_files:
-        raise FileNotFoundError(f"File {file_path} not found.")
+        raise FileNotFoundError(f"(get_pred_data) File {file_path} not found.")
     return file_path
 
 def interpret_user_input(
@@ -355,7 +355,7 @@ def interpret_user_input(
     """
     # Verify argument types
     if not isinstance(user_input, str):
-        raise TypeError(f"user_input must be a string. Got type: {type(user_input)}")
+        raise TypeError(f"(interpret_user_input) `user_input` must be a string. Got type: {type(user_input)}")
     # Get user input
     while True:
         input_yn = user_input.strip().lower()
@@ -364,4 +364,4 @@ def interpret_user_input(
         elif input_yn in ['n', 'no']:
             return False
         else:
-            raise ValueError(f"Invalid input: {user_input}. Please enter 'y' or 'n'.")
+            raise ValueError(f"(interpret_user_input) Invalid input: {user_input}. Please enter 'y' or 'n'.")

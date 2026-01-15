@@ -28,7 +28,7 @@ def load_model(
     model_path = verify_path(model_path)
     # Vertify the path ends with .h5 or .keras
     if not (model_path.endswith('.h5') or model_path.endswith('.keras')):
-        raise ValueError("Model path must end with .h5 or .keras")
+        raise ValueError(f"(load_model) `model_path` must end with .h5 or .keras. Got: {model_path}")
     # Load the model
     model = models.load_model(model_path)
     return model

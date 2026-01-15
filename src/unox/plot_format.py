@@ -30,10 +30,10 @@ def pad_extent(
     """
     # Verify the tuple is the right shape
     if not isinstance(extent, tuple) or len(extent) != 4:
-        raise ValueError("Extent must be a tuple of the form (lat_min, lat_max, lon_min, lon_max)")
+        raise ValueError(f"(pad_extent) `extent` must be a tuple of the form (lat_min, lat_max, lon_min, lon_max). Got type: {type(extent)}")
     # Verify the padding is a number
     if not udata.verify_number(padding):
-        raise TypeError("Padding must be a number, got: " + str(type(padding)) + ". Padding value: " + str(padding))
+        raise TypeError(f"(pad_extent) `padding` must be a number. Got type: {type(padding)}.")
     # Unpack the extent tuple
     lat_min, lat_max, lon_min, lon_max = extent
     # Verify these values
@@ -109,7 +109,7 @@ def get_var_label_and_units(
     }
 
     if var not in var_labels_and_units.keys():
-        raise ValueError(f"Variable '{var}' not recognized. Available variables: {list(var_labels_and_units.keys())}")
+        raise ValueError(f"(get_var_label_and_units) Variable '{var}' not recognized. Available variables: {list(var_labels_and_units.keys())}")
     else:
         label, units = var_labels_and_units[var]
     return label, units
