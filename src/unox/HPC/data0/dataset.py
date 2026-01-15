@@ -79,6 +79,7 @@ def get_dataset(
     is_predict : bool, optional
         If True, treat the dataset as a model output prediction set.
     **kwargs : keyword arguments
+        Additional keyword arguments to pass to `load_dataset()` and `verify_dataset()`.
 
     Returns
     -------
