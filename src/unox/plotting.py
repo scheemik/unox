@@ -1758,13 +1758,11 @@ def compare_input_vars(
         'input_set':'no2_sample_input',
         'year':2019,
         'var':'u10',
-        'fmt':'nc',
     },
     input_b_dict = {
         'input_set':'no2_sample_input',
         'year':2019,
         'var':'u10',
-        'fmt':'nc',
     },
     abs_tolerance=2e-5,
 ):
@@ -1775,8 +1773,7 @@ def compare_input_vars(
     ----------
     input_dict_a : dict
         Dictionary containing the parameters for the first input variable.
-        Must contain 'input_set', 'year', and 'var'. A value for 'fmt' is optional,
-        but must be either 'nc' or 'npy'. Default is 'nc'.
+        Must contain 'input_set', 'year', and 'var'. 
     input_dict_b : dict
         Dictionary containing the parameters for the second input variable.
         Must contain 'input_set', 'year', and 'var'.
@@ -1784,67 +1781,37 @@ def compare_input_vars(
         The absolute tolerance for comparing the input files. Default is 2e-5.
     """
     # Verify argument types
-    if True:
-        for input_dict in [input_a_dict, input_b_dict]:
-            if not isinstance(input_dict, dict):
-                raise TypeError(f"(compare_input_vars) `input_dict` must be a dictionary. Got: {type(input_dict)}")
-            required_keys = ['input_set', 'year', 'var']
-            for key in required_keys:
-                if key not in input_dict:
-                    raise KeyError(f"(compare_input_vars) `input_dict` must contain the key '{key}'.")
-            if not isinstance(input_dict['input_set'], str):
-                raise TypeError(f"(compare_input_vars) `input_set` must be a string. Got type: {type(input_dict['input_set'])}")
-            if not udata.verify_number(input_dict['year']):
-                raise TypeError(f"(compare_input_vars) `year` must be an integer. Got type: {type(input_dict['year'])}")
-            if not isinstance(input_dict['var'], str):
-                raise TypeError(f"(compare_input_vars) `var` must be a string. Got type: {type(input_dict['var'])}")
-            if 'fmt' in input_dict:
-                if input_dict['fmt'] not in ['nc', 'npy']:
-                    raise ValueError(f"(compare_input_vars) `fmt` must be either 'nc' or 'npy'. Got type: {input_dict['fmt']}")
-        if not isinstance(abs_tolerance, float):
-            raise TypeError(f"(compare_input_vars) `abs_tolerance` must be a float. Got type: {type(abs_tolerance)}")
+    for input_dict in [input_a_dict, input_b_dict]:
+        if not isinstance(input_dict, dict):
+            raise TypeError(f"(compare_input_vars) `input_dict` must be a dictionary. Got: {type(input_dict)}")
+        required_keys = ['input_set', 'year', 'var']
+        for key in required_keys:
+            if key not in input_dict:
+                raise KeyError(f"(compare_input_vars) `input_dict` must contain the key '{key}'.")
+        if not isinstance(input_dict['input_set'], str):
+            raise TypeError(f"(compare_input_vars) `input_set` must be a string. Got type: {type(input_dict['input_set'])}")
+        if not udata.verify_number(input_dict['year']):
+            raise TypeError(f"(compare_input_vars) `year` must be an integer. Got type: {type(input_dict['year'])}")
+        if not isinstance(input_dict['var'], str):
+            raise TypeError(f"(compare_input_vars) `var` must be a string. Got type: {type(input_dict['var'])}")
+    if not isinstance(abs_tolerance, float):
+        raise TypeError(f"(compare_input_vars) `abs_tolerance` must be a float. Got type: {type(abs_tolerance)}")
     # Loop over the two input dictionaries and load the data
     for input_dict in [input_a_dict, input_b_dict]:
-        # Get the requested format, if none was given, select 'nc'
-        fmt = input_dict.get('fmt', 'nc')
-        if fmt == 'npy':
-            # Check for stage 2 variables
-            if input_dict['var'] == 'no2_s2':
-                this_stage=2
-                input_dict['var'] = 'no2'
-            elif input_dict['var'] == 'no2_s2_tm1':
-                this_stage=2
-                input_dict['var'] = 'no2_tm1'
-            else:
-                this_stage=1
-            # Load the input data from npy file
-            this_input, var_index = unox.get_one_input_var_array(
-                input_dict['var'],
-                stage=this_stage, 
-                year=input_dict['year'],
-                input_set=input_dict['input_set'],
-            )
-            # Reset the variable name if it was changed
-            if this_stage == 2:
-                if input_dict['var'] == 'no2':
-                    input_dict['var'] = 'no2_s2'
-                elif input_dict['var'] == 'no2_tm1':
-                    input_dict['var'] = 'no2_s2_tm1'
-        elif fmt == 'nc':
-            # Load the input data from netCDF
-            xr_dataset = udata.get_dataset(
-                input_dict['input_set'],
-                is_input_set=True,
-            )
-            from unox.HPC.utils.load_input import get_npy_from_netcdf
-            this_input = get_npy_from_netcdf(
-                xr_dataset,
-                year=input_dict['year'],
-                var=input_dict['var'],
-            )
-            # If nox, remove extra dimension
-            if input_dict['var'] == 'nox':
-                this_input = this_input.squeeze()
+        # Load the input data from netCDF
+        xr_dataset = get_dataset(
+            input_dict['input_set'],
+            is_input_set=True,
+        )
+        this_input, lats, lons = get_npy_from_netcdf(
+            xr_dataset,
+            year=input_dict['year'],
+            input_config='sample_config',
+            var=input_dict['var'],
+        )
+        # If nox, remove extra dimension
+        if input_dict['var'] == 'nox':
+            this_input = this_input.squeeze()
         input_dict['data_array'] = this_input
         print(f"Shape of {input_dict['var']} from {input_dict['input_set']}: {this_input.shape}")
     # Are the arrays different?
@@ -1995,11 +1962,11 @@ def set_of_runs(
     else:
         this_config = unique_config_files[0]
     # Open the input netCDF file
-    input_dataset = udata.get_dataset(this_input_set, is_input_set=True)
+    input_dataset = get_dataset(this_input_set, is_input_set=True)
     # Get the y variable
     y_var = input_dataset.attrs['y_var']
     # Load the "truth" array
-    truth = get_npy_from_netcdf(
+    truth, lats, lons = get_npy_from_netcdf(
         input_dataset,
         year,
         this_config,
