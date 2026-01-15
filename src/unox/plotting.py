@@ -137,6 +137,202 @@ def plot_lats_lons(
     # Return the figure
     return fig
 
+def map_ax(
+    ax,
+    xr_data_arr,
+    plt_title=None,
+    cmap=pplt.Colormap('Fire'),
+    cbar_max=None,
+    cbar_min=None,
+    cb_ext='neither',
+    padding=0.1,
+):
+    """Plots a map of the data in the given dataset.
+
+    Creates a map of the 'var' data on a map using the provided netCDF file.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The axes on which to plot the data.
+    xr_data_arr : xarray.DataArray
+        The xarray data to plot. Must not have a time dimension.
+    plt_title : str, optional
+        The title for the plot. Default is `None`.
+    cmap : matplotlib.colors.Colormap, optional
+        The colormap to use for the plot. Default is pplt.cm.Fire.
+    cbar_max : float, optional
+        Maximum value for the colorbar. When `None`, the colorbar max is set to the max value to plot.
+        Default is `None`.
+    cbar_min : float, optional
+        Minimum value for the colorbar. When `None`, the colorbar max is set to the min value to plot.
+        Default is `None`.
+    cb_ext : str, optional
+        How to extend the ends of the colorbar. Can be 'neither', 'both', 'min', or 'max'.
+        Default is 'neither'.
+    padding : float
+        The padding (in a fraction of total extent) to add to the extent of the map. 
+        Default is 0.1.
+    
+    Returns
+    -------
+    this_map_ax : matplotlib.axes.Axes
+        The axes object containing the plot.
+    clrbar_label : str
+        The label for the colorbar containing the variable name and units.
+    
+    Examples
+    --------
+    >>> import xarray as xr
+    >>> this_dataset = xr.open_dataset('../datafiles/sample_data/nox_2019_t106_US.nc')
+    >>> fig = plot_nc_map(xr_data_arr=this_dataset)
+    """
+    # Verify argument types
+    if not isinstance(ax, pplt.axes.Axes):
+        raise TypeError(f"(nc_map) `ax` must be a proplot Axes object. Got type: {type(ax)}")
+    if not isinstance(xr_data_arr, xr.DataArray):
+        raise TypeError(f"(nc_map) `xr_data_arr` must be an xarray DataArray. Got type: {type(xr_data_arr)}")
+    if not isinstance(plt_title, (type(None), str)):
+        raise TypeError(f"(nc_map) `plt_title` must be a string or None. Got type: {type(plt_title)}")
+    if not isinstance(cmap, mpl.colors.Colormap):
+        raise TypeError(f"(nc_map) `cmap` must be a matplotlib Colormap. Got type: {type(cmap)}")
+    if not isinstance(cbar_max, type(None)) or not verify_number(cbar_max):
+        raise TypeError(f"(nc_map) `cbar_max` must be a number or None. Got type: {type(cbar_max)}")
+    if not isinstance(cbar_min, type(None)) or not verify_number(cbar_min):
+        raise TypeError(f"(nc_map) `cbar_min` must be a number or None. Got type: {type(cbar_min)}")
+    if cb_ext not in ['neither', 'both', 'min', 'max']:
+        raise ValueError(f"(nc_map) `cb_ext` must be 'neither', 'both', 'min', or 'max'. Got: {cb_ext}")
+    # `padding` is verified in `pad_extent()`
+
+    # Verify the xr_data_arr. Assume there is no time dimension
+    xr_data_arr = verify_dataset(xr_data_arr, check_time=False)
+    # If there are any dimensions of size 1 (var, for example), squeeze them out
+    xr_data_arr = xr_data_arr.squeeze(drop=True)
+    # Check to ensure that `lat` and `lon` are the only remaining dimensions
+    if not set(xr_data_arr.dims).issubset({'lat', 'lon'}):
+        raise ValueError(f"(nc_map) `xr_data_arr` must have only 'lat' and 'lon' dimensions after squeezing. Got dimensions: {xr_data_arr.dims}")
+    # Get the variable name from xr_data_arr
+    var = xr_data_arr.name
+
+    # Get the long name and units of the specified variable for plot labels
+    try:
+        var_name = xr_data_arr.long_name
+        var_unit = xr_data_arr.units
+    except:
+        var_name = 'var'
+        var_unit = 'units'
+
+    # Find the min and max lat and lon values
+    this_extent = udata.get_extent(xr_data_arr, check_time=False)
+    # Enlarge the extent of the map by the given padding value
+    p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_fmt.pad_extent(this_extent, padding)
+
+    # Get the maximum value for the colorbar
+    if isinstance(cbar_max, type(None)):
+        cbar_max = xr_data_arr.max()
+        cbar_max = cbar_max.values
+        cbar_max = np.unique(cbar_max)[0]
+    # Get the minimum value for the colorbar
+    if isinstance(cbar_min, type(None)):
+        cbar_min = xr_data_arr.min()
+        cbar_min = cbar_min.values
+        cbar_min = np.unique(cbar_min)[0]
+    # Plot the data, use `discrete=False` to set a continuous colorbar
+    this_var = ax.pcolormesh(xr_data_arr, vmin=cbar_min, vmax=cbar_max, discrete=False, extend=cb_ext)
+    # Format the map
+    ax.format(
+        lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
+        title=plt_title,
+        latlines=10, lonlines=10, coast=True,
+        labels=True, gridminor=True
+    )
+    # Assemble colorbar label
+    clrbar_label = f"{var_name} ({var_unit})"
+    # Return the axis plot and colorbar label
+    return this_map_ax, clrbar_label
+
+def plot_var_maps(
+    dataset,
+    vars=['nox'],
+    datetime='2019-01-02T00:00:00',
+    avg_over=None,
+    **kwargs,
+):
+    """Plots a maps of data in a netCDF.
+
+    A wrapper for the `map_ax()` function.
+    Creates maps for each specified 'var' using the provided netCDF file.
+
+    Parameters
+    ----------
+    dataset : str, uarray, xarray.Dataset or xarray.DataArray
+        Path to the netCDF data file.
+    vars : str or list
+        The name(s) of the variable(s) to plot from the netCDF file.
+        Default is `nox`.
+    datetime : str
+        Date and time to select from the data file.
+    avg_over : str, numpy.timedelta64, or None
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `nc_map()`.
+    
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+    
+    Examples
+    --------
+    >>> import xarray as xr
+    >>> this_dataset = xr.open_dataset('../datafiles/sample_data/nox_2019_t106_US.nc')
+    >>> fig = plot_nc_map(xr_dataset=this_dataset)
+    """
+    # Make `uarray` object
+    u_arr = uarray(dataset, **kwargs)
+    # Verify argument types 
+    # The `verify_dataset()` function is automatically run when creating a `uarray` object
+    if not isinstance(vars, list):
+        if isinstance(vars, str):
+            vars = [vars]
+        else:
+            raise TypeError(f"(plot_var_maps) `vars` must be a list of variable names or a single variable name string. Got type: {type(vars)}")
+    if len(vars) == 0:
+        raise ValueError("(plot_var_maps) `vars` list cannot be empty.")
+    # `datetime` and `avg_over` are verified in `select_time()`
+    
+    # Select the time slice to plot
+    u_arr.xr, title_segment = select_time(u_arr.xr, datetime, avg_over)
+
+    # Create the figure
+    fig = pplt.figure(refwidth=10)
+    n_rows, n_cols = uplt_fmt.set_fig_row_col(len(vars))
+    axs = fig.subplots(nrows=n_rows, ncols=n_cols, proj='cyl')
+    # Select medium resolution for features such as coastlines
+    pplt.rc.reso = 'med' 
+
+    # Plot each of the variables
+    for i in range(len(vars)):
+        var = vars[i]
+        # Verify that the variable is in the dataset
+        verify_var(u_arr.xr, var)
+        # Reduce the dataset to just the specified variable
+        var_xr = u_arr.xr[var]
+    
+        # Add the plot to the axis
+        this_var, clrbar_label = map_ax(
+            axs[i], 
+            var_xr,
+            **kwargs,
+        )
+        # Add a colorbar
+        axs[i].colorbar(this_var, loc='b', label=clrbar_label)
+    # Add an overall title
+    fig.suptitle(title_segment, fontsize=title_font_size)
+    # Return the figure
+    return fig
+
 def plot_nc_map(
     xr_dataset='../datafiles/nox_2019_t106_US.nc',
     var='nox',
