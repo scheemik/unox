@@ -420,58 +420,46 @@ def plot_nc_map(
 
 def select_time(
     xr_dataset,
-    var,
     datetime,
     avg_over=None,
 ):
     """Selects the time from an xarray to plot.
 
     Either selects a single time slice or averages over a time period to result in 
-    an xarray for the specified variable without a time dimension, only lat-lon dimensions.
+    an xarray without a time dimension, only lat-lon dimensions.
 
     Parameters
     ----------
     xr_dataset : xarray.Dataset or xarray.DataArray
         The xarray data to plot. Must have a time dimension.
-    var : str
-        The name of the variable to plot from the netCDF file.
     datetime : str
         Date and time to select from the data file.
     avg_over : str, numpy.timedelta64, or None
         If provided, averages the data over the specified time period.
         If None, takes just the time slice specified in `datetime`.
-    title_fmt : str
-        The format of the title. Can be 'date' or 'varname'.
 
     Returns
     -------
-    var_sel_time : xarray.Dataset or xarray.DataArray
+    xr_sel_time : xarray.Dataset or xarray.DataArray
         An xarray DataArray of the selected variable without a time dimension.
-    overall_title : str
-        The title string for the plot.
+    title_segment : str
+        A segement of the title string for the plot with time information.
     """
     # Verify argument types
     xr_dataset = verify_dataset(xr_dataset, check_time=True)
-    if isinstance(var, type(None)):
-        # Keep all the variables and return an xarray Dataset
-        this_xarray = xr_dataset
-    else:
-        # Verify that the variable is in the dataset, if specified
-        udata.verify_var(xr_dataset, var)
-        # Save the attributes for the specified variable
-        # var_name = xr_dataset[var].long_name
-        # var_unit = xr_dataset[var].units
-        # Reduce the dataset to just the specified variable
-        this_xarray = xr_dataset[var]
+    if not isinstance(datetime, (str, np.timedelta64)):
+        raise TypeError(f"(select_time) `datetime` must be a string, or a numpy.timedelta64. Got type: {type(datetime)}")
+    if not isinstance(avg_over, (type(None), str, np.timedelta64)):
+        raise TypeError(f"(select_time) `avg_over` must be None, a string, or a numpy.timedelta64. Got type: {type(avg_over)}")
 
     # Select the time to plot
     if isinstance(avg_over, type(None)):
         # Take just that time slice
         # Use squeeze to drop `time` dimension as sel() only automatically drops scalar
         # dimensions, which `time` is not
-        var_sel_time = this_xarray.sel(time=datetime, drop=False).squeeze(drop=True)
+        xr_sel_time = xr_dataset.sel(time=datetime, drop=False).squeeze(drop=True)
         # Format a string for the title
-        overall_title = datetime.split('T')[0]
+        title_segment = datetime.split('T')[0]
     else:
         # Add the increment over which to average to the datetime
         try:
@@ -480,17 +468,13 @@ def select_time(
             raise ValueError(f"(select_time) Invalid `avg_over` value: {avg_over}")
         # Average over the specified amount of time
         # Maintain attributes by using `drop=False` in sel() and `keep_attrs=True` in mean()
-        var_sel_time = this_xarray.sel(time=slice(datetime, end_date), drop=False)
-        var_sel_time = var_sel_time.mean(dim='time', keep_attrs=True)
+        xr_sel_time = xr_dataset.sel(time=slice(datetime, end_date), drop=False)
+        xr_sel_time = xr_sel_time.mean(dim='time', keep_attrs=True)
         # Get the value and unit of the averaging
         avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
         # Format a string for the title
-        overall_title = f"Averaged over {avg_over_num} {avg_over_unit} from {datetime.split('T')[0]}"
-    # if not isinstance(var, type(None)):
-    #     # Add the saved attributes to the xarray DataArray
-    #     var_sel_time.attrs['long_name'] = var_name
-    #     var_sel_time.attrs['units'] = var_unit
-    return var_sel_time, overall_title
+        title_segment = f"Averaged over {avg_over_num} {avg_over_unit} from {datetime.split('T')[0]}"
+    return xr_sel_time, title_segment
 
 def nc_map(
     ax,
