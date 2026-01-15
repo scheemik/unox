@@ -72,7 +72,7 @@ def get_dataset(
 
     Parameters
     ----------
-    set_to_get : str
+    set_to_get : str, uarray, xarray.Dataset, xarray.DataArray
         The name of the dataset to get.
     is_input_set : bool, optional
         If True, treat the dataset as an input set.
@@ -105,6 +105,9 @@ def get_dataset(
     # If set_to_get is a xarray Dataset or DataArray, verify it
     elif isinstance(set_to_get, xr.Dataset) or isinstance(set_to_get, xr.DataArray):
         xr_dataset = verify_dataset(set_to_get, **kwargs)
+    # If set_to_get is already a uarray, return it
+    elif isinstance(set_to_get, uarray):
+        return set_to_get.xr
     else:
         raise TypeError(f"(get_dataset) `set_to_get` must be string, xr.Dataset, or xr.DataArray. Got {type(set_to_get)}.")
     return xr_dataset
