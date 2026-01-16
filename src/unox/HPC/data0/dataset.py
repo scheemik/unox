@@ -147,6 +147,7 @@ def load_dataset(
 def csv_to_pd(
     csv_filepath,
     is_US_EPA=True,
+    **kwargs,
 ):
     """Load a CSV file into a pandas DataFrame.
 
@@ -160,6 +161,8 @@ def csv_to_pd(
     is_US_EPA : bool, optional
         If True, verify that the CSV file has the required columns
         for US EPA data. Defaults to True.
+    **kwargs : keyword arguments
+        Additional keyword arguments to accommodate wrapper functions.
 
     Returns
     -------
@@ -207,6 +210,7 @@ def csv_to_pd(
 def csv_to_xr(
     csv_filepath,
     is_US_EPA=True,
+    **kwargs,
 ):
     """Load a CSV file into an xarray Dataset.
 
@@ -220,6 +224,8 @@ def csv_to_xr(
     is_US_EPA : bool, optional
         If True, verify that the CSV file has the required columns
         for US EPA data. Defaults to True.
+    **kwargs : keyword arguments
+        Additional keyword arguments to accommodate wrapper functions.
 
     Returns
     -------
