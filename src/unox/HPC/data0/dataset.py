@@ -334,3 +334,35 @@ def get_years(
     ## to avoid TypeError: Object of type int64 is not JSON serializable
     years = [int(year) for year in years]
     return years
+
+def get_metadata(
+    this_uarr,
+):
+    """Find and load the relevant metadata dictionary for the given uarray.
+
+    Parameters
+    ----------
+    this_uarr : uarray
+        The uarray object for which to load the metadata.
+
+    Returns
+    -------
+    metadata : dict
+        The metadata dictionary for this uarray.
+    """
+    # Verify argument types
+    if not isinstance(this_uarr, uarray):
+        raise TypeError(f"(get_metadata) `this_uarr` must be a uarray. Got type: {type(this_uarr)}.")
+
+    # Check whether the uarray is an input or prediction set
+    if this_uarr.is_input_set and this_uarr.is_predict:
+        raise ValueError(f"(get_metadata) `uarray` cannot be both an input set and a prediction set.")
+    elif this_uarr.is_input_set or this_uarr.is_predict:
+        # Verify the path to the metadata file
+        this_uarr.metadata_file = verify_path(this_uarr.metadata_file)
+        # Load metadata file as a dictionary
+        with open(this_uarr.metadata_file, 'r') as f:
+            metadata = json.load(f)
+        return metadata
+    else:
+        raise ValueError(f"(get_metadata) `uarray` must be either an input set or a prediction set to load metadata.")
