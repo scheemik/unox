@@ -124,3 +124,43 @@ def test_get_US_EPA_species_name():
         assert True, f"get_US_EPA_species_name raised an exception on invalid input: {e}"
     else:
         assert False, f"get_US_EPA_species_name did not raise an exception on invalid input: {invalid_species}"
+
+def test_get_years():
+    """Test the get_years function."""
+    # Test with sample data files
+    expected_years = {
+        'datafiles/sample_data/2019u10.nc': [2019],
+        'datafiles/sample_data/daily_42602_2019.csv': [2019],
+        'datafiles/sample_data/nox_2019_t106_US.nc': [2019],
+        'datafiles/sample_data/TROPESS_reanalysis_mon_emi_nox_anth_2021.nc': [2021],
+    }
+    for datafile, expected in expected_years.items():
+        # Pass datafile as string
+        actual_years = udata.get_years(datafile)
+        assert actual_years == expected, f"Expected years {expected} from '{datafile}' as string, but got {actual_years}"
+        # Pass datafile as xarray Dataset
+        xr_dataset = udata.load_dataset(datafile)
+        actual_years = udata.get_years(xr_dataset)
+        assert actual_years == expected, f"Expected years {expected} from '{datafile}' as xarray, but got {actual_years}"
+        # Pass datafile as uarray
+        this_uarr = udata.uarray(datafile)
+        actual_years = udata.get_years(this_uarr)
+        assert actual_years == expected, f"Expected years {expected} from '{datafile}' as uarray, but got {actual_years}"
+        
+    
+    # Test with invalid file paths
+    invalid_inputs = [
+        'datafiles/sample_data/non_existent_file.nc',
+        'tests/data_for_tests/sample.csv',
+        'tests/data_for_tests/lats_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy',
+        'tests/data_for_tests/lons_TROPESS_reanalysis_mon_emi_nox_anth_2021.npy',
+    ]
+    # Concatenate with invalid_datasets list
+    invalid_inputs.extend(invalid_datasets)
+    for invalid_path in invalid_inputs:
+        try:
+            udata.get_years(invalid_path)
+        except Exception as e:
+            assert True, f"get_years raised an exception on invalid file path: {e}"
+        else:
+            assert False, f"get_years did not raise an exception on invalid file path: {invalid_path}"
