@@ -303,7 +303,7 @@ def get_years(
 
     Parameters
     ----------
-    dataset : xarray.Dataset, xarray.DataArray
+    dataset : str, uarray, xarray.Dataset, xarray.DataArray
         The dataset from which to extract the years.
 
     Returns
@@ -314,6 +314,10 @@ def get_years(
     # Verify argument types
     if isinstance(dataset, xr.Dataset) or isinstance(dataset, xr.DataArray):
         xr_dataset = verify_dataset(dataset, check_time=True)
+    elif isinstance(dataset, str):
+        xr_dataset = load_dataset(dataset, check_time=True)
+    elif isinstance(dataset, uarray):
+        xr_dataset = verify_dataset(dataset.xr, check_time=True)
     else:
         raise TypeError(f"(get_years) `dataset` must be an xarray Dataset or DataArray. Got type: {type(dataset)}.")
     # Get a list of years present in the dataset
