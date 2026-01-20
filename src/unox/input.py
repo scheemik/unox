@@ -1153,6 +1153,8 @@ def make_input_metadata_file(
     for g_attr in [
         'y_var',
         'x_vars',
+        'x1_vars',
+        'x2_vars',
         'description',
         'data_dir',
         'chemra_path',
