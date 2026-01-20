@@ -1,5 +1,6 @@
 import xarray as xr
 import pandas as pd
+import json
 
 from unox.HPC.data0 import dataset as udata
 
@@ -164,3 +165,17 @@ def test_get_years():
             assert True, f"get_years raised an exception on invalid file path: {e}"
         else:
             assert False, f"get_years did not raise an exception on invalid file path: {invalid_path}"
+
+def test_get_metadata():
+    """Test the get_metadata function."""
+    # Define the example input set
+    input_set = 'no2_2019_JFM'
+    # Load the input set as a uarray
+    this_uarr = udata.uarray(input_set, is_input_set=True)
+    # Get metadata
+    metadata = this_uarr._get_metadata()
+    # Load the expected metadata from a known source
+    with open(f"inputfiles/{input_set}/input_metadata.json", 'r') as f:
+        expected_metadata = json.load(f)
+    # Compare the metadata
+    assert metadata == expected_metadata, f"Expected metadata: \n{expected_metadata}\n Got: \n{metadata}"
