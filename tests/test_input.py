@@ -27,6 +27,34 @@ example_xr = xr.Dataset(
         'lon': np.linspace(-180, 180, n_lon),
     }
 )
+# Create a second example xarray Dataset for test_make_input_metadata_file
+n_lat2 = 2
+n_lon2 = 4
+n_start2 = '2005-01-01'
+n_end2 = '2020-12-31'
+time_arr2 = pd.date_range(start=n_start2, end=n_end2, freq='M')
+n_time2 = len(time_arr2)
+example_xr2 = xr.Dataset(
+    {
+        'no2': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'no2_s2': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'no2_tm1': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'no2_s2_tm1': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'u10': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'v10': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'blh': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'sp': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'skt': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        't2m': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'ssrd': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'lsm': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+    },
+    coords={
+        'time': time_arr2,
+        'lat': np.linspace(-90, 90, n_lat2),
+        'lon': np.linspace(-180, 180, n_lon2),
+    }
+)
 
 def test_x_or_y_var():
     """Test the x_or_y_var function."""
