@@ -1041,9 +1041,16 @@ def make_input_metadata_file(
 
     Parameters
     ----------
-    input_set : str, xr.Dataset
+    input_set : str, xr.Dataset, uarray
         Directory inside `inputfiles/` where the dataset is found and 
         in which the metadata file will be saved, or the xarray Dataset
+    output_dir : str, None, optional
+        Directory inside `inputfiles/` where the metadata file will be saved.
+        If None, the metadata file will not be saved. Default is None.
+    g_attrs : dict, None, optional
+        Global attributes to use for the metadata file.
+    overwrite : bool, optional
+        Whether to overwrite an existing metadata file. Default is True.
 
     Returns
     -------
