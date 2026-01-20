@@ -1,5 +1,6 @@
 import xarray as xr
 import pandas as pd
+import json
 
 # Necessary to use relative imports (starting with a dot) to avoid
 # errors when running on HPC as the `unox` package is not available
@@ -36,14 +37,41 @@ class uarray():
 
     """
     # Initialize the uarray object
-    def __init__(self, xr_array, **kwargs):
-        self.xr = get_dataset(xr_array, **kwargs)
+    def __init__(self, 
+        xr_array, 
+        is_input_set=False,
+        is_predict=False,
+        **kwargs,
+    ):
+        self.xr = get_dataset(
+            xr_array, 
+            is_input_set,
+            is_predict,
+            **kwargs,
+        )
         self.years = None
+        self.metadata = None
         # Add name if `xr_array` is a string
         if isinstance(xr_array, str):
             self.name = xr_array
+            # Set input / prediction attributes
+            if is_input_set:
+                self.metadata_file = verify_path(f'inputfiles/{xr_array}/input_metadata.json')
+                self.is_input_set = True
+                self.is_predict = False
+            elif is_predict:
+                self.metadata_file = verify_path(f'HPC_runs/{xr_array}/output_metadata.json')
+                self.is_input_set = False
+                self.is_predict = True
+            else:
+                self.metadata_file = None
+                self.is_input_set = False
+                self.is_predict = False
         else:
             self.name = 'xarray dataset'
+            self.metadata_file = None
+            self.is_input_set = False
+            self.is_predict = False
     # Verify aspects of the dataset
     def _verify(self, **kwargs):
         self.xr = verify_dataset(self.xr, **kwargs)
@@ -56,8 +84,16 @@ class uarray():
             self.years = get_years(self.xr)
         return self.years
     def _select_year(self, year):
+        # Ensure that the dataset has a time coordinate
         self._verify(check_time=True)
+        # Get just the data for the specified year
         return self.xr.sel(time=slice(f"{year}-01-01", f"{year}-12-31"))
+    def _get_metadata(self):
+        # Check whether metadata has already been loaded
+        if isinstance(self.metadata, type(None)):
+            # Get the metadata dictionary
+            self.metadata = get_metadata(self)
+            return self.metadata
     # Modify aspects of the dataset
     def _shift_lons(self, **kwargs):
         self.xr = shift_lon_arr(self.xr, **kwargs)
