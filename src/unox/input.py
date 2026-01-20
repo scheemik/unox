@@ -8,8 +8,8 @@ import json
 import warnings
 
 import unox.unox as unox
-from unox.HPC.data0.paths import verify_path, make_file_path
-from unox.HPC.data0.dataset import get_years
+from unox.HPC.data0.paths import verify_path, remove_non_empty_directory, make_file_path
+from unox.HPC.data0.dataset import uarray, get_years
 from unox.HPC.data0.verify_dataset import verify_dataset, verify_var
 from unox.HPC.data0.latlon import shift_lon_arr
 import unox.data as udata
@@ -1086,18 +1086,23 @@ def make_input_metadata_file(
     }
     ```
     """
-    # Verify input_set is a string or xr.Dataset
+    # Verify argument types
     if isinstance(input_set, str):
-        # Check whether the given input_set exists in 'inputfiles/'
-        xr_path = f'inputfiles/{input_set}/{input_set}.nc'
-        if not os.path.exists(xr_path):
-            raise ValueError(f"(make_input_metadata_file) File {xr_path} does not exist.")
-        # Load the dataset
-        xr_dataset = xr.load_dataset(xr_path)
+        # Load the xr dataset from a uarray
+        xr_dataset = uarray(input_set, is_input_set=True).xr
     elif isinstance(input_set, xr.Dataset):
         xr_dataset = input_set
-    # Verify the dataset
-    xr_dataset = verify_dataset(xr_dataset)
+    elif isinstance(input_set, uarray):
+        xr_dataset = input_set.xr
+    else:
+        raise TypeError(f"(make_input_metadata_file) `input_set` must be a string, xarray.Dataset, or uarray. Got type: {type(input_set)}")
+    if not isinstance(output_dir, (str, type(None))):
+        raise TypeError(f"(make_input_metadata_file) `output_dir` must be a string or None. Got type: {type(output_dir)}")
+    if not isinstance(g_attrs, (dict, type(None))):
+        raise TypeError(f"(make_input_metadata_file) `g_attrs` must be a dict or None. Got type: {type(g_attrs)}")
+    if not isinstance(overwrite, bool):
+        raise TypeError(f"(make_input_metadata_file) `overwrite` must be a bool. Got type: {type(overwrite)}")
+
     # If the metadata file already exists, load it
     if not isinstance(output_dir, type(None)):
         # Assemble the filepath for the metadata file
