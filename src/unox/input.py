@@ -1371,3 +1371,132 @@ def make_input_config(
         file.write(json.dumps(config_dict, indent=4))
     print(f'Saved configuration file to {config_filepath}')
     return config_dict
+
+def copy_input_files(
+    source_input_set,
+    output_dir,
+    keep_vars='all',
+    start_date=None,
+    end_date=None,
+    overwrite=True,
+    **kwargs,
+):
+    """Copies an input set to a new location.
+
+    Creates a copy of the input netCDF and `input_metadata.json` file
+    from the specified source in a new directory, optionally filtering
+    the netCDF to only include specified variables and date range.
+
+    Parameters
+    ----------
+    source_input_set : str
+        Name of the source input set located in `inputfiles/`.
+    output_dir : str
+        Name of the output directory inside `inputfiles/` where the new input set will be copied to.
+    keep_vars : list of str or `all`, optional
+        List of variable names to keep in the copied netCDF. If `all`, all variables are kept.
+        Default is `all`.
+    start_date : str, None, or np.datetime64, optional
+        Date from which to start the copied data. If None, the start date equals that of the original file.
+        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+        Default is None.
+    end_date : str, None, or np.datetime64, optional
+        Date at which to end the copied data. If None, the end date equals that of the original file.
+        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+        Default is None.
+    **kwargs : dict, optional
+
+    Returns
+    -------
+    new_xr_dataset : xarray.Dataset
+        The copied and filtered xarray Dataset that is saved to the new location.
+    """ 
+    # Verify argument types
+    if not isinstance(source_input_set, str):
+        raise TypeError(f"(copy_input_files) `source_input_set` must be a string. Got type: {type(source_input_set)}")
+    if not isinstance(output_dir, str):
+        raise TypeError(f"(copy_input_files) `output_dir` must be a string. Got type: {type(output_dir)}")
+    if not isinstance(keep_vars, list) and not keep_vars == 'all':
+        if isinstance(keep_vars, str):
+            # Turn `keep_vars` into a list if it's a single string
+            keep_vars = [keep_vars]
+        else:
+            raise TypeError(f"(copy_input_files) `keep_vars` must be a list of strings or 'all'. Got type: {type(keep_vars)}")
+    if not (isinstance(start_date, (str, type(None), np.datetime64))):
+        raise TypeError(f"(copy_input_files) `start_date` must be a string, None, or np.datetime64. Got type: {type(start_date)}")
+    if not (isinstance(end_date, (str, type(None), np.datetime64))):
+        raise TypeError(f"(copy_input_files) `end_date` must be a string, None, or np.datetime64. Got type: {type(end_date)}")
+    # Verify that the source and output directories are not the same
+    if source_input_set == output_dir:
+        raise ValueError(f"(copy_input_files) `source_input_set` and `output_dir` cannot be the same. Both are '{source_input_set}'.")
+
+    # Check whether the output directory already exists
+    try:
+        verify_path(f"inputfiles/{output_dir}/")
+    except FileNotFoundError as e:
+        assert True, f"(copy_input_files) Output directory 'inputfiles/{output_dir}/' does not exist. Creating it."
+    else:
+        if overwrite == False:
+            # Ask whether to overwrite the existing directory
+            overwrite = unox.interpret_user_input(input(f"Output directory 'inputfiles/{output_dir}/' already exists. Overwrite? (y/n)"))
+            if not overwrite:
+                print('Aborting input file copy.')
+                return
+        print(f"Overwriting existing input files in {output_dir}")
+        remove_non_empty_directory(f"inputfiles/{output_dir}/")
+    # Make the output directory
+    make_file_path(f"inputfiles/{output_dir}/")
+    
+    # Load the source dataset as a `uarray`
+    source_uarr = uarray(source_input_set, is_input_set=True)
+
+    # Check whether to filter variables
+    if keep_vars != 'all':
+        # Verify that all variables in `keep_vars` are in the source dataset
+        for var in keep_vars:
+            verify_var(source_uarr.xr, var)
+        # Drop variables not in `keep_vars`
+        vars_to_drop = [var for var in source_uarr.xr.data_vars if var not in keep_vars]
+        source_uarr.xr = source_uarr.xr.drop_vars(vars_to_drop)
+        # Update the variable list attributes
+        for var_list_attr in ['x_vars', 'x1_vars', 'x2_vars']:
+            if var_list_attr in source_uarr.xr.attrs:
+                filtered_var_list = [var for var in source_uarr.xr.attrs[var_list_attr] if var in keep_vars]
+                source_uarr.xr.attrs[var_list_attr] = filtered_var_list
+        if 'y_var' in source_uarr.xr.attrs:
+            if source_uarr.xr.attrs['y_var'] not in keep_vars:
+                source_uarr.xr.attrs['y_var'] = 'None'
+    # Check whether to filter dates
+    if not isinstance(start_date, type(None)) or not isinstance(end_date, type(None)):
+        # Convert start_date and end_date to strings of YYYY-MM-DD if they are np.datetime64
+        if isinstance(start_date, np.datetime64):
+            start_date = str(pd.to_datetime(start_date).date())
+        elif isinstance(start_date, type(None)):
+            this_start = source_uarr.xr['time'].values[0]
+            start_date = f"{this_start.year:04d}-{this_start.month:02d}-{this_start.day:02d}"
+        if isinstance(end_date, np.datetime64):
+            end_date = str(pd.to_datetime(end_date).date())
+        elif isinstance(end_date, type(None)):
+            this_end = source_uarr.xr['time'].values[-1]
+            end_date = f"{this_end.year:04d}-{this_end.month:02d}-{this_end.day:02d}"
+        # Verify that `start_date` is before `end_date`
+        if start_date >= end_date:
+            raise ValueError(f"(copy_input_files) `start_date` must be before `end_date`. Got start_date: {start_date}, end_date: {end_date}.")
+        # Select the date range
+        source_uarr.xr = source_uarr.xr.sel(time=slice(start_date, end_date), drop=True)
+    
+    # Update the modification time attribute
+    source_uarr.xr.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Write out results
+    if not isinstance(output_dir, type(None)):
+        # Write the new dataset to the output directory
+        source_uarr.xr.to_netcdf(f"inputfiles/{output_dir}/{output_dir}.nc")
+        # Create metadata file
+        meta_dict = make_input_metadata_file(
+            source_uarr.xr,
+            output_dir=output_dir,
+            g_attrs=source_uarr.xr.attrs,
+        )
+
+    return source_uarr
