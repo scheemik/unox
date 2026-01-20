@@ -1129,6 +1129,20 @@ def make_input_metadata_file(
     # Check for global attributes
     if isinstance(g_attrs, type(None)):
         g_attrs = xr_dataset.attrs
+    else:
+        # Update the types of the given `g_attrs` to be compatible with JSON
+        for key in g_attrs.keys():
+            if isinstance(g_attrs[key], np.integer):
+                g_attrs[key] = int(g_attrs[key])
+            elif isinstance(g_attrs[key], np.floating):
+                g_attrs[key] = float(g_attrs[key])
+            elif isinstance(g_attrs[key], np.ndarray):
+                g_attrs[key] = g_attrs[key].tolist()
+            elif isinstance(g_attrs[key], (np.bool_, bool)):
+                if g_attrs[key] == True:
+                    g_attrs[key] = 'True'
+                else:
+                    g_attrs[key] = 'False'
     # Check whether `lsm` is in the list of data variables
     if 'lsm' in list(xr_dataset.data_vars):
         # Add `lsm: True` to the global attributes
