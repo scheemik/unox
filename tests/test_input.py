@@ -6,7 +6,8 @@ import pandas as pd
 import os
 import json
 
-from unox.HPC.data0.paths import verify_path
+from unox.HPC.data0.paths import verify_path, remove_non_empty_directory
+from unox.HPC.data0.dataset import uarray
 
 # Create an example xarray Dataset for testing
 # Include dimensions of time, lat, lon, and some example variables
@@ -586,3 +587,97 @@ def test_make_input_config():
             assert True, f"make_input_config raised an exception on invalid stage_2 {invalid_input}: {e}"
         else:
             assert False, f"make_input_config did not raise an exception on invalid stage_2 {invalid_input}"
+
+def test_copy_input_files():
+    """Test the copy_input_files function."""
+    # Define default inputs
+    default_inputs = {
+        'source_input_set': 'no2_2019_JFM',
+        'output_dir': 'test_copy_input_files',
+        'keep_vars': 'all',
+        'start_date': None,
+        'end_date': None,
+    }
+    # Test different valid values of `keep_vars`
+    valid_keep_vars = [
+        'all',
+        'nox',
+        ['no2', 'no2_tm1'],
+    ]
+    for this_keep_vars in valid_keep_vars:
+        # Create a copy of the input file
+        uin.copy_input_files(
+            source_input_set=default_inputs['source_input_set'],
+            output_dir=default_inputs['output_dir'],
+            keep_vars=this_keep_vars,
+            start_date=default_inputs['start_date'],
+            end_date=default_inputs['end_date'],
+        )
+        # Load the copied input netCDF file
+        this_new_netCDF = uarray(default_inputs['output_dir'], is_input_set=True)
+        # Load the metadata file
+        input_metadata = this_new_netCDF._get_metadata()
+        # Verify that the variables in the copied file match the expected variables
+        if this_keep_vars == 'all':
+            # Assemble the list of all variables
+            expected_vars = list(set(input_metadata['x_vars'] + input_metadata['x1_vars'] + input_metadata['x2_vars'] + [input_metadata['y_var']]))
+            if input_metadata['lsm'] == 'True':
+                expected_vars.append('lsm')
+        else: 
+            expected_vars = list(set(this_keep_vars))
+        actual_vars = list(set(this_new_netCDF.xr.data_vars.keys()))
+        assert actual_vars.sort() == expected_vars.sort(), f"`copy_input_files()` did not copy the expected variables. \nGot: {actual_vars} \nExpected: {expected_vars}"
+        # Release the loaded file
+        this_new_netCDF = 'None'
+    
+    # Test different valid values of `start_date` and `end_date`
+    valid_date_ranges = [
+        {
+            'start': '2019-01-02',
+            'end': '2019-03-31',
+            'exp_start': '2019-01-02',
+            'exp_end': '2019-03-31',
+        },
+        {
+            'start': '2019-01-02',
+            'end': '2019-01-31',
+            'exp_start': '2019-01-02',
+            'exp_end': '2019-01-31',
+        },
+        {
+            'start': None,
+            'end': '2019-02-15',
+            'exp_start': '2019-01-02',
+            'exp_end': '2019-02-15',
+        },
+        {
+            'start': '2019-02-02',
+            'end': None,
+            'exp_start': '2019-02-02',
+            'exp_end': '2019-03-31',
+        },
+    ]
+    for this_date_range in valid_date_ranges:
+        # Create a copy of the input file
+        uin.copy_input_files(
+            source_input_set=default_inputs['source_input_set'],
+            output_dir=default_inputs['output_dir'],
+            keep_vars=default_inputs['keep_vars'],
+            start_date=this_date_range['start'],
+            end_date=this_date_range['end'],
+        )
+        # Load the copied input netCDF file
+        this_new_netCDF = uarray(default_inputs['output_dir'], is_input_set=True)
+        # Get the actual start and end dates from the copied file as strings
+        this_start = this_new_netCDF.xr['time'].values[0]
+        actual_start_date = f"{this_start.year:04d}-{this_start.month:02d}-{this_start.day:02d}"
+        this_end = this_new_netCDF.xr['time'].values[-1]
+        actual_end_date = f"{this_end.year:04d}-{this_end.month:02d}-{this_end.day:02d}"
+        # Verify that the date range in the copied file matches the expected date range
+        assert actual_start_date == this_date_range['exp_start'], f"`copy_input_files()` did not copy the expected start date. Got: {actual_start_date}, Expected: {this_date_range['exp_start']}"
+        assert actual_end_date == this_date_range['exp_end'], f"`copy_input_files()` did not copy the expected end date. Got: {actual_end_date}, Expected: {this_date_range['exp_end']}"
+        # Release the loaded file
+        this_new_netCDF = 'None'
+
+    # Clean up test directory
+    remove_non_empty_directory(f"inputfiles/{default_inputs['output_dir']}/")
