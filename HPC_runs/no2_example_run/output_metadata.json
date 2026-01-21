@@ -2,7 +2,7 @@
     "savedir": "HPC_runs/no2_example_run/",
     "config_path": "inputfiles/_input_configs/sample_config.json",
     "config_dict": {
-        "input_set": "no2_lsm6",
+        "input_set": "no2_2005-2020",
         "x_vars": [
             "no2",
             "no2_tm1",
