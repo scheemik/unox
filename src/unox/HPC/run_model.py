@@ -22,6 +22,7 @@ print(f"Current working directory: {os.getcwd()}")
 n_epochs = 250
 model_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
+output_fmt = 'nc' # 'nc', 'npy', or 'both'
 split_year = 2019
 split_value = 0.9
 
@@ -221,9 +222,9 @@ def predict_and_save(
         pred = model.predict(xnow)
         np.save(f"{savedir}stage{kwargs['stage']}_output/pred_{x.split('/')[-1]}", pred)
 
-if input_fmt == 'npy':
+if output_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=1)
-elif input_fmt == 'nc':
+elif output_fmt == 'nc' or output_fmt == 'both':
     # Get the long name and units of the y variable to put in the new xarray
     y_var = uarr.xr.attrs['y_var']
     y_var_name = uarr.xr[y_var].long_name
@@ -237,13 +238,11 @@ elif input_fmt == 'nc':
     for year in range(split_year, max(years)+1):
         print(f"Generating predictions for year: {year}")
         x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
-        # Get the latitude and longitude values
-        # lats = input_ds.lat.values
-        # lons = input_ds.lon.values
         # Make the predictions
         pred = unet.predict(x_test)
         # Save the numpy array to file
-        np.save(f"{savedir}stage1_output/pred_X_{year}.npy", pred)
+        if output_fmt == 'both':
+            np.save(f"{savedir}stage1_output/pred_X_{year}.npy", pred)
         # Add year to the list of predictions in the metadata dictionary
         output_metadata['pred_years']['stage1'].append(year)
 
@@ -274,6 +273,8 @@ elif input_fmt == 'nc':
             pred_xarray[coord].attrs[this_attr] = data_for_year[coord].attrs[this_attr]
     # Save the xarray to a file
     pred_xarray.to_netcdf(f"{savedir}predictions.nc")
+else:
+    raise ValueError(f"`output_fmt` must be 'npy', 'nc', or 'both'. Got: {output_fmt}")
 
 print('Done with stage 1')
 if config_dict['stage_2'] == False:
@@ -316,9 +317,9 @@ else:
 
 unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=model_fmt)
 
-if input_fmt == 'npy':
+if output_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=2)
-elif input_fmt == 'nc':
+elif output_fmt == 'nc' or output_fmt == 'both':
     # Create a new variable name and long name
     pred_var = f"{y_var}_pred_s2"
     pred_var_name = f"Predicted {y_var_name} (stage 2)"
@@ -331,7 +332,8 @@ elif input_fmt == 'nc':
         # Make the predictions
         pred = unet.predict(x_test)
         # Save out the numpy array to file
-        np.save(f"{savedir}stage2_output/pred_X_{year}.npy", pred)
+        if output_fmt == 'both':
+            np.save(f"{savedir}stage2_output/pred_X_{year}.npy", pred)
         # Add year to the list of predictions in the metadata dictionary
         output_metadata['pred_years']['stage2'].append(year)
 
@@ -366,6 +368,8 @@ elif input_fmt == 'nc':
             pred_xarray[coord].attrs[this_attr] = data_for_year[coord].attrs[this_attr]
     # Save the xarray to a file
     pred_xarray.to_netcdf(f"{savedir}predictions.nc")
+else:
+    raise ValueError(f"`output_fmt` must be 'npy', 'nc', or 'both'. Got: {output_fmt}")
 
 # Save the output metadata dictionary to file
 print('output_metadata:', output_metadata)
