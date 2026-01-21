@@ -1,5 +1,6 @@
 #test code based on Unet_Chinese_NOx example_code.ipynb
 import numpy as np
+import pandas as pd
 import glob
 import sys
 import os 
@@ -11,7 +12,6 @@ from data0.dataset import uarray
 from data0.paths import verify_path
 from utils.data_split import data_split
 import data0.run_functions as rf
-from data0.config import get_config
 import data0.run_functions as rf
 
 print("")
@@ -271,6 +271,21 @@ elif output_fmt == 'nc' or output_fmt == 'both':
     for coord in ['lat', 'lon']:
         for this_attr in data_for_year[coord].attrs.keys():
             pred_xarray[coord].attrs[this_attr] = data_for_year[coord].attrs[this_attr]
+    # Add global attributes for the prediction file
+    pred_xarray.attrs['description'] = f"Predicted {y_var_name} using a U-net model"
+    pred_xarray.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+    pred_xarray.attrs['y_var'] = f"{y_var}"
+    pred_xarray.attrs['input_set'] = f"{uarr.name}"
+    pred_xarray.attrs['config_path'] = f"{config_path}"
+    pred_xarray.attrs['config_dict'] = f"{config_dict}"
+    # Copy over global attributes from the input xarray
+    for this_attr in uarr.xr.attrs.keys():
+        if this_attr in ['stages']:
+            pred_xarray.attrs[this_attr] = [1]
+        elif this_attr in ['x_vars', 'stage_2_cutoff']:
+            pred_xarray.attrs[this_attr] = config_dict[this_attr]
+        elif this_attr not in ['description', 'modification_date', 'y_var', 'x_vars', 'x1_vars', 'x2_vars']:
+            pred_xarray.attrs[this_attr] = uarr.xr.attrs[this_attr]
     # Save the xarray to a file
     pred_xarray.to_netcdf(f"{savedir}predictions.nc")
 else:
@@ -366,6 +381,12 @@ elif output_fmt == 'nc' or output_fmt == 'both':
     for coord in ['lat', 'lon']:
         for this_attr in data_for_year[coord].attrs.keys():
             pred_xarray[coord].attrs[this_attr] = data_for_year[coord].attrs[this_attr]
+    # Add global attributes for the prediction file
+    pred_xarray.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+    # Copy over global attributes from the input xarray
+    for this_attr in uarr.xr.attrs.keys():
+        if this_attr in ['stages']:
+            pred_xarray.attrs[this_attr] = [1,2]
     # Save the xarray to a file
     pred_xarray.to_netcdf(f"{savedir}predictions.nc")
 else:
