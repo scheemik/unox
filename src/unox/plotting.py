@@ -336,6 +336,63 @@ def plot_var_maps(
     # Return the figure
     return fig
 
+def select_time(
+    xr_dataset,
+    datetime,
+    avg_over=None,
+):
+    """Selects the time from an xarray to plot.
+
+    Either selects a single time slice or averages over a time period to result in 
+    an xarray without a time dimension, only lat-lon dimensions.
+
+    Parameters
+    ----------
+    xr_dataset : xarray.Dataset or xarray.DataArray
+        The xarray data to plot. Must have a time dimension.
+    datetime : str
+        Date and time to select from the data file.
+    avg_over : str, numpy.timedelta64, or None
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
+
+    Returns
+    -------
+    xr_sel_time : xarray.Dataset or xarray.DataArray
+        An xarray DataArray of the selected variable without a time dimension.
+    title_segment : str
+        A segement of the title string for the plot with time information.
+    """
+    # Verify argument types
+    xr_dataset = verify_dataset(xr_dataset, check_time=True)
+    if not isinstance(datetime, (str, np.timedelta64)):
+        raise TypeError(f"(select_time) `datetime` must be a string, or a numpy.timedelta64. Got type: {type(datetime)}")
+    if not isinstance(avg_over, (type(None), str, np.timedelta64)):
+        raise TypeError(f"(select_time) `avg_over` must be None, a string, or a numpy.timedelta64. Got type: {type(avg_over)}")
+
+    # Select the time to plot
+    if isinstance(avg_over, type(None)):
+        # Take just that time slice
+        # Use squeeze to drop `time` dimension as sel() only automatically drops scalar
+        # dimensions, which `time` is not
+        xr_sel_time = xr_dataset.sel(time=datetime, drop=False).squeeze(drop=True)
+        # Format a string for the title
+        title_segment = datetime.split('T')[0]
+    else:
+        # Add the increment over which to average to the datetime
+        try:
+            end_date = udata.add_amount_to_date(datetime, avg_over)
+        except:
+            raise ValueError(f"(select_time) Invalid `avg_over` value: {avg_over}")
+        # Average over the specified amount of time
+        # Maintain attributes by using `drop=False` in sel() and `keep_attrs=True` in mean()
+        xr_sel_time = xr_dataset.sel(time=slice(datetime, end_date), drop=False)
+        xr_sel_time = xr_sel_time.mean(dim='time', keep_attrs=True)
+        # Get the value and unit of the averaging
+        avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
+        # Format a string for the title
+        title_segment = f"Averaged over {avg_over_num} {avg_over_unit} from {datetime.split('T')[0]}"
+    return xr_sel_time, title_segment
 def plot_nc_map(
     xr_dataset='../datafiles/nox_2019_t106_US.nc',
     var='nox',
