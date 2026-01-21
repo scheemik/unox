@@ -332,7 +332,7 @@ def plot_var_maps(
         # Add a colorbar
         axs[i].colorbar(this_var, loc='b', label=clrbar_label)
     # Add an overall title
-    fig.suptitle(title_segment, fontsize=title_font_size)
+    fig.suptitle(f"{u_arr.name} {title_segment}", fontsize=title_font_size)
     # Return the figure
     return fig
 
