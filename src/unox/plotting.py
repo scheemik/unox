@@ -993,12 +993,12 @@ def plot_comp_maps(
     vars_to_plot = [y_var]
     # Verify that the prediction array has the correct variable
     pred_var = f"{y_var}_pred"
-    udata.verify_var(pred_xarray, pred_var)
+    verify_var(pred_xarray, pred_var)
     vars_to_plot.append(pred_var)
     # Decide on the number of rows and columns in the figure
     if stage1_only == False:
         pred_var_s2 = f"{y_var}_pred_s2"
-        udata.verify_var(pred_xarray, pred_var_s2)
+        verify_var(pred_xarray, pred_var_s2)
         vars_to_plot.append(pred_var_s2)
         # Set the number of rows and columns in the figure
         if add_corr_plots:
@@ -1385,7 +1385,7 @@ def corr_plot(
             ax_var = y_var
             # If not done already, add the "truth" data to the prediction xarray
             try:
-                udata.verify_var(pred_xarray, ax_var)
+                verify_var(pred_xarray, ax_var)
             except:
                 # Trim the latitude and longitude extents to match
                 pred_xarray, input_xarray = udata.match_domains(pred_xarray, input_xarray)
@@ -1406,7 +1406,7 @@ def corr_plot(
         else:
             raise ValueError(f"(corr_plot) `this_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {this_ax}")
         # Verify that the prediction array has the correct variable
-        udata.verify_var(pred_xarray, ax_var)
+        verify_var(pred_xarray, ax_var)
         # Add the data to plot to the list
         plot_data.append(pred_xarray[ax_var].sel(time=str(year)).values)
 
