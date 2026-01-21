@@ -384,7 +384,7 @@ def test_make_input_config():
     # Test with valid parameters
     actual = uin.make_input_config(
         'test_make_input_config',
-        input_set='no2_lsm6',
+        input_set='no2_2005-2020',
         grid_size=[30,40],
         x_vars=[
             'no2',
@@ -408,7 +408,7 @@ def test_make_input_config():
         ],
     )
     expected = {
-        "input_set": "no2_lsm6",
+        "input_set": "no2_2005-2020",
         "grid_size": [30, 40],
         "x_vars": [
             "no2",

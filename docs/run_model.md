@@ -100,7 +100,7 @@ These are `.json` files stored in `inputfiles/_input_configs/` and follow the fo
 
 ```json
 {
-    "input_set": "no2_lsm6",
+    "input_set": "no2_2005-2020",
     "x_vars": [
         "no2",
         "no2_tm1",
@@ -517,7 +517,7 @@ Generating predictions for year: 2020
 [1m 5/12[0m [32m━━━━━━━━[0m[37m━━━━━━━━━━━━[0m [1m0s[0m 13ms/step
 [1m 9/12[0m [32m━━━━━━━━━━━━━━━[0m[37m━━━━━[0m [1m0s[0m 13ms/step
 [1m12/12[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 14ms/step
-output_metadata: {'savedir': 'HPC_runs/example_job/', 'config_path': 'inputfiles/_input_configs/sample_config.json', 'config_dict': {'input_set': 'no2_lsm6', 'x_vars': ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd'], 'stage_2': True, 'stage_2_cutoff': 2013, 'lsm_vars': [], 'grid_size': [56, 120]}, 'version': 1, 'n_epochs': 250, 'model_fmt': 'keras', 'input_fmt': 'nc', 'split_year': 2019, 'split_value': 0.9, 'train_years': {'stage1': [2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018], 'stage2': [2014, 2015, 2016, 2017, 2018]}, 'pred_years': {'stage1': [2019, 2020], 'stage2': [2019, 2020]}, 'unet_build_shape': (56, 120, 9)}
+output_metadata: {'savedir': 'HPC_runs/example_job/', 'config_path': 'inputfiles/_input_configs/sample_config.json', 'config_dict': {'input_set': 'no2_2005-2020', 'x_vars': ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd'], 'stage_2': True, 'stage_2_cutoff': 2013, 'lsm_vars': [], 'grid_size': [56, 120]}, 'version': 1, 'n_epochs': 250, 'model_fmt': 'keras', 'input_fmt': 'nc', 'split_year': 2019, 'split_value': 0.9, 'train_years': {'stage1': [2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018], 'stage2': [2014, 2015, 2016, 2017, 2018]}, 'pred_years': {'stage1': [2019, 2020], 'stage2': [2019, 2020]}, 'unet_build_shape': (56, 120, 9)}
 
 Done running test_unet.py
 
