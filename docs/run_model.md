@@ -64,12 +64,12 @@ The script `HPC_from_animus.sh` is set up to facilitate the transfer so you do n
 - `-c`: Cluster
     - The name of the cluster to transfer to, the default being `trillium`.
 
-Here is an example of transferring the `no2_sample_input` input file from Animus to Trillium:
+Here is an example of transferring the `no2_2005-2020` input file from Animus to Trillium:
 
 ```console
-(uplt) username@animus-c:~/unox$ bash HPC_from_animus.sh -f no2_sample_input -i 
+(uplt) username@animus-c:~/unox$ bash HPC_from_animus.sh -f no2_2005-2020 -i 
 -c, No cluster specified, defaulting to trillium
--i, Copying full input file directory for no2_sample_input to trillium from Animus
+-i, Copying full input file directory for no2_2005-2020 to trillium from Animus
 Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
 (<username>@trillium.alliancecan.ca) Duo two-factor login for <username>
 
@@ -79,16 +79,17 @@ Enter a passcode or select one of the following options:
 
 Passcode or option (1-1): 1
 Success. Logging you in...
-input_metadata.json         100% 1307    90.1KB/s   00:00    
-Y_2005.npy                  100%   19MB  24.6MB/s   00:00    
+input_metadata.json         100% 1307    90.1KB/s   00:00
+Y_2005.npy                  100%   19MB  24.6MB/s   00:00
 Y_2006.npy                  100%   19MB  61.1MB/s   00:00
 ...
-X_2019.npy                  100%  168MB  84.3MB/s   00:01    
-X_2020.npy                  100%  168MB  89.4MB/s   00:01    
-no2_sample_input.nc         100% 3882MB  91.9MB/s   00:42
+X_2019.npy                  100%  168MB  84.3MB/s   00:01
+X_2020.npy                  100%  168MB  89.4MB/s   00:01
+input_metadata.json         100% 1319   232.4KB/s   00:00    
+no2_2005-2020.nc            100% 3882MB  77.1MB/s   00:50
 ```
 
-Note that the `.npy` files are now deprecated. 
+Note that the `.npy` files are now deprecated and the only files that should transfer are the `.json` and `.nc`.
 
 <a id='config_files'></a>
 [back to top](#top)
