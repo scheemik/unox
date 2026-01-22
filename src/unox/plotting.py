@@ -650,6 +650,7 @@ def plot_comparison(
     set_under_val=1,
     hist_params={'bins':100, 'vmax':1000, 'vmin':10},
     log_scale=True,
+    **kwargs,
 ):
     """
     Plot a comparison of two numpy arrays.
