@@ -595,38 +595,35 @@ def plot_run_analysis(
 
     # Add correlation plots, if specified
     if add_corr_plots:
-        # Create arrays to hold the plots and titles
+        # Create arrays to hold the plots
         fig_q_list = [None]*3
-        title_list = [None]*3
-        # Set histogram parameters
-        hist_params={'bins':100, 'vmax':10000, 'vmin':10}
         # Add the three correlation plots to the figure
-        fig_q_list[0], title_list[0] = corr_plot(
-            HPC_run=HPC_run,
-            year=year,
-            x_ax='pred',
-            y_ax='truth',
+        fig_q_list[0] = corr_plot(
+            HPC_run,
+            is_predict=True,
+            x_var='pred',
+            y_var='truth',
+            datetime=year,
             ax=axs[-3],
-            hist_params=hist_params,
             **kwargs,
         )
         if stage1_only == False:
-            fig_q_list[1], title_list[1] = corr_plot(
-                HPC_run=HPC_run,
-                year=year,
-                x_ax='pred_s2',
-                y_ax='truth',
+            fig_q_list[1] = corr_plot(
+                HPC_run,
+                is_predict=True,
+                x_var='pred_s2',
+                y_var='truth',
+                datetime=year,
                 ax=axs[-2],
-                hist_params=hist_params,
                 **kwargs,
             )
-            fig_q_list[2], title_list[2] = corr_plot(
-                HPC_run=HPC_run,
-                year=year,
-                x_ax='pred',
-                y_ax='pred_s2',
+            fig_q_list[2] = corr_plot(
+                HPC_run,
+                is_predict=True,
+                x_var='pred',
+                y_var='pred_s2',
+                datetime=year,
                 ax=axs[-1],
-                hist_params=hist_params,
                 **kwargs,
             )
         # Add the colorbar
