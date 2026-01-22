@@ -9,15 +9,11 @@ from scipy.stats import linregress
 import json
 import os
 
-from unox import unox
-from unox.HPC.data0.paths import verify_path
 from unox import data as udata
-from unox.HPC.data0.dataset import uarray, get_dataset
+from unox.HPC.data0.dataset import uarray
 from unox.HPC.data0.verify_dataset import verify_dataset, verify_var
 from unox.HPC.data0.verify_dtype import verify_number
 from unox import plot_format as uplt_fmt
-from unox.input import x_or_y_var, get_input_index
-from unox.HPC.data0.load_input import get_npy_from_netcdf
 
 # Set font sizes
 mpl.rcParams['font.size'] = 16
