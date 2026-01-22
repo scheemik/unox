@@ -338,8 +338,9 @@ def plot_var_maps(
 
 def select_time(
     xr_dataset,
-    datetime,
+    datetime=None,
     avg_over=None,
+    sum_vars=False,
 ):
     """Selects the time from an xarray to plot.
 
@@ -350,11 +351,13 @@ def select_time(
     ----------
     xr_dataset : xarray.Dataset or xarray.DataArray
         The xarray data to plot. Must have a time dimension.
-    datetime : str
+    datetime : str or None, optional
         Date and time to select from the data file.
-    avg_over : str, numpy.timedelta64, or None
+    avg_over : str, numpy.timedelta64, or None, optional
         If provided, averages the data over the specified time period.
         If None, takes just the time slice specified in `datetime`.
+    sum_vars : bool, optional
+        Whether to sum across all time steps. Is ignored if `avg_over` is not None.
 
     Returns
     -------
@@ -365,20 +368,15 @@ def select_time(
     """
     # Verify argument types
     xr_dataset = verify_dataset(xr_dataset, check_time=True)
-    if not isinstance(datetime, (str, np.timedelta64)):
-        raise TypeError(f"(select_time) `datetime` must be a string, or a numpy.timedelta64. Got type: {type(datetime)}")
+    if not isinstance(datetime, (type(None), str, np.timedelta64)):
+        raise TypeError(f"(select_time) `datetime` must be None, a string, or a numpy.timedelta64. Got type: {type(datetime)}")
     if not isinstance(avg_over, (type(None), str, np.timedelta64)):
         raise TypeError(f"(select_time) `avg_over` must be None, a string, or a numpy.timedelta64. Got type: {type(avg_over)}")
+    if not isinstance(sum_vars, bool):
+        raise TypeError(f"(select_time) `sum_vars` must be a bool. Got type: {type(sum_vars)}")
 
     # Select the time to plot
-    if isinstance(avg_over, type(None)):
-        # Take just that time slice
-        # Use squeeze to drop `time` dimension as sel() only automatically drops scalar
-        # dimensions, which `time` is not
-        xr_sel_time = xr_dataset.sel(time=datetime, drop=False).squeeze(drop=True)
-        # Format a string for the title
-        title_segment = datetime.split('T')[0]
-    else:
+    if not isinstance(avg_over, type(None)):
         # Add the increment over which to average to the datetime
         try:
             end_date = udata.add_amount_to_date(datetime, avg_over)
@@ -391,7 +389,19 @@ def select_time(
         # Get the value and unit of the averaging
         avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
         # Format a string for the title
-        title_segment = f"Averaged over {avg_over_num} {avg_over_unit} from {datetime.split('T')[0]}"
+        title_segment = f"Averaged from {str(xr_dataset.time.values[0]).split('T')[0].split(' ')[0]} to {str(xr_dataset.time.values[-1]).split('T')[0].split(' ')[0]} ({avg_over_num} {avg_over_unit})"
+    elif sum_vars == True:
+        # Sum all the variables over time
+        xr_sel_time = xr_dataset.sum(dim='time', keep_attrs=True).squeeze(drop=True)
+        # Format a string for the title
+        title_segment = f"Summed from {str(xr_dataset.time.values[0]).split('T')[0].split(' ')[0]} to {str(xr_dataset.time.values[-1]).split('T')[0].split(' ')[0]}"
+    else:
+        # Take just that time slice
+        # Use squeeze to drop `time` dimension as sel() only automatically drops scalar
+        # dimensions, which `time` is not
+        xr_sel_time = xr_dataset.sel(time=datetime, drop=False).squeeze(drop=True)
+        # Format a string for the title
+        title_segment = datetime.split('T')[0]
     return xr_sel_time, title_segment
 
 def plot_run_analysis(
