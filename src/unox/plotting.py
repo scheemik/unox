@@ -393,6 +393,250 @@ def select_time(
         # Format a string for the title
         title_segment = f"Averaged over {avg_over_num} {avg_over_unit} from {datetime.split('T')[0]}"
     return xr_sel_time, title_segment
+
+def plot_run_analysis(
+    HPC_run,
+    year,
+    datetime='2019-01-02',
+    avg_over=None,
+    restrict_lat_lon_to=None,
+    add_corr_plots=True,
+    stage1_only=False,
+    clr_bar_scale=0.5,
+    clr_map=pplt.Colormap('seismic'),
+    **kwargs,
+):
+    """Plots a set of maps to compare the truth and the two stages of the model.
+
+    Creates a set of 6 maps:
+    1. 'Truth'
+    2. Stage 1
+    3. Stage 2
+    4. Difference: 'Truth' - Stage 1
+    5. Difference: 'Truth' - Stage 2
+    6. Difference: Stage 1 - Stage 2
+
+    Additionally adds correlation plots between:
+    7. 'Truth' and Stage 1
+    8. 'Truth' and Stage 2
+    9. Stage 1 and Stage 2
+
+    Parameters
+    ----------
+    HPC_run : str
+        The name of the HPC_run for which to make comparison maps.
+    year : int
+        The year for which to make comparisons.
+    datetime : np.datetime64 or str, optional
+        Date and time to select from the data file.
+        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+    avg_over : str, numpy.timedelta64, or None, optional
+        If provided, averages the data over the specified time period.
+        If None, takes just the time slice specified in `datetime`.
+    restrict_lat_lon_to : str, optional
+        Path to a netCDF file to restrict the latitude and longitude range.
+        If None, the entire dataset is used.
+    add_corr_plots : bool, optional
+        Whether or not to add a row of correlation plots to the figure.
+    stage1_only : bool, optional
+        If True, produce graphs just corresponding to stage 1. If False, produce graphs
+        for stage 1 and stage 2. Default is False.
+    clr_bar_scale : float between 0 and 1, optional
+        Scale factor for the color bar. If set to 1, the color bar will be scaled 
+        to the maximum absolute value of the data. Default is 0.5.
+    clr_map : matplotlib.colors.Colormap, optional
+        The colormap to use for the map plots. Default is a diverging seismic colormap.
+    **kwargs : keyword arguments
+        Additional keyword arguments to pass to `corr_plot()`.
+    
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plots.
+    """
+    # Verify argument types
+    if not isinstance(HPC_run, str):
+        raise TypeError(f"(plot_comp_maps) `HPC_run` must be a string. Got type: {type(HPC_run)}")
+    if not isinstance(year, int):
+        raise TypeError(f"(plot_comp_maps) `year` must be an integer. Got type: {type(year)}")
+    # `datetime` and `avg_over` are verified in `select_time()`
+
+    # Get predictions dataset
+    pred_uarr = uarray(HPC_run, is_predict=True)
+    # Get the metadata from the predictions uarray
+    meta_dict = pred_uarr._get_metadata()
+    # Get the input set from the metadata
+    input_set = meta_dict['config_dict']['input_set']
+    # Get the input set used in the HPC run
+    input_uarr = uarray(input_set, is_input_set=True)
+    # Get and verify input set
+    input_xarray = input_uarr.xr
+
+    # Get the `y_var` name from the input dataset
+    y_var = input_uarr.xr.attrs['y_var']
+    # Make a list for the variables to plot
+    vars_to_plot = [y_var]
+    # Verify that the prediction array has the correct variable
+    pred_var = f"{y_var}_pred"
+    verify_var(pred_uarr.xr, pred_var)
+    vars_to_plot.append(pred_var)
+    # Decide on the number of rows and columns in the figure
+    if stage1_only == False:
+        pred_var_s2 = f"{y_var}_pred_s2"
+        verify_var(pred_uarr.xr, pred_var_s2)
+        vars_to_plot.append(pred_var_s2)
+        # Set the number of rows and columns in the figure
+        if add_corr_plots:
+            n_rows = 3
+            n_rows_maps = 2
+        else:
+            n_rows = 2
+            n_rows_maps = 2
+        n_cols = 3
+    else:
+        # Set the number of rows and columns in the figure
+        if add_corr_plots:
+            n_rows = 2
+            n_rows_maps = 1
+        else:
+            n_rows = 1
+            n_rows_maps = 1
+        n_cols = 3
+    
+    # Trim the latitude and longitude extents to match
+    pred_uarr.xr, input_uarr.xr = udata.match_domains(pred_uarr.xr, input_uarr.xr)
+    # Add the "truth" data to the prediction array
+    pred_uarr.xr[y_var] = input_uarr.xr[y_var]
+    # Select the time slice to plot
+    ## Note: This will not affect the data used in the correlation plots
+    pred_uarr.xr, time_title = select_time(
+        pred_uarr.xr,
+        datetime=datetime,
+        avg_over=avg_over,
+    )
+
+    # Get the units of the y_var
+    y_var_unit = input_uarr.xr[y_var].units
+    # Calculate the difference between the "truth" and the predictions
+    pred_uarr.xr['y_m_st1'] = pred_uarr.xr[y_var] - pred_uarr.xr[pred_var]
+    pred_uarr.xr['y_m_st1'].attrs = {'long_name': f"'Truth' - Stage 1 prediction", 'units': y_var_unit}
+    vars_to_plot.append('y_m_st1')
+    if stage1_only == False:
+        pred_uarr.xr['y_m_st2'] = pred_uarr.xr[y_var] - pred_uarr.xr[pred_var_s2]
+        pred_uarr.xr['y_m_st2'].attrs = {'long_name': f"'Truth' - Stage 2 prediction", 'units': y_var_unit}
+        vars_to_plot.append('y_m_st2')
+        pred_uarr.xr['st1_m_st2'] = pred_uarr.xr[pred_var] - pred_uarr.xr[pred_var_s2]
+        pred_uarr.xr['st1_m_st2'].attrs = {'long_name': f"Stage 1 - Stage 2", 'units': y_var_unit}
+        vars_to_plot.append('st1_m_st2')
+
+    # Create tuple of the projections for each subplot
+    if add_corr_plots == False:
+        # Only one projection required
+        these_projs = 'cyl'
+    else:
+        # Create a list of projections for each subplot
+        these_projs = []
+        for i in range(n_rows_maps*n_cols):
+            these_projs.append('cyl')
+        for i in range((n_rows - n_rows_maps)*n_cols):
+            these_projs.append(None)
+    # Create the figure
+    ## Setting `share=False` to allow separate axis labels for each subplot
+    fig, axs = pplt.subplots(refwidth=4, nrows=n_rows, ncols=n_cols, proj=these_projs, share=False)
+    # Select medium resolution for features such as coastlines
+    pplt.rc.reso = 'med' 
+
+    # Get the maximum and minimum values for each variable
+    vmin_arr = pred_uarr.xr.min(skipna=True)
+    vmax_arr = pred_uarr.xr.max(skipna=True)
+    # Gather the maximum and mimum values across all variables
+    val_list = []
+    for var in vmin_arr.data_vars:
+        val_list.append(vmin_arr[var].values)
+        val_list.append(vmax_arr[var].values)
+    # Get the halfrange for use with a diverging color map
+    chr = udata.get_max_abs_val(val_list)
+    # Scale the color bar
+    if clr_bar_scale < 0 or clr_bar_scale > 1:
+        warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
+        clr_bar_scale = 0.5
+    if clr_bar_scale != 1:
+        chr *= clr_bar_scale
+        cbe = 'both'
+    else:
+        cbe = 'neither'
+
+    # Make blank lists to collect vars and colorbar labels
+    these_vars = [None]*(n_rows_maps*n_cols)
+    these_cblbls = [None]*(n_rows_maps*n_cols)
+    # Add the plots to the axes
+    for i in range(len(vars_to_plot)):
+        data_arr = pred_uarr.xr[vars_to_plot[i]]
+        # Add the plot to the axis
+        these_vars[i], these_cblbls[i] = map_ax(
+            axs[i], 
+            data_arr,
+            plt_title=data_arr.attrs['long_name'],
+            cmap=clr_map,
+            cbar_max=chr,
+            cbar_min=-chr,
+            cb_ext=cbe,
+            **kwargs,
+        )
+
+    # Determine the colorbar label
+    if len(set(these_cblbls)) == 1:
+        cb_label = these_cblbls[0]
+    else:
+        cb_label = 'Labels vary'
+        cb_label = these_cblbls[0]
+    # Add one overall colorbar for the entire figure on the right-hand side
+    cbar = make_colorbar(fig, these_vars[-1], cb_label, num_ticks=9, cb_loc='r', cb_extend=cbe, rows=(1, n_rows_maps))
+
+    # Add correlation plots, if specified
+    if add_corr_plots:
+        # Create arrays to hold the plots and titles
+        fig_q_list = [None]*3
+        title_list = [None]*3
+        # Set histogram parameters
+        hist_params={'bins':100, 'vmax':10000, 'vmin':10}
+        # Add the three correlation plots to the figure
+        fig_q_list[0], title_list[0] = corr_plot(
+            HPC_run=HPC_run,
+            year=year,
+            x_ax='pred',
+            y_ax='truth',
+            ax=axs[-3],
+            hist_params=hist_params,
+            **kwargs,
+        )
+        if stage1_only == False:
+            fig_q_list[1], title_list[1] = corr_plot(
+                HPC_run=HPC_run,
+                year=year,
+                x_ax='pred_s2',
+                y_ax='truth',
+                ax=axs[-2],
+                hist_params=hist_params,
+                **kwargs,
+            )
+            fig_q_list[2], title_list[2] = corr_plot(
+                HPC_run=HPC_run,
+                year=year,
+                x_ax='pred',
+                y_ax='pred_s2',
+                ax=axs[-1],
+                hist_params=hist_params,
+                **kwargs,
+            )
+        # Add the colorbar
+        fig.colorbar(fig_q_list[0], loc='r', label='Count per pixel', extend='both', formatter='sci', rows=(n_rows_maps+1, n_rows))
+
+    # Set the figure title
+    fig.suptitle(f"HPC run: {HPC_run}, input set: {input_set}, {time_title}", fontsize=title_font_size)
+    return fig
+
+########################################################
 def plot_nc_map(
     xr_dataset='../datafiles/nox_2019_t106_US.nc',
     var='nox',
