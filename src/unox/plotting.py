@@ -1705,277 +1705,14 @@ def make_colorbar(
     cbar.update_ticks()
     return cbar
 
-def corr_plot_old(
-    HPC_run = 'no2_example_run',
-    year = 2019,
-    x_ax = 'pred',
-    y_ax = 'truth',
-    restrict_lat_lon_to = None,
-    ax = None,
-    **kwargs,
-):
-    """
-    Plot the prediction vs truth values.
-
-    Creates a correlation plot between the prediction values of the given HPC run
-
-    Parameters
-    ----------
-    HPC_run : str
-        The name of the HPC_run for which to make a correlation plot.
-    year : int
-        The year for which to make comparisons.
-    x_ax : str
-        What to plot on the x-axis. Must be one of ['truth', 'pred', 'pred_s2'].
-    y_ax : str
-        What to plot on the y-axis. Must be one of ['truth', 'pred', 'pred_s2'].
-    restrict_lat_lon_to : str
-        Path to a netCDF file to restrict the latitude and longitude range.
-        If None, the entire dataset is used.
-    ax : matplotlib.axes.Axes or None
-        The axes on which to plot the data. If None, a new figure and axes are created.
-    **kwargs : dict
-        Additional keyword arguments to pass to the `plot_comparison` function.
-
-    Returns
-    -------
-    fig : matplotlib.figure.Figure
-        The figure object containing the plot.
-
-    Examples
-    --------
-    >>> fig = corr_plot('no2_example_run', 2019, x_ax='pred', y_ax='truth')
-    """
-    # Verify argument types
-    if not isinstance(HPC_run, str):
-        raise TypeError(f"(corr_plot) `HPC_run` must be a string. Got type: {type(HPC_run)}")
-    if not isinstance(year, int):
-        raise TypeError(f"(corr_plot) `year` must be an integer. Got type: {type(year)}")
-    if not x_ax in ['truth', 'pred', 'pred_s2']:
-        raise ValueError(f"(corr_plot) `x_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {x_ax}")
-    if not y_ax in ['truth', 'pred', 'pred_s2']:
-        raise ValueError(f"(corr_plot) `y_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {y_ax}")
-    
-    # Create a new figure and axis if none is provided
-    if isinstance(ax, type(None)):
-        new_fig = True
-    else:
-        new_fig = False
-    
-    # Assemble filepath to the HPC_run predictions netcdf
-    pred_nc_path = f"HPC_runs/{HPC_run}/predictions.nc"
-    # Get and verify predictions data
-    pred_xarray = uarray(pred_nc_path).xr
-    # Get the input set used in the HPC run
-    input_set = get_input_set(HPC_run)
-    # Get and verify input set
-    input_xarray = uarray(input_set, is_input_set=True).xr
-
-    # Get the `y_var` name from the input dataset
-    y_var = input_xarray.attrs['y_var']
-    # For the x and y axes, get the specified data
-    plot_data = []
-    plot_labels = []
-    for this_ax in [x_ax, y_ax]:
-        if this_ax == 'truth':
-            ax_var = y_var
-            # If not done already, add the "truth" data to the prediction xarray
-            try:
-                verify_var(pred_xarray, ax_var)
-            except:
-                # Trim the latitude and longitude extents to match
-                pred_xarray, input_xarray = udata.match_domains(pred_xarray, input_xarray)
-                # Add the "truth" data to the prediction array
-                pred_xarray[ax_var] = input_xarray[ax_var]
-            # Assemble the axis label
-            var_units = pred_xarray[ax_var].attrs['units']
-            plot_labels.append(f"'Truth' ({var_units})")
-        elif this_ax in ['pred', 'pred_s2']:
-            ax_var = f"{y_var}_{this_ax}"
-            # Assemble the axis label
-            if '2' in this_ax:
-                label_mod = r"$_{s2}$"
-            else:
-                label_mod = ""
-            var_units = pred_xarray[ax_var].attrs['units']
-            plot_labels.append(f"Predictions{label_mod} ({var_units})")
-        else:
-            raise ValueError(f"(corr_plot) `this_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {this_ax}")
-        # Verify that the prediction array has the correct variable
-        verify_var(pred_xarray, ax_var)
-        # Add the data to plot to the list
-        plot_data.append(pred_xarray[ax_var].sel(time=str(year)).values)
-
-    # Get the long name and units of the specified variable for plot labels
-    try:
-        var_name = input_xarray[y_var].attrs['long_name']
-    except:
-        var_name = 'var'
-    # Assemble the plot title
-    plt_title = f"HPC run: {HPC_run}, input set: {input_set}, {var_name}"
-
-    # Plot the comparison
-    fig_q = plot_comparison(
-        plot_data[0],
-        plot_data[1],
-        label_x=plot_labels[0],
-        label_y=plot_labels[1],
-        ax = ax,
-        plt_title = plt_title,
-        **kwargs,
-    )
-    return fig_q, plt_title
-
-def all_corr_plots(
-    HPC_run = 'no2_example_run',
-    year = 2019,
-    hist_params={'bins':100, 'vmax':10000, 'vmin':10},
-    **kwargs,
-):
-    """Plot all combinations of correlation plots for the given HPC run.
-
-    Parameters
-    ----------
-    HPC_run : str
-        The name of the HPC_run for which to make a correlation plot.
-    year : int
-        The year for which to make comparisons.
-    hist_params : dict
-        Dictionary containing the parameters for the histogram.
-        Must contain 'bins', 'vmax', and 'vmin'.
-        Defined here instead of in **kwargs to insure consistency between plots.
-    **kwargs : dict
-        Additional keyword arguments to pass to the `corr_plot` function.
-
-    Returns
-    -------
-    fig : matplotlib.figure.Figure
-        The figure object containing the plot.
-
-    Examples
-    --------
-    >>> fig = all_corr_plots('no2_example_run', 2019)
-    """
-    # Verify argument types
-    if not isinstance(HPC_run, str):
-        raise TypeError(f"(corr_plot) `HPC_run` must be a string. Got type: {type(HPC_run)}")
-    if not isinstance(year, int):
-        raise TypeError(f"(corr_plot) `year` must be an integer. Got type: {type(year)}")
-    
-    # Create the figure
-    ## Setting `share=False` to allow separate axis labels for each subplot
-    fig, axs = pplt.subplots(refwidth=4, nrows=1, ncols=3, share=False)
-
-    # Create arrays to hold the plots and titles
-    fig_q_list = [None]*3
-    title_list = [None]*3
-    # Add the three correlation plots to the figure
-    fig_q_list[0], title_list[0] = corr_plot(
-        HPC_run=HPC_run,
-        year=year,
-        x_ax='pred',
-        y_ax='truth',
-        ax=axs[0],
-        hist_params=hist_params,
-        **kwargs,
-    )
-    fig_q_list[1], title_list[1] = corr_plot(
-        HPC_run=HPC_run,
-        year=year,
-        x_ax='pred_s2',
-        y_ax='truth',
-        ax=axs[1],
-        hist_params=hist_params,
-        **kwargs,
-    )
-    fig_q_list[2], title_list[2] = corr_plot(
-        HPC_run=HPC_run,
-        year=year,
-        x_ax='pred',
-        y_ax='pred_s2',
-        ax=axs[2],
-        hist_params=hist_params,
-        **kwargs,
-    )
-    # Check whether all the titles are the same
-    if len(set(title_list)) != 1:
-        warnings.warn(f"(all_corr_plots) The titles of the correlation plots are not the same: {title_list}. Using the first title for the figure title.")
-    # Set the figure super title
-    fig.suptitle(title_list[0], fontsize=title_font_size)
-    # Add the colorbar
-    fig.colorbar(fig_q_list[0], loc='r', label='Count per pixel', formatter='sci')
-
-def plot_true_pred_comp(
-    truth_data={'stage':1, 'x_or_y':'y', 'year':2019, 'input_set':'sample_data'},
-    pred_data={'stage':1, 'HPC_run':'no2_example_run', 'year':2019},
-    hist_params={'bins':100, 'vmax':1000, 'vmin':10},
-    restrict_lat_lon_to=None,
-    var='nox',
-):
-    """Plot a comparison of the truth and predicted data.
-
-    Creates a correlation plot of the stage 1 data (truth) and the
-    output of the model (prediction).
-
-    Parameters
-    ----------
-    truth_data : dict
-        Dictionary containing the parameters for the truth data.
-        Must contain 'stage', 'x_or_y', 'year', and 'input_set'.
-    pred_data : dict
-        Dictionary containing the parameters for the predicted data.
-        Must contain 'stage', 'HPC_run', and 'year'.
-    hist_params : dict
-        Dictionary containing the parameters for the histogram.
-        Must contain 'bins', 'vmax', and 'vmin'.
-    restrict_lat_lon_to : str
-        Path to a netCDF file to restrict the latitude and longitude range.
-        If None, the entire dataset is used.
-    var : str
-        The name of the gas being modelled. Default is 'nox'.
-    
-    Returns
-    -------
-    fig : matplotlib.figure.Figure
-        The figure object containing the plot.
-    
-    Examples
-    --------
-    >>> fig = plot_comparison(truth_arr, pred_arr)
-    """
-    # Get the variable label and units
-    var_label, var_units = uplt_fmt.get_var_label_and_units(var)
-    # Load the data
-    truth = np.load(unox.get_input_data(**truth_data))  #truth (y input file)
-    stage1 = np.load(unox.get_pred_data(**pred_data))  #stage 1 prediction
-    if not isinstance(restrict_lat_lon_to, type(None)):
-        # Restrict range
-        lats, lons = unox.load_lats_lons()
-        [truth, stage1], lats, lons = udata.restrict_domain([truth, stage1], lats, lons, xr.open_dataset(restrict_lat_lon_to))
-    # Flatten the data to just one axis
-    truths = truth.flatten()
-    preds = stage1.flatten()
-    # Plot the comparison
-    fig = plot_comparison(
-        truths, 
-        preds, 
-        label_x=f"'Truth' ({var_units})",
-        label_y=f"Stage 1 ({var_units})",      
-        hist_params=hist_params
-    )
-    # Set the figure title
-    fig.suptitle(f"HPC run: {pred_data['HPC_run']}, input set: {truth_data['input_set']} - {var_label}", fontsize=title_font_size)           
-    return fig
-
-def plot_npy_hist(
-    npy_arr,
+def plot_hist(
+    data_arrs,
     ax=None,
     n_bins=100,
-    xlabel='NOx emissions (kg/m2/s)',
+    ax_label='NOx emissions (kg/m2/s)',
     ylabel='Frequency',
-    title=None,
+    plt_title=None,
     log_scale=False,
-    clr='blue',
 ):
     """Plots a histogram of the given numpy array.
 
@@ -2011,10 +1748,8 @@ def plot_npy_hist(
     >>> fig = plot_npy_hist(npy_arr)
     >>> ax[0] = plot_npy_hist(npy_arr, ax=ax[0], n_bins=50, title='Histogram of NOx emissions')
     """
-    # Verify the numpy array
-    npy_arr = udata.verify_npy(npy_arr)
-    # Flatten the numpy array
-    npy_arr_flat = npy_arr.flatten()
+    # Verify argument types
+
     # Create a new figure and axis if none is provided
     if isinstance(ax, type(None)):
         new_fig = True
@@ -2022,13 +1757,19 @@ def plot_npy_hist(
         new_fig = False
     if new_fig:
         fig, ax = pplt.subplots()
-    # Plot the histogram
-    ax.hist(npy_arr_flat, bins=n_bins, color=clr, alpha=0.5, label='n = '+str(len(npy_arr_flat)))
+    # Loop across the data arrays
+    for data_arr in data_arrs:
+        if isinstance(data_arr, xr.DataArray):
+            data_arr = data_arr.values
+        # Flatten the array
+        flat_arr = data_arr.flatten()
+        # Plot the histogram
+        ax.hist(flat_arr, bins=n_bins, alpha=0.5, label='n = '+str(len(flat_arr)))
     # Format the plot
-    ax.set_xlabel(xlabel)
+    ax.set_xlabel(ax_label)
     ax.set_ylabel(ylabel)
-    if title is not None:
-        ax.set_title(title)
+    if not isinstance(plt_title, type(None)):
+        ax.set_title(plt_title)
     if log_scale:
         ax.set_yscale('log')
         # Set the ticks to scientific notation
