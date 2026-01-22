@@ -106,21 +106,21 @@ def get_dataset(
 ):
     """Get the given dataset.
 
-    Parameters
-    ----------
-    set_to_get : str, uarray, xarray.Dataset, xarray.DataArray
-        The name of the dataset to get.
-    is_input_set : bool, optional
-        If True, treat the dataset as an input set.
-    is_predict : bool, optional
-        If True, treat the dataset as a model output prediction set.
-    **kwargs : keyword arguments
-        Additional keyword arguments to pass to `load_dataset()` and `verify_dataset()`.
+        Parameters
+        ----------
+        set_to_get : str, uarray, xarray.Dataset, xarray.DataArray
+            The name of the dataset to get.
+        is_input_set : bool, optional
+            If True, treat the dataset as an input set.
+        is_predict : bool, optional
+            If True, treat the dataset as a model output prediction set.
+        **kwargs : keyword arguments
+            Additional keyword arguments to pass to `load_dataset()` and `verify_dataset()`.
 
-    Returns
-    -------
-    xr_dataset : xarray.Dataset or xarray.DataArray
-        The loaded and verified xarray dataset.
+        Returns
+        -------
+        xr_dataset : xarray.Dataset or xarray.DataArray
+            The loaded and verified xarray dataset.
     """
     # If set_to_get is a string, load the dataset
     if isinstance(set_to_get, str):
