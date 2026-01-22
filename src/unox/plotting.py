@@ -188,19 +188,19 @@ def map_ax(
     """
     # Verify argument types
     if not isinstance(ax, pplt.axes.Axes):
-        raise TypeError(f"(nc_map) `ax` must be a proplot Axes object. Got type: {type(ax)}")
+        raise TypeError(f"(map_ax) `ax` must be a proplot Axes object. Got type: {type(ax)}")
     if not isinstance(xr_data_arr, xr.DataArray):
-        raise TypeError(f"(nc_map) `xr_data_arr` must be an xarray DataArray. Got type: {type(xr_data_arr)}")
+        raise TypeError(f"(map_ax) `xr_data_arr` must be an xarray DataArray. Got type: {type(xr_data_arr)}")
     if not isinstance(plt_title, (type(None), str)):
-        raise TypeError(f"(nc_map) `plt_title` must be a string or None. Got type: {type(plt_title)}")
+        raise TypeError(f"(map_ax) `plt_title` must be a string or None. Got type: {type(plt_title)}")
     if not isinstance(cmap, mpl.colors.Colormap):
-        raise TypeError(f"(nc_map) `cmap` must be a matplotlib Colormap. Got type: {type(cmap)}")
+        raise TypeError(f"(map_ax) `cmap` must be a matplotlib Colormap. Got type: {type(cmap)}")
     if not isinstance(cbar_max, type(None)):
         verify_number(cbar_max)
     if not isinstance(cbar_min, type(None)):
         verify_number(cbar_min)
     if cb_ext not in ['neither', 'both', 'min', 'max']:
-        raise ValueError(f"(nc_map) `cb_ext` must be 'neither', 'both', 'min', or 'max'. Got: {cb_ext}")
+        raise ValueError(f"(map_ax) `cb_ext` must be 'neither', 'both', 'min', or 'max'. Got: {cb_ext}")
     # `padding` is verified in `pad_extent()`
 
     # Verify the xr_data_arr. Assume there is no time dimension
@@ -209,7 +209,7 @@ def map_ax(
     xr_data_arr = xr_data_arr.squeeze(drop=True)
     # Check to ensure that `lat` and `lon` are the only remaining dimensions
     if not set(xr_data_arr.dims).issubset({'lat', 'lon'}):
-        raise ValueError(f"(nc_map) `xr_data_arr` must have only 'lat' and 'lon' dimensions after squeezing. Got dimensions: {xr_data_arr.dims}")
+        raise ValueError(f"(map_ax) `xr_data_arr` must have only 'lat' and 'lon' dimensions after squeezing. Got dimensions: {xr_data_arr.dims}")
     # Get the variable name from xr_data_arr
     var = xr_data_arr.name
 
