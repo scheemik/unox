@@ -255,6 +255,7 @@ def plot_var_maps(
     vars=['nox'],
     datetime='2019-01-02T00:00:00',
     avg_over=None,
+    restrict_lat_lon_to=None,
     **kwargs,
 ):
     """Plots a maps of data in a netCDF.
@@ -303,6 +304,13 @@ def plot_var_maps(
     
     # Select the time slice to plot
     u_arr.xr, title_segment = select_time(u_arr.xr, datetime, avg_over)
+
+    # Restrict the latitude and longitude range
+    if not isinstance(restrict_lat_lon_to, type(None)):
+        # Load the specified data set to restrict to
+        restrict_xr = uarray(restrict_lat_lon_to).xr
+        # Restrict the domain of the data to plot
+        u_arr.xr, _ = udata.match_domains(u_arr.xr, restrict_xr, require_equal=False)
 
     # Create the figure
     fig = pplt.figure(refwidth=10)
@@ -521,6 +529,15 @@ def plot_run_analysis(
         avg_over=avg_over,
     )
 
+    # Restrict the latitude and longitude range
+    ## Note: This will not affect the data used in the correlation plots
+    if not isinstance(restrict_lat_lon_to, type(None)):
+        # Load the specified data set to restrict to
+        restrict_xr = uarray(restrict_lat_lon_to).xr
+        # Restrict the domain of the data to plot
+        pred_uarr.xr, _ = udata.match_domains(pred_uarr.xr, restrict_xr, require_equal=False)
+        input_uarr.xr, _ = udata.match_domains(input_uarr.xr, restrict_xr, require_equal=False)
+
     # Get the units of the y_var
     y_var_unit = input_uarr.xr[y_var].units
     # Calculate the difference between the "truth" and the predictions
@@ -611,6 +628,7 @@ def plot_run_analysis(
             y_var='truth',
             datetime=year,
             ax=axs[-3],
+            restrict_lat_lon_to=restrict_lat_lon_to,
             **kwargs,
         )
         if stage1_only == False:
@@ -621,6 +639,7 @@ def plot_run_analysis(
                 y_var='truth',
                 datetime=year,
                 ax=axs[-2],
+                restrict_lat_lon_to=restrict_lat_lon_to,
                 **kwargs,
             )
             fig_q_list[2] = corr_plot(
@@ -630,6 +649,7 @@ def plot_run_analysis(
                 y_var='pred_s2',
                 datetime=year,
                 ax=axs[-1],
+                restrict_lat_lon_to=restrict_lat_lon_to,
                 **kwargs,
             )
         # Add the colorbar
@@ -883,6 +903,14 @@ def corr_plot(
         # Otherwise, select the time over which to plot the correlation
         x_xarr, x_time_title = select_time(x_xarr, datetime=datetime, **kwargs)
         y_xarr, y_time_title = select_time(y_xarr, datetime=datetime, **kwargs)
+    
+    # Restrict the latitude and longitude range
+    if not isinstance(restrict_lat_lon_to, type(None)):
+        # Load the specified data set to restrict to
+        restrict_xr = uarray(restrict_lat_lon_to).xr
+        # Restrict the domain of the data to plot
+        x_xarr, _ = udata.match_domains(x_xarr, restrict_xr, require_equal=False)
+        y_xarr, _ = udata.match_domains(y_xarr, restrict_xr, require_equal=False)
 
     # Plot the comparison
     fig_q = plot_comparison(
@@ -1030,6 +1058,7 @@ def compare_input_vars(
         'var':'no2_s2',
     },
     abs_tolerance=2e-5,
+    restrict_lat_lon_to=None,
 ):
     """
     Compares the data for two input variables.
@@ -1067,6 +1096,12 @@ def compare_input_vars(
         input_dict['u_arr'] = uarray(input_dict['input_set'], is_input_set=True)
         # Narrow the time range of the data
         input_dict['u_arr'].xr = input_dict['u_arr'].xr.sel(time=str(input_dict['year']))
+        # Restrict the latitude and longitude range
+        if not isinstance(restrict_lat_lon_to, type(None)):
+            # Load the specified data set to restrict to
+            restrict_xr = uarray(restrict_lat_lon_to).xr
+            # Restrict the domain of the data to plot
+            input_dict['u_arr'].xr, _ = udata.match_domains(input_dict['u_arr'].xr, restrict_xr, require_equal=False)
         # Get the xarray dataset for just the given variable
         this_input = input_dict['u_arr'].xr[input_dict['var']]
         # If y_var, remove extra dimension
