@@ -1782,124 +1782,16 @@ def plot_hist(
     else:
         return ax
 
-def plot_npy_diff(
-    npy_a,
-    npy_b,
-    title=None,
-    filename=None,
-):
-    """Plots the difference between two numpy arrays.
-
-    Assuming the npy arrays have dimensions (time, lat, lon), creates a heatmap of number of differences for all time across lat vs. lon and the number of differences for all locations across time.
-
-    Parameters
-    ----------
-    npy_a : numpy.ndarray
-        The first numpy array.
-    npy_b : numpy.ndarray
-        The second numpy array.
-    title : str, optional
-        The title of the plot. If None, no title is set.
-    filename : str
-        The filename to save the plot. Default is None.
-
-    Returns
-    -------
-    fig : matplotlib.figure.Figure
-        The figure object containing the plot.
-
-    Examples
-    --------
-    >>> fig = plot_npy_diff(npy_a, npy_b)
-    """
-    # Verify the numpy arrays
-    npy_a = udata.verify_npy(np.squeeze(npy_a))
-    npy_b = udata.verify_npy(np.squeeze(npy_b))
-    # Check if the shapes of the numpy arrays match
-    if npy_a.shape != npy_b.shape:
-        raise ValueError(f"(plot_npy_diff) The shapes of the numpy arrays do not match. Got: {npy_a.shape} and {npy_b.shape}")
-    # Create an boolean array to tell where the two arrays differ
-    ab_diff = npy_a != npy_b
-    # Find total number of entries
-    total_entries = np.prod(ab_diff.shape)
-    print("Number of differences:", np.sum(ab_diff),'/', total_entries, '(', np.sum(ab_diff)/total_entries*100, '% )')
-    if np.sum(ab_diff) == 0:
-        no_diff = True
-        print("The two arrays are identical. Skiping plot.")
-        return
-    else:
-        no_diff = False
-
-    # Create the figure
-    ## Make the axis so that they don't share x ranges by setting `share=False`
-    ## Setting `refwidth`` makes the figure a reasonable size
-    ## The value of `refaspect` is the height divided by the width of each subplot
-    fig, ax = pplt.subplots(nrows=3, ncols=2, proj={2:'cyl'}, refwidth=4, share=False, refaspect=1.8)
-
-    # Plot line plot showing number of differences for all locations across time
-    ax[0].plot(np.sum(ab_diff, axis=(1, 2)), color='red')
-    # Don't share x or y axes with first plot
-    ax[0].set_xlabel('Time')
-    ax[0].set_ylabel('Number of differences')
-
-    # Plot map showing number of differences for all time
-    lats, lons = unox.load_lats_lons()
-    temp, pcm = plot_npy_map(fig, ax[1], np.sum(ab_diff, axis=0),
-                            lats, lons,
-                            ax_title=None,
-                            cb_extend='max',
-                            cmap=pplt.Colormap('viridis'))
-    ax[1].set_xlabel('Longitude')
-    ax[1].set_ylabel('Latitude')
-    # # Add colorbar above the plot
-    cbar = ax[1].colorbar(pcm, loc='t', label='Number of differences')
-
-    # Plot a histograms of the both numpy arrays
-    plot_npy_hist(npy_a, ax=ax[2], title='Arrays A and B', log_scale=True, clr='blue')
-    plot_npy_hist(npy_b, ax=ax[2], title='Arrays A and B', log_scale=True, clr='red')
-
-    # Plot a histograms of both arrays, just where they differ
-    if no_diff == False:
-        plot_npy_hist(npy_a[ab_diff], ax=ax[3], title='Arrays A and B, where they differ', log_scale=True, clr='blue')
-        plot_npy_hist(npy_b[ab_diff], ax=ax[3], title='Arrays A and B, where they differ', log_scale=True, clr='red')
-
-    # Plot a histogram of the differences between the two arrays, just where they differ
-    if no_diff == False:
-        delta_ab_diff = npy_a[ab_diff] - npy_b[ab_diff]
-        plot_npy_hist(delta_ab_diff, ax=ax[4], title='A - B, where they differ', log_scale=True, clr='red')
-    
-    # Make a comparison plot
-    if no_diff == False:
-        q = plot_comparison(npy_a[ab_diff], npy_b[ab_diff],
-                        label_x='A (where they differ)',
-                        label_y='B (where they differ)',
-                        ax=ax[5],
-                        hist_params={'bins':100, 'vmax':1000, 'vmin':10},
-                        cmap=pplt.Colormap('viridis'),
-                        log_scale=True,
-                        set_under_val=1)
-        ax[5].colorbar(q, loc='r', label='Count per pixel', formatter='sci')
-
-    # Set the title of the figure if provided
-    if title is not None:
-        fig.suptitle(title)
-    fig.format()
-
-    # Save the figure to file
-    if filename is not None:
-        fig.savefig(filename)
-    return fig
-
 def compare_input_vars(
     input_a_dict = {
-        'input_set':'no2_sample_input',
+        'input_set':'no2_2019_JFM',
         'year':2019,
-        'var':'u10',
+        'var':'no2',
     },
     input_b_dict = {
-        'input_set':'no2_sample_input',
+        'input_set':'no2_2019_JFM',
         'year':2019,
-        'var':'u10',
+        'var':'no2_s2',
     },
     abs_tolerance=2e-5,
 ):
@@ -1935,22 +1827,20 @@ def compare_input_vars(
         raise TypeError(f"(compare_input_vars) `abs_tolerance` must be a float. Got type: {type(abs_tolerance)}")
     # Loop over the two input dictionaries and load the data
     for input_dict in [input_a_dict, input_b_dict]:
-        # Load the input data from netCDF
-        xr_dataset = get_dataset(
-            input_dict['input_set'],
-            is_input_set=True,
-        )
-        this_input, lats, lons = get_npy_from_netcdf(
-            xr_dataset,
-            year=input_dict['year'],
-            input_config='sample_config',
-            var=input_dict['var'],
-        )
-        # If nox, remove extra dimension
-        if input_dict['var'] == 'nox':
+        # Load the input data as a uarray
+        input_dict['u_arr'] = uarray(input_dict['input_set'], is_input_set=True)
+        # Narrow the time range of the data
+        input_dict['u_arr'].xr = input_dict['u_arr'].xr.sel(time=str(input_dict['year']))
+        # Get the xarray dataset for just the given variable
+        this_input = input_dict['u_arr'].xr[input_dict['var']]
+        # If y_var, remove extra dimension
+        if input_dict['var'] == input_dict['u_arr'].xr.attrs['y_var']:
             this_input = this_input.squeeze()
         input_dict['data_array'] = this_input
         print(f"Shape of {input_dict['var']} from {input_dict['input_set']}: {this_input.shape}")
+    # Check whether the data arrays are the same size
+    if input_a_dict['data_array'].shape != input_b_dict['data_array'].shape:
+        raise ValueError(f"(compare_input_vars) The shapes of the input data arrays do not match. Got: {input_a_dict['data_array'].shape} and {input_b_dict['data_array'].shape}")
     # Are the arrays different?
     if np.array_equal(input_a_dict['data_array'], input_b_dict['data_array']):
         print(f"Match found for {input_a_dict['input_set']}-{input_a_dict['year']}-{input_a_dict['var']} vs {input_b_dict['input_set']}-{input_b_dict['year']}-{input_b_dict['var']}.")
@@ -1961,270 +1851,107 @@ def compare_input_vars(
         else:
             print("The input files differ more than the tolerance of",abs_tolerance)
         # Plot the differences
+
+        # Create an boolean variable to tell where the two arrays differ
+        input_a_dict['u_arr'].xr['ab_diff'] = input_a_dict['u_arr'].xr[input_a_dict['var']] != input_b_dict['u_arr'].xr[input_b_dict['var']]
+        # Put that variable into an array
+        ab_diff = np.array(input_a_dict['u_arr'].xr['ab_diff'].values).squeeze()
+        total_diffs = np.sum(ab_diff)
+        # Find total number of entries
+        total_entries = np.prod(ab_diff.shape)
+        print("Number of differences:", total_diffs,'/', total_entries, '(', total_diffs/total_entries*100, '% )')
+
+        # Create the figure
+        ## Make the axis so that they don't share x ranges by setting `share=False`
+        ## Setting `refwidth`` makes the figure a reasonable size
+        ## The value of `refaspect` is the height divided by the width of each subplot
+        fig, ax = pplt.subplots(nrows=3, ncols=2, proj={2:'cyl'}, refwidth=4, share=False, refaspect=1.8)
+
+        ## Plot 0: Line plot showing number of differences across time
+        diff_arr = np.sum(ab_diff, axis=(1, 2))
+        # time_arr = input_a_dict['u_arr'].xr['time'].values
+        # time_arr = [date.to_datetimeindex() for date in time_arr]
+        # # Make the date locator
+        # loc = mpl.dates.AutoDateLocator()
+        # ax[0].xaxis.set_major_locator(loc)
+        # ax[0].xaxis.set_major_formatter(mpl.dates.ConciseDateFormatter(loc))
+
+        # Plot line plot showing number of differences for all locations across time
+        ax[0].plot(diff_arr, color='red')
+        # Don't share x or y axes with first plot
+        ax[0].set_xlabel('Time')
+        ax[0].set_ylabel('Number of differences')
+
+        ## Plot 1: A map showing where the differences are
+        # Create an xarray DataArray of the sum of the differences over time
+        this_x_arr1, title_segment = select_time(
+            input_a_dict['u_arr'].xr,
+            sum_vars=True,
+        )
+        # Define metadata for that DataArray
+        this_x_arr1['ab_diff'].attrs['long_name'] = 'Differences'
+        this_x_arr1['ab_diff'].attrs['units'] = 'count'
+        ax1_var, ax1_clrbar_label = map_ax(
+            ax[1],
+            this_x_arr1['ab_diff'],
+            plt_title=title_segment,
+            cmap=pplt.Colormap('Viridis'),
+        )
+        # Add a colorbar
+        ax[1].colorbar(ax1_var, loc='r', label=ax1_clrbar_label)
+
+        # Format a label for the histograms
+        hist_units = f"{input_a_dict['u_arr'].xr[input_a_dict['var']].attrs['units']}"
+        hist_label = f"{input_a_dict['u_arr'].xr[input_a_dict['var']].attrs['long_name']} ({hist_units})"
+
+        ## Plot 2: Histograms of both inputs
+        plot_hist(
+            [input_a_dict['data_array'], input_b_dict['data_array']],
+            ax=ax[2],
+            plt_title='Input data arrays',
+            ax_label=hist_label,
+            log_scale=True,
+        )
+
+        # Get arrays of the inputs where they differ
+        a_where_differ = input_a_dict['u_arr'].xr[input_a_dict['var']].where(input_a_dict['u_arr'].xr['ab_diff']).values
+        b_where_differ = input_b_dict['u_arr'].xr[input_b_dict['var']].where(input_a_dict['u_arr'].xr['ab_diff']).values
+        # Flatten all three arrays and remove NaN values
+        a_differ_flat = a_where_differ[~np.isnan(a_where_differ)].flatten()
+        b_differ_flat = b_where_differ[~np.isnan(b_where_differ)].flatten()
+        # Get the difference between these two arrays
+        delta_ab_flat = a_differ_flat - b_differ_flat
+
+        ## Plot 3: Histograms of both inputs, where they differ
+        plot_hist(
+            [a_differ_flat, b_differ_flat],
+            ax=ax[3],
+            plt_title='Input data arrays where they differ',
+            ax_label=hist_label,
+            log_scale=True,
+        )
+
+        ## Plot 4: Histogram of the differences between both inputs, where they differ
+        plot_hist(
+            [delta_ab_flat],
+            ax=ax[4],
+            plt_title='Difference between inputs where they differ',
+            ax_label=hist_label,
+            log_scale=True,
+        )
+
+        ## Plot 5: Correlation plot between both inputs, where they differ
+        q = plot_comparison(
+            a_differ_flat,
+            b_differ_flat,
+            ax=ax[5],
+            a_label=f"Array A ({hist_units})",
+            b_label=f"Array A ({hist_units})",
+        )
+        # Add the colorbar
+        ax[5].colorbar(q, loc='r', label='Count per pixel', formatter='sci')
+
+        # Set the figure title
         overall_title = f"{input_a_dict['input_set']}-{input_a_dict['year']}-{input_a_dict['var']} vs {input_b_dict['input_set']}-{input_b_dict['year']}-{input_b_dict['var']}"
-        return plot_npy_diff(input_a_dict['data_array'], input_b_dict['data_array'], title=overall_title)
-    
-def set_of_runs(
-    set_name,
-    year,
-    stage=1,
-    this_date='2019-01-02',
-    avg_over=None,
-    restrict_lat_lon_to=None,
-    clr_bar_scale=0.5,
-    maps_or_comps='maps',
-):
-    """Creates a figure to summarize a set of runs.
-
-    Creates a set of 12 plots:
-    1. Plot of the "Truth"
-    2. Summary of the set of runs
-    3-12. Plots of each run compared with the "Truth"
-
-    Parameters
-    ----------
-    set_name : str
-        The directory name within `HPC_runs/` containing the set of runs.
-    year : int
-        The year of the data to plot.
-    stage : int
-        The stage of the data to plot (1 or 2).
-    this_date : np.datetime64 or str
-        Date and time to select from the data file.
-        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
-    avg_over : str, numpy.timedelta64, or None
-        If provided, averages the data over the specified time period.
-        If None, takes just the time slice specified in `datetime`.
-    restrict_lat_lon_to : str
-        Path to a netCDF file to restrict the latitude and longitude range.
-        If None, the entire dataset is used.
-    clr_bar_scale : float between 0 and 1
-        Scale factor for the color bar. If set to 1, the color bar will be scaled 
-        to the maximum absolute value of the data. Default is 0.5.
-    
-    Returns
-    -------
-    fig : matplotlib.figure.Figure
-        The figure object containing the plots.
-    """
-    # Verify argument types
-    if True:
-        if not isinstance(set_name, str):
-            raise TypeError(f"(set_of_maps) `set_name` must be a string. Got type: {type(set_name)}")
-        if not udata.verify_number(year):
-            raise TypeError(f"(set_of_maps) `year` must be an integer. Got type: {type(year)}")
-        if stage not in [1, 2]:
-            raise ValueError(f"(set_of_maps) `stage` must be either 1 or 2. Got: {stage}")
-        if not (isinstance(this_date, str) or isinstance(this_date, np.datetime64)):
-            raise TypeError(f"(set_of_maps) `this_date` must be a string or np.datetime64. Got type: {type(this_date)}")
-        if not (isinstance(avg_over, type(None)) or isinstance(avg_over, str) or udata.verify_timedelta64(avg_over)):
-            raise TypeError(f"(set_of_maps) `avg_over` must be None, a string, or a numpy.timedelta64. Got type: {type(avg_over)}")
-        if not (isinstance(restrict_lat_lon_to, type(None)) or isinstance(restrict_lat_lon_to, str)):
-            raise TypeError(f"(set_of_maps) `restrict_lat_lon_to` must be None or a string. Got type: {type(restrict_lat_lon_to)}")
-        if not udata.verify_number(clr_bar_scale):
-            raise TypeError(f"(set_of_maps) `clr_bar_scale` must be a number. Got type: {type(clr_bar_scale)}")
-        if maps_or_comps not in ['maps', 'comps']:
-            raise ValueError(f"(set_of_maps) `maps_or_comps` must be either 'maps' or 'comps'. Got {maps_or_comps}.")
-    # Verify the set of runs exists
-    set_path = verify_path(f"HPC_runs/{set_name}")
-    # Get a list of the runs in the set (the subdirectories of the set directory)
-    runs_in_set = os.listdir(set_path)
-    # Replace the year in `this_date` with the specified year
-    yr, mn, day = udata.get_YMD_from_date(this_date)
-    start_date = f"{year:04d}-{mn:02d}-{day:02d}"
-    start_doy = udata.get_DOY(start_date)
-    # Calculate the end date, if applicable
-    if isinstance(avg_over, type(None)):
-        # Format overall title
-        overall_title = f"stage {stage} comparisons on {start_date}"
-    else:
-        end_date = udata.add_amount_to_date(start_date, avg_over)
-        # If the year incremented, set to December 31st in specified year
-        yr, mn, day = udata.get_YMD_from_date(end_date)
-        if yr > year:
-            end_date = f"{year:04d}-12-31"
-        end_doy = udata.get_DOY(end_date)
-        # Format overall title
-        overall_title = f"stage {stage} comparisons from {start_date}-{end_date}"
-
-    # Calculate the number of rows in the figure
-    n_cols = 3
-    n_rows = len(runs_in_set)//n_cols + (1 if len(runs_in_set)%n_cols > 0 else 0)
-    # Create the figure
-    fig = pplt.figure(refwidth=4)
-    ax = fig.subplots(nrows=n_rows, ncols=n_cols, proj='cyl')
-    # Select medium resolution for features such as coastlines
-    pplt.rc.reso = 'med' 
-
-    # Create dictionary with the runs_in_set as keys
-    run_metadicts = {run: {} for run in runs_in_set}
-    # Create blank lists to be filled
-    input_sets = []
-    config_files = []
-    pred_arrs0 = []
-    # Loop across each run
-    for run in runs_in_set:
-        # Load the output metadata dictionary
-        with open(f"{set_path}/{run}/output_metadata.json", 'r') as file:
-            run_metadicts[run] = json.load(file)
-        # Verify year is in the appropriate stage predictions
-        these_pred_years = run_metadicts[run]['pred_years'][f"stage{stage}"]
-        if not year in these_pred_years:
-            raise ValueError(f"(set_of_maps) Year {year} not found in stage {stage} predictions for run '{run}'. Available years: {these_pred_years}.")
-        # Add the input set to the list
-        input_sets.append(run_metadicts[run]['config_dict']['input_set'])
-        # Add config file to the list
-        config_files.append(run_metadicts[run]['config_file'])
-        # Load the prediction values for this run
-        run_metadicts[run]['pred_arr'] = np.load(unox.get_pred_data(
-            stage=stage, 
-            HPC_run=f"{set_name}/{run}",
-            year=year,
-        ))
-        # Add prediction array to the list
-        pred_arrs0.append(run_metadicts[run]['pred_arr'])
-    # Check whether there is a unique input set
-    unique_input_sets = list(set(input_sets))
-    if len(unique_input_sets) != 1:
-        raise ValueError(f"(set_of_maps) input sets found in the set of runs contain multiple values: {unique_input_sets}. All runs must use the same input set.")
-    else:
-        this_input_set = unique_input_sets[0]
-    # Check whether there is a unique config file
-    unique_config_files = list(set(config_files))
-    if len(unique_config_files) != 1:
-        print(f"Warning: multiple values found for config files across runs: {unique_config_files}")
-        print(f"Using the first entry as config file: {unique_config_files[0]}")
-    if unique_config_files[0] == 'input_config':
-        this_config = f"{set_path}/{runs_in_set[0]}/input_config.json"
-    else:
-        this_config = unique_config_files[0]
-    # Open the input netCDF file
-    input_dataset = get_dataset(this_input_set, is_input_set=True)
-    # Get the y variable
-    y_var = input_dataset.attrs['y_var']
-    # Load the "truth" array
-    truth, lats, lons = get_npy_from_netcdf(
-        input_dataset,
-        year,
-        this_config,
-        var=y_var,
-    )
-    # Get the latitude and longitude values
-    lats, lons = udata.get_lats_lons(input_dataset)
-
-    # Restrict the latitude and longitude range
-    if not isinstance(restrict_lat_lon_to, type(None)):
-        # Create a list of all map data arrays
-        data_list = pred_arrs0 + [truth]
-        # Restrict the domain of all the arrays in the list
-        data_list, lats, lons = udata.restrict_domain(data_list, lats, lons, xr.open_dataset(restrict_lat_lon_to))
-        # Put the restricted arrays back into the original variables
-        pred_arrs0 = data_list[:-1]
-        truth = data_list[-1]
-        
-    # Average over a time period, if specified
-    if isinstance(avg_over, type(None)):
-        plt_truth = truth[start_doy, :, :]
-    else:
-        plt_truth = np.average(truth[start_doy:end_doy, :, :], axis=0)
-    # Plot the "truth"
-    plot_npy_map(
-        fig,
-        ax[0],
-        plt_truth,
-        lats,
-        lons,
-        cmap=pplt.Colormap('Fire'),
-        ax_title="truth",
-    )
-    if maps_or_comps == 'comps' and isinstance(avg_over, type(None)):
-        plt_truth = truth
-
-    # Create blank list to be filled
-    pred_arrs = []
-    # Loop across each run
-    for i in range(len(runs_in_set)):
-        run = runs_in_set[i]
-        # Select the time to plot
-        if isinstance(avg_over, type(None)):
-            if maps_or_comps == 'maps':
-                # Save the difference on just the specified day
-                plt_this = plt_truth - pred_arrs0[i][start_doy, :, :]
-            elif maps_or_comps == 'comps':
-                # Save all days
-                plt_this = pred_arrs0[i]
-            # Add the prediction array to the list
-            pred_arrs.append(plt_this)
-        else:
-            if maps_or_comps == 'maps':
-                # Take the difference
-                temp_arr = truth - pred_arrs0[i]
-            elif maps_or_comps == 'comps':
-                temp_arr = pred_arrs0[i]
-            # Average over the specified time period
-            plt_this = np.average(temp_arr[start_doy:end_doy, :, :], axis=0)
-            # Add the prediction array to the list
-            pred_arrs.append(plt_this)
-
-    # Get the minimum and maximum values across the truth, stage1, and stage2 arrays
-    vmin, vmax = udata.get_vminmax(pred_arrs)
-    
-    # Get the halfrange for use with a diverging color map
-    chr = udata.get_max_abs_val([vmin, vmax])
-    # Scale the color bar
-    if clr_bar_scale < 0 or clr_bar_scale > 1:
-        warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
-        clr_bar_scale = 0.5
-    if clr_bar_scale != 1:
-        chr *= clr_bar_scale
-        cbe = 'both'
-    else:
-        cbe = 'neither'
-
-    # Loop across each run
-    for i in range(len(runs_in_set)):
-        run = runs_in_set[i]
-        # Load the prediction values for this run
-        pred_arr = np.load(unox.get_pred_data(
-            stage=stage, 
-            HPC_run=f"{set_name}/{run}",
-            year=year,
-        ))
-        # Assemble plot title
-        if set_name[0] == "_":
-            this_ax_title = run.replace(f"{set_name[1:]}_", "")
-        else:
-            this_ax_title = run.replace(f"{set_name}_", "")
-        # Plot this run
-        if maps_or_comps == 'maps':
-            plot_npy_map(
-                fig,
-                ax[i+2],
-                pred_arrs[i],
-                lats,
-                lons,
-                c_halfrange=chr, 
-                cb_extend=cbe,
-                ax_title=this_ax_title,
-            )
-        elif maps_or_comps == 'comps':
-            q = plot_comparison(
-                plt_truth, 
-                pred_arrs[i],
-                label_x='truth',
-                label_y=f"Pred with {this_ax_title}",
-                ax=ax[i+2],
-                hist_params={'bins':100, 'vmax':1000, 'vmin':10},
-                cmap=pplt.Colormap('viridis'),
-                log_scale=True,
-                set_under_val=1,
-            )
-            ax[i+2].colorbar(q, loc='r', label='Count per pixel', formatter='sci')
-
-    # Get the variable label and units
-    var_label, var_units = uplt_fmt.get_var_label_and_units(y_var)
-    # Add one overall colorbar for the entire figure on the right-hand side
-    # cbar = make_colorbar(fig, ax[2].get_children()[0], var_label+' '+var_units, num_ticks=9, cb_loc='b', cb_extend=cbe)
-    # Set the figure title
-    fig.suptitle(f"HPC run set: {set_name}, input set: {this_input_set} - {overall_title}", fontsize=title_font_size)
-    return fig
+        fig.suptitle(overall_title)
+        return fig
