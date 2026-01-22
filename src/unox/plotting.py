@@ -413,7 +413,7 @@ def plot_run_analysis(
     add_corr_plots=True,
     stage1_only=False,
     clr_bar_scale=0.5,
-    clr_map=pplt.Colormap('seismic'),
+    clr_map=pplt.Colormap('Balance'),
     **kwargs,
 ):
     """Plots a set of maps to compare the truth and the two stages of the model.
