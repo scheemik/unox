@@ -766,40 +766,42 @@ def plot_comparison(
         return q
 
 def corr_plot(
-    HPC_run = 'no2_example_run',
-    year = 2019,
-    x_ax = 'pred',
-    y_ax = 'truth',
+    dataset,
+    x_var = 'pred',
+    y_var = 'truth',
+    datetime = 2019,
     restrict_lat_lon_to = None,
-    ax = None,
     **kwargs,
 ):
-    """
-    Plot the prediction vs truth values.
+    """Makes a correlation plot of the two given variables.
 
-    Creates a correlation plot between the prediction values of the given HPC run
+    Creates a heatmap correlation plot with the specified variables on each axis
+    using the data from the specified dataset, filtering based on the given datetime,
+    period over which to average, and latitude/longitude restrictions.
 
     Parameters
     ----------
-    HPC_run : str
-        The name of the HPC_run for which to make a correlation plot.
-    year : int
-        The year for which to make comparisons.
-    x_ax : str
-        What to plot on the x-axis. Must be one of ['truth', 'pred', 'pred_s2'].
-    y_ax : str
-        What to plot on the y-axis. Must be one of ['truth', 'pred', 'pred_s2'].
-    restrict_lat_lon_to : str
-        Path to a netCDF file to restrict the latitude and longitude range.
-        If None, the entire dataset is used.
-    ax : matplotlib.axes.Axes or None
-        The axes on which to plot the data. If None, a new figure and axes are created.
+    dataset : str, uarray, xarray.Dataset or xarray.DataArray
+        The dataset from which to get the data for the correlation plot.
+    x_var : str, optional
+        The variable to plot on the x-axis.
+        Can be `truth`, `pred`, `pred_s2`, or any variable in the dataset.
+        Default is `pred`.
+    y_var : str, optional
+        The variable to plot on the y-axis.
+        Can be `truth`, `pred`, `pred_s2`, or any variable in the dataset.
+        Default is `truth`.
+    datetime : int, str, or numpy.timedelta64, optional
+        If an integer year is provided, all the data from that year will be used.
+        If a datetime is given, the data will be filtered by `select_time()`, using
+        that datetime and the value of `avg_over`, if included in `**kwargs`. 
+
     **kwargs : dict
         Additional keyword arguments to pass to the `plot_comparison` function.
 
     Returns
     -------
-    fig : matplotlib.figure.Figure
+    fig_q : matplotlib.figure.Figure
         The figure object containing the plot.
 
     Examples
@@ -807,84 +809,85 @@ def corr_plot(
     >>> fig = corr_plot('no2_example_run', 2019, x_ax='pred', y_ax='truth')
     """
     # Verify argument types
-    if not isinstance(HPC_run, str):
-        raise TypeError(f"(corr_plot) `HPC_run` must be a string. Got type: {type(HPC_run)}")
-    if not isinstance(year, int):
-        raise TypeError(f"(corr_plot) `year` must be an integer. Got type: {type(year)}")
-    if not x_ax in ['truth', 'pred', 'pred_s2']:
-        raise ValueError(f"(corr_plot) `x_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {x_ax}")
-    if not y_ax in ['truth', 'pred', 'pred_s2']:
-        raise ValueError(f"(corr_plot) `y_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {y_ax}")
-    
-    # Create a new figure and axis if none is provided
-    if isinstance(ax, type(None)):
-        new_fig = True
+    # Making a `uarray` object verifies `dataset`
+    u_arr = uarray(dataset, **kwargs)
+    if not isinstance(x_var, str):
+        raise ValueError(f"(corr_plot) `x_var` must be a string. Got type: {type(x_var)}")
+    if not isinstance(y_var, str):
+        raise ValueError(f"(corr_plot) `y_var` must be a string. Got type: {type(y_var)}")
+    if isinstance(datetime, int):
+        year = datetime
+    elif not isinstance(datetime, (str, np.timedelta64)):
+        raise TypeError(f"(select_time) `datetime` must be a string, or a numpy.timedelta64. Got type: {type(datetime)}")
     else:
-        new_fig = False
-    
-    # Assemble filepath to the HPC_run predictions netcdf
-    pred_nc_path = f"HPC_runs/{HPC_run}/predictions.nc"
-    # Get and verify predictions data
-    pred_xarray = uarray(pred_nc_path).xr
-    # Get the input set used in the HPC run
-    input_set = get_input_set(HPC_run)
-    # Get and verify input set
-    input_xarray = uarray(input_set, is_input_set=True).xr
+        year = None
 
-    # Get the `y_var` name from the input dataset
-    y_var = input_xarray.attrs['y_var']
-    # For the x and y axes, get the specified data
-    plot_data = []
-    plot_labels = []
-    for this_ax in [x_ax, y_ax]:
-        if this_ax == 'truth':
-            ax_var = y_var
-            # If not done already, add the "truth" data to the prediction xarray
-            try:
-                verify_var(pred_xarray, ax_var)
-            except:
-                # Trim the latitude and longitude extents to match
-                pred_xarray, input_xarray = udata.match_domains(pred_xarray, input_xarray)
-                # Add the "truth" data to the prediction array
-                pred_xarray[ax_var] = input_xarray[ax_var]
-            # Assemble the axis label
-            var_units = pred_xarray[ax_var].attrs['units']
-            plot_labels.append(f"'Truth' ({var_units})")
-        elif this_ax in ['pred', 'pred_s2']:
-            ax_var = f"{y_var}_{this_ax}"
-            # Assemble the axis label
-            if '2' in this_ax:
-                label_mod = r"$_{s2}$"
-            else:
-                label_mod = ""
-            var_units = pred_xarray[ax_var].attrs['units']
-            plot_labels.append(f"Predictions{label_mod} ({var_units})")
+    # Set the x and y data arrays to `None`
+    x_xarr = None
+    y_xarr = None
+    # Verify the specified x and y axes are in the dataset
+    if x_var in ['pred', 'pred_s2'] or y_var in ['pred', 'pred_s2']:
+        # Make sure the dataset is a prediction uarray
+        if not u_arr.is_predict:
+            raise ValueError(f"(corr_plot) To plot 'pred' or 'pred_s2', `dataset` {u_arr.name} must be a prediction HPC run. Got {u_arr.name}.is_predict: {u_arr.is_predict}")
+        # Get the name of the `y_var` used in the HPC run
+        HPC_y_var = u_arr.xr.attrs['y_var']
+        # Add that `y_var` to the predcition axes
+        if 'pred' in x_var:
+            x_var = f"{HPC_y_var}_{x_var}"
+            x_xarr = u_arr.xr[x_var]
+        if 'pred' in y_var:
+            y_var = f"{HPC_y_var}_{y_var}"
+            y_xarr = u_arr.xr[y_var]
+    # Check whether to plot the 'truth'
+    if x_var == 'truth' or y_var == 'truth':
+        # Get the name of the `y_var` used in the input set
+        HPC_y_var = u_arr.xr.attrs['y_var']
+        # If the dataset is a prediction uarray
+        if u_arr.is_predict:
+            # Get the metadata from the predictions uarray
+            meta_dict = u_arr._get_metadata()
+            # Get the input set from the metadata
+            input_set = meta_dict['config_dict']['input_set']
+            # Get the input set used in the HPC run
+            input_uarr = uarray(input_set, is_input_set=True)
+        elif u_arr.is_input_set:
+            input_uarr = u_arr
         else:
-            raise ValueError(f"(corr_plot) `this_ax` must be one of ['truth', 'pred', 'pred_s2']. Got: {this_ax}")
-        # Verify that the prediction array has the correct variable
-        verify_var(pred_xarray, ax_var)
-        # Add the data to plot to the list
-        plot_data.append(pred_xarray[ax_var].sel(time=str(year)).values)
-
-    # Get the long name and units of the specified variable for plot labels
-    try:
-        var_name = input_xarray[y_var].attrs['long_name']
-    except:
-        var_name = 'var'
-    # Assemble the plot title
-    plt_title = f"HPC run: {HPC_run}, input set: {input_set}, {var_name}"
+            raise ValueError(f"(corr_plot) To plot 'truth', `dataset` {u_arr.name} must be either a prediction HPC run or an input set. Got is_predict: {u_arr.is_predict}, is_input_set: {u_arr.is_input_set}")
+        if x_var == 'truth':
+            x_xarr = input_uarr.xr[HPC_y_var]
+        if y_var == 'truth':
+            y_xarr = input_uarr.xr[HPC_y_var]
+    # Check whether both x and y data arrays have been set
+    if isinstance(x_xarr, type(None)):
+        # Verify the specified variable is in the dataset
+        verify_var(u_arr.xr, x_var)
+        # Set the x data array
+        x_xarr = u_arr.xr[x_var]
+    if isinstance(y_xarr, type(None)):
+        # Verify the specified variable is in the dataset
+        verify_var(u_arr.xr, y_var)
+        # Set the x data array
+        y_xarr = u_arr.xr[y_var]
+    
+    # Narrow the time range of the data
+    if not isinstance(year, type(None)):
+        # If `year` is set, select that year from the x and y data arrays
+        x_xarr = x_xarr.sel(time=str(year))
+        y_xarr = y_xarr.sel(time=str(year))
+    else:
+        # Otherwise, select the time over which to plot the correlation
+        x_xarr, x_time_title = select_time(x_xarr, datetime=datetime, **kwargs)
+        y_xarr, y_time_title = select_time(y_xarr, datetime=datetime, **kwargs)
 
     # Plot the comparison
     fig_q = plot_comparison(
-        plot_data[0],
-        plot_data[1],
-        label_x=plot_labels[0],
-        label_y=plot_labels[1],
-        ax = ax,
-        plt_title = plt_title,
+        x_xarr,
+        y_xarr,
         **kwargs,
     )
-    return fig_q, plt_title
+    return fig_q
 
 
 ########################################################
