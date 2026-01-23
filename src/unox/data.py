@@ -528,6 +528,7 @@ def restrict_domain(
 def match_domains(
     xr_a,
     xr_b,
+    require_equal=True,
 ):
     """Restrict the domain of the given xarray Datasets to match each other.
 
@@ -550,13 +551,13 @@ def match_domains(
         The first dataset, with the latitude and longitude extents trimmed to match `xr_a`.
     """
     # Verify argument types
-    xr_a = verify_dataset(xr_a)
-    xr_b = verify_dataset(xr_b)
+    xr_a = verify_dataset(xr_a, check_time=False)
+    xr_b = verify_dataset(xr_b, check_time=False)
 
     # Get the extent of xr_a
-    (a_lat_min, a_lat_max, a_lon_min, a_lon_max) = get_extent(xr_a)
+    (a_lat_min, a_lat_max, a_lon_min, a_lon_max) = get_extent(xr_a, check_time=False)
     # Get the extent of xr_b
-    (b_lat_min, b_lat_max, b_lon_min, b_lon_max) = get_extent(xr_b)
+    (b_lat_min, b_lat_max, b_lon_min, b_lon_max) = get_extent(xr_b, check_time=False)
     
     # Find the maximum extent covered by both datasets
     lat_min = max(a_lat_min, b_lat_min)
@@ -573,13 +574,14 @@ def match_domains(
     tr_xr_a = xr_a.sel(lat=slice(lat_min, lat_max), lon=slice(lon_min, lon_max))
     tr_xr_b = xr_b.sel(lat=slice(lat_min, lat_max), lon=slice(lon_min, lon_max))
 
-    # Verify these two datasets have the same latitude and longitude values
-    lats_a, lons_a = get_lats_lons(tr_xr_a)
-    lats_b, lons_b = get_lats_lons(tr_xr_b)
-    if not np.array_equal(lats_a, lats_b):
-        raise ValueError(f"(match domains) Latitude values do not match between the two datasets.")
-    if not np.array_equal(lons_a, lons_b):
-        raise ValueError(f"(match domains) Longitude values do not match between the two datasets.")
+    if require_equal == True:
+        # Verify these two datasets have the same latitude and longitude values
+        lats_a, lons_a = get_lats_lons(tr_xr_a, check_time=False)
+        lats_b, lons_b = get_lats_lons(tr_xr_b, check_time=False)
+        if not np.array_equal(lats_a, lats_b):
+            raise ValueError(f"(match domains) Latitude values do not match between the two datasets.")
+        if not np.array_equal(lons_a, lons_b):
+            raise ValueError(f"(match domains) Longitude values do not match between the two datasets.")
     return tr_xr_a, tr_xr_b
 
 def verify_npy(
