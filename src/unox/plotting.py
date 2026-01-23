@@ -1353,7 +1353,7 @@ def compare_input_vars(
             b_differ_flat,
             ax=ax[5],
             a_label=f"Array A ({hist_units})",
-            b_label=f"Array A ({hist_units})",
+            b_label=f"Array B ({hist_units})",
         )
         # Add the colorbar
         ax[5].colorbar(q, loc='r', label='Count per pixel', formatter='sci')
