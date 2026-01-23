@@ -99,7 +99,7 @@ class uarray():
         self.xr = shift_lon_arr(self.xr, **kwargs)
 
 def get_dataset(
-    set_to_get,
+    dataset,
     is_input_set=False,
     is_predict=False,
     **kwargs,
@@ -108,7 +108,7 @@ def get_dataset(
 
         Parameters
         ----------
-        set_to_get : str, uarray, xarray.Dataset, xarray.DataArray
+        dataset : str, uarray, xarray.Dataset, xarray.DataArray
             The name of the dataset to get.
         is_input_set : bool, optional
             If True, treat the dataset as an input set.
@@ -122,30 +122,30 @@ def get_dataset(
         xr_dataset : xarray.Dataset or xarray.DataArray
             The loaded and verified xarray dataset.
     """
-    # If set_to_get is a string, load the dataset
-    if isinstance(set_to_get, str):
+    # If dataset is a string, load the dataset
+    if isinstance(dataset, str):
         if is_input_set:
             # Check whether a file path in the `inputfiles` directory was given
-            if 'inputfiles/' not in set_to_get:
+            if 'inputfiles/' not in dataset:
                 # Assemble the file path
-                file_path = f'inputfiles/{set_to_get}/{set_to_get}.nc'
+                file_path = f'inputfiles/{dataset}/{dataset}.nc'
         elif is_predict:
             # Check whether a file path in the `HPC_runs` directory was given
-            if 'HPC_runs/' not in set_to_get:
+            if 'HPC_runs/' not in dataset:
                 # Assemble the file path
-                file_path = f'HPC_runs/{set_to_get}/predictions.nc'
+                file_path = f'HPC_runs/{dataset}/predictions.nc'
         else:
-            file_path = set_to_get
+            file_path = dataset
         # Load (and verify) the dataset
         xr_dataset = load_dataset(file_path, **kwargs)
-    # If set_to_get is a xarray Dataset or DataArray, verify it
-    elif isinstance(set_to_get, xr.Dataset) or isinstance(set_to_get, xr.DataArray):
-        xr_dataset = verify_dataset(set_to_get, **kwargs)
-    # If set_to_get is already a uarray, return it
-    elif isinstance(set_to_get, uarray):
-        return set_to_get.xr
+    # If dataset is a xarray Dataset or DataArray, verify it
+    elif isinstance(dataset, xr.Dataset) or isinstance(dataset, xr.DataArray):
+        xr_dataset = verify_dataset(dataset, **kwargs)
+    # If dataset is already a uarray, return it
+    elif isinstance(dataset, uarray):
+        return dataset.xr
     else:
-        raise TypeError(f"(get_dataset) `set_to_get` must be string, xr.Dataset, or xr.DataArray. Got {type(set_to_get)}.")
+        raise TypeError(f"(get_dataset) `dataset` must be string, xr.Dataset, or xr.DataArray. Got {type(dataset)}.")
     return xr_dataset
 
 def load_dataset(
