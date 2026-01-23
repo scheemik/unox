@@ -12,7 +12,6 @@ from data0.dataset import uarray
 from data0.paths import verify_path
 from utils.data_split import data_split
 import data0.run_functions as rf
-import data0.run_functions as rf
 
 print("")
 print("===== Begin run_model.py =====")
@@ -78,8 +77,8 @@ print(output_metadata['unet_build_shape'])
 
 # Import packages based on version
 if version == 0: # keras v2.9.0, tensorflow v2.9.2
-    from utils.functions_old import r2_keras
-    from utils.functions_old import msenonzero
+    from legacy.functions_old import r2_keras
+    from legacy.functions_old import msenonzero
     from model.core_old import Unet
 elif version == 1: # keras v3.10.0, tensorflow v2.17.0
     from utils.functions import r2_keras
