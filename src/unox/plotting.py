@@ -425,6 +425,7 @@ def select_time(
 def plot_run_analysis(
     dataset,
     year,
+    datetime=None,
     restrict_lat_lon_to=None,
     add_corr_plots=True,
     stage1_only=False,
@@ -453,6 +454,9 @@ def plot_run_analysis(
         The dataset for which to make comparison maps. Must be a predictions dataset.
     year : `int`
         The year for which to make comparisons.
+    datetime : `str`, `None`, optional
+        Date and time to select from the data file.
+        Default is `None`.
     restrict_lat_lon_to : `str`, `None`, optional
         Path to a netCDF file to restrict the latitude and longitude range.
         If `None`, the entire dataset is used.
@@ -480,7 +484,7 @@ def plot_run_analysis(
 
     Examples
     --------
-    >>> fig = plot_run_analysis(HPC_run = 'no2_example_run', year = 2019, datetime='2019-01-02',
+    >>> fig = plot_run_analysis('no2_example_run', year = 2019, datetime='2019-01-02',
     avg_over='364D', restrict_lat_lon_to='../datafiles/sample_data/nox_2019_t106_US.nc',  add_corr_plots=True)
     """
     # Verify argument types
@@ -488,6 +492,10 @@ def plot_run_analysis(
     pred_uarr = uarray(dataset, is_predict=True)
     if not isinstance(year, int):
         raise TypeError(f"(plot_run_analysis) `year` must be an integer. Got type: {type(year)}")
+    if not isinstance(datetime, (type(None), str, np.timedelta64)):
+        raise TypeError(f"(select_time) `datetime` must be None, a string, or a numpy.timedelta64. Got type: {type(datetime)}")
+    elif isinstance(datetime, type(None)):
+        datetime = f"{year}-01-02"
     if not isinstance(restrict_lat_lon_to, (type(None), str)):
         raise TypeError(f"(plot_run_analysis) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
     if not isinstance(add_corr_plots, bool):
@@ -546,7 +554,7 @@ def plot_run_analysis(
     pred_uarr.xr[y_var] = input_uarr.xr[y_var]
     # Select the time slice to plot
     ## Note: This will not affect the data used in the correlation plots
-    pred_uarr.xr, time_title = select_time(pred_uarr.xr, **kwargs)
+    pred_uarr.xr, time_title = select_time(pred_uarr.xr, datetime, **kwargs)
 
     # Restrict the latitude and longitude range
     ## Note: This will not affect the data used in the correlation plots
