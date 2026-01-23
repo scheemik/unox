@@ -683,7 +683,7 @@ def plot_run_analysis(
         fig.colorbar(fig_q_list[0], loc='r', label='Count per pixel', extend='both', formatter='sci', rows=(n_rows_maps+1, n_rows))
 
     # Set the figure title
-    fig.suptitle(f"HPC run: {HPC_run}, input set: {input_set}, {time_title}", fontsize=title_font_size)
+    fig.suptitle(f"HPC run: {pred_uarr.name}, input set: {input_set}, {time_title}", fontsize=title_font_size)
     return fig
 
 def plot_comparison(
