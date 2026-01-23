@@ -24,32 +24,33 @@ mpl.rcParams['legend.fontsize'] = 12
 title_font_size = 20
 
 def plot_extent(
-    xr_dataset='/datafiles/nox_2019_t106_US.nc',
+    dataset,
     **kwargs,
 ):
-    """Plots the extent of the given xarray dataset.
+    """Plots the extent of the given dataset.
 
     Creates a map with the Robin projection of the entire world
-    with a box showing the maximum extent of the dataset.
+    with a box showing the maximum N,S,E,W extent of the dataset.
 
     Parameters
     ----------
-    xr_dataset : str or xarray.Dataset or xarray.DataArray
-        The xarray data for which to plot the extent or the file path to the dataset.
+    dataset : `str`, `xarray.Dataset`, `xarray.DataArray`
+        The dataset for which to plot the latitude / longitude extent.
     **kwargs : keyword arguments
         Additional keyword arguments to pass to `uarray()`.
     
     Returns
     -------
-    fig : matplotlib.figure.Figure
+    fig : `matplotlib.figure.Figure`
         The figure object containing the plot.
 
     Examples
     --------
-    >>> fig = plot_extent(xr_dataset)
+    >>> fig = plot_extent('inputfiles/no2_2019_JFM/no2_2019_JFM.nc')
+    >>> fig = plot_extent('no2_2019_JFM', is_input_set=True)
     """
     # Make `uarray` object
-    u_arr = uarray(xr_dataset, **kwargs)
+    u_arr = uarray(dataset, **kwargs)
     # Verify argument types 
     # The `verify_dataset()` function is automatically run when creating a `uarray` object
 
@@ -74,36 +75,37 @@ def plot_extent(
     return fig
 
 def plot_lats_lons(
-    xr_dataset='/datafiles/nox_2019_t106_US.nc',
+    dataset,
     padding=0.1,
     **kwargs,
 ):
-    """Plot the latitude and longitude values in the given dataset.
+    """Plot the latitude and longitude values of the given dataset.
 
     Creates a map showing the longitude and latitude resolution of the 
-    given dataset.
+    given dataset in a checkerboard pattern.
 
     Parameters
     ----------
-    xr_dataset : str or xarray.Dataset or xarray.DataArray
-        The xarray data for which to plot the extent or the file path to the dataset.
-    padding : float
+    dataset : `str`, `xarray.Dataset`, `xarray.DataArray`
+        The dataset for which to plot the latitude and longitude grid.
+    padding : `float`, optional
         The padding (in a fraction of total extent) to add to the extent of the map. 
-        Default is 0.1 degrees.
+        Default is `0.1`.
     **kwargs : keyword arguments
         Additional keyword arguments to pass to `uarray()`.
     
     Returns
     -------
-    fig : matplotlib.figure.Figure
+    fig : `matplotlib.figure.Figure`
         The figure object containing the plot.
     
     Examples
     --------
-    >>> fig = plot_lats_lons(xr_dataset)
+    >>> fig = plot_lats_lons('inputfiles/no2_2019_JFM/no2_2019_JFM.nc')
+    >>> fig = plot_lats_lons('no2_2019_JFM', is_input_set=True)
     """
     # Make `uarray` object
-    u_arr = uarray(xr_dataset, **kwargs)
+    u_arr = uarray(dataset, **kwargs)
     # Verify argument types 
     # The `verify_dataset()` function is automatically run when creating a `uarray` object
     # The `verify_number()` function is automatically run in `pad_extent()`
@@ -134,8 +136,8 @@ def plot_lats_lons(
     return fig
 
 def map_ax(
+    xr_arr,
     ax,
-    xr_data_arr,
     plt_title=None,
     cmap=pplt.Colormap('Fire'),
     cbar_max=None,
@@ -144,53 +146,58 @@ def map_ax(
     padding=0.1,
     **kwargs,
 ):
-    """Plots a map of the data in the given dataset.
+    """Plots a map of the given data array.
 
-    Creates a map of the 'var' data on a map using the provided netCDF file.
+    Creates a map of the given xarray DataArray on the axes provided. 
+    The latitude and longitude values from `xr_arr` are used to set the extent of the map.
 
     Parameters
     ----------
-    ax : matplotlib.axes.Axes
-        The axes on which to plot the data.
-    xr_data_arr : xarray.DataArray
+    xr_arr : `xarray.DataArray`
         The xarray data to plot. Must not have a time dimension.
-    plt_title : str, optional
-        The title for the plot. Default is `None`.
-    cmap : matplotlib.colors.Colormap, optional
-        The colormap to use for the plot. Default is pplt.cm.Fire.
-    cbar_max : float, optional
+    ax : `matplotlib.axes.Axes`
+        The axes on which to plot the data.
+    plt_title : `str`, optional
+        The title for the plot. 
+        Default is `None`.
+    cmap : `matplotlib.colors.Colormap`, optional
+        The colormap to use for the plot. 
+        Default is `pplt.cm.Fire`.
+    cbar_max : `float`, optional
         Maximum value for the colorbar. When `None`, the colorbar max is set to the max value to plot.
         Default is `None`.
-    cbar_min : float, optional
+    cbar_min : `float`, optional
         Minimum value for the colorbar. When `None`, the colorbar max is set to the min value to plot.
         Default is `None`.
-    cb_ext : str, optional
-        How to extend the ends of the colorbar. Can be 'neither', 'both', 'min', or 'max'.
-        Default is 'neither'.
-    padding : float
+    cb_ext : `str`, optional
+        How to extend the ends of the colorbar. Can be `'neither'`, `'both'`, `'min'`, or `'max'`.
+        Default is `'neither'`.
+    padding : `float`, optional
         The padding (in a fraction of total extent) to add to the extent of the map. 
-        Default is 0.1.
+        Default is `0.1`.
     **kwargs : keyword arguments
         Additional keyword arguments accepted to facilitate wrapper functions.
     
     Returns
     -------
-    this_map_ax : matplotlib.axes.Axes
+    this_map_ax : `matplotlib.axes.Axes`
         The axes object containing the plot.
-    clrbar_label : str
+    clrbar_label : `str`
         The label for the colorbar containing the variable name and units.
     
     Examples
     --------
-    >>> import xarray as xr
-    >>> this_dataset = xr.open_dataset('../datafiles/sample_data/nox_2019_t106_US.nc')
-    >>> fig = plot_nc_map(xr_data_arr=this_dataset)
+    >>> import proplot as pplt
+    >>> fig, axs = pplt.subplots(nrows=1, ncols=2, proj='cyl')
+    >>> this_xr = uarray('no2_2019_JFM', is_input_set=True).xr['no2']
+    >>> this_xr = this_xr.sel(time='2019-01-02').squeeze(drop=True)
+    >>> this_ax, cb_label = map_ax(this_xr, axs[0])
     """
     # Verify argument types
+    if not isinstance(xr_arr, xr.DataArray):
+        raise TypeError(f"(map_ax) `xr_arr` must be an xarray DataArray. Got type: {type(xr_arr)}")
     if not isinstance(ax, pplt.axes.Axes):
         raise TypeError(f"(map_ax) `ax` must be a proplot Axes object. Got type: {type(ax)}")
-    if not isinstance(xr_data_arr, xr.DataArray):
-        raise TypeError(f"(map_ax) `xr_data_arr` must be an xarray DataArray. Got type: {type(xr_data_arr)}")
     if not isinstance(plt_title, (type(None), str)):
         raise TypeError(f"(map_ax) `plt_title` must be a string or None. Got type: {type(plt_title)}")
     if not isinstance(cmap, mpl.colors.Colormap):
@@ -203,41 +210,41 @@ def map_ax(
         raise ValueError(f"(map_ax) `cb_ext` must be 'neither', 'both', 'min', or 'max'. Got: {cb_ext}")
     # `padding` is verified in `pad_extent()`
 
-    # Verify the xr_data_arr. Assume there is no time dimension
-    xr_data_arr = verify_dataset(xr_data_arr, check_time=False)
+    # Verify the xr_arr. Assume there is no time dimension
+    xr_arr = verify_dataset(xr_arr, check_time=False)
     # If there are any dimensions of size 1 (var, for example), squeeze them out
-    xr_data_arr = xr_data_arr.squeeze(drop=True)
+    xr_arr = xr_arr.squeeze(drop=True)
     # Check to ensure that `lat` and `lon` are the only remaining dimensions
-    if not set(xr_data_arr.dims).issubset({'lat', 'lon'}):
-        raise ValueError(f"(map_ax) `xr_data_arr` must have only 'lat' and 'lon' dimensions after squeezing. Got dimensions: {xr_data_arr.dims}")
-    # Get the variable name from xr_data_arr
-    var = xr_data_arr.name
+    if not set(xr_arr.dims).issubset({'lat', 'lon'}):
+        raise ValueError(f"(map_ax) `xr_arr` must have only 'lat' and 'lon' dimensions after squeezing. Got dimensions: {xr_arr.dims}")
+    # Get the variable name from xr_arr
+    var = xr_arr.name
 
     # Get the long name and units of the specified variable for plot labels
     try:
-        var_name = xr_data_arr.long_name
-        var_unit = xr_data_arr.units
+        var_name = xr_arr.long_name
+        var_unit = xr_arr.units
     except:
         var_name = 'var'
         var_unit = 'units'
 
     # Find the min and max lat and lon values
-    this_extent = udata.get_extent(xr_data_arr, check_time=False)
+    this_extent = udata.get_extent(xr_arr, check_time=False)
     # Enlarge the extent of the map by the given padding value
     p_lat_min, p_lat_max, p_lon_min, p_lon_max = uplt_fmt.pad_extent(this_extent, padding)
 
     # Get the maximum value for the colorbar
     if isinstance(cbar_max, type(None)):
-        cbar_max = xr_data_arr.max()
+        cbar_max = xr_arr.max()
         cbar_max = cbar_max.values
         cbar_max = np.unique(cbar_max)[0]
     # Get the minimum value for the colorbar
     if isinstance(cbar_min, type(None)):
-        cbar_min = xr_data_arr.min()
+        cbar_min = xr_arr.min()
         cbar_min = cbar_min.values
         cbar_min = np.unique(cbar_min)[0]
     # Plot the data, use `discrete=False` to set a continuous colorbar
-    this_map_ax = ax.pcolormesh(xr_data_arr, vmin=cbar_min, vmax=cbar_max, discrete=False, extend=cb_ext, cmap=cmap)
+    this_map_ax = ax.pcolormesh(xr_arr, vmin=cbar_min, vmax=cbar_max, discrete=False, extend=cb_ext, cmap=cmap)
     # Format the map
     ax.format(
         lonlim=(p_lon_min, p_lon_max), latlim=(p_lat_min, p_lat_max),
@@ -253,41 +260,36 @@ def map_ax(
 def plot_var_maps(
     dataset,
     vars=['nox'],
-    datetime='2019-01-02T00:00:00',
-    avg_over=None,
     restrict_lat_lon_to=None,
     **kwargs,
 ):
     """Plots a maps of data in a netCDF.
 
     A wrapper for the `map_ax()` function.
-    Creates maps for each specified 'var' using the provided netCDF file.
+    Creates maps for each specified 'var' using the provided dataset.
 
     Parameters
     ----------
-    dataset : str, uarray, xarray.Dataset or xarray.DataArray
-        Path to the netCDF data file.
-    vars : str or list
-        The name(s) of the variable(s) to plot from the netCDF file.
+    dataset : `str`, `xarray.Dataset`, `xarray.DataArray`
+        The dataset for which to plot the specified variables.
+    vars : `str`, `list`, optional
+        The name(s) of the variable(s) to plot from the dataset.
         Default is `nox`.
-    datetime : str
-        Date and time to select from the data file.
-    avg_over : str, numpy.timedelta64, or None
-        If provided, averages the data over the specified time period.
-        If None, takes just the time slice specified in `datetime`.
+    restrict_lat_lon_to : `str`, `None`, optional
+        Path to a netCDF file to restrict the latitude and longitude range.
+        If `None`, the entire dataset is used.
+        Default is `None`.
     **kwargs : keyword arguments
-        Additional keyword arguments to pass to `uarray`, `set_fig_row_col()` and `map_ax()`.
+        Additional keyword arguments to pass to `uarray`, `select_time()`, `set_fig_row_col()` and `map_ax()`.
     
     Returns
     -------
-    fig : matplotlib.figure.Figure
+    fig : `matplotlib.figure.Figure`
         The figure object containing the plot.
     
     Examples
     --------
-    >>> import xarray as xr
-    >>> this_dataset = xr.open_dataset('../datafiles/sample_data/nox_2019_t106_US.nc')
-    >>> fig = plot_nc_map(xr_dataset=this_dataset)
+    >>> fig = plot_var_maps('no2_example_run', is_predict=True, vars=['no2_pred'], datetime='2019-06-01', avg_over='30D')
     """
     # Make `uarray` object
     u_arr = uarray(dataset, **kwargs)
@@ -300,10 +302,9 @@ def plot_var_maps(
             raise TypeError(f"(plot_var_maps) `vars` must be a list of variable names or a single variable name string. Got type: {type(vars)}")
     if len(vars) == 0:
         raise ValueError("(plot_var_maps) `vars` list cannot be empty.")
-    # `datetime` and `avg_over` are verified in `select_time()`
     
     # Select the time slice to plot
-    u_arr.xr, title_segment = select_time(u_arr.xr, datetime, avg_over)
+    u_arr.xr, title_segment = select_time(u_arr.xr, **kwargs)
 
     # Restrict the latitude and longitude range
     if not isinstance(restrict_lat_lon_to, type(None)):
@@ -329,8 +330,8 @@ def plot_var_maps(
     
         # Add the plot to the axis
         this_var, clrbar_label = map_ax(
-            axs[i], 
             var_xr,
+            axs[i], 
             **kwargs,
         )
         # Add a colorbar
@@ -341,37 +342,47 @@ def plot_var_maps(
     return fig
 
 def select_time(
-    xr_dataset,
+    xr_data,
     datetime=None,
     avg_over=None,
     sum_vars=False,
+    **kwargs,
 ):
     """Selects the time from an xarray to plot.
 
-    Either selects a single time slice or averages over a time period to result in 
-    an xarray without a time dimension, only lat-lon dimensions.
+    Either selects a single time slice, averages over a time period, or sums over the entire available time dimension to result in an xarray without a time dimension, only lat-lon dimensions.
 
     Parameters
     ----------
-    xr_dataset : xarray.Dataset or xarray.DataArray
+    xr_data : `xarray.Dataset`, `xarray.DataArray`
         The xarray data to plot. Must have a time dimension.
-    datetime : str or None, optional
+    datetime : `str`, `None`, optional
         Date and time to select from the data file.
-    avg_over : str, numpy.timedelta64, or None, optional
+        Default is `None`.
+    avg_over : `str`, `numpy.timedelta64`, `None`, optional
         If provided, averages the data over the specified time period.
         If None, takes just the time slice specified in `datetime`.
-    sum_vars : bool, optional
+        Default is `None`.
+    sum_vars : `bool`, optional
         Whether to sum across all time steps. Is ignored if `avg_over` is not None.
+        Default is `False`.
+    **kwargs : keyword arguments
+        Additional keyword arguments accepted to facilitate wrapper functions.
 
     Returns
     -------
-    xr_sel_time : xarray.Dataset or xarray.DataArray
+    xr_sel_time : `xarray.Dataset`, `xarray.DataArray`
         An xarray DataArray of the selected variable without a time dimension.
-    title_segment : str
-        A segement of the title string for the plot with time information.
+    title_segment : `str`
+        A segment of the title string for the plot with time information.
+
+    Examples
+    --------
+    >>> xr_data = uarray('no2_2019_JFM', is_input_set=True).xr
+    >>> xr_sel_time, title_segment = select_time(xr_data, datetime='2019-01-15')
     """
     # Verify argument types
-    xr_dataset = verify_dataset(xr_dataset, check_time=True)
+    xr_data = verify_dataset(xr_data, check_time=True)
     if not isinstance(datetime, (type(None), str, np.timedelta64)):
         raise TypeError(f"(select_time) `datetime` must be None, a string, or a numpy.timedelta64. Got type: {type(datetime)}")
     if not isinstance(avg_over, (type(None), str, np.timedelta64)):
@@ -388,31 +399,29 @@ def select_time(
             raise ValueError(f"(select_time) Invalid `avg_over` value: {avg_over}")
         # Average over the specified amount of time
         # Maintain attributes by using `drop=False` in sel() and `keep_attrs=True` in mean()
-        xr_sel_time = xr_dataset.sel(time=slice(datetime, end_date), drop=False)
+        xr_sel_time = xr_data.sel(time=slice(datetime, end_date), drop=False)
         xr_sel_time = xr_sel_time.mean(dim='time', keep_attrs=True)
         # Get the value and unit of the averaging
         avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
         # Format a string for the title
-        title_segment = f"Averaged from {str(xr_dataset.time.values[0]).split('T')[0].split(' ')[0]} to {str(xr_dataset.time.values[-1]).split('T')[0].split(' ')[0]} ({avg_over_num} {avg_over_unit})"
+        title_segment = f"Averaged from {str(xr_data.time.values[0]).split('T')[0].split(' ')[0]} to {str(xr_data.time.values[-1]).split('T')[0].split(' ')[0]} ({avg_over_num} {avg_over_unit})"
     elif sum_vars == True:
         # Sum all the variables over time
-        xr_sel_time = xr_dataset.sum(dim='time', keep_attrs=True).squeeze(drop=True)
+        xr_sel_time = xr_data.sum(dim='time', keep_attrs=True).squeeze(drop=True)
         # Format a string for the title
-        title_segment = f"Summed from {str(xr_dataset.time.values[0]).split('T')[0].split(' ')[0]} to {str(xr_dataset.time.values[-1]).split('T')[0].split(' ')[0]}"
+        title_segment = f"Summed from {str(xr_data.time.values[0]).split('T')[0].split(' ')[0]} to {str(xr_data.time.values[-1]).split('T')[0].split(' ')[0]}"
     else:
         # Take just that time slice
         # Use squeeze to drop `time` dimension as sel() only automatically drops scalar
         # dimensions, which `time` is not
-        xr_sel_time = xr_dataset.sel(time=datetime, drop=False).squeeze(drop=True)
+        xr_sel_time = xr_data.sel(time=datetime, drop=False).squeeze(drop=True)
         # Format a string for the title
         title_segment = datetime.split('T')[0]
     return xr_sel_time, title_segment
 
 def plot_run_analysis(
-    HPC_run,
+    dataset,
     year,
-    datetime='2019-01-02',
-    avg_over=None,
     restrict_lat_lon_to=None,
     add_corr_plots=True,
     stage1_only=False,
@@ -420,7 +429,7 @@ def plot_run_analysis(
     clr_map=pplt.Colormap('Balance'),
     **kwargs,
 ):
-    """Plots a set of maps to compare the truth and the two stages of the model.
+    """Plots a set of maps to compare the 'truth' and the two stages of the model.
 
     Creates a set of 6 maps:
     1. 'Truth'
@@ -437,46 +446,48 @@ def plot_run_analysis(
 
     Parameters
     ----------
-    HPC_run : str
-        The name of the HPC_run for which to make comparison maps.
-    year : int
+    dataset : `str`, `xarray.Dataset`, `xarray.DataArray`, `uarray`
+        The dataset for which to make comparison maps. Must be a predictions dataset.
+    year : `int`
         The year for which to make comparisons.
-    datetime : np.datetime64 or str, optional
-        Date and time to select from the data file.
-        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
-    avg_over : str, numpy.timedelta64, or None, optional
-        If provided, averages the data over the specified time period.
-        If None, takes just the time slice specified in `datetime`.
-    restrict_lat_lon_to : str, optional
+    restrict_lat_lon_to : `str`, `None`, optional
         Path to a netCDF file to restrict the latitude and longitude range.
-        If None, the entire dataset is used.
-    add_corr_plots : bool, optional
+        If `None`, the entire dataset is used.
+        Default is `None`.
+    add_corr_plots : `bool`, optional
         Whether or not to add a row of correlation plots to the figure.
-    stage1_only : bool, optional
-        If True, produce graphs just corresponding to stage 1. If False, produce graphs
-        for stage 1 and stage 2. Default is False.
-    clr_bar_scale : float between 0 and 1, optional
-        Scale factor for the color bar. If set to 1, the color bar will be scaled 
-        to the maximum absolute value of the data. Default is 0.5.
-    clr_map : matplotlib.colors.Colormap, optional
-        The colormap to use for the map plots. Default is a diverging seismic colormap.
+        Default is `True`.
+    stage1_only : `bool`, optional
+        If `True`, produce graphs just corresponding to stage 1. If `False`, produce graphs
+        for stage 1 and stage 2. 
+        Default is `False`.
+    clr_bar_scale : `float`, optional
+        Scale factor for the color bar, must be between `0` and `1`. If set to `1`, the color bar will be scaled to the maximum absolute value of the data. 
+        Default is `0.5`.
+    clr_map : `matplotlib.colors.Colormap`, optional
+        The colormap to use for the map plots. 
+        Default is `pplt.cm.Balance`.
     **kwargs : keyword arguments
-        Additional keyword arguments to pass to `corr_plot()`.
+        Additional keyword arguments to pass to `select_time()`, `map_ax()`, and `corr_plot()`.
     
     Returns
     -------
-    fig : matplotlib.figure.Figure
+    fig : `matplotlib.figure.Figure`
         The figure object containing the plots.
+
+    Examples
+    --------
+    >>> fig = plot_run_analysis(HPC_run = 'no2_example_run', year = 2019, datetime='2019-01-02',
+    avg_over='364D', restrict_lat_lon_to='../datafiles/sample_data/nox_2019_t106_US.nc',  add_corr_plots=True)
     """
     # Verify argument types
-    if not isinstance(HPC_run, str):
-        raise TypeError(f"(plot_comp_maps) `HPC_run` must be a string. Got type: {type(HPC_run)}")
+    if not isinstance(dataset, (str, xr.Dataset, xr.DataArray, uarray)):
+        raise TypeError(f"(plot_comp_maps) `dataset` must be a string. Got type: {type(dataset)}")
     if not isinstance(year, int):
         raise TypeError(f"(plot_comp_maps) `year` must be an integer. Got type: {type(year)}")
-    # `datetime` and `avg_over` are verified in `select_time()`
 
     # Get predictions dataset
-    pred_uarr = uarray(HPC_run, is_predict=True)
+    pred_uarr = uarray(dataset, is_predict=True)
     # Get the metadata from the predictions uarray
     meta_dict = pred_uarr._get_metadata()
     # Get the input set from the metadata
@@ -523,11 +534,7 @@ def plot_run_analysis(
     pred_uarr.xr[y_var] = input_uarr.xr[y_var]
     # Select the time slice to plot
     ## Note: This will not affect the data used in the correlation plots
-    pred_uarr.xr, time_title = select_time(
-        pred_uarr.xr,
-        datetime=datetime,
-        avg_over=avg_over,
-    )
+    pred_uarr.xr, time_title = select_time(pred_uarr.xr, **kwargs)
 
     # Restrict the latitude and longitude range
     ## Note: This will not affect the data used in the correlation plots
@@ -597,8 +604,8 @@ def plot_run_analysis(
         data_arr = pred_uarr.xr[vars_to_plot[i]]
         # Add the plot to the axis
         these_vars[i], these_cblbls[i] = map_ax(
-            axs[i], 
             data_arr,
+            axs[i], 
             plt_title=data_arr.attrs['long_name'],
             cmap=clr_map,
             cbar_max=chr,
@@ -622,7 +629,7 @@ def plot_run_analysis(
         fig_q_list = [None]*3
         # Add the three correlation plots to the figure
         fig_q_list[0] = corr_plot(
-            HPC_run,
+            dataset,
             is_predict=True,
             x_var='pred',
             y_var='truth',
@@ -633,7 +640,7 @@ def plot_run_analysis(
         )
         if stage1_only == False:
             fig_q_list[1] = corr_plot(
-                HPC_run,
+                dataset,
                 is_predict=True,
                 x_var='pred_s2',
                 y_var='truth',
@@ -643,7 +650,7 @@ def plot_run_analysis(
                 **kwargs,
             )
             fig_q_list[2] = corr_plot(
-                HPC_run,
+                dataset,
                 is_predict=True,
                 x_var='pred',
                 y_var='pred_s2',
@@ -660,40 +667,73 @@ def plot_run_analysis(
     return fig
 
 def plot_comparison(
-    a_xr_data_arr,
-    b_xr_data_arr,
+    a_xr_arr,
+    b_xr_arr,
     ax=None,
     plt_title=None,
     a_label=None,
     b_label=None,
     cmap=pplt.Colormap('viridis'),
-    cbar_max=None,
-    cbar_min=None,
-    cb_ext='neither',
     set_under_val=1,
     hist_params={'bins':100, 'vmax':1000, 'vmin':10},
     log_scale=True,
     **kwargs,
 ):
-    """
-    Plot a comparison of two numpy arrays.
+    """Plot a comparison of two arrays.
 
-    Creates a correlation plot between the values of the two given numpy arrays.
+    Creates a correlation plot between the values of the two given arrays.
 
+    Parameters
+    ----------
+    a_xr_arr : `xarray.DataArray`, `numpy.ndarray`
+        The first xarray DataArray or numpy array to compare.
+    b_xr_arr : `xarray.DataArray`, `numpy.ndarray`
+        The second xarray DataArray or numpy array to compare.
+    ax : `matplotlib.axes.Axes`, optional
+        The axes on which to plot the data.
+        Default is `None`.
+    plt_title : `str`, optional
+        The title for the plot. 
+        Default is `None`.
+    a_label : `str`, optional
+        The label to use for the first array.
+    b_label : `str`, optional
+        The label to use for the second array.
+    cmap : `matplotlib.colors.Colormap`, optional
+        The colormap to use for the plot. 
+        Default is `pplt.cm.viridis`.
+    set_under_val : `float`, optional
+        The value below which to set the colormap to white.
+        Default is `1`.
+    hist_params : `dict`, optional
+        The dictionary of values to set the 2D histogram parameters.
+        Default is `{'bins':100, 'vmax':1000, 'vmin':10}`.
+    log_scale : `bool`, optional
+        Whether to use a logarithmic scale for the histogram.
+        Default is `True`.
+    **kwargs : keyword arguments
+        Additional keyword arguments accepted to facilitate wrapper functions.
+    
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        The figure object containing the plot. Returned if `ax` is `None`.
+    q : `QuadMesh`
+        The QuadMesh object created by the 2D histogram. Returned if `ax` is given.
     """
     # Verify argument types
-    if isinstance(a_xr_data_arr, xr.DataArray):
-        a_xr_label = f"{a_xr_data_arr.attrs['long_name']} ({a_xr_data_arr.attrs['units']})"
-        a_xr_data_arr = a_xr_data_arr.values
-    elif not isinstance(a_xr_data_arr, (xr.DataArray, np.ndarray)):
-        raise TypeError(f"(plot_comparison) `a_xr_data_arr` must be an xarray DataArray or numpy array. Got type: {type(a_xr_data_arr)}")
+    if isinstance(a_xr_arr, xr.DataArray):
+        a_xr_label = f"{a_xr_arr.attrs['long_name']} ({a_xr_arr.attrs['units']})"
+        a_xr_arr = a_xr_arr.values
+    elif not isinstance(a_xr_arr, (xr.DataArray, np.ndarray)):
+        raise TypeError(f"(plot_comparison) `a_xr_arr` must be an xarray DataArray or numpy array. Got type: {type(a_xr_arr)}")
     else:
         a_xr_label = 'Array A'
-    if isinstance(b_xr_data_arr, xr.DataArray):
-        b_xr_label = f"{b_xr_data_arr.attrs['long_name']} ({b_xr_data_arr.attrs['units']})"
-        b_xr_data_arr = b_xr_data_arr.values
-    elif not isinstance(b_xr_data_arr, (xr.DataArray, np.ndarray)):
-        raise TypeError(f"(plot_comparison) `b_xr_data_arr` must be an xarray DataArray or numpy array. Got type: {type(b_xr_data_arr)}")
+    if isinstance(b_xr_arr, xr.DataArray):
+        b_xr_label = f"{b_xr_arr.attrs['long_name']} ({b_xr_arr.attrs['units']})"
+        b_xr_arr = b_xr_arr.values
+    elif not isinstance(b_xr_arr, (xr.DataArray, np.ndarray)):
+        raise TypeError(f"(plot_comparison) `b_xr_arr` must be an xarray DataArray or numpy array. Got type: {type(b_xr_arr)}")
     else:
         b_xr_label = 'Array B'
     if not isinstance(ax, (pplt.axes.Axes, type(None))):
@@ -710,12 +750,6 @@ def plot_comparison(
         raise TypeError(f"(plot_comparison) `b_label` must be a string or None. Got type: {type(b_label)}")
     if not isinstance(cmap, mpl.colors.Colormap):
         raise TypeError(f"(plot_comparison) `cmap` must be a matplotlib Colormap. Got type: {type(cmap)}")
-    if not isinstance(cbar_max, type(None)):
-        verify_number(cbar_max)
-    if not isinstance(cbar_min, type(None)):
-        verify_number(cbar_min)
-    if cb_ext not in ['neither', 'both', 'min', 'max']:
-        raise ValueError(f"(map_ax) `cb_ext` must be 'neither', 'both', 'min', or 'max'. Got: {cb_ext}")
     verify_number(set_under_val)
     if not isinstance(hist_params, dict):
         raise TypeError(f"(plot_comparison) `hist_params` must be a dictionary. Got type: {type(hist_params)}")
@@ -724,11 +758,11 @@ def plot_comparison(
     
     # Convert the xarray DataArrays to numpy arrays, 
     # then squeeze and flatten to get one dimensional arrays
-    npy_a = np.squeeze(a_xr_data_arr).flatten()
-    npy_b = np.squeeze(b_xr_data_arr).flatten()
+    npy_a = np.squeeze(a_xr_arr).flatten()
+    npy_b = np.squeeze(b_xr_arr).flatten()
     # Verify these arrays are the same length
     if len(npy_a) != len(npy_b):
-        raise ValueError(f"(plot_comparison) `a_xr_data_arr` and `b_xr_data_arr` must have the same number of elements. Got lengths {len(npy_a)} and {len(npy_b)} respectively.")
+        raise ValueError(f"(plot_comparison) `a_xr_arr` and `b_xr_arr` must have the same number of elements. Got lengths {len(npy_a)} and {len(npy_b)} respectively.")
     # Create a new figure and axis if none is provided
     if isinstance(ax, type(None)):
         new_fig = True
@@ -804,32 +838,35 @@ def corr_plot(
 
     Parameters
     ----------
-    dataset : str, uarray, xarray.Dataset or xarray.DataArray
+    dataset : `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
         The dataset from which to get the data for the correlation plot.
-    x_var : str, optional
+    x_var : `str`, optional
         The variable to plot on the x-axis.
         Can be `truth`, `pred`, `pred_s2`, or any variable in the dataset.
         Default is `pred`.
-    y_var : str, optional
+    y_var : `str`, optional
         The variable to plot on the y-axis.
         Can be `truth`, `pred`, `pred_s2`, or any variable in the dataset.
         Default is `truth`.
-    datetime : int, str, or numpy.timedelta64, optional
+    datetime : `int`, `str`, or `numpy.timedelta64`, optional
         If an integer year is provided, all the data from that year will be used.
         If a datetime is given, the data will be filtered by `select_time()`, using
         that datetime and the value of `avg_over`, if included in `**kwargs`. 
-
+    restrict_lat_lon_to : `str`, `None`, optional
+        Path to a netCDF file to restrict the latitude and longitude range.
+        If `None`, the entire dataset is used.
+        Default is `None`.
     **kwargs : dict
-        Additional keyword arguments to pass to the `plot_comparison` function.
+        Additional keyword arguments to pass to `select_time()` and `plot_comparison()`.
 
     Returns
     -------
-    fig_q : matplotlib.figure.Figure
+    fig_q : `matplotlib.figure.Figure`
         The figure object containing the plot.
 
     Examples
     --------
-    >>> fig = corr_plot('no2_example_run', 2019, x_ax='pred', y_ax='truth')
+    >>> fig = corr_plot('no2_example_run', 2019, is_predict=True, x_ax='pred', y_ax='truth')
     """
     # Verify argument types
     # Making a `uarray` object verifies `dataset`
@@ -920,15 +957,12 @@ def corr_plot(
     )
     return fig_q
 
-
-########################################################
-
 def make_colorbar(
     fig,
     cb_ax,
     cb_label,
     num_ticks=9,
-    cb_loc='l',
+    cb_loc='r',
     cb_extend='neither',
     **kwargs,
 ):
@@ -936,31 +970,33 @@ def make_colorbar(
 
     Parameters
     ----------
-    fig : matplotlib.figure.Figure
+    fig : `matplotlib.figure.Figure`
         The figure on which to add the colorbar.
-    cb_ax : matplotlib.axes.Axes
+    cb_ax : `matplotlib.axes.Axes`
         The axes on which to add the colorbar.
-    cb_label : str
+    cb_label : `str`
         The label for the colorbar.
-    num_ticks : int
-        The number of ticks for the colorbar. Default is 9.
-    cb_loc : str
-        The location of the colorbar. Default is 'l' (left).
-    cb_extend : str
-        The extension of the colorbar. Can be 'neither', 'both', 'min', or 'max'.
-        Default is 'neither'.
+    num_ticks : `int`, optional
+        The number of ticks for the colorbar. 
+        Default is `9`.
+    cb_loc : `str`, optional
+        The location of the colorbar. Default is 'r' (right).
+    cb_ext : `str`, optional
+        How to extend the ends of the colorbar. Can be `'neither'`, `'both'`, `'min'`, or `'max'`.
+        Default is `'neither'`.
     **kwargs : keyword arguments
-        Additional keyword arguments to pass to `colorbar()`.
+        Additional keyword arguments to pass to `colorbar()`, such as the `rows` tuple.
 
     Returns
     -------
-    cbar : matplotlib.colorbar.Colorbar
-        The created colorbar.
+    cbar : `matplotlib.colorbar.Colorbar`
+        The generated colorbar.
 
     Examples
     --------
-    >>> fig, ax = pplt.subplots()
-    >>> cbar = make_colorbar(fig, ax, cb_label='NOx emissions (kg/m2/s)')
+    >>> fig, axs = pplt.subplots(nrows=3, ncols=3)
+    >>> n_rows_maps = 2
+    >>> cbar = make_colorbar(fig, axs, cb_label='NOx emissions (kg/m2/s)', rows=(1, n_rows_maps))
     """
     # Add one overall colorbar for the entire figure on the right-hand side
     cbar = fig.colorbar(cb_ax, loc=cb_loc, label=cb_label, extend=cb_extend, **kwargs)
@@ -978,39 +1014,47 @@ def plot_hist(
     plt_title=None,
     log_scale=False,
 ):
-    """Plots a histogram of the given numpy array.
+    """Plots a histogram of the given array(s).
 
-    Creates a histogram of the given numpy array on the given axis, or
-    creates a new figure and axis if none is provided.
+    Creates a histogram of the given data on the given axis, or creates a new figure and axis if none is provided.
+    Each array in `data_arrs` is plotted as a separate histogram on the same axes.
 
     Parameters
     ----------
-    npy_arr : numpy.ndarray
-        The numpy array to plot.
-    ax : matplotlib.axes.Axes, optional
-        The axes on which to plot the histogram. If None, a new figure and axes are created.
-    n_bins : int
-        The number of bins to use for the histogram. Default is 100.
-    xlabel : str
-        The label for the x-axis. Default is 'NOx emissions (kg/m2/s)'.
-    ylabel : str
-        The label for the y-axis. Default is 'Frequency'.
-    title : str, optional
-        The title of the plot. If None, no title is set.
-    log_scale : bool
-        If True, the y-axis will be set to a logarithmic scale. Default is False.
-    clr : str
-        The color of the histogram bars. Default is 'blue'.
+    data_arrs : `list`, `numpy.ndarray`, `xr.DataArray`
+        The array(s) to plot.
+    ax : `matplotlib.axes.Axes`, `None`, optional
+        The axes on which to plot the histogram. If `None`, a new figure and axes are created.
+        Default is `None`.
+    n_bins : `int`, optional
+        The number of bins to use for the histogram. 
+        Default is `100`.
+    ax_label : `str`, optional
+        The label for the x-axis. 
+        Default is `'NOx emissions (kg/m2/s)'`.
+    ylabel : `str`, optional
+        The label for the y-axis. 
+        Default is `'Frequency'`.
+    plt_title : `str`, optional
+        The title of the plot. If `None`, no title is set.
+        Default is `None`.
+    log_scale : `bool`, optional
+        If `True`, the y-axis will be set to a logarithmic scale. 
+        Default is `False`.
 
     Returns
     -------
-    fig / ax : matplotlib.figure.Figure or matplotlib.axes.Axes
+    fig / ax : `matplotlib.figure.Figure` or `matplotlib.axes.Axes`
         The figure or axes containing the histogram.
 
     Examples
     --------
-    >>> fig = plot_npy_hist(npy_arr)
-    >>> ax[0] = plot_npy_hist(npy_arr, ax=ax[0], n_bins=50, title='Histogram of NOx emissions')
+    >>> data_arr1 = uarray('nox_2019_JFM', is_input_set=True).xr['no2'].values
+    >>> data_arr2 = uarray('nox_2019_JFM', is_input_set=True).xr['no2_s2'].values
+    >>> fig = plot_npy_hist(data_arr1)
+    
+    >>> fig, axs = pplt.subplots(nrows=2, ncols=1)
+    >>> axs[0] = plot_npy_hist([data_arr1, data_arr2], ax=axs[0], n_bins=50, title='Histogram of NO2 emissions, both stages')
     """
     # Verify argument types
 
@@ -1065,14 +1109,42 @@ def compare_input_vars(
 
     Parameters
     ----------
-    input_dict_a : dict
+    input_dict_a : `dict`, optional
         Dictionary containing the parameters for the first input variable.
-        Must contain 'input_set', 'year', and 'var'. 
-    input_dict_b : dict
+        Must contain `'input_set'`, `'year'`, and `'var'`. 
+    input_dict_b : `dict`, optional
         Dictionary containing the parameters for the second input variable.
-        Must contain 'input_set', 'year', and 'var'.
-    abs_tolerance : float
-        The absolute tolerance for comparing the input files. Default is 2e-5.
+        Must contain `'input_set'`, `'year'`, and `'var'`. 
+    abs_tolerance : `float`, optional
+        The absolute tolerance for comparing the input files. 
+        Default is `2e-5`.
+    restrict_lat_lon_to : `str`, `None`, optional
+        Path to a netCDF file to restrict the latitude and longitude range.
+        If `None`, the entire dataset is used.
+        Default is `None`.
+    
+    Returns
+    -------
+    None
+        If the input files match within the given tolerance.
+    fig : `matplotlib.figure.Figure`
+        If the input files differ more than the given tolerance, a figure is returned.
+    
+    Examples
+    --------
+    >>> fig = compare_input_vars(
+    ...     {
+    ...         'input_set': 'no2_2019_JFM',
+    ...         'year': 2019,
+    ...         'var': 'no2',
+    ...     },
+    ...     {
+    ...         'input_set': 'no2_2019_JFM',
+    ...         'year': 2019,
+    ...         'var': 'no2_s2',
+    ...     },
+    ...     restrict_lat_lon_to='../datafiles/sample_data/nox_2019_t106_US.nc',
+    ... )
     """
     # Verify argument types
     for input_dict in [input_a_dict, input_b_dict]:
@@ -1163,8 +1235,8 @@ def compare_input_vars(
         this_x_arr1['ab_diff'].attrs['long_name'] = 'Differences'
         this_x_arr1['ab_diff'].attrs['units'] = 'count'
         ax1_var, ax1_clrbar_label = map_ax(
-            ax[1],
             this_x_arr1['ab_diff'],
+            ax[1],
             plt_title=title_segment,
             cmap=pplt.Colormap('Viridis'),
         )
