@@ -1,5 +1,5 @@
 {
-    "input_set": "no2_lsm6",
+    "input_set": "no2_2005-2020",
     "x_vars": [
         "no2",
         "no2_tm1",
@@ -15,5 +15,5 @@
     "stage_2_cutoff": 2013,
     "lsm_vars": [
     ],
-    "grid_size": [35, 46]
+    "grid_size": [56, 120]
 }

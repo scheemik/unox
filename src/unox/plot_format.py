@@ -1,39 +1,121 @@
+import numpy as np
+
 from unox import data as udata
+from unox.HPC.data0.verify_dtype import verify_number
+
+def set_fig_row_col(
+    n_subplots,
+    n_rows=None,
+    n_cols=None,
+    **kwargs,
+):
+    """Determine the number of rows and columns in a figure based on the number of subplots.
+
+        Parameters
+        ----------
+        n_subplots : int
+            The total number of subplots in the figure.
+        n_rows : in or None
+            The number of rows to use in the figure. Default is `None`.
+        n_cols : int or None
+            The number of columns to use in the figure. Default is `None`.
+        **kwargs : keyword arguments
+            Additional keyword arguments accepted to facilitate wrapper functions.
+        
+        Returns
+        -------
+        n_rows : int
+            The number of rows in the figure.
+        n_cols : int
+            The number of columns in the figure.
+        
+        Examples
+        --------
+        >>> n_rows, n_cols = set_fig_row_col(4)
+        2, 2
+        >>> n_rows, n_cols = set_fig_row_col(6)
+        2, 3
+        >>> n_rows, n_cols = set_fig_row_col(6, n_rows=3)
+        3, 2
+    """
+    # Verify argument types
+    if not isinstance(n_subplots, int):
+        raise TypeError(f"(set_fig_row_col) `n_subplots` must be an integer. Got type: {type(n_subplots)}")
+    if not isinstance(n_rows, type(None)) and not isinstance(n_rows, int):
+        raise TypeError(f"(set_fig_row_col) `n_rows` must be an integer or `None`. Got type: {type(n_rows)}")
+    if not isinstance(n_cols, type(None)) and not isinstance(n_cols, int):
+        raise TypeError(f"(set_fig_row_col) `n_cols` must be an integer or `None`. Got type: {type(n_cols)}")
+    # Make sure none of the inputs are equal to zero or negative
+    if n_subplots <= 0:
+        raise ValueError(f"(set_fig_row_col) `n_subplots` must be a positive integer. Got: {n_subplots}")
+    if not isinstance(n_rows, type(None)) and n_rows <= 0:
+        raise ValueError(f"(set_fig_row_col) `n_rows` must be a positive integer. Got: {n_rows}")
+    if not isinstance(n_cols, type(None)) and n_cols <= 0:
+        raise ValueError(f"(set_fig_row_col) `n_cols` must be a positive integer. Got: {n_cols}")
+    # Determine the number of rows and columns
+    if not isinstance(n_rows, type(None)) and not isinstance(n_cols, type(None)):
+        # Both rows and columns are specified
+        if n_rows * n_cols < n_subplots:
+            raise ValueError(f"(set_fig_row_col) `n_rows` * `n_cols` must be greater than or equal to `n_subplots`. Got: {n_rows} * {n_cols} < {n_subplots}")
+        return n_rows, n_cols
+    elif not isinstance(n_rows, type(None)):
+        # Only rows are specified
+        n_cols = int(np.ceil(n_subplots / n_rows))
+        return n_rows, n_cols
+    elif not isinstance(n_cols, type(None)):
+        # Only columns are specified
+        n_rows = int(np.ceil(n_subplots / n_cols))
+        return n_rows, n_cols
+    else:
+        # Neither rows nor columns are specified
+        if n_subplots == 3:
+            n_rows = 1
+            n_cols = 3
+        elif n_subplots == 7:
+            n_rows = 2
+            n_cols = 4
+        elif n_subplots == 8:
+            n_rows = 2
+            n_cols = 4
+        else: # Use as close to a square layout as possible
+            n_cols = int(np.ceil(np.sqrt(n_subplots)))
+            n_rows = int(np.ceil(n_subplots / n_cols))
+        return n_rows, n_cols
 
 def pad_extent(
     extent, 
     padding=0.1,
-    ):
+):
     """Pads the given extent.
 
-    Pads the latitude and longitude extent of a dataset by enlarging
-    the extent by the padding value.
+        Pads the latitude and longitude extent of a dataset by enlarging
+        the extent by the padding value.
 
-    Parameters
-    ----------
-    extent : tuple
-        A tuple of np.float64 in the form (lat_min, lat_max, lon_min, lon_max).
-    padding : float
-        The amount to pad the extent by in a fraction.
+        Parameters
+        ----------
+        extent : tuple
+            A tuple of np.float64 in the form (lat_min, lat_max, lon_min, lon_max).
+        padding : float
+            The amount to pad the extent by in a fraction.
 
-    Returns
-    -------
-    padded_extent : tuple
-        A tuple of np.float64 in the form (p_lat_min, p_lat_max, p_lon_min, p_lon_max).
+        Returns
+        -------
+        padded_extent : tuple
+            A tuple of np.float64 in the form (p_lat_min, p_lat_max, p_lon_min, p_lon_max).
 
-    Examples
-    --------
-    >>> nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
-    >>> extent = unox.data.get_extent(nox)
-    >>> padded_extent = pad_extent(extent, padding=0.1)
-    (20.635399999999997, 62.3546, -132.6375, -52.9875)
+        Examples
+        --------
+        >>> nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
+        >>> extent = unox.data.get_extent(nox)
+        >>> padded_extent = pad_extent(extent, padding=0.1)
+        (20.635399999999997, 62.3546, -132.6375, -52.9875)
     """
     # Verify the tuple is the right shape
     if not isinstance(extent, tuple) or len(extent) != 4:
-        raise ValueError("Extent must be a tuple of the form (lat_min, lat_max, lon_min, lon_max)")
+        raise ValueError(f"(pad_extent) `extent` must be a tuple of the form (lat_min, lat_max, lon_min, lon_max). Got type: {type(extent)}")
     # Verify the padding is a number
-    if not udata.verify_number(padding):
-        raise TypeError("Padding must be a number, got: " + str(type(padding)) + ". Padding value: " + str(padding))
+    if not verify_number(padding):
+        raise TypeError(f"(pad_extent) `padding` must be a number. Got type: {type(padding)}.")
     # Unpack the extent tuple
     lat_min, lat_max, lon_min, lon_max = extent
     # Verify these values
@@ -61,27 +143,27 @@ def pad_extent(
 
 def get_var_label_and_units(
     var,
-    ):
+):
     """Get the label and units for a variable.
 
-    Returns the label and units for a variable based on its name.
+        Returns the label and units for a variable based on its name.
 
-    Parameters
-    ----------
-    var : str
-        The name of the variable.
+        Parameters
+        ----------
+        var : str
+            The name of the variable.
 
-    Returns
-    -------
-    label : str
-        The label for the variable.
-    units : str
-        The units for the variable.
+        Returns
+        -------
+        label : str
+            The label for the variable.
+        units : str
+            The units for the variable.
 
-    Examples
-    --------
-    >>> label, units = get_var_label_and_units('temperature')
-    ('Temperature', '°C')
+        Examples
+        --------
+        >>> label, units = get_var_label_and_units('temperature')
+        ('Temperature', '°C')
     """
     var_labels_and_units = {
         'lat': ('Latitude', r'$^\circ$N'),
@@ -109,7 +191,7 @@ def get_var_label_and_units(
     }
 
     if var not in var_labels_and_units.keys():
-        raise ValueError(f"Variable '{var}' not recognized. Available variables: {list(var_labels_and_units.keys())}")
+        raise ValueError(f"(get_var_label_and_units) Variable '{var}' not recognized. Available variables: {list(var_labels_and_units.keys())}")
     else:
         label, units = var_labels_and_units[var]
     return label, units
@@ -120,40 +202,40 @@ def make_stage_comp_arrs(
     var,
     avg_over=None,
     stage1_only=False,
-    ):
+):
     """Create arrays for stage comparison plots.
 
-    Creates a dictionary of arrays for stage comparison, where each key is a stage
-    and the value is an array of the variable for that stage. For use with the 
-    `unox.plotting.plot_stage_comp_maps()` function.
+        Creates a dictionary of arrays for stage comparison, where each key is a stage
+        and the value is an array of the variable for that stage. For use with the 
+        `unox.plotting.plot_stage_comp_maps()` function.
 
-    Parameters
-    ----------
-    in_arrs : dict
-        A dictionary of input arrays, where the keys are stage names and the values are arrays.
-        Expects format like: {'truth': truth_arr, 'stage1': stage1_arr, 'stage2': stage2_arr}
-    this_date : np.datetime64 or str
-        Date and time to select from the data file.
-        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
-    var : str
-        The variable which will be plotted.
-    avg_over : str, numpy.timedelta64, or None
-        If provided, averages the data over the specified time period.
-        If None, takes just the time slice specified in `datetime`.
-    stage1_only : bool
-        If True, produce arrays just corresponding to stage 1. If False, produce arrays
-        for stage 1 and stage 2. Default is False.
+        Parameters
+        ----------
+        in_arrs : dict
+            A dictionary of input arrays, where the keys are stage names and the values are arrays.
+            Expects format like: {'truth': truth_arr, 'stage1': stage1_arr, 'stage2': stage2_arr}
+        this_date : np.datetime64 or str
+            Date and time to select from the data file.
+            Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+        var : str
+            The variable which will be plotted.
+        avg_over : str, numpy.timedelta64, or None
+            If provided, averages the data over the specified time period.
+            If None, takes just the time slice specified in `datetime`.
+        stage1_only : bool
+            If True, produce arrays just corresponding to stage 1. If False, produce arrays
+            for stage 1 and stage 2. Default is False.
 
-    Returns
-    -------
-    out_arrs : dict
-        A dictionary of output arrays for each stage.
-    overall_title : str
-        A title for the overall plot, based on the variable and date(s).
-    
-    Examples
-    --------
-    >>> 
+        Returns
+        -------
+        out_arrs : dict
+            A dictionary of output arrays for each stage.
+        overall_title : str
+            A title for the overall plot, based on the variable and date(s).
+        
+        Examples
+        --------
+        >>> 
     """
     out_arrs = {}
     

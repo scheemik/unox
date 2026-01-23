@@ -4,7 +4,7 @@ import unox.HPC.data0.load_input as uload
 # from unox.HPC.data0.config import get_config
 
 input_config = {
-    "input_set": "no2_lsm6",
+    "input_set": "no2_2005-2020",
     "x_vars": [
         "no2",
         "no2_tm1",
@@ -26,7 +26,7 @@ input_config = {
 def test_get_npy_from_netcdf():
     """Test the get_npy_from_netcdf function."""
     # Define valid input parameters
-    input_file = 'inputfiles/no2_lsm6/no2_lsm6.nc'
+    input_file = 'inputfiles/no2_2005-2020/no2_2005-2020.nc'
     # input_config = 'inputfiles/_input_configs/sample_config.json'
     # Define valid test cases
     test_cases = [

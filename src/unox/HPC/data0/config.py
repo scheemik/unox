@@ -2,19 +2,21 @@ import json
 
 from .paths import verify_path
 
-def get_config(config_file):
+def get_config(
+    config_file
+):
     """Load the configuration from a JSON file.
 
-    Parameters
-    ----------
-    config_file : str or dict
-        The name or path to the configuration JSON file, 
-        or a dictionary in the format of a configuration file.
+        Parameters
+        ----------
+        config_file : str or dict
+            The name or path to the configuration JSON file, 
+            or a dictionary in the format of a configuration file.
 
-    Returns
-    -------
-    config_dict : dict
-        The configuration as a dictionary.
+        Returns
+        -------
+        config_dict : dict
+            The configuration as a dictionary.
     """
     # Verify argument types
     if isinstance(config_file, dict):
@@ -34,4 +36,4 @@ def get_config(config_file):
             config_dict = json.load(file)
             return config_dict
     else:
-        raise TypeError(f"(get_config) `config_file` must be a string or dictionary. Got {type(config_file)}.")
+        raise TypeError(f"(get_config) `config_file` must be a string or dictionary. Got type: {type(config_file)}.")

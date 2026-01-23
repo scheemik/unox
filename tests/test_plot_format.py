@@ -2,6 +2,92 @@ from unox import plot_format as uplt_fmt
 from unox import data as udata
 import xarray as xr
 
+def test_set_fig_row_col():
+    """Test the set_fig_row_col function."""
+    # Define valid inputs and expected outputs
+    inputs_expected = [
+        {
+            'n_subplots': 1,
+            'n_rows': None,
+            'n_cols': None,
+            'expected': (1, 1),
+        },
+        {
+            'n_subplots': 4,
+            'n_rows': None,
+            'n_cols': None,
+            'expected': (2, 2),
+        },
+        {
+            'n_subplots': 4,
+            'n_rows': 1,
+            'n_cols': None,
+            'expected': (1, 4),
+        },
+        {
+            'n_subplots': 4,
+            'n_rows': None,
+            'n_cols': 1,
+            'expected': (4, 1),
+        },
+    ]
+    # Test valid inputs
+    for test_case in inputs_expected:
+        n_subplots = test_case['n_subplots']
+        n_rows = test_case['n_rows']
+        n_cols = test_case['n_cols']
+        expected = test_case['expected']
+        actual = uplt_fmt.set_fig_row_col(n_subplots, n_rows=n_rows, n_cols=n_cols)
+        assert actual == expected, f"Expected {expected}, but got {actual} for n_subplots={n_subplots}, n_rows={n_rows}, n_cols={n_cols}"
+    # Define invalid inputs
+    invalid_inputs = [
+        {
+            'n_subplots': 10,
+            'n_rows': 2,
+            'n_cols': 2,
+        },
+        {
+            'n_subplots': 5,
+            'n_rows': 1,
+            'n_cols': 4,
+        },
+    ]
+    # Test invalid inputs
+    for test_case in invalid_inputs:
+        n_subplots = test_case['n_subplots']
+        n_rows = test_case['n_rows']
+        n_cols = test_case['n_cols']
+        try:
+            uplt_fmt.set_fig_row_col(n_subplots, n_rows=n_rows, n_cols=n_cols)
+        except ValueError as e:
+            assert True, f"set_fig_row_col raised an exception on invalid input n_subplots={n_subplots}, n_rows={n_rows}, n_cols={n_cols}: {e}"
+        else:
+            assert False, f"set_fig_row_col did not raise an exception on invalid input n_subplots={n_subplots}, n_rows={n_rows}, n_cols={n_cols}"
+    # Define more invalid inputs
+    invalid_inputs = [0, 1.0, '4', False, [], {}]
+    for invalid_input in invalid_inputs:
+        # Try for n_subplots
+        try:
+            uplt_fmt.set_fig_row_col(invalid_input)
+        except (ValueError, TypeError) as e:
+            assert True, f"set_fig_row_col raised an exception on invalid `n_subplots` {invalid_input}: {e}"
+        else:
+            assert False, f"set_fig_row_col did not raise an exception on invalid `n_subplots` {invalid_input}"
+        # Try for n_rows
+        try:
+            uplt_fmt.set_fig_row_col(2, n_rows=invalid_input)
+        except (ValueError, TypeError) as e:
+            assert True, f"set_fig_row_col raised an exception on invalid `n_rows` {invalid_input}: {e}"
+        else:
+            assert False, f"set_fig_row_col did not raise an exception on invalid `n_rows` {invalid_input}"
+        # Try for n_cols
+        try:
+            uplt_fmt.set_fig_row_col(2, n_cols=invalid_input)
+        except (ValueError, TypeError) as e:
+            assert True, f"set_fig_row_col raised an exception on invalid `n_cols` {invalid_input}: {e}"
+        else:
+            assert False, f"set_fig_row_col did not raise an exception on invalid `n_cols` {invalid_input}"
+
 def test_pad_extent():
     """Test the pad_extent function."""
     # Get extent from sample netcdf

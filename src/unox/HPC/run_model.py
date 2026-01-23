@@ -1,5 +1,6 @@
 #test code based on Unet_Chinese_NOx example_code.ipynb
 import numpy as np
+import pandas as pd
 import glob
 import sys
 import os 
@@ -11,7 +12,6 @@ from data0.dataset import uarray
 from data0.paths import verify_path
 from utils.data_split import data_split
 import data0.run_functions as rf
-from data0.config import get_config
 import data0.run_functions as rf
 
 print("")
@@ -22,6 +22,7 @@ print(f"Current working directory: {os.getcwd()}")
 n_epochs = 250
 model_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
+output_fmt = 'nc' # 'nc', 'npy', or 'both'
 split_year = 2019
 split_value = 0.9
 
@@ -114,7 +115,7 @@ def begin_training(
     batch_size=30,
     n_epochs=250,
     save_format='keras',
-    ):
+):
     """Begin training the Unet model.
 
     Parameters
@@ -147,7 +148,7 @@ def begin_training(
     """
     # Check the stage number
     if stage not in [1, 2]:
-        raise ValueError("Stage must be 1 or 2.")
+        raise ValueError(f"(begin_training) `stage` must be 1 or 2. Got: {stage}")
     # Set up callbacks
     csv_logger = CSVLogger(f"{savedir}unet_stage{stage}_log.csv", append=True, separator=';')
     earlystopper = EarlyStopping(patience=15, verbose=1)
@@ -170,7 +171,7 @@ unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xvalid=xva
 def load_test_files(
     x_files,
     stage,
-    ):
+):
     """Load test files for a given stage.
 
     Parameters
@@ -191,7 +192,7 @@ def load_test_files(
     elif stage == 2:
         split_index = 5
     else:
-        raise ValueError("Stage must be 1 or 2.")
+        raise ValueError(f"(load_test_files) `stage` must be 1 or 2. Got: {stage}")
     # Gather just the testing files
     xtest_files = x_files[split_index:]
     print("")
@@ -202,7 +203,7 @@ def predict_and_save(
     savedir,
     model,
     **kwargs,
-    ):
+):
     """Generate predictions using the model and save them.
 
     Parameters
@@ -221,9 +222,9 @@ def predict_and_save(
         pred = model.predict(xnow)
         np.save(f"{savedir}stage{kwargs['stage']}_output/pred_{x.split('/')[-1]}", pred)
 
-if input_fmt == 'npy':
+if output_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=1)
-elif input_fmt == 'nc':
+elif output_fmt == 'nc' or output_fmt == 'both':
     # Get the long name and units of the y variable to put in the new xarray
     y_var = uarr.xr.attrs['y_var']
     y_var_name = uarr.xr[y_var].long_name
@@ -237,13 +238,11 @@ elif input_fmt == 'nc':
     for year in range(split_year, max(years)+1):
         print(f"Generating predictions for year: {year}")
         x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
-        # Get the latitude and longitude values
-        # lats = input_ds.lat.values
-        # lons = input_ds.lon.values
         # Make the predictions
         pred = unet.predict(x_test)
         # Save the numpy array to file
-        np.save(f"{savedir}stage1_output/pred_X_{year}.npy", pred)
+        if output_fmt == 'both':
+            np.save(f"{savedir}stage1_output/pred_X_{year}.npy", pred)
         # Add year to the list of predictions in the metadata dictionary
         output_metadata['pred_years']['stage1'].append(year)
 
@@ -272,8 +271,25 @@ elif input_fmt == 'nc':
     for coord in ['lat', 'lon']:
         for this_attr in data_for_year[coord].attrs.keys():
             pred_xarray[coord].attrs[this_attr] = data_for_year[coord].attrs[this_attr]
+    # Add global attributes for the prediction file
+    pred_xarray.attrs['description'] = f"Predicted {y_var_name} using a U-net model"
+    pred_xarray.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+    pred_xarray.attrs['y_var'] = f"{y_var}"
+    pred_xarray.attrs['input_set'] = f"{uarr.name}"
+    pred_xarray.attrs['config_path'] = f"{config_path}"
+    pred_xarray.attrs['config_dict'] = f"{config_dict}"
+    # Copy over global attributes from the input xarray
+    for this_attr in uarr.xr.attrs.keys():
+        if this_attr in ['stages']:
+            pred_xarray.attrs[this_attr] = [1]
+        elif this_attr in ['x_vars', 'stage_2_cutoff']:
+            pred_xarray.attrs[this_attr] = config_dict[this_attr]
+        elif this_attr not in ['description', 'modification_date', 'y_var', 'x_vars', 'x1_vars', 'x2_vars']:
+            pred_xarray.attrs[this_attr] = uarr.xr.attrs[this_attr]
     # Save the xarray to a file
     pred_xarray.to_netcdf(f"{savedir}predictions.nc")
+else:
+    raise ValueError(f"`output_fmt` must be 'npy', 'nc', or 'both'. Got: {output_fmt}")
 
 print('Done with stage 1')
 if config_dict['stage_2'] == False:
@@ -309,16 +325,16 @@ if model_fmt in ['keras', 'both']:
 elif model_fmt in ['h5']:
     unet.load_weights(f"{savedir}unet_stage1_model.h5")
 else:
-    raise ValueError(f"model_fmt must be 'h5', 'keras', or 'both', got {model_fmt}")
+    raise ValueError(f"`model_fmt` must be 'h5', 'keras', or 'both'. Got: {model_fmt}")
 
 
 # Stage-2 training of the Unet
 
 unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=model_fmt)
 
-if input_fmt == 'npy':
+if output_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=2)
-elif input_fmt == 'nc':
+elif output_fmt == 'nc' or output_fmt == 'both':
     # Create a new variable name and long name
     pred_var = f"{y_var}_pred_s2"
     pred_var_name = f"Predicted {y_var_name} (stage 2)"
@@ -331,7 +347,8 @@ elif input_fmt == 'nc':
         # Make the predictions
         pred = unet.predict(x_test)
         # Save out the numpy array to file
-        np.save(f"{savedir}stage2_output/pred_X_{year}.npy", pred)
+        if output_fmt == 'both':
+            np.save(f"{savedir}stage2_output/pred_X_{year}.npy", pred)
         # Add year to the list of predictions in the metadata dictionary
         output_metadata['pred_years']['stage2'].append(year)
 
@@ -364,8 +381,16 @@ elif input_fmt == 'nc':
     for coord in ['lat', 'lon']:
         for this_attr in data_for_year[coord].attrs.keys():
             pred_xarray[coord].attrs[this_attr] = data_for_year[coord].attrs[this_attr]
+    # Add global attributes for the prediction file
+    pred_xarray.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+    # Copy over global attributes from the input xarray
+    for this_attr in uarr.xr.attrs.keys():
+        if this_attr in ['stages']:
+            pred_xarray.attrs[this_attr] = [1,2]
     # Save the xarray to a file
     pred_xarray.to_netcdf(f"{savedir}predictions.nc")
+else:
+    raise ValueError(f"`output_fmt` must be 'npy', 'nc', or 'both'. Got: {output_fmt}")
 
 # Save the output metadata dictionary to file
 print('output_metadata:', output_metadata)

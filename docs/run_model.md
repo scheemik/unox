@@ -64,12 +64,12 @@ The script `HPC_from_animus.sh` is set up to facilitate the transfer so you do n
 - `-c`: Cluster
     - The name of the cluster to transfer to, the default being `trillium`.
 
-Here is an example of transferring the `no2_sample_input` input file from Animus to Trillium:
+Here is an example of transferring the `no2_2005-2020` input file from Animus to Trillium:
 
 ```console
-(uplt) username@animus-c:~/unox$ bash HPC_from_animus.sh -f no2_sample_input -i 
+(uplt) username@animus-c:~/unox$ bash HPC_from_animus.sh -f no2_2005-2020 -i 
 -c, No cluster specified, defaulting to trillium
--i, Copying full input file directory for no2_sample_input to trillium from Animus
+-i, Copying full input file directory for no2_2005-2020 to trillium from Animus
 Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
 (<username>@trillium.alliancecan.ca) Duo two-factor login for <username>
 
@@ -79,16 +79,17 @@ Enter a passcode or select one of the following options:
 
 Passcode or option (1-1): 1
 Success. Logging you in...
-input_metadata.json         100% 1307    90.1KB/s   00:00    
-Y_2005.npy                  100%   19MB  24.6MB/s   00:00    
+input_metadata.json         100% 1307    90.1KB/s   00:00
+Y_2005.npy                  100%   19MB  24.6MB/s   00:00
 Y_2006.npy                  100%   19MB  61.1MB/s   00:00
 ...
-X_2019.npy                  100%  168MB  84.3MB/s   00:01    
-X_2020.npy                  100%  168MB  89.4MB/s   00:01    
-no2_sample_input.nc         100% 3882MB  91.9MB/s   00:42
+X_2019.npy                  100%  168MB  84.3MB/s   00:01
+X_2020.npy                  100%  168MB  89.4MB/s   00:01
+input_metadata.json         100% 1319   232.4KB/s   00:00    
+no2_2005-2020.nc            100% 3882MB  77.1MB/s   00:50
 ```
 
-Note that the `.npy` files are now deprecated. 
+Note that the `.npy` files are now deprecated and the only files that should transfer are the `.json` and `.nc`.
 
 <a id='config_files'></a>
 [back to top](#top)
@@ -100,7 +101,7 @@ These are `.json` files stored in `inputfiles/_input_configs/` and follow the fo
 
 ```json
 {
-    "input_set": "no2_lsm6",
+    "input_set": "no2_2005-2020",
     "x_vars": [
         "no2",
         "no2_tm1",
@@ -165,22 +166,22 @@ I have created a script, `HPC_job_submit.sh` which handles much of the boiler-pl
 - `-c`: Cluster
     - The name of the cluster to transfer to, the default being `trillium`.
 
-Here is an example of submitting a job named `example_job` to Trillium:
+Here is an example of submitting a job named `no2_example_run` to Trillium:
 
 ```console
-username@HPC: unox$ bash HPC_job_submit.sh -j example_job
+username@HPC: unox$ bash HPC_job_submit.sh -j no2_example_run
 ===== Begin HPC_job_submit.sh =====
--j, Name specified, using JOBNAME=example_job
+-j, Name specified, using JOBNAME=no2_example_run
 -i, No config file specified, using CONFIG_FILE=sample_config
     Configuration file inputfiles/_input_configs/sample_config.json found.
 -t, No run type specified, using TYPE=test
     Using LAUNCHER=HPC_GPU_slurm.sh
 -v, No version specified, using VERSION=1
 -c, Using cluster: trillium
-Directory for job HPC_runs/example_job already exists
+Directory for job HPC_runs/no2_example_run already exists
 Would you like to overwrite it? (y/n)
 y
-Overwriting directory HPC_runs/example_job
+Overwriting directory HPC_runs/no2_example_run
 Sending HPC notifications to email: <your_email@domain>
 Submitted batch job 199403
 [<username>@trig-login01 unox]$ 
@@ -202,13 +203,13 @@ For more information, see the Alliance Canada documentation on [Monitoring Jobs]
 By adding your email to the `HPC_slurm.sh` script as described on the {doc}`Installation <installation>`, you should receive emails every time a job begins or ends.
 Here's an example email notifying of a job starting:
 
-> Subject line: Trillium-GPU slurm Job_id=199403 Name=example_job Began, Queued time 00:00:01
+> Subject line: Trillium-GPU slurm Job_id=199403 Name=no2_example_run Began, Queued time 00:00:01
 > 
 > Body of message:
 > 
 > ```console
 > scontrol show jobid 199403
-> JobId=199403 JobName=example_job
+> JobId=199403 JobName=no2_example_run
 >   UserId=<username>(<userID>) GroupId=<username>(<userID>) MCS_label=N/A
 >   Priority=958038 Nice=0 Account=def-dylan QOS=normal
 >   JobState=RUNNING Reason=None Dependency=(null)
@@ -231,10 +232,10 @@ Here's an example email notifying of a job starting:
 >   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)
 >   Command=/scratch/<username>/unox/HPC_GPU_slurm.sh
 >   WorkDir=/scratch/<username>/unox
->   Comment=/opt/slurm/bin/sbatch --export=NONE --get-user-env=L --job-name=example_job HPC_GPU_slurm.sh -j example_job -i default -t test -v 1 -c trillium
->   StdErr=/scratch/<username>/unox/HPC_runs/example_job/log_199403.txt
+>   Comment=/opt/slurm/bin/sbatch --export=NONE --get-user-env=L --job-name=no2_example_run HPC_GPU_slurm.sh -j no2_example_run -i default -t test -v 1 -c trillium
+>   StdErr=/scratch/<username>/unox/HPC_runs/no2_example_run/log_199403.txt
 >   StdIn=/dev/null
->   StdOut=/scratch/<username>/unox/HPC_runs/example_job/log_199403.txt
+>   StdOut=/scratch/<username>/unox/HPC_runs/no2_example_run/log_199403.txt
 >   CpusPerTres=gpu:24
 >   TresPerNode=gres/gpu:1
 >   MailUser=<your_email@domain> MailType=INVALID_DEPEND,BEGIN,END,FAIL,REQUEUE,STAGE_OUT
@@ -244,12 +245,12 @@ I highly recommend setting up a rule in your email client to automatically send 
 You will not receive emails before the job has started and, depending on the day and how long you allot for the job to run, it can spend a significant time in the queue.
 
 Once a job completes, you will receive an email like the one below:
-> Subject line: Trillium-GPU slurm Job_id=199403 Name=example_job Ended, Run time 00:44:00, COMPLETED, ExitCode 0
+> Subject line: Trillium-GPU slurm Job_id=199403 Name=no2_example_run Ended, Run time 00:44:00, COMPLETED, ExitCode 0
 > 
 > Body of message:
 > ```console
 > scontrol show jobid 199403
-> JobId=199403 JobName=example_job
+> JobId=199403 JobName=no2_example_run
 >   UserId=<username>(<user_ID>) GroupId=<username>(<user_ID>) MCS_label=N/A
 >   Priority=958038 Nice=0 Account=def-dylan QOS=normal
 >   JobState=COMPLETED Reason=None Dependency=(null)
@@ -272,10 +273,10 @@ Once a job completes, you will receive an email like the one below:
 >   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)
 >   Command=/scratch/<username>/unox/HPC_GPU_slurm.sh
 >   WorkDir=/scratch/<username>/unox
->   Comment=/opt/slurm/bin/sbatch --export=NONE --get-user-env=L --job-name=example_job HPC_GPU_slurm.sh -j example_job -i default -t test -v 1 -c trillium
->   StdErr=/scratch/<username>/unox/HPC_runs/example_job/log_199403.txt
+>   Comment=/opt/slurm/bin/sbatch --export=NONE --get-user-env=L --job-name=no2_example_run HPC_GPU_slurm.sh -j no2_example_run -i default -t test -v 1 -c trillium
+>   StdErr=/scratch/<username>/unox/HPC_runs/no2_example_run/log_199403.txt
 >   StdIn=/dev/null
->   StdOut=/scratch/<username>/unox/HPC_runs/example_job/log_199403.txt
+>   StdOut=/scratch/<username>/unox/HPC_runs/no2_example_run/log_199403.txt
 >   CpusPerTres=gpu:24
 >   TresPerNode=gres/gpu:1
 >   MailUser=<your_email@domain> MailType=INVALID_DEPEND,BEGIN,END,FAIL,REQUEUE,STAGE_OUT
@@ -302,8 +303,8 @@ alias mysq='squeue -u <username>'
 Then, monitoring the queue looks like this:
 ```console
 username@HPC: unox$ mysq
-  JOBID           USER      ACCOUNT         NAME  ST  TIME_LEFT  PARTITION NODES  TRES_PER_NODE NODELIST (REASON)
- 199403     <username>    def-dylan  example_job   R      40:24    compute     1     gres/gpu:1 trig0012 (None)
+  JOBID           USER      ACCOUNT             NAME  ST  TIME_LEFT  PARTITION NODES  TRES_PER_NODE NODELIST (REASON)
+ 199403     <username>    def-dylan  no2_example_run   R      40:24    compute     1     gres/gpu:1 trig0012 (None)
 ```
 
 The output is formatted to be very wide, so to make the columns line up correctly, you need to make your console window wide enough. 
@@ -333,7 +334,7 @@ Note that the log files are very extensive, reaching 10's of thousands of lines.
 
 ```txt
 ===== Begin HPC_slurm.sh =====
--j, Name specified, using JOBNAME=example_job
+-j, Name specified, using JOBNAME=no2_example_run
 -i, Input files specified, using CONFIG_FILE=default
 -t, Run type specified, using TYPE=test
     Using CODEFILE=src/unox/HPC/run_model.py
@@ -343,9 +344,9 @@ Loading modules for Trillium HPC environment
 -v 1, using updated code
 Activating virtualenv from /home/<username>/.virtualenvs/unoxTrilliumNC/bin/activate
 
-Directory for job HPC_runs/example_job already exists
+Directory for job HPC_runs/no2_example_run already exists
 
-Running src/unox/HPC/run_model.py with savedir HPC_runs/example_job
+Running src/unox/HPC/run_model.py with savedir HPC_runs/no2_example_run
 
 2026-01-13 14:13:22.248220: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
 2026-01-13 14:13:23.058670: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:485] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
@@ -358,7 +359,7 @@ To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 FMA, 
 ===== Begin run_model.py =====
 Current working directory: /scratch/<username>/unox
 Using input arguments:
-	argv[1], savedir: HPC_runs/example_job/
+	argv[1], savedir: HPC_runs/no2_example_run/
 	argv[2], config_file: inputfiles/_input_configs/sample_config.json
 	argv[3], version: 1
 	Shape of first xtrain file: (364, 56, 120, 9)
@@ -517,12 +518,12 @@ Generating predictions for year: 2020
 [1m 5/12[0m [32m━━━━━━━━[0m[37m━━━━━━━━━━━━[0m [1m0s[0m 13ms/step
 [1m 9/12[0m [32m━━━━━━━━━━━━━━━[0m[37m━━━━━[0m [1m0s[0m 13ms/step
 [1m12/12[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 14ms/step
-output_metadata: {'savedir': 'HPC_runs/example_job/', 'config_path': 'inputfiles/_input_configs/sample_config.json', 'config_dict': {'input_set': 'no2_lsm6', 'x_vars': ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd'], 'stage_2': True, 'stage_2_cutoff': 2013, 'lsm_vars': [], 'grid_size': [56, 120]}, 'version': 1, 'n_epochs': 250, 'model_fmt': 'keras', 'input_fmt': 'nc', 'split_year': 2019, 'split_value': 0.9, 'train_years': {'stage1': [2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018], 'stage2': [2014, 2015, 2016, 2017, 2018]}, 'pred_years': {'stage1': [2019, 2020], 'stage2': [2019, 2020]}, 'unet_build_shape': (56, 120, 9)}
+output_metadata: {'savedir': 'HPC_runs/no2_example_run/', 'config_path': 'inputfiles/_input_configs/sample_config.json', 'config_dict': {'input_set': 'no2_2005-2020', 'x_vars': ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd'], 'stage_2': True, 'stage_2_cutoff': 2013, 'lsm_vars': [], 'grid_size': [56, 120]}, 'version': 1, 'n_epochs': 250, 'model_fmt': 'keras', 'input_fmt': 'nc', 'split_year': 2019, 'split_value': 0.9, 'train_years': {'stage1': [2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018], 'stage2': [2014, 2015, 2016, 2017, 2018]}, 'pred_years': {'stage1': [2019, 2020], 'stage2': [2019, 2020]}, 'unet_build_shape': (56, 120, 9)}
 
 Done running test_unet.py
 
 scontrol show job 199403
-JobId=199403 JobName=example_job
+JobId=199403 JobName=no2_example_run
    UserId=<username>(<user_ID>) GroupId=<username>(<user_ID>) MCS_label=N/A
    Priority=958038 Nice=0 Account=def-dylan QOS=normal
    JobState=COMPLETING Reason=None Dependency=(null)
@@ -545,10 +546,10 @@ JobId=199403 JobName=example_job
    OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)
    Command=/scratch/<username>/unox/HPC_GPU_slurm.sh
    WorkDir=/scratch/<username>/unox
-   Comment=/opt/slurm/bin/sbatch --export=NONE --get-user-env=L --job-name=example_job HPC_GPU_slurm.sh -j example_job -i default -t test -v 1 -c trillium 
-   StdErr=/scratch/<username>/unox/HPC_runs/example_job/log_199403.txt
+   Comment=/opt/slurm/bin/sbatch --export=NONE --get-user-env=L --job-name=no2_example_run HPC_GPU_slurm.sh -j no2_example_run -i default -t test -v 1 -c trillium 
+   StdErr=/scratch/<username>/unox/HPC_runs/no2_example_run/log_199403.txt
    StdIn=/dev/null
-   StdOut=/scratch/<username>/unox/HPC_runs/example_job/log_199403.txt
+   StdOut=/scratch/<username>/unox/HPC_runs/no2_example_run/log_199403.txt
    CpusPerTres=gpu:24
    TresPerNode=gres/gpu:1
    MailUser=<your_email@domain> MailType=INVALID_DEPEND,BEGIN,END,FAIL,REQUEUE,STAGE_OUT
@@ -595,12 +596,12 @@ It works by taking in the following arguments:
     - The default behavior will not transfer model files.
     - This flag does not accept any input, it is just a binary.
 
-Here is an example of transferring the `example_job` model run from Animus to Trillium:
+Here is an example of transferring the `no2_example_run` model run from Animus to Trillium:
 
 ```console
-(uplt) username@animus-c:~/unox$ bash HPC_to_animus.sh -f example_job -j 
+(uplt) username@animus-c:~/unox$ bash HPC_to_animus.sh -f no2_example_run -j 
 -c, No cluster specified, defaulting to trillium
--j, Copying full HPC job directory for example_job from trillium to Animus
+-j, Copying full HPC job directory for no2_example_run from trillium to Animus
 Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
 (<username>@trillium.alliancecan.ca) Duo two-factor login for <username>
 

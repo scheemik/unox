@@ -6,7 +6,8 @@ import pandas as pd
 import os
 import json
 
-from unox.HPC.data0.paths import verify_path
+from unox.HPC.data0.paths import verify_path, remove_non_empty_directory
+from unox.HPC.data0.dataset import uarray
 
 # Create an example xarray Dataset for testing
 # Include dimensions of time, lat, lon, and some example variables
@@ -25,6 +26,34 @@ example_xr = xr.Dataset(
         'time': time_arr,
         'lat': np.linspace(-90, 90, n_lat),
         'lon': np.linspace(-180, 180, n_lon),
+    }
+)
+# Create a second example xarray Dataset for test_make_input_metadata_file
+n_lat2 = 2
+n_lon2 = 4
+n_start2 = '2005-01-01'
+n_end2 = '2020-12-31'
+time_arr2 = pd.date_range(start=n_start2, end=n_end2, freq='M')
+n_time2 = len(time_arr2)
+example_xr2 = xr.Dataset(
+    {
+        'no2': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'no2_s2': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'no2_tm1': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'no2_s2_tm1': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'u10': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'v10': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'blh': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'sp': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'skt': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        't2m': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'ssrd': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+        'lsm': (('time', 'lat', 'lon'), np.random.rand(n_time2, n_lat2, n_lon2)),
+    },
+    coords={
+        'time': time_arr2,
+        'lat': np.linspace(-90, 90, n_lat2),
+        'lon': np.linspace(-180, 180, n_lon2),
     }
 )
 
@@ -286,136 +315,76 @@ def test_make_input_metadata_file():
     verify_file = 'tests/data_for_tests/input_metadata.json'
     with open(verify_file, 'r') as f:
         verify_dict = json.load(f)
+    # Get the x variables from the example xarray Dataset
+    x_var_list = list(example_xr2.data_vars.keys())
+    # Remove `lsm` from the variable list
+    x_var_list.remove('lsm')
     # Make the attribute dictionaries
-    x_attrs = {
-        'data_dir': '/data/high_res/emacdonald/unet/datafiles/',
-        'chemra_path': 'TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
-        'insitu_path': 'US_EPA/daily_42602_',
-        'era5_path': 'ERA5concatenated/',
-        'var_scale_factors': {
-            'chemra': 1000,
-            'u10': 1,
-            'v10': 1,
-            'blh': 1000,
-            'sp': 100000,
-            'skt': 1,
-            't2m': 1,
-            'ssrd': 1000000,
-        },
-        'stage_2_cutoff': 2013,
-    }
-    y_attrs = {
-        'var': 'nox',
+    g_attrs = {
+        'x_vars': x_var_list,
+        'y_var': 'nox',
         'emiss_dir': '/data/high_res/emacdonald/unet/datafiles/t106',
         'emiss_pre': 'nox_',
         'emiss_post': '_t106_US.nc',
-        'scale_factor': 1e12,
         'nan_fill': 0,
         'stage_2_cutoff': 2013,
+        'lsm': 'True',
+        'data_dir': '/data/high_res',
+        'chemra_path': 'emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_',
+        'insitu_path': 'US_EPA/NO2/daily_NO2/daily_42602_',
+        'era5_path': 'ERA5concatenated',
+        'stages': [1, 2],
     }
-    # Call the function to create the metadata file
-    for year in [2005, 2008, 2009, 2012, 2013, 2014, 2015]:
-        uin.make_input_metadata_file(
-            year,
-            'x',
-            x_attrs,
-            stage=None,
-            output_dir='test_make_input_metadata_file',
-        )
-        uin.make_input_metadata_file(
-            year,
-            'y',
-            y_attrs,
-            stage=None,
-            output_dir='test_make_input_metadata_file',
-        )
-    # Load the created metadata file
-    test_file = 'inputfiles/test_make_input_metadata_file/input_metadata.json'
-    with open(test_file, 'r') as f:
-        test_dict = json.load(f)
+    # Create metadata file
+    meta_dict = uin.make_input_metadata_file(
+        example_xr2,
+        output_dir=None,
+        g_attrs=g_attrs,
+    )
     # Verify that the created metadata matches the verification metadata
-    assert test_dict == verify_dict, "make_input_metadata_file output does not match verification metadata."
-    # Clean up the test directory
-    if os.path.exists("inputfiles/test_make_input_metadata_file"):
-        for file in os.listdir("inputfiles/test_make_input_metadata_file"):
-            file_path = os.path.join("inputfiles/test_make_input_metadata_file", file)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-        os.rmdir("inputfiles/test_make_input_metadata_file")
+    assert meta_dict == verify_dict, "`make_input_metadata_file` output does not match verification metadata."
     
     # Test invalid inputs
-    for year in [None, '2019', True, False]:
+    for invalid_xr in [None, '2019', True, 1, 1.0, [], {}]:
         try:
             uin.make_input_metadata_file(
-                year,
-                'x',
-                x_attrs,
-                stage=None,
+                invalid_xr,
                 output_dir=None,
+                g_attrs=g_attrs,
+            )
+        except (TypeError, FileNotFoundError) as e:
+            assert True, f"`make_input_metadata_file` raised an exception on invalid xarray {invalid_xr}: {e}"
+        else:
+            assert False, f"`make_input_metadata_file` did not raise an exception on invalid xarray {invalid_xr}"
+    for invalid_output_dir in [True, 1, 1.0, [], {}]:
+        try:
+            uin.make_input_metadata_file(
+                example_xr2,
+                output_dir=invalid_output_dir,
+                g_attrs=g_attrs,
             )
         except TypeError as e:
-            assert True, f"make_input_metadata_file raised an exception on invalid year {year}: {e}"
+            assert True, f"`make_input_metadata_file` raised an exception on invalid output directory {invalid_output_dir}: {e}"
         else:
-            assert False, f"make_input_metadata_file did not raise an exception on invalid year {year}"
-    for x_or_y in [None, 'z', True, False, 1]:
+            assert False, f"`make_input_metadata_file` did not raise an exception on invalid output directory {invalid_output_dir}"
+    for invalid_g_attr in ['2019', True, 1, 1.0, []]:
         try:
             uin.make_input_metadata_file(
-                2019,
-                x_or_y,
-                x_attrs,
-                stage=None,
+                example_xr2,
                 output_dir=None,
-            )
-        except (ValueError, TypeError) as e:
-            assert True, f"make_input_metadata_file raised an exception on invalid x_or_y {x_or_y}: {e}"
-        else:
-            assert False, f"make_input_metadata_file did not raise an exception on invalid x_or_y {x_or_y}"
-    for attrs in [None, 'not_a_dict', True, False, 123]:
-        try:
-            uin.make_input_metadata_file(
-                2019,
-                'x',
-                attrs,
-                stage=None,
-                output_dir=None,
+                g_attrs=invalid_g_attr,
             )
         except TypeError as e:
-            assert True, f"make_input_metadata_file raised an exception on invalid attrs {attrs}: {e}"
+            assert True, f"`make_input_metadata_file` raised an exception on invalid global attribute dictionary {invalid_g_attr}: {e}"
         else:
-            assert False, f"make_input_metadata_file did not raise an exception on invalid attrs {attrs}"
-    for stage in ['1', True, False, 3]:
-        try:
-            uin.make_input_metadata_file(
-                2019,
-                'x',
-                x_attrs,
-                stage=stage,
-                output_dir=None,
-            )
-        except ValueError as e:
-            assert True, f"make_input_metadata_file raised an exception on invalid stage {stage}: {e}"
-        else:
-            assert False, f"make_input_metadata_file did not raise an exception on invalid stage {stage}"
-    for output_dir in [True, False, 123]:
-        try:
-            uin.make_input_metadata_file(
-                2019,
-                'x',
-                x_attrs,
-                stage=None,
-                output_dir=output_dir,
-            )
-        except TypeError as e:
-            assert True, f"make_input_metadata_file raised an exception on invalid output_dir {output_dir}: {e}"
-        else:
-            assert False, f"make_input_metadata_file did not raise an exception on invalid output_dir {output_dir}"
+            assert False, f"`make_input_metadata_file` did not raise an exception on invalid global attribute dictionary {invalid_g_attr}"
 
 def test_make_input_config():
     """Test the make_input_config function."""
     # Test with valid parameters
     actual = uin.make_input_config(
         'test_make_input_config',
-        input_set='no2_lsm6',
+        input_set='no2_2005-2020',
         grid_size=[30,40],
         x_vars=[
             'no2',
@@ -439,7 +408,7 @@ def test_make_input_config():
         ],
     )
     expected = {
-        "input_set": "no2_lsm6",
+        "input_set": "no2_2005-2020",
         "grid_size": [30, 40],
         "x_vars": [
             "no2",
@@ -618,3 +587,97 @@ def test_make_input_config():
             assert True, f"make_input_config raised an exception on invalid stage_2 {invalid_input}: {e}"
         else:
             assert False, f"make_input_config did not raise an exception on invalid stage_2 {invalid_input}"
+
+def test_copy_input_files():
+    """Test the copy_input_files function."""
+    # Define default inputs
+    default_inputs = {
+        'source_input_set': 'no2_2019_JFM',
+        'output_dir': 'test_copy_input_files',
+        'keep_vars': 'all',
+        'start_date': None,
+        'end_date': None,
+    }
+    # Test different valid values of `keep_vars`
+    valid_keep_vars = [
+        'all',
+        'nox',
+        ['no2', 'no2_tm1'],
+    ]
+    for this_keep_vars in valid_keep_vars:
+        # Create a copy of the input file
+        uin.copy_input_files(
+            source_input_set=default_inputs['source_input_set'],
+            output_dir=default_inputs['output_dir'],
+            keep_vars=this_keep_vars,
+            start_date=default_inputs['start_date'],
+            end_date=default_inputs['end_date'],
+        )
+        # Load the copied input netCDF file
+        this_new_netCDF = uarray(default_inputs['output_dir'], is_input_set=True)
+        # Load the metadata file
+        input_metadata = this_new_netCDF._get_metadata()
+        # Verify that the variables in the copied file match the expected variables
+        if this_keep_vars == 'all':
+            # Assemble the list of all variables
+            expected_vars = list(set(input_metadata['x_vars'] + input_metadata['x1_vars'] + input_metadata['x2_vars'] + [input_metadata['y_var']]))
+            if input_metadata['lsm'] == 'True':
+                expected_vars.append('lsm')
+        else: 
+            expected_vars = list(set(this_keep_vars))
+        actual_vars = list(set(this_new_netCDF.xr.data_vars.keys()))
+        assert actual_vars.sort() == expected_vars.sort(), f"`copy_input_files()` did not copy the expected variables. \nGot: {actual_vars} \nExpected: {expected_vars}"
+        # Release the loaded file
+        this_new_netCDF = 'None'
+    
+    # Test different valid values of `start_date` and `end_date`
+    valid_date_ranges = [
+        {
+            'start': '2019-01-02',
+            'end': '2019-03-31',
+            'exp_start': '2019-01-02',
+            'exp_end': '2019-03-31',
+        },
+        {
+            'start': '2019-01-02',
+            'end': '2019-01-31',
+            'exp_start': '2019-01-02',
+            'exp_end': '2019-01-31',
+        },
+        {
+            'start': None,
+            'end': '2019-02-15',
+            'exp_start': '2019-01-02',
+            'exp_end': '2019-02-15',
+        },
+        {
+            'start': '2019-02-02',
+            'end': None,
+            'exp_start': '2019-02-02',
+            'exp_end': '2019-03-31',
+        },
+    ]
+    for this_date_range in valid_date_ranges:
+        # Create a copy of the input file
+        uin.copy_input_files(
+            source_input_set=default_inputs['source_input_set'],
+            output_dir=default_inputs['output_dir'],
+            keep_vars=default_inputs['keep_vars'],
+            start_date=this_date_range['start'],
+            end_date=this_date_range['end'],
+        )
+        # Load the copied input netCDF file
+        this_new_netCDF = uarray(default_inputs['output_dir'], is_input_set=True)
+        # Get the actual start and end dates from the copied file as strings
+        this_start = this_new_netCDF.xr['time'].values[0]
+        actual_start_date = f"{this_start.year:04d}-{this_start.month:02d}-{this_start.day:02d}"
+        this_end = this_new_netCDF.xr['time'].values[-1]
+        actual_end_date = f"{this_end.year:04d}-{this_end.month:02d}-{this_end.day:02d}"
+        # Verify that the date range in the copied file matches the expected date range
+        assert actual_start_date == this_date_range['exp_start'], f"`copy_input_files()` did not copy the expected start date. Got: {actual_start_date}, Expected: {this_date_range['exp_start']}"
+        assert actual_end_date == this_date_range['exp_end'], f"`copy_input_files()` did not copy the expected end date. Got: {actual_end_date}, Expected: {this_date_range['exp_end']}"
+        # Release the loaded file
+        this_new_netCDF = 'None'
+
+    # Clean up test directory
+    remove_non_empty_directory(f"inputfiles/{default_inputs['output_dir']}/")

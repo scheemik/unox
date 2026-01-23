@@ -8,9 +8,9 @@ import json
 import warnings
 
 import unox.unox as unox
-from unox.HPC.data0.paths import verify_path, make_file_path
-from unox.HPC.data0.dataset import get_years
-from unox.HPC.data0.verify_dataset import verify_dataset
+from unox.HPC.data0.paths import verify_path, remove_non_empty_directory, make_file_path
+from unox.HPC.data0.dataset import uarray, get_years
+from unox.HPC.data0.verify_dataset import verify_dataset, verify_var
 from unox.HPC.data0.latlon import shift_lon_arr
 import unox.data as udata
 from unox.plot_format import pad_extent
@@ -36,70 +36,68 @@ input_vars_dict = {
 def x_or_y_var(
     var,
 ):
-    """
-    Return whether the given variable is an x or y variable.
+    """Return whether the given variable is an x or y variable.
 
-    Parameters
-    ----------
-    var : str
-        The variable to check.
+        Parameters
+        ----------
+        var : str
+            The variable to check.
 
-    Returns
-    -------
-    x_or_y : str
-        'x' if the variable is an x variable, 'y' if it is a y variable.
-    
-    Examples
-    --------
-    >>> x_or_y_var('no2')
-    'x'
-    >>> x_or_y_var('nox')
-    'y'
+        Returns
+        -------
+        x_or_y : str
+            'x' if the variable is an x variable, 'y' if it is a y variable.
+        
+        Examples
+        --------
+        >>> x_or_y_var('no2')
+        'x'
+        >>> x_or_y_var('nox')
+        'y'
     """
     # Verify the variable is a string
     if not isinstance(var, str):
-        raise TypeError(f'Variable must be a string, got {type(var)}.')
+        raise TypeError(f"(x_or_y_var) `var` must be a string. Got type: {type(var)}")
     # Check if the variable is in the input_vars_dict
     for key in input_vars_dict.keys():
         if var in input_vars_dict[key]['x_vars']:
             return 'x'
         elif var in input_vars_dict[key]['y_vars']:
             return 'y'
-    raise ValueError(f"Variable '{var}' not recognized. Available variables in input_vars_dict: {input_vars_dict}")
+    raise ValueError(f"(x_or_y_var) Variable '{var}' not recognized. Available variables in input_vars_dict: {input_vars_dict}")
 
 def get_input_index(
     var,
 ):
-    """
-    Get the index of the given variable in the input array.
+    """Get the index of the given variable in the input array.
 
-    Parameters
-    ----------
-    var : str
-        The variable to check.
-    
-    Returns
-    -------
-    index : int
-        The index of the variable in the input array.
+        Parameters
+        ----------
+        var : str
+            The variable to check.
+        
+        Returns
+        -------
+        index : int
+            The index of the variable in the input array.
 
-    Examples
-    --------
-    >>> get_input_index('no2')
-    0
-    >>> get_input_index('u10')
-    2
+        Examples
+        --------
+        >>> get_input_index('no2')
+        0
+        >>> get_input_index('u10')
+        2
     """
     # Verify the variable is a string
     if not isinstance(var, str):
-        raise TypeError(f'Variable must be a string, got {type(var)}.')
+        raise TypeError(f"(get_input_index) Variable must be a string. Got type: {type(var)}")
     # Check if the variable is in the input_vars_dict
     for key in input_vars_dict.keys():
         if var in input_vars_dict[key]['x_vars']:
             return input_vars_dict[key]['x_vars'].index(var)
         elif var in input_vars_dict[key]['y_vars']:
             return input_vars_dict[key]['y_vars'].index(var)
-    raise ValueError(f"Variable '{var}' not recognized. Available variables in input_vars_dict: {input_vars_dict}")
+    raise ValueError(f"(get_input_index) Variable '{var}' not recognized. Available variables in input_vars_dict: {input_vars_dict}")
 
 def make_y_input_file(
     year,
@@ -116,55 +114,54 @@ def make_y_input_file(
     output_format='nc',
     **kwargs,
 ):
-    """
-    Create a y input file for the Unet model for the given year.
+    """Create a y input file for the Unet model for the given year.
 
-    The array in the generated file will have these dimensions:
-    - time: 364 (or 365 for leap years)
-        - One day less than usual to allow for t-1 variable
-    - lat: length depends on the latitude grid
-    - lon: length depends on the longitude grid
-    - var: 1 (a dummy dimension to match the x input files)
+        The array in the generated file will have these dimensions:
+        - time: 364 (or 365 for leap years)
+            - One day less than usual to allow for t-1 variable
+        - lat: length depends on the latitude grid
+        - lon: length depends on the longitude grid
+        - var: 1 (a dummy dimension to match the x input files)
 
-    Parameters
-    ----------
-    year : int
-        The year for which to create the y input file (between 2005 and 2021).
-    var : str, optional
-        The variable to extract from the dataset. Default is 'nox'.
-    emiss_dir : str, optional
-        Directory where the emissions data are stored. 
-        Default is '/data/high_res/emacdonald/unet/datafiles/t106'.
-    emiss_pre : str, optional
-        Prefix for the emissions input file name. Default is 'nox_'.
-    emiss_post : str, optional
-        Extension for the input file name. Default is '_t106_US.nc'.
-    scale_factor : float, optional
-        Factor by which to scale the data. Default is 1e12.
-    nan_fill : float, optional
-        Value to fill NaNs in the dataset. Default is 0.
-    stage_2_cutoff : int, optional
-        Year after which the data will also be saved in stage 2.
-    output_dir : str, optional
-        Directory inside `inputfiles/` where the output y input file will be saved.
-        Default is `'test_input'`.
-    write_this_year : bool, optional
-        Whether to write the data for this year or just return the xarray without writing to file.
-        Default is True.
-    output_format : str, optional
-        Whether to save netcdf files ('nc'), numpy arrays ('npy'), or 'both'.
-        Default is 'nc'. Irrelevant if `write_this_year` is False.
-    overwrite : bool, optional
-        Whether to overwrite existing netcdf files. Default is True.
-    **kwargs : dict, optional
-        Additional keyword arguments (not used).
+        Parameters
+        ----------
+        year : int
+            The year for which to create the y input file (between 2005 and 2021).
+        var : str, optional
+            The variable to extract from the dataset. Default is 'nox'.
+        emiss_dir : str, optional
+            Directory where the emissions data are stored. 
+            Default is '/data/high_res/emacdonald/unet/datafiles/t106'.
+        emiss_pre : str, optional
+            Prefix for the emissions input file name. Default is 'nox_'.
+        emiss_post : str, optional
+            Extension for the input file name. Default is '_t106_US.nc'.
+        scale_factor : float, optional
+            Factor by which to scale the data. Default is 1e12.
+        nan_fill : float, optional
+            Value to fill NaNs in the dataset. Default is 0.
+        stage_2_cutoff : int, optional
+            Year after which the data will also be saved in stage 2.
+        output_dir : str, optional
+            Directory inside `inputfiles/` where the output y input file will be saved.
+            Default is `'test_input'`.
+        write_this_year : bool, optional
+            Whether to write the data for this year or just return the xarray without writing to file.
+            Default is True.
+        output_format : str, optional
+            Whether to save netcdf files ('nc'), numpy arrays ('npy'), or 'both'.
+            Default is 'nc'. Irrelevant if `write_this_year` is False.
+        overwrite : bool, optional
+            Whether to overwrite existing netcdf files. Default is True.
+        **kwargs : dict, optional
+            Additional keyword arguments (not used).
 
-    Returns
-    -------
-    input_netcdf_xr : xarray.Dataset
-        The y input data for the specified year.
-    g_attr_dict : dict
-        Dictionary of global attributes for the dataset.
+        Returns
+        -------
+        input_netcdf_xr : xarray.Dataset
+            The y input data for the specified year.
+        g_attr_dict : dict
+            Dictionary of global attributes for the dataset.
     """
     # Assemble file path
     filepath = f'{emiss_dir}/{emiss_pre}{year}{emiss_post}'
@@ -249,27 +246,26 @@ def write_input_netcdf(
     sort=True,
     **kwargs,
 ):
-    """
-    Write an xarray Dataset to a netcdf file, appending or overwriting as needed.
+    """ Write an xarray Dataset to a netcdf file, appending or overwriting as needed.
 
-    Parameters
-    ----------
-    input_netcdf_xr : xarray.Dataset
-        The dataset to write to the netcdf file.
-    output_filepath : str
-        Path to the output netcdf file.
-    g_attr_dict : dict, optional
-        Dictionary of global attributes to add to the dataset if creating a new file.
-    overwrite : bool, optional
-        Whether to overwrite existing data in the netcdf file if there are overlapping times.
-        Default is True.
-    sort : bool, optional
-        Whether to sort the xarray before writing to netcdf. Sorting takes a long time.
-        Default is True.
+        Parameters
+        ----------
+        input_netcdf_xr : xarray.Dataset
+            The dataset to write to the netcdf file.
+        output_filepath : str
+            Path to the output netcdf file.
+        g_attr_dict : dict, optional
+            Dictionary of global attributes to add to the dataset if creating a new file.
+        overwrite : bool, optional
+            Whether to overwrite existing data in the netcdf file if there are overlapping times.
+            Default is True.
+        sort : bool, optional
+            Whether to sort the xarray before writing to netcdf. Sorting takes a long time.
+            Default is True.
 
-    Returns
-    -------
-    input_netcdf_xr : xarray.Dataset
+        Returns
+        -------
+        input_netcdf_xr : xarray.Dataset
         The dataset that was written to the netcdf file.
     """
     # Check whether the netcdf file already exists
@@ -284,9 +280,9 @@ def write_input_netcdf(
         new_lats = input_netcdf_xr.coords['lat'].values
         new_lons = input_netcdf_xr.coords['lon'].values
         if not np.array_equal(existing_lats, new_lats):
-            raise ValueError(f"Latitude values of the existing netcdf file and the new data do not match. \nExisting lats: \n{existing_lats} \nNew lats: \n{new_lats}")
+            raise ValueError(f"(write_input_netcdf) Latitude values of the existing netcdf file and the new data do not match. \nExisting lats: \n{existing_lats} \nNew lats: \n{new_lats}")
         if not np.array_equal(existing_lons, new_lons):
-            raise ValueError(f"Longitude values of the existing netcdf file and the new data do not match. \nExisting lons: \n{existing_lons} \nNew lons: \n{new_lons}")
+            raise ValueError(f"(write_input_netcdf) Longitude values of the existing netcdf file and the new data do not match. \nExisting lons: \n{existing_lons} \nNew lons: \n{new_lons}")
         # Get lists of variables from both datasets
         new_vars = list(input_netcdf_xr.data_vars)
         existing_vars = list(existing_ds.data_vars)
@@ -305,7 +301,7 @@ def write_input_netcdf(
                 first_overlap = pd.to_datetime(str(first_overlap)).strftime('%Y-%m-%d')
                 last_overlap = pd.to_datetime(str(last_overlap)).strftime('%Y-%m-%d')
             if overlapping_times and overwrite==False:
-                raise ValueError(f"The new data overlaps with the existing file in {output_filepath} between {first_overlap} and {last_overlap}. To overwrite, set overwrite=True.")
+                raise ValueError(f"(write_input_netcdf) The new data overlaps with the existing file in {output_filepath} between {first_overlap} and {last_overlap}. To overwrite, set overwrite=True.")
             elif overlapping_times and overwrite==True:
                 print(f"Overwriting overlapping data in {output_filepath} for times between {first_overlap} and {last_overlap}.")
                 # Remove the overlapping times from the existing dataset
@@ -334,26 +330,25 @@ def set_global_attrs(
     xr_dataset,
     attr_dict,
 ):
-    """
-    Add attributes to an xarray Dataset.
+    """Add attributes to an xarray Dataset.
 
-    Parameters
-    ----------
-    xr_dataset : xarray.Dataset
-        The dataset to which attributes will be added.
-    attr_dict : dict
-        Dictionary of attributes to add to the dataset.
+        Parameters
+        ----------
+        xr_dataset : xarray.Dataset
+            The dataset to which attributes will be added.
+        attr_dict : dict
+            Dictionary of attributes to add to the dataset.
 
-    Returns
-    -------
-    xarray.Dataset
+        Returns
+        -------
+        xarray.Dataset
         The dataset with added attributes.
     """
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify the attribute dictionary
     if not isinstance(attr_dict, dict):
-        raise TypeError(f'attr_dict must be a dictionary, got {type(attr_dict)}.')
+        raise TypeError(f"(set_global_attrs) `attr_dict` must be a dictionary. Got type: {type(attr_dict)}")
     # Add each attribute to the dataset
     for key, value in attr_dict.items():
         xr_dataset.attrs[key] = value
@@ -366,30 +361,29 @@ def set_var_attrs(
     var,
     attr_dict,
 ):
-    """
-    Add attributes to a variable in an xarray Dataset.
+    """Add attributes to a variable in an xarray Dataset.
 
-    Parameters
-    ----------
-    xr_dataset : xarray.Dataset
-        The dataset containing the variable to which attributes will be added.
-    var : str
-        The variable to which attributes will be added.
-    attr_dict : dict
-        Dictionary of attributes to add to the variable.
+        Parameters
+        ----------
+        xr_dataset : xarray.Dataset
+            The dataset containing the variable to which attributes will be added.
+        var : str
+            The variable to which attributes will be added.
+        attr_dict : dict
+            Dictionary of attributes to add to the variable.
 
-    Returns
-    -------
-    xarray.Dataset
+        Returns
+        -------
+        xarray.Dataset
         The dataset with the variable having added attributes.
     """
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify `var` is in the dataset
-    udata.verify_var(xr_dataset, var)
+    verify_var(xr_dataset, var)
     # Verify the attribute dictionary
     if not isinstance(attr_dict, dict):
-        raise TypeError(f'attr_dict must be a dictionary, got {type(attr_dict)}.')
+        raise TypeError(f"(set_var_attrs) `attr_dict` must be a dictionary. Got type: {type(attr_dict)}")
     # Add each attribute to the variable
     for key, value in attr_dict.items():
         xr_dataset[var].attrs[key] = value
@@ -400,27 +394,26 @@ def scale_xr_var(
     var,
     scale_factor,
 ):
-    """
-    Scale a variable in an xarray Dataset by a given factor.
+    """Scale a variable in an xarray Dataset by a given factor.
 
-    Parameters
-    ----------
-    xr_dataset : xarray.Dataset
-        The dataset containing the variable to be scaled.
-    var : str
-        The variable to be scaled.
-    scale_factor : float
-        The factor by which to scale the variable.
+        Parameters
+        ----------
+        xr_dataset : xarray.Dataset
+            The dataset containing the variable to be scaled.
+        var : str
+            The variable to be scaled.
+        scale_factor : float
+            The factor by which to scale the variable.
 
-    Returns
-    -------
-    xarray.Dataset
-        The dataset with the scaled variable.
+        Returns
+        -------
+        xarray.Dataset
+            The dataset with the scaled variable.
     """
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify `var` is in the dataset
-    udata.verify_var(xr_dataset, var)
+    verify_var(xr_dataset, var)
     # Note the variable attributes
     var_attrs = xr_dataset[var].attrs
     # Scale the variable
@@ -439,28 +432,27 @@ def add_tm1_var(
     var,
     year,
 ):
-    """
-    Add a version of the given variable which is shifted by one day (t-1)
+    """Add a version of the given variable which is shifted by one day (t-1)
     to the dataset, and drop January 1st from the time coordinate.
 
-    Parameters
-    ----------
-    xr_dataset : xarray.Dataset
-        The dataset containing the variable to shifted.
-    var : str
-        The variable to be shifted.
-    year : int
-        The year which xr_dataset covers (between 2005 and 2021).
+        Parameters
+        ----------
+        xr_dataset : xarray.Dataset
+            The dataset containing the variable to shifted.
+        var : str
+            The variable to be shifted.
+        year : int
+            The year which xr_dataset covers (between 2005 and 2021).
 
-    Returns
-    -------
-    xarray.Dataset
-        The dataset with the shifted variable.
+        Returns
+        -------
+        xarray.Dataset
+            The dataset with the shifted variable.
     """
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify `var` is in the dataset
-    udata.verify_var(xr_dataset, var)
+    verify_var(xr_dataset, var)
     # Note the variable attributes
     var_attrs = xr_dataset[var].attrs
     # Create name for t-1 variable
@@ -469,17 +461,21 @@ def add_tm1_var(
     xr_dataset[var_tm1] = xr_dataset[var].shift(time=1)
     # Add shifted_from to the attributes
     var_attrs['shifted_from'] = var
+    # Add (t-1) to the name in the attributes
+    var_attrs['long_name'] = var_attrs.get('long_name', var) + ' (t-1)'
     # Check for stage 2 variable
     var_s2 = f'{var}_s2'
     if var_s2 in xr_dataset.data_vars:
         # Note the variable attributes
-        var_s2_attrs = xr_dataset[var].attrs
+        var_s2_attrs = xr_dataset[var_s2].attrs
         # Create name for t-1 variable
         var_s2_tm1 = f'{var_s2}_tm1'
         # Create a t-1 shifted version of the variable
         xr_dataset[var_s2_tm1] = xr_dataset[var_s2].shift(time=1)
         # Add shifted_from to the attributes
         var_s2_attrs['shifted_from'] = var_s2
+        # Add (t-1) to the name in the attributes
+        var_s2_attrs['long_name'] = var_s2_attrs.get('long_name', var_s2) + ' (t-1)'
     # Drop January 1st, as the t-1 variable will have null values on that day
     try:
         xr_dataset = xr_dataset.drop_sel(time=f'{year}-01-01')
@@ -510,57 +506,56 @@ def make_x_input_file(
     overwrite=True,
     **kwargs,
 ):
-    """
-    Create an x input file for the Unet model for the given year and stage.
+    """Create an x input file for the Unet model for the given year and stage.
 
-    The array in the file will have these dimensions:
-    - time: 364 (or 365 for leap years)
-        - One day less than usual to allow for t-1 variable
-    - lat: length depends on the latitude grid
-    - lon: length depends on the longitude grid
-    - var: 9 variables (e.g., 'no2', 'u10', 'v10', etc.)
+        The array in the file will have these dimensions:
+        - time: 364 (or 365 for leap years)
+            - One day less than usual to allow for t-1 variable
+        - lat: length depends on the latitude grid
+        - lon: length depends on the longitude grid
+        - var: 9 variables (e.g., 'no2', 'u10', 'v10', etc.)
 
-    Parameters
-    ----------
-    year : int
-        The year for which to create the x input file.
-    stage_2 : bool, optional
-        Whether or not to make stage 2 in addition to stage 1 for the input.
-        Default is True.
-    data_dir : str, optional
-        Directory where the NOx data are stored. 
-        Default is '/data/high_res'.
-    chemra_path : str, optional
-        Path to the chemical reanalysis data files. 
-        Default is 'emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
-    chemra_var : str, optional
-        The variable to extract from the dataset. Default is 'no2'
-    insitu_path : str, optional
-        Path to the insitu data files. Default is 'US_EPA/NO2/daily_NO2/daily_42602_'.
-    era5_path : str, optional
-        Path to the ERA5 reanalysis data files. Default is 'ERA5concatenated'.
-    scale_factors : dict, optional
-        Scaling factors for the variables. Default is a dictionary with
-        scaling factors for 'chemra', 'sp', 'ssrd', and 'blh'.
-    stage_2_cutoff : int, optional
-        Year after which input files will also be generated for stage 2. Default is 2013.
-    output_dir : str, optional
-        Directory inside `inputfiles/` where the output x input file will be saved.
-        Default is `'test_input'`.
-    write_this_year : bool, optional
-        Whether to write the data for this year or just return the xarray without writing to file.
-        Default is True.
-    output_format : str, optional
-        Whether to save netcdf files ('nc'), numpy arrays ('npy'), or 'both'.
-        Default is 'nc'. Irrelevant if `write_this_year` is False.
-    overwrite : bool, optional
-        Whether to overwrite existing netcdf files. Default is True.
-    **kwargs : dict, optional
-        Additional keyword arguments (not used).
+        Parameters
+        ----------
+        year : int
+            The year for which to create the x input file.
+        stage_2 : bool, optional
+            Whether or not to make stage 2 in addition to stage 1 for the input.
+            Default is True.
+        data_dir : str, optional
+            Directory where the NOx data are stored. 
+            Default is '/data/high_res'.
+        chemra_path : str, optional
+            Path to the chemical reanalysis data files. 
+            Default is 'emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_'.
+        chemra_var : str, optional
+            The variable to extract from the dataset. Default is 'no2'
+        insitu_path : str, optional
+            Path to the insitu data files. Default is 'US_EPA/NO2/daily_NO2/daily_42602_'.
+        era5_path : str, optional
+            Path to the ERA5 reanalysis data files. Default is 'ERA5concatenated'.
+        scale_factors : dict, optional
+            Scaling factors for the variables. Default is a dictionary with
+            scaling factors for 'chemra', 'sp', 'ssrd', and 'blh'.
+        stage_2_cutoff : int, optional
+            Year after which input files will also be generated for stage 2. Default is 2013.
+        output_dir : str, optional
+            Directory inside `inputfiles/` where the output x input file will be saved.
+            Default is `'test_input'`.
+        write_this_year : bool, optional
+            Whether to write the data for this year or just return the xarray without writing to file.
+            Default is True.
+        output_format : str, optional
+            Whether to save netcdf files ('nc'), numpy arrays ('npy'), or 'both'.
+            Default is 'nc'. Irrelevant if `write_this_year` is False.
+        overwrite : bool, optional
+            Whether to overwrite existing netcdf files. Default is True.
+        **kwargs : dict, optional
+            Additional keyword arguments (not used).
 
-    Returns
-    -------
-    x_data : xarray.Dataset
+        Returns
+        -------
+        x_data : xarray.Dataset
         The x input data for the specified year.
     """
     # Assemble the file path for the chemical reanalysis data
@@ -761,26 +756,25 @@ def fill_w_insitu(
     insitu_filepath, 
     var='no2',
 ):
-    """
-    Add stage 2 for the variable in an xarray Dataset using available insitu data.
+    """Add stage 2 for the variable in an xarray Dataset using available insitu data.
 
-    Given an xarray Dataset with reanalysis data, duplicate the specified variable and
-    replace values of that duplicated variable when and where there is available 
-    insitu data in the provided filepath, to be used for stage 2 of training the unet.
+        Given an xarray Dataset with reanalysis data, duplicate the specified variable and
+        replace values of that duplicated variable when and where there is available 
+        insitu data in the provided filepath, to be used for stage 2 of training the unet.
 
-    Parameters
-    ----------
-    xr_dataset : xarray.Dataset
-        The dataset containing reanalysis data.
-    insitu_filepath : str
-        Path to the CSV file containing insitu data.
-    var : str, optional
-        The variable to replace in the dataset. Default is 'no2'.
+        Parameters
+        ----------
+        xr_dataset : xarray.Dataset
+            The dataset containing reanalysis data.
+        insitu_filepath : str
+            Path to the CSV file containing insitu data.
+        var : str, optional
+            The variable to replace in the dataset. Default is 'no2'.
 
-    Returns
-    -------
-    xarray.Dataset
-        The updated dataset with insitu data replacing the specified variable.
+        Returns
+        -------
+        xarray.Dataset
+            The updated dataset with insitu data replacing the specified variable.
     """
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
@@ -790,6 +784,8 @@ def fill_w_insitu(
     xr_dataset[var_s2]= xr_dataset[var].copy(deep=True)
     # Save the variable attributes
     var_s2_attrs = xr_dataset[var_s2].attrs
+    # Modify the long_name attribute to indicate stage 2
+    var_s2_attrs['long_name'] = var_s2_attrs.get('long_name', var_s2) + ' Stage 2'
     # Verify the insitu file path
     insitu_filepath = verify_path(insitu_filepath)
     # Load the insitu data
@@ -839,29 +835,28 @@ def make_all_y_input_files(
     sort=True,
     **kwargs,
 ):
-    """
-    Create y input files for multiple years.
+    """Create y input files for multiple years.
 
-    Runs the `make_y_input_file` function for each year in the specified range.
+        Runs the `make_y_input_file` function for each year in the specified range.
 
-    Parameters
-    ----------
-    years : iterable, optional
-        Years for which to create y input files. Default is range(2005, 2021).
-    var : str, optional
-        Variable to extract from the dataset. Default is 'nox'.
-    output_dir : str, optional
-        Directory inside `inputfiles/` where the output y input files will be saved.
-        Default is `'test_input'`.
-    sort : bool, optional
-        Whether to sort the xarray after making all y inputs. Sorting takes a long time.
-        Default is True.
-    **kwargs : dict, optional
-        Additional keyword arguments to pass to the `make_y_input_file` function.
+        Parameters
+        ----------
+        years : iterable, optional
+            Years for which to create y input files. Default is range(2005, 2021).
+        var : str, optional
+            Variable to extract from the dataset. Default is 'nox'.
+        output_dir : str, optional
+            Directory inside `inputfiles/` where the output y input files will be saved.
+            Default is `'test_input'`.
+        sort : bool, optional
+            Whether to sort the xarray after making all y inputs. Sorting takes a long time.
+            Default is True.
+        **kwargs : dict, optional
+            Additional keyword arguments to pass to the `make_y_input_file` function.
 
-    Returns
-    -------
-    y_data_array : list of numpy.ndarray
+        Returns
+        -------
+        y_data_array : list of numpy.ndarray
         List of y input data arrays for the specified years.
     """
     # Assemble the filepath
@@ -904,33 +899,32 @@ def make_all_x_input_files(
     sort=True,
     **kwargs,
 ):
-    """
-    Create x input files for multiple years and stages.
+    """Create x input files for multiple years and stages.
 
-    Runs the `make_x_input_file` function for each year and stage in the specified ranges.
+        Runs the `make_x_input_file` function for each year and stage in the specified ranges.
 
-    Parameters
-    ----------
-    years : iterable, optional
-        Years for which to create x input files. Default is range(2005, 2021).
-    stage_2 : bool, optional
-        Whether or not to make stage 2 in addition to stage 1 for the input.
-        Default is True.
-    stage_2_cutoff : int, optional
-        Year after which the data will also be saved in stage 2. Default is 2013.
-    output_dir : str, optional
-        Directory inside `inputfiles/` where the output x input files will be saved.
-        Default is `'test_input'`.
-    sort : bool, optional
-        Whether to sort the xarray after making all x inputs. Sorting takes a long time.
-        Default is True.
-    **kwargs : dict, optional
-        Additional keyword arguments to pass to the `make_x_input_file` function.
+        Parameters
+        ----------
+        years : iterable, optional
+            Years for which to create x input files. Default is range(2005, 2021).
+        stage_2 : bool, optional
+            Whether or not to make stage 2 in addition to stage 1 for the input.
+            Default is True.
+        stage_2_cutoff : int, optional
+            Year after which the data will also be saved in stage 2. Default is 2013.
+        output_dir : str, optional
+            Directory inside `inputfiles/` where the output x input files will be saved.
+            Default is `'test_input'`.
+        sort : bool, optional
+            Whether to sort the xarray after making all x inputs. Sorting takes a long time.
+            Default is True.
+        **kwargs : dict, optional
+            Additional keyword arguments to pass to the `make_x_input_file` function.
 
-    Returns
-    -------
-    x_data_array : list of xarray.Dataset
-        List of x input data arrays for the specified years and stages.
+        Returns
+        -------
+        x_data_array : list of xarray.Dataset
+            List of x input data arrays for the specified years and stages.
     """
     # Assemble the filepath
     output_filepath = f'inputfiles/{output_dir}/{output_dir}.nc'
@@ -973,28 +967,27 @@ def make_all_input_files(
     sort=True,
     **kwargs,
 ):
-    """
-    Create all input files for the Unet model.
+    """Create all input files for the Unet model.
 
-    This function combines the creation of y input files and x input files 
-    for both stages.
+        This function combines the creation of y input files and x input files 
+        for both stages.
 
-    Parameters
-    ----------
-    output_dir : str, optional
-        Directory inside `inputfiles/` where the output input files will be saved.
-        Default is `'test_input'`.
-    sort : bool, optional
-        Whether to sort the xarray after making all inputs. Sorting takes a long time.
-        Default is True.
-    **kwargs : dict, optional
-        Additional keyword arguments to pass to the `make_y_input_file` and 
-        `make_x_input_file` functions.
+        Parameters
+        ----------
+        output_dir : str, optional
+            Directory inside `inputfiles/` where the output input files will be saved.
+            Default is `'test_input'`.
+        sort : bool, optional
+            Whether to sort the xarray after making all inputs. Sorting takes a long time.
+            Default is True.
+        **kwargs : dict, optional
+            Additional keyword arguments to pass to the `make_y_input_file` and 
+            `make_x_input_file` functions.
 
-    Returns
-    -------
-    input_netcdf_xr : xarray.Dataset
-        The combined input data for both x and y.
+        Returns
+        -------
+        input_netcdf_xr : xarray.Dataset
+            The combined input data for both x and y.
     """
     print("Note: It may take around an hour to generate all input files.")
     # Make sure the output directory exists
@@ -1027,71 +1020,82 @@ def make_input_metadata_file(
     g_attrs=None,
     overwrite=True,
 ):
-    """
-    Create a metadata file for the dataset in the given directory.
+    """Create a metadata file for the dataset in the given directory.
 
-    Gather the metadata from the given dataset, format it, and output
-    to a clear-text file that can be easily read.
+        Gather the metadata from the given dataset, format it, and output
+        to a clear-text file that can be easily read.
 
-    Parameters
-    ----------
-    input_set : str, xr.Dataset
-        Directory inside `inputfiles/` where the dataset is found and 
-        in which the metadata file will be saved, or the xarray Dataset
+        Parameters
+        ----------
+        input_set : str, xr.Dataset, uarray
+            Directory inside `inputfiles/` where the dataset is found and 
+            in which the metadata file will be saved, or the xarray Dataset
+        output_dir : str, None, optional
+            Directory inside `inputfiles/` where the metadata file will be saved.
+            If None, the metadata file will not be saved. Default is None.
+        g_attrs : dict, None, optional
+            Global attributes to use for the metadata file.
+        overwrite : bool, optional
+            Whether to overwrite an existing metadata file. Default is True.
 
-    Returns
-    -------
-    metadata_dict : dict
-        The metadata dictionary that was saved to the json file.
-        Has the format:
-    ```json
-    {
-        "years": {
-            "x": [
-                2005,
+        Returns
+        -------
+        metadata_dict : dict
+            The metadata dictionary that was saved to the json file.
+            Has the format:
+        ```json
+        {
+            "years": {
+                "x": [
+                    2005,
+                    ...
+                    2020
+                ],
+                "y": [
+                    2005,
+                    ...
+                    2020
+                ]
+            },
+            "y_var": "nox",
+            "emiss_dir": "/data/high_res/t106",
+            "emiss_pre": "nox_",
+            "emiss_post": "_t106_US.nc",
+            "nan_fill": 0,
+            "stage_2_cutoff": 2013,
+            "x_vars": [
+                "no2",
                 ...
-                2020
+                "ssrd"
             ],
-            "y": [
-                2005,
-                ...
-                2020
+            "data_dir": "/data/high_res",
+            "chemra_path": "emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_",
+            "insitu_path": "US_EPA/NO2/daily_NO2/daily_42602_",
+            "era5_path": "ERA5concatenated",
+            "stages": [
+                1,
+                2
             ]
-        },
-        "y_var": "nox",
-        "emiss_dir": "/data/high_res/t106",
-        "emiss_pre": "nox_",
-        "emiss_post": "_t106_US.nc",
-        "nan_fill": 0,
-        "stage_2_cutoff": 2013,
-        "x_vars": [
-            "no2",
-            ...
-            "ssrd"
-        ],
-        "data_dir": "/data/high_res",
-        "chemra_path": "emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_",
-        "insitu_path": "US_EPA/NO2/daily_NO2/daily_42602_",
-        "era5_path": "ERA5concatenated",
-        "stages": [
-            1,
-            2
-        ]
-    }
-    ```
+        }
+        ```
     """
-    # Verify input_set is a string or xr.Dataset
+    # Verify argument types
     if isinstance(input_set, str):
-        # Check whether the given input_set exists in 'inputfiles/'
-        xr_path = f'inputfiles/{input_set}/{input_set}.nc'
-        if not os.path.exists(xr_path):
-            raise ValueError(f'File {xr_path} does not exist.')
-        # Load the dataset
-        xr_dataset = xr.load_dataset(xr_path)
+        # Load the xr dataset from a uarray
+        xr_dataset = uarray(input_set, is_input_set=True).xr
     elif isinstance(input_set, xr.Dataset):
         xr_dataset = input_set
-    # Verify the dataset
-    xr_dataset = verify_dataset(xr_dataset)
+    elif isinstance(input_set, uarray):
+        xr_dataset = input_set.xr
+    else:
+        raise TypeError(f"(make_input_metadata_file) `input_set` must be a string, xarray.Dataset, or uarray. Got type: {type(input_set)}")
+    if not isinstance(output_dir, (str, type(None))):
+        raise TypeError(f"(make_input_metadata_file) `output_dir` must be a string or None. Got type: {type(output_dir)}")
+    if not isinstance(g_attrs, (dict, type(None))):
+        raise TypeError(f"(make_input_metadata_file) `g_attrs` must be a dict or None. Got type: {type(g_attrs)}")
+    if not isinstance(overwrite, bool):
+        raise TypeError(f"(make_input_metadata_file) `overwrite` must be a bool. Got type: {type(overwrite)}")
+
     # If the metadata file already exists, load it
     if not isinstance(output_dir, type(None)):
         # Assemble the filepath for the metadata file
@@ -1118,6 +1122,20 @@ def make_input_metadata_file(
     # Check for global attributes
     if isinstance(g_attrs, type(None)):
         g_attrs = xr_dataset.attrs
+    else:
+        # Update the types of the given `g_attrs` to be compatible with JSON
+        for key in g_attrs.keys():
+            if isinstance(g_attrs[key], np.integer):
+                g_attrs[key] = int(g_attrs[key])
+            elif isinstance(g_attrs[key], np.floating):
+                g_attrs[key] = float(g_attrs[key])
+            elif isinstance(g_attrs[key], np.ndarray):
+                g_attrs[key] = g_attrs[key].tolist()
+            elif isinstance(g_attrs[key], (np.bool_, bool)):
+                if g_attrs[key] == True:
+                    g_attrs[key] = 'True'
+                else:
+                    g_attrs[key] = 'False'
     # Check whether `lsm` is in the list of data variables
     if 'lsm' in list(xr_dataset.data_vars):
         # Add `lsm: True` to the global attributes
@@ -1128,6 +1146,8 @@ def make_input_metadata_file(
     for g_attr in [
         'y_var',
         'x_vars',
+        'x1_vars',
+        'x2_vars',
         'description',
         'data_dir',
         'chemra_path',
@@ -1212,94 +1232,93 @@ def make_input_config(
     overwrite=False,
     **kwargs,
 ):
-    """
-    Create a configuration file for using input data with the Unet model.
+    """Create a configuration file for using input data with the Unet model.
 
-    Parameters
-    ----------
-    config_name : str
-        Name of the configuration file to be created.
-    input_set : str or xr.Dataset, optional
-        Directory inside `inputfiles/` where the dataset is found, or the xarray Dataset.
-        Default is 'no2_sample_input'.
-    grid_size : list of int, optional
-        The number of grid cells to have in [latitude, longitude] when running the Unet model.
-        Default is [56, 120].
-    x_vars : list of str, optional
-        List of variable names to be used as input features for the model.
-        Default is a list of common meteorological and chemical variables.
-    stage_2 : bool, optional
-        Whether or not stage 2 should be run with the Unet model.
-        Default is True.
-    stage_2_cutoff : int, optional
-        Year after which stage 2 data will be used.
-        Default is 2013.
-    lsm_vars : list of str, optional
-        List of variable names that should use land-sea mask.
-        Default is ['no2', 'no2_tm1'].
-    zfi_vars : list of str, optional
-        List of variable names that should use zero-fill mask.
-        Default is ['t2m'].
-    **kwargs : dict, optional
+        Parameters
+        ----------
+        config_name : str
+            Name of the configuration file to be created.
+        input_set : str or xr.Dataset, optional
+            Directory inside `inputfiles/` where the dataset is found, or the xarray Dataset.
+            Default is 'no2_sample_input'.
+        grid_size : list of int, optional
+            The number of grid cells to have in [latitude, longitude] when running the Unet model.
+            Default is [56, 120].
+        x_vars : list of str, optional
+            List of variable names to be used as input features for the model.
+            Default is a list of common meteorological and chemical variables.
+        stage_2 : bool, optional
+            Whether or not stage 2 should be run with the Unet model.
+            Default is True.
+        stage_2_cutoff : int, optional
+            Year after which stage 2 data will be used.
+            Default is 2013.
+        lsm_vars : list of str, optional
+            List of variable names that should use land-sea mask.
+            Default is ['no2', 'no2_tm1'].
+        zfi_vars : list of str, optional
+            List of variable names that should use zero-fill mask.
+            Default is ['t2m'].
+        **kwargs : dict, optional
 
-    Returns
-    -------
-    config_dict : dict
-        The configuration dictionary that was saved to the json file.
+        Returns
+        -------
+        config_dict : dict
+            The configuration dictionary that was saved to the json file.
     """
     # Verify argument types
     if not isinstance(config_name, str):
-        raise TypeError(f"config_name must be a string. Got type: {type(config_name)}")
+        raise TypeError(f"(make_input_config) `config_name` must be a string. Got type: {type(config_name)}")
     # Verify input_set is a string or xr.Dataset
     if isinstance(input_set, str):
         # Check whether the given input_set exists in 'inputfiles/'
         xr_path = f'inputfiles/{input_set}/{input_set}.nc'
         if not os.path.exists(xr_path):
-            raise ValueError(f'File {xr_path} does not exist.')
+            raise ValueError(f"(make_input_config) File {xr_path} does not exist.")
         # Load the dataset
         xr_dataset = xr.load_dataset(xr_path)
     elif isinstance(input_set, xr.Dataset):
         xr_dataset = input_set
     else:
-        raise TypeError(f"input_set must be a string or xarray.Dataset. Got type: {type(input_set)}")
+        raise TypeError(f"(make_input_config) `input_set` must be a string or xarray.Dataset. Got type: {type(input_set)}")
     if not isinstance(grid_size, list):
-        raise TypeError(f"grid_size must be a list of integers. Got type: {type(grid_size)}")
+        raise TypeError(f"(make_input_config) `grid_size` must be a list of integers. Got type: {type(grid_size)}")
     if not isinstance(x_vars, list):
-        raise TypeError(f"x_vars must be a list of strings. Got type: {type(x_vars)}")
+        raise TypeError(f"(make_input_config) `x_vars` must be a list of strings. Got type: {type(x_vars)}")
     if not isinstance(stage_2, bool):
-        raise TypeError(f"stage_2 must be a boolean. Got type: {type(stage_2)}")
+        raise TypeError(f"(make_input_config) `stage_2` must be a boolean. Got type: {type(stage_2)}")
     if not isinstance(stage_2_cutoff, int):
-        raise TypeError(f"stage_2_cutoff must be an integer. Got type: {type(stage_2_cutoff)}")
+        raise TypeError(f"(make_input_config) `stage_2_cutoff` must be an integer. Got type: {type(stage_2_cutoff)}")
     if not isinstance(lsm_vars, list):
-        raise TypeError(f"lsm_vars must be a list of strings. Got type: {type(lsm_vars)}")
+        raise TypeError(f"(make_input_config) `lsm_vars` must be a list of strings. Got type: {type(lsm_vars)}")
     if not isinstance(zfi_vars, list):
-        raise TypeError(f"zfi_vars must be a list of strings. Got type: {type(zfi_vars)}")
+        raise TypeError(f"(make_input_config) `zfi_vars` must be a list of strings. Got type: {type(zfi_vars)}")
     if not isinstance(overwrite, bool):
-        raise TypeError(f"overwrite must be a boolean. Got type: {type(overwrite)}")
+        raise TypeError(f"(make_input_config) `overwrite` must be a boolean. Got type: {type(overwrite)}")
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify that grid_size has exactly 2 integers
     if not len(grid_size) == 2:
-        raise TypeError(f'Expected `grid_size` to have a length of 2. Got length of {len(grid_size)}: {grid_size}')
+        raise ValueError(f"(make_input_config) Expected `grid_size` to have a length of 2. Got length of {len(grid_size)}: {grid_size}")
     else:
         if isinstance(grid_size[0], int):
             n_lats = grid_size[0]
         else:
-            raise TypeError(f"Number of latitudes in `grid_size` must be an integer. Got type: {type(grid_size[0])}")
+            raise TypeError(f"(make_input_config) Number of latitudes in `grid_size` must be an integer. Got type: {type(grid_size[0])}")
         if isinstance(grid_size[1], int):
             n_lons = grid_size[1]
         else:
-            raise TypeError(f"Number of longitudes in `grid_size` must be an integer. Got type: {type(grid_size[1])}")
+            raise TypeError(f"(make_input_config) Number of longitudes in `grid_size` must be an integer. Got type: {type(grid_size[1])}")
     # Verify that `grid_size` is not larger than the lat-lon grid in xr_dataset
     xr_n_lats = xr_dataset.sizes['lat']
     xr_n_lons = xr_dataset.sizes['lon']
     if n_lats > xr_n_lats:
-        raise ValueError(f'Requested length of latitude grid ({n_lats}) cannot exceed length of latitude dimension in the given netcdf ({xr_n_lats}).')
+        raise ValueError(f"(make_input_config) Requested length of latitude grid ({n_lats}) cannot exceed length of latitude dimension in the given netcdf ({xr_n_lats}).")
     if n_lons > xr_n_lons:
-        raise ValueError(f'Requested length of longitude grid ({n_lons}) cannot exceed length of longitude dimension in the given netcdf ({xr_n_lons}).')
+        raise ValueError(f"(make_input_config) Requested length of longitude grid ({n_lons}) cannot exceed length of longitude dimension in the given netcdf ({xr_n_lons}).")
     # Verify that all x_vars are in the dataset
     for var in x_vars:
-        udata.verify_var(xr_dataset, var)
+        verify_var(xr_dataset, var)
     # Verify that stage 2 exists in the dataset
     if not 2 in xr_dataset.attrs.get('stages', []):
         stage_2 = False
@@ -1307,13 +1326,13 @@ def make_input_config(
     # Verify that stage_2_cutoff is a year that exists in the dataset
     years = get_years(xr_dataset)
     if stage_2_cutoff not in years:
-        raise ValueError(f'stage_2_cutoff {stage_2_cutoff} not found in dataset years: {years}')
+        raise ValueError(f"(make_input_config) `stage_2_cutoff` {stage_2_cutoff} not found in dataset years: {years}")
     # Verify that the lsm_vars are in the dataset
     for var in lsm_vars:
-        udata.verify_var(xr_dataset, var)
+        verify_var(xr_dataset, var)
     # Verify that the zfi_vars are in the dataset
     for var in zfi_vars:
-        udata.verify_var(xr_dataset, var)
+        verify_var(xr_dataset, var)
     # Build the dictionary
     config_dict = {
         'input_set': input_set,
@@ -1337,3 +1356,132 @@ def make_input_config(
         file.write(json.dumps(config_dict, indent=4))
     print(f'Saved configuration file to {config_filepath}')
     return config_dict
+
+def copy_input_files(
+    source_input_set,
+    output_dir,
+    keep_vars='all',
+    start_date=None,
+    end_date=None,
+    overwrite=True,
+    **kwargs,
+):
+    """Copies an input set to a new location.
+
+        Creates a copy of the input netCDF and `input_metadata.json` file
+        from the specified source in a new directory, optionally filtering
+        the netCDF to only include specified variables and date range.
+
+        Parameters
+        ----------
+        source_input_set : str
+            Name of the source input set located in `inputfiles/`.
+        output_dir : str
+            Name of the output directory inside `inputfiles/` where the new input set will be copied to.
+        keep_vars : list of str or `all`, optional
+            List of variable names to keep in the copied netCDF. If `all`, all variables are kept.
+            Default is `all`.
+        start_date : str, None, or np.datetime64, optional
+            Date from which to start the copied data. If None, the start date equals that of the original file.
+            Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+            Default is None.
+        end_date : str, None, or np.datetime64, optional
+            Date at which to end the copied data. If None, the end date equals that of the original file.
+            Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+            Default is None.
+        **kwargs : dict, optional
+
+        Returns
+        -------
+        new_xr_dataset : xarray.Dataset
+            The copied and filtered xarray Dataset that is saved to the new location.
+    """ 
+    # Verify argument types
+    if not isinstance(source_input_set, str):
+        raise TypeError(f"(copy_input_files) `source_input_set` must be a string. Got type: {type(source_input_set)}")
+    if not isinstance(output_dir, str):
+        raise TypeError(f"(copy_input_files) `output_dir` must be a string. Got type: {type(output_dir)}")
+    if not isinstance(keep_vars, list) and not keep_vars == 'all':
+        if isinstance(keep_vars, str):
+            # Turn `keep_vars` into a list if it's a single string
+            keep_vars = [keep_vars]
+        else:
+            raise TypeError(f"(copy_input_files) `keep_vars` must be a list of strings or 'all'. Got type: {type(keep_vars)}")
+    if not (isinstance(start_date, (str, type(None), np.datetime64))):
+        raise TypeError(f"(copy_input_files) `start_date` must be a string, None, or np.datetime64. Got type: {type(start_date)}")
+    if not (isinstance(end_date, (str, type(None), np.datetime64))):
+        raise TypeError(f"(copy_input_files) `end_date` must be a string, None, or np.datetime64. Got type: {type(end_date)}")
+    # Verify that the source and output directories are not the same
+    if source_input_set == output_dir:
+        raise ValueError(f"(copy_input_files) `source_input_set` and `output_dir` cannot be the same. Both are '{source_input_set}'.")
+
+    # Check whether the output directory already exists
+    try:
+        verify_path(f"inputfiles/{output_dir}/")
+    except FileNotFoundError as e:
+        assert True, f"(copy_input_files) Output directory 'inputfiles/{output_dir}/' does not exist. Creating it."
+    else:
+        if overwrite == False:
+            # Ask whether to overwrite the existing directory
+            overwrite = unox.interpret_user_input(input(f"Output directory 'inputfiles/{output_dir}/' already exists. Overwrite? (y/n)"))
+            if not overwrite:
+                print('Aborting input file copy.')
+                return
+        print(f"Overwriting existing input files in {output_dir}")
+        remove_non_empty_directory(f"inputfiles/{output_dir}/")
+    # Make the output directory
+    make_file_path(f"inputfiles/{output_dir}/")
+    
+    # Load the source dataset as a `uarray`
+    source_uarr = uarray(source_input_set, is_input_set=True)
+
+    # Check whether to filter variables
+    if keep_vars != 'all':
+        # Verify that all variables in `keep_vars` are in the source dataset
+        for var in keep_vars:
+            verify_var(source_uarr.xr, var)
+        # Drop variables not in `keep_vars`
+        vars_to_drop = [var for var in source_uarr.xr.data_vars if var not in keep_vars]
+        source_uarr.xr = source_uarr.xr.drop_vars(vars_to_drop)
+        # Update the variable list attributes
+        for var_list_attr in ['x_vars', 'x1_vars', 'x2_vars']:
+            if var_list_attr in source_uarr.xr.attrs:
+                filtered_var_list = [var for var in source_uarr.xr.attrs[var_list_attr] if var in keep_vars]
+                source_uarr.xr.attrs[var_list_attr] = filtered_var_list
+        if 'y_var' in source_uarr.xr.attrs:
+            if source_uarr.xr.attrs['y_var'] not in keep_vars:
+                source_uarr.xr.attrs['y_var'] = 'None'
+    # Check whether to filter dates
+    if not isinstance(start_date, type(None)) or not isinstance(end_date, type(None)):
+        # Convert start_date and end_date to strings of YYYY-MM-DD if they are np.datetime64
+        if isinstance(start_date, np.datetime64):
+            start_date = str(pd.to_datetime(start_date).date())
+        elif isinstance(start_date, type(None)):
+            this_start = source_uarr.xr['time'].values[0]
+            start_date = f"{this_start.year:04d}-{this_start.month:02d}-{this_start.day:02d}"
+        if isinstance(end_date, np.datetime64):
+            end_date = str(pd.to_datetime(end_date).date())
+        elif isinstance(end_date, type(None)):
+            this_end = source_uarr.xr['time'].values[-1]
+            end_date = f"{this_end.year:04d}-{this_end.month:02d}-{this_end.day:02d}"
+        # Verify that `start_date` is before `end_date`
+        if start_date >= end_date:
+            raise ValueError(f"(copy_input_files) `start_date` must be before `end_date`. Got start_date: {start_date}, end_date: {end_date}.")
+        # Select the date range
+        source_uarr.xr = source_uarr.xr.sel(time=slice(start_date, end_date), drop=True)
+    
+    # Update the modification time attribute
+    source_uarr.xr.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Write out results
+    if not isinstance(output_dir, type(None)):
+        # Write the new dataset to the output directory
+        source_uarr.xr.to_netcdf(f"inputfiles/{output_dir}/{output_dir}.nc")
+        # Create metadata file
+        meta_dict = make_input_metadata_file(
+            source_uarr.xr,
+            output_dir=output_dir,
+            g_attrs=source_uarr.xr.attrs,
+        )
+
+    return source_uarr
