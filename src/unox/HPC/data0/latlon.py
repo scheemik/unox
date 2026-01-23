@@ -9,36 +9,36 @@ def shift_lon(
 ):
     """Shift the given longitude value between ranges [0, 360] and [-180, 180].
 
-    If the Prime Meridian is centered and the longitude value is in the range [0, 360],
-    shift it to the range [-180, 180]. If the Prime Meridian is not centered (i.e. the
-    International Date Line is centered) and the longitude value is in the range 
-    [-180, 180], shift it to the range [0, 360]. Otherwise, return the same value.
-    If the longitude value is not a number or is NaN, or is outside the relevant range
-    for the specified PM_centered, raise a ValueError.
+        If the Prime Meridian is centered and the longitude value is in the range [0, 360],
+        shift it to the range [-180, 180]. If the Prime Meridian is not centered (i.e. the
+        International Date Line is centered) and the longitude value is in the range 
+        [-180, 180], shift it to the range [0, 360]. Otherwise, return the same value.
+        If the longitude value is not a number or is NaN, or is outside the relevant range
+        for the specified PM_centered, raise a ValueError.
 
-    Parameters
-    ----------
-    lon_value : float
-        The longitude value to shift.
-    PM_centered : bool, optional
-        If True, shift the longitude value from the range [0, 360] to [-180, 180].
-        If False, shift from [-180, 180] to [0, 360]. Defaults to True.
+        Parameters
+        ----------
+        lon_value : float
+            The longitude value to shift.
+        PM_centered : bool, optional
+            If True, shift the longitude value from the range [0, 360] to [-180, 180].
+            If False, shift from [-180, 180] to [0, 360]. Defaults to True.
 
-    Returns
-    -------
-    lon_value : float
-        The shifted longitude value.
+        Returns
+        -------
+        lon_value : float
+            The shifted longitude value.
 
-    Examples
-    --------
-    >>> lon_value = shift_lon(45.0, PM_centered=True)
-    45.0
-    >>> lon_value = shift_lon(270.0, PM_centered=True)
-    -90.0
-    >>> lon_value = shift_lon(-70.0, PM_centered=False)
-    290.0
-    >>> lon_value = shift_lon(200.0, PM_centered=False)
-    200.0
+        Examples
+        --------
+        >>> lon_value = shift_lon(45.0, PM_centered=True)
+        45.0
+        >>> lon_value = shift_lon(270.0, PM_centered=True)
+        -90.0
+        >>> lon_value = shift_lon(-70.0, PM_centered=False)
+        290.0
+        >>> lon_value = shift_lon(200.0, PM_centered=False)
+        200.0
     """
     if not verify_number(lon_value):
         raise ValueError(f"(shift_lon) `lon_value` value must be a number. Got type: {type(lon_value)}")
@@ -67,34 +67,33 @@ def shift_lon_arr(
     in_array,
     **kwargs,
 ):
-    """
-    Shift the given array of longitude values between ranges [0, 360] and [-180, 180].
+    """Shift the given array of longitude values between ranges [0, 360] and [-180, 180].
 
-    Map the `shift_lon` function to shift each value in the array.
+        Map the `shift_lon` function to shift each value in the array.
 
-    Parameters
-    ----------
-    in_array : numpy.ndarray or xarray.Dataset
-        The array of longitude values to shift.
-    **kwargs : keyword arguments
-        Additional keyword arguments to pass to `shift_lon()`.
+        Parameters
+        ----------
+        in_array : numpy.ndarray or xarray.Dataset
+            The array of longitude values to shift.
+        **kwargs : keyword arguments
+            Additional keyword arguments to pass to `shift_lon()`.
 
-    Returns
-    -------
-    numpy.ndarray or xarray.Dataset
-        The shifted longitude values in the range [-180, 180].
+        Returns
+        -------
+        numpy.ndarray or xarray.Dataset
+            The shifted longitude values in the range [-180, 180].
 
-    Examples
-    --------
-    >>> in_array = np.array([0, 90, 180, 270, 360])
-    >>> shifted_lon = shift_lon_arr(in_array)
-    array([0, 90, 180, -90, 0])
+        Examples
+        --------
+        >>> in_array = np.array([0, 90, 180, 270, 360])
+        >>> shifted_lon = shift_lon_arr(in_array)
+        array([0, 90, 180, -90, 0])
 
-    >>> xarray_dataset.coords['lon'].values
-    array([  0.   ,   1.125,   2.25 , ... 357.75 , 358.875], dtype=float32)
-    >>> xarray_dataset = shift_lon_arr(xarray_dataset)
-    >>> xarray_dataset.coords['lon'].values
-    array([  0.   ,   1.125,   2.25 , ...  -2.25 ,  -1.125], dtype=float32)
+        >>> xarray_dataset.coords['lon'].values
+        array([  0.   ,   1.125,   2.25 , ... 357.75 , 358.875], dtype=float32)
+        >>> xarray_dataset = shift_lon_arr(xarray_dataset)
+        >>> xarray_dataset.coords['lon'].values
+        array([  0.   ,   1.125,   2.25 , ...  -2.25 ,  -1.125], dtype=float32)
     """
     # Ensure the input is a numpy array or xarray Dataset
     if isinstance(in_array, np.ndarray):

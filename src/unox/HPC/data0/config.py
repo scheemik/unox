@@ -7,16 +7,16 @@ def get_config(
 ):
     """Load the configuration from a JSON file.
 
-    Parameters
-    ----------
-    config_file : str or dict
-        The name or path to the configuration JSON file, 
-        or a dictionary in the format of a configuration file.
+        Parameters
+        ----------
+        config_file : str or dict
+            The name or path to the configuration JSON file, 
+            or a dictionary in the format of a configuration file.
 
-    Returns
-    -------
-    config_dict : dict
-        The configuration as a dictionary.
+        Returns
+        -------
+        config_dict : dict
+            The configuration as a dictionary.
     """
     # Verify argument types
     if isinstance(config_file, dict):

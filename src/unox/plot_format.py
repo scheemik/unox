@@ -11,32 +11,32 @@ def set_fig_row_col(
 ):
     """Determine the number of rows and columns in a figure based on the number of subplots.
 
-    Parameters
-    ----------
-    n_subplots : int
-        The total number of subplots in the figure.
-    n_rows : in or None
-        The number of rows to use in the figure. Default is `None`.
-    n_cols : int or None
-        The number of columns to use in the figure. Default is `None`.
-    **kwargs : keyword arguments
-        Additional keyword arguments accepted to facilitate wrapper functions.
-    
-    Returns
-    -------
-    n_rows : int
-        The number of rows in the figure.
-    n_cols : int
-        The number of columns in the figure.
-    
-    Examples
-    --------
-    >>> n_rows, n_cols = set_fig_row_col(4)
-    2, 2
-    >>> n_rows, n_cols = set_fig_row_col(6)
-    2, 3
-    >>> n_rows, n_cols = set_fig_row_col(6, n_rows=3)
-    3, 2
+        Parameters
+        ----------
+        n_subplots : int
+            The total number of subplots in the figure.
+        n_rows : in or None
+            The number of rows to use in the figure. Default is `None`.
+        n_cols : int or None
+            The number of columns to use in the figure. Default is `None`.
+        **kwargs : keyword arguments
+            Additional keyword arguments accepted to facilitate wrapper functions.
+        
+        Returns
+        -------
+        n_rows : int
+            The number of rows in the figure.
+        n_cols : int
+            The number of columns in the figure.
+        
+        Examples
+        --------
+        >>> n_rows, n_cols = set_fig_row_col(4)
+        2, 2
+        >>> n_rows, n_cols = set_fig_row_col(6)
+        2, 3
+        >>> n_rows, n_cols = set_fig_row_col(6, n_rows=3)
+        3, 2
     """
     # Verify argument types
     if not isinstance(n_subplots, int):
@@ -88,27 +88,27 @@ def pad_extent(
 ):
     """Pads the given extent.
 
-    Pads the latitude and longitude extent of a dataset by enlarging
-    the extent by the padding value.
+        Pads the latitude and longitude extent of a dataset by enlarging
+        the extent by the padding value.
 
-    Parameters
-    ----------
-    extent : tuple
-        A tuple of np.float64 in the form (lat_min, lat_max, lon_min, lon_max).
-    padding : float
-        The amount to pad the extent by in a fraction.
+        Parameters
+        ----------
+        extent : tuple
+            A tuple of np.float64 in the form (lat_min, lat_max, lon_min, lon_max).
+        padding : float
+            The amount to pad the extent by in a fraction.
 
-    Returns
-    -------
-    padded_extent : tuple
-        A tuple of np.float64 in the form (p_lat_min, p_lat_max, p_lon_min, p_lon_max).
+        Returns
+        -------
+        padded_extent : tuple
+            A tuple of np.float64 in the form (p_lat_min, p_lat_max, p_lon_min, p_lon_max).
 
-    Examples
-    --------
-    >>> nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
-    >>> extent = unox.data.get_extent(nox)
-    >>> padded_extent = pad_extent(extent, padding=0.1)
-    (20.635399999999997, 62.3546, -132.6375, -52.9875)
+        Examples
+        --------
+        >>> nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
+        >>> extent = unox.data.get_extent(nox)
+        >>> padded_extent = pad_extent(extent, padding=0.1)
+        (20.635399999999997, 62.3546, -132.6375, -52.9875)
     """
     # Verify the tuple is the right shape
     if not isinstance(extent, tuple) or len(extent) != 4:
@@ -146,24 +146,24 @@ def get_var_label_and_units(
 ):
     """Get the label and units for a variable.
 
-    Returns the label and units for a variable based on its name.
+        Returns the label and units for a variable based on its name.
 
-    Parameters
-    ----------
-    var : str
-        The name of the variable.
+        Parameters
+        ----------
+        var : str
+            The name of the variable.
 
-    Returns
-    -------
-    label : str
-        The label for the variable.
-    units : str
-        The units for the variable.
+        Returns
+        -------
+        label : str
+            The label for the variable.
+        units : str
+            The units for the variable.
 
-    Examples
-    --------
-    >>> label, units = get_var_label_and_units('temperature')
-    ('Temperature', '°C')
+        Examples
+        --------
+        >>> label, units = get_var_label_and_units('temperature')
+        ('Temperature', '°C')
     """
     var_labels_and_units = {
         'lat': ('Latitude', r'$^\circ$N'),
@@ -205,37 +205,37 @@ def make_stage_comp_arrs(
 ):
     """Create arrays for stage comparison plots.
 
-    Creates a dictionary of arrays for stage comparison, where each key is a stage
-    and the value is an array of the variable for that stage. For use with the 
-    `unox.plotting.plot_stage_comp_maps()` function.
+        Creates a dictionary of arrays for stage comparison, where each key is a stage
+        and the value is an array of the variable for that stage. For use with the 
+        `unox.plotting.plot_stage_comp_maps()` function.
 
-    Parameters
-    ----------
-    in_arrs : dict
-        A dictionary of input arrays, where the keys are stage names and the values are arrays.
-        Expects format like: {'truth': truth_arr, 'stage1': stage1_arr, 'stage2': stage2_arr}
-    this_date : np.datetime64 or str
-        Date and time to select from the data file.
-        Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
-    var : str
-        The variable which will be plotted.
-    avg_over : str, numpy.timedelta64, or None
-        If provided, averages the data over the specified time period.
-        If None, takes just the time slice specified in `datetime`.
-    stage1_only : bool
-        If True, produce arrays just corresponding to stage 1. If False, produce arrays
-        for stage 1 and stage 2. Default is False.
+        Parameters
+        ----------
+        in_arrs : dict
+            A dictionary of input arrays, where the keys are stage names and the values are arrays.
+            Expects format like: {'truth': truth_arr, 'stage1': stage1_arr, 'stage2': stage2_arr}
+        this_date : np.datetime64 or str
+            Date and time to select from the data file.
+            Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
+        var : str
+            The variable which will be plotted.
+        avg_over : str, numpy.timedelta64, or None
+            If provided, averages the data over the specified time period.
+            If None, takes just the time slice specified in `datetime`.
+        stage1_only : bool
+            If True, produce arrays just corresponding to stage 1. If False, produce arrays
+            for stage 1 and stage 2. Default is False.
 
-    Returns
-    -------
-    out_arrs : dict
-        A dictionary of output arrays for each stage.
-    overall_title : str
-        A title for the overall plot, based on the variable and date(s).
-    
-    Examples
-    --------
-    >>> 
+        Returns
+        -------
+        out_arrs : dict
+            A dictionary of output arrays for each stage.
+        overall_title : str
+            A title for the overall plot, based on the variable and date(s).
+        
+        Examples
+        --------
+        >>> 
     """
     out_arrs = {}
     

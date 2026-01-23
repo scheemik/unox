@@ -12,19 +12,19 @@ def verify_dataset(
 ):
     """Verify that the given xarray dataset is valid.
 
-    Checks to make sure the given dataset is of the expected type
-    and contains the expected coordinates.
+        Checks to make sure the given dataset is of the expected type
+        and contains the expected coordinates.
 
-    Parameters
-    ----------
-    xr_dataset : xarray.Dataset or xarray.DataArray
-        The xarray data to verify.
-    check_time : bool, optional
-        If True, verify that the dataset has a 'time' coordinate.
-    shift_lons : bool, optional
-        If True, shift the longitude values based on the PM_centered kwarg.
-    **kwargs : keyword arguments
-        Additional keyword arguments to pass to `shift_lon_arr()`.
+        Parameters
+        ----------
+        xr_dataset : xarray.Dataset or xarray.DataArray
+            The xarray data to verify.
+        check_time : bool, optional
+            If True, verify that the dataset has a 'time' coordinate.
+        shift_lons : bool, optional
+            If True, shift the longitude values based on the PM_centered kwarg.
+        **kwargs : keyword arguments
+            Additional keyword arguments to pass to `shift_lon_arr()`.
     """
     # Verify argument types
     if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
@@ -64,17 +64,17 @@ def verify_var(
 ):
     """Verifies that the given variable is in the given xarray dataset.
 
-    Parameters
-    ----------
-    xr_dataset : xarray.Dataset or xarray.DataArray
-        The xarray data to verify.
-    var : str
-        The variable name to verify.
+        Parameters
+        ----------
+        xr_dataset : xarray.Dataset or xarray.DataArray
+            The xarray data to verify.
+        var : str
+            The variable name to verify.
 
-    Returns
-    -------
-    bool
-        True if the variable is in the dataset, otherwise raises a ValueError.
+        Returns
+        -------
+        bool
+            True if the variable is in the dataset, otherwise raises a ValueError.
     """
     # Verify argument types
     if not isinstance(xr_dataset, xr.Dataset) and not isinstance(xr_dataset, xr.DataArray):
@@ -92,29 +92,29 @@ def fuzzy_coord_match(
 ):
     """Returns standard coordinate name for given fuzzy match.
 
-    Takes in a coordinate name which may be a variation of standard
-    coordinate names (e.g., 'lat', 'latitude', 'Latitude') and returns the
-    standard coordinate name ('lat', 'lon', 'time') for latitude, longitude,
-    and time. Also returns the dummy 'number' coordinate from ERA5 data.
+        Takes in a coordinate name which may be a variation of standard
+        coordinate names (e.g., 'lat', 'latitude', 'Latitude') and returns the
+        standard coordinate name ('lat', 'lon', 'time') for latitude, longitude,
+        and time. Also returns the dummy 'number' coordinate from ERA5 data.
 
-    Parameters
-    ----------
-    coord : str
-        The coordinate name to match.
+        Parameters
+        ----------
+        coord : str
+            The coordinate name to match.
 
-    Returns
-    -------
-    matched_coord : str
-        The standard coordinate name that matches the input coordinate.
+        Returns
+        -------
+        matched_coord : str
+            The standard coordinate name that matches the input coordinate.
 
-    Examples
-    --------
-    >>> fuzzy_coord_match('lat')
-    'lat' 
-    >>> fuzzy_coord_match('latitude')
-    'lat'
-    >>> fuzzy_coord_match('Latitude')
-    'lat'
+        Examples
+        --------
+        >>> fuzzy_coord_match('lat')
+        'lat' 
+        >>> fuzzy_coord_match('latitude')
+        'lat'
+        >>> fuzzy_coord_match('Latitude')
+        'lat'
     """
     # Convert the coordinate to lowercase for matching
     coord = coord.lower()

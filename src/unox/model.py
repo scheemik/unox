@@ -9,20 +9,20 @@ def load_model(
 ):
     """Load a trained model from a file.
 
-    Parameters
-    ----------
-    model_path : str
-        Path to the model file. Should be an .h5 or .keras file.
+        Parameters
+        ----------
+        model_path : str
+            Path to the model file. Should be an .h5 or .keras file.
 
-    Returns
-    -------
-    model : tf.keras.Model
-        The loaded model.
+        Returns
+        -------
+        model : tf.keras.Model
+            The loaded model.
 
-    Examples
-    --------
-    >>> model = load_model('model.h5')
-    >>> model.summary()
+        Examples
+        --------
+        >>> model = load_model('model.h5')
+        >>> model.summary()
     """
     # Verify the model path
     model_path = verify_path(model_path)

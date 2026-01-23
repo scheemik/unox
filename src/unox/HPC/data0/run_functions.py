@@ -17,39 +17,38 @@ def process_cmd_args(
 ):
     """Process command line arguments given to `run_model.py`
 
-    Parameters
-    ----------
-    cmd_args : list
-        The list of command line arguments given to `run_model.py`.
-        Assumes the arguments are:
-        - arg 0: script name (i.e., `run_model.py`)
-        - arg 1: savedir, the directory in which to save model outputs
-        - arg 2: config_file, the model configuration file to use
-        - arg 3: version, the version of the packages to import (0 or 1)
-    verbose : bool, optional
-        Whether to print the processed command line arguments.
-        Default is True.
-    default_savedir : str, optional
-        The default save directory to use if none is found in `cmd_args`.
-        Default is 'HPC_runs/test_unet'.
-    default_config : str, optional
-        The default config file to use if none is found in `cmd_args`.
-        Default is 'input_config'.
-    default_version : int, optional
-        The default version to use if none is found in `cmd_args`.
-        Default is 1.
-    
-    Returns
-    -------
-    savedir : str
-        The path to the directory in which to save model outputs.
-    config_dict : dict
-        The model configuration dictionary.
-    config_path : str
-        The path to the configuration file used.
-    version : int
-        The version of the packages to use for running the model (0 or 1).
-
+            Parameters
+            ----------
+            cmd_args : list
+                The list of command line arguments given to `run_model.py`.
+                Assumes the arguments are:
+                - arg 0: script name (i.e., `run_model.py`)
+                - arg 1: savedir, the directory in which to save model outputs
+                - arg 2: config_file, the model configuration file to use
+                - arg 3: version, the version of the packages to import (0 or 1)
+            verbose : bool, optional
+                Whether to print the processed command line arguments.
+                Default is True.
+            default_savedir : str, optional
+                The default save directory to use if none is found in `cmd_args`.
+                Default is 'HPC_runs/test_unet'.
+            default_config : str, optional
+                The default config file to use if none is found in `cmd_args`.
+                Default is 'input_config'.
+            default_version : int, optional
+                The default version to use if none is found in `cmd_args`.
+                Default is 1.
+            
+            Returns
+            -------
+            savedir : str
+                The path to the directory in which to save model outputs.
+            config_dict : dict
+                The model configuration dictionary.
+            config_path : str
+                The path to the configuration file used.
+            version : int
+                The version of the packages to use for running the model (0 or 1).
     """ 
     # Verify argument types
     if not isinstance(cmd_args, list):
@@ -138,36 +137,35 @@ def make_output_metadata_dict(
 ):
     """Creates the dictionary of metadata for a run to be output to a dictionary. 
 
-    Parameters
-    ----------
-    savedir : str
-        The path to the directory in which the data for this run is saved.
-    config_path : str
-        The path to the configuration JSON file. 
-    config_dict : dict
-        The dictionary of the configuration file.
-    version : int
-        The version of the code used in this run (0 or 1).
-    n_epochs : int
-        The number of epochs the model was run over.
-    model_fmt : str
-        The format in which to output the trained model for this run.
-        Either 'h5', 'keras', or 'both'.
-    input_fmt : str
-        The format of the input data used for this run.
-        Either 'nc' or 'npy'.
-    split_year : int
-        The year at which to split the training and validation data.
-        Defaults to 2019.
-    split_value : float
-        The ratio with which the data was split between training and validation.
-        For example, a value of 0.9 would give 90% to training and 10% to validation. 
-    
-    Returns
-    -------
-    output_metadata : dict
-        The output metadata dictionary.
-
+        Parameters
+        ----------
+        savedir : str
+            The path to the directory in which the data for this run is saved.
+        config_path : str
+            The path to the configuration JSON file. 
+        config_dict : dict
+            The dictionary of the configuration file.
+        version : int
+            The version of the code used in this run (0 or 1).
+        n_epochs : int
+            The number of epochs the model was run over.
+        model_fmt : str
+            The format in which to output the trained model for this run.
+            Either 'h5', 'keras', or 'both'.
+        input_fmt : str
+            The format of the input data used for this run.
+            Either 'nc' or 'npy'.
+        split_year : int
+            The year at which to split the training and validation data.
+            Defaults to 2019.
+        split_value : float
+            The ratio with which the data was split between training and validation.
+            For example, a value of 0.9 would give 90% to training and 10% to validation. 
+        
+        Returns
+        -------
+        output_metadata : dict
+            The output metadata dictionary.
     """
     # Verify argument types
     if not isinstance(savedir, str):
@@ -220,31 +218,31 @@ def prepare_input(
 ):
     """Prepare the input data for the model.
 
-    Get the training data from the input NetCDF dataset as numpy arrays
-    and concatenate them along the time dimension.
+        Get the training data from the input NetCDF dataset as numpy arrays
+        and concatenate them along the time dimension.
 
-    Parameters
-    ----------
-    uarr : unox.uarray
-        The dataset of the input NetCDF file.
-    input_config : str or dict
-        Path to the input configuration JSON file or a dictionary containing the configuration.
-    output_metadata : dict
-        The dictionary of metadata describing the output of a model run.
-    split_year : int, optional
-        The year at which to split the training and testing data.
-        Defaults to 2019.
-    stage : int
-        The stage of the data to plot (1 or 2).
-    
-    Returns
-    -------
-    xtrain : np.ndarray
-        Concatenated training input features.
-    ytrain : np.ndarray
-        Concatenated training target variables.
-    output_metadata : dict
-        The dictionary of metadata describing the output of a model run with values added for `train_years` and `unet_build_shape`.
+        Parameters
+        ----------
+        uarr : unox.uarray
+            The dataset of the input NetCDF file.
+        input_config : str or dict
+            Path to the input configuration JSON file or a dictionary containing the configuration.
+        output_metadata : dict
+            The dictionary of metadata describing the output of a model run.
+        split_year : int, optional
+            The year at which to split the training and testing data.
+            Defaults to 2019.
+        stage : int
+            The stage of the data to plot (1 or 2).
+        
+        Returns
+        -------
+        xtrain : np.ndarray
+            Concatenated training input features.
+        ytrain : np.ndarray
+            Concatenated training target variables.
+        output_metadata : dict
+            The dictionary of metadata describing the output of a model run with values added for `train_years` and `unet_build_shape`.
     """
     # Verify argument types
     uarr._verify()

@@ -5,27 +5,27 @@ def verify_path(
 ):
     """Verify that the filepath exists.
 
-    Checks if the path to the data files exists and is valid.
-    If not, it raises an error.
+        Checks if the path to the data files exists and is valid.
+        If not, it raises an error.
 
-    Parameters
-    ----------
-    path : str
-        Relative path to the directory containing data files.
+        Parameters
+        ----------
+        path : str
+            Relative path to the directory containing data files.
 
-    Raises
-    ------
-    FileNotFoundError
-        If the specified path does not exist.
+        Raises
+        ------
+        FileNotFoundError
+            If the specified path does not exist.
 
-    Returns
-    -------
-    path : str
-        The verified path to the data files.
+        Returns
+        -------
+        path : str
+            The verified path to the data files.
 
-    Examples
-    --------
-    >>> verify_path()
+        Examples
+        --------
+        >>> verify_path()
     """
     # Verify argument types
     if not isinstance(path, str):
@@ -48,12 +48,12 @@ def remove_non_empty_directory(
 ):
     """Remove a non-empty directory and all its contents.
 
-    This function will recursively delete all files and directories in the given path.
+        This function will recursively delete all files and directories in the given path.
 
-    Parameters
-    ----------
-    base_dir : str
-        Relative path to the directory to be removed.
+        Parameters
+        ----------
+        base_dir : str
+            Relative path to the directory to be removed.
     """
     # Verify the path
     top = verify_path(base_dir)
@@ -76,22 +76,22 @@ def make_file_path(
 ):
     """Create a file path.
 
-    If the given path doesn't exist, create the specified directory structure.
+        If the given path doesn't exist, create the specified directory structure.
 
-    Parameters
-    ----------
-    path : str
-        Relative path to make.
+        Parameters
+        ----------
+        path : str
+            Relative path to make.
 
-    Returns
-    -------
-    path : str
-        The verified path to the data files.
+        Returns
+        -------
+        path : str
+            The verified path to the data files.
 
-    Examples
-    --------
-    >>> make_file_path('datafiles/some/more/data/a_file.txt')
-    'datafiles/some/more/data/'
+        Examples
+        --------
+        >>> make_file_path('datafiles/some/more/data/a_file.txt')
+        'datafiles/some/more/data/'
     """
     # Verify argument types
     if not isinstance(path, str):

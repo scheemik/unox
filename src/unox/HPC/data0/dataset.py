@@ -154,20 +154,20 @@ def load_dataset(
 ):
     """Load the data from the given filepath into an xarray dataset.
 
-    Verifies the given filepath, ensures the file contains an applicable format,
-    and loads the data into an xarray dataset.
+        Verifies the given filepath, ensures the file contains an applicable format,
+        and loads the data into an xarray dataset.
 
-    Parameters
-    ----------
-    file_path : str
-        The filepath to the data file to load.
-    **kwargs : keyword arguments
-        Additional keyword arguments to pass to `csv_to_xr()` and `verify_dataset()`.
+        Parameters
+        ----------
+        file_path : str
+            The filepath to the data file to load.
+        **kwargs : keyword arguments
+            Additional keyword arguments to pass to `csv_to_xr()` and `verify_dataset()`.
 
-    Returns
-    -------
-    xr_dataset : xarray.Dataset or xarray.DataArray
-        The loaded xarray dataset.
+        Returns
+        -------
+        xr_dataset : xarray.Dataset or xarray.DataArray
+            The loaded xarray dataset.
     """
     # Verify the filepath
     file_path = verify_path(file_path)
@@ -187,35 +187,35 @@ def csv_to_pd(
 ):
     """Load a CSV file into a pandas DataFrame.
 
-    Loads a CSV file into a pandas DataFrame, ensuring that the
-    required columns are present if the file is from the US EPA.
+        Loads a CSV file into a pandas DataFrame, ensuring that the
+        required columns are present if the file is from the US EPA.
 
-    Parameters
-    ----------
-    csv_filepath : str
-        The path to the CSV file to load.
-    is_US_EPA : bool, optional
-        If True, verify that the CSV file has the required columns
-        for US EPA data. Defaults to True.
-    **kwargs : keyword arguments
-        Additional keyword arguments to accommodate wrapper functions.
+        Parameters
+        ----------
+        csv_filepath : str
+            The path to the CSV file to load.
+        is_US_EPA : bool, optional
+            If True, verify that the CSV file has the required columns
+            for US EPA data. Defaults to True.
+        **kwargs : keyword arguments
+            Additional keyword arguments to accommodate wrapper functions.
 
-    Returns
-    -------
-    df : pandas.DataFrame
-        The loaded DataFrame.
+        Returns
+        -------
+        df : pandas.DataFrame
+            The loaded DataFrame.
 
-    Examples
-    --------
-    >>> df = csv_to_pd('datafiles/US_EPA/daily_42602_2019.csv')
-    >>> df.head()   
-                Latitude	Longitude	Arithmetic Mean
-    Date			
-    2019-01-01	33.553056	-86.815	    4.314286
-    2019-01-08	33.553056	-86.815	    6.263636
-    2019-01-09	33.553056	-86.815	    4.957143
-    2019-01-10	33.553056	-86.815	    5.891667
-    2019-01-11	33.553056	-86.815	    14.500000
+        Examples
+        --------
+        >>> df = csv_to_pd('datafiles/US_EPA/daily_42602_2019.csv')
+        >>> df.head()   
+                    Latitude	Longitude	Arithmetic Mean
+        Date			
+        2019-01-01	33.553056	-86.815	    4.314286
+        2019-01-08	33.553056	-86.815	    6.263636
+        2019-01-09	33.553056	-86.815	    4.957143
+        2019-01-10	33.553056	-86.815	    5.891667
+        2019-01-11	33.553056	-86.815	    14.500000
     """
     # Verify the filepath
     csv_filepath = verify_path(csv_filepath)
@@ -250,28 +250,28 @@ def csv_to_xr(
 ):
     """Load a CSV file into an xarray Dataset.
 
-    Loads a CSV file into an xarray Dataset, ensuring that the
-    required columns are present if the file is from the US EPA.
+        Loads a CSV file into an xarray Dataset, ensuring that the
+        required columns are present if the file is from the US EPA.
 
-    Parameters
-    ----------
-    csv_filepath : str
-        The path to the CSV file to load.
-    is_US_EPA : bool, optional
-        If True, verify that the CSV file has the required columns
-        for US EPA data. Defaults to True.
-    **kwargs : keyword arguments
-        Additional keyword arguments to accommodate wrapper functions.
+        Parameters
+        ----------
+        csv_filepath : str
+            The path to the CSV file to load.
+        is_US_EPA : bool, optional
+            If True, verify that the CSV file has the required columns
+            for US EPA data. Defaults to True.
+        **kwargs : keyword arguments
+            Additional keyword arguments to accommodate wrapper functions.
 
-    Returns
-    -------
-    xr_dataset : xarray.Dataset
-        The loaded Dataset.
+        Returns
+        -------
+        xr_dataset : xarray.Dataset
+            The loaded Dataset.
 
-    Examples
-    --------
-    >>> xr_dataset = csv_to_xr('datafiles/US_EPA/daily_42602_2019.csv')
-    >>> xr_dataset
+        Examples
+        --------
+        >>> xr_dataset = csv_to_xr('datafiles/US_EPA/daily_42602_2019.csv')
+        >>> xr_dataset
     """
     # Load the CSV into a pandas DataFrame
     df = csv_to_pd(csv_filepath, is_US_EPA)
@@ -288,24 +288,24 @@ def get_US_EPA_species_name(
 ):
     """Get the US EPA species name from the ID.
 
-    Maps the US EPA species ID to the corresponding species name.
+        Maps the US EPA species ID to the corresponding species name.
 
-    Parameters
-    ----------
-    ID : str
-        The US EPA species ID to map.
+        Parameters
+        ----------
+        ID : str
+            The US EPA species ID to map.
 
-    Returns
-    -------
-    species_name : str
-        The corresponding US EPA species name.
+        Returns
+        -------
+        species_name : str
+            The corresponding US EPA species name.
 
-    Examples
-    --------
-    >>> species_name = get_US_EPA_species_name('42602')
-    'no2'
-    >>> species_name = get_US_EPA_species_name('42101')
-    'co'
+        Examples
+        --------
+        >>> species_name = get_US_EPA_species_name('42602')
+        'no2'
+        >>> species_name = get_US_EPA_species_name('42101')
+        'co'
     """
     # Define a mapping of US EPA species IDs to species names
     species_mapping = {
@@ -343,15 +343,15 @@ def get_years(
 ):
     """Get a list of unique years from the time coordinate of the given dataset.
 
-    Parameters
-    ----------
-    dataset : str, uarray, xarray.Dataset, xarray.DataArray
-        The dataset from which to extract the years.
+        Parameters
+        ----------
+        dataset : str, uarray, xarray.Dataset, xarray.DataArray
+            The dataset from which to extract the years.
 
-    Returns
-    -------
-    years : list of int
-        A list of unique years in the dataset.
+        Returns
+        -------
+        years : list of int
+            A list of unique years in the dataset.
     """
     # Verify argument types
     if isinstance(dataset, xr.Dataset) or isinstance(dataset, xr.DataArray):
@@ -376,15 +376,15 @@ def get_metadata(
 ):
     """Find and load the relevant metadata dictionary for the given uarray.
 
-    Parameters
-    ----------
-    this_uarr : uarray
-        The uarray object for which to load the metadata.
+        Parameters
+        ----------
+        this_uarr : uarray
+            The uarray object for which to load the metadata.
 
-    Returns
-    -------
-    metadata : dict
-        The metadata dictionary for this uarray.
+        Returns
+        -------
+        metadata : dict
+            The metadata dictionary for this uarray.
     """
     # Verify argument types
     if not isinstance(this_uarr, uarray):
