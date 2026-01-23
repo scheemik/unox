@@ -117,8 +117,7 @@ def process_cmd_args(
         print(f"\targv[3], version: {version}")
     
     # If using the old version of the packages, create directories for staged output
-    # if version == 0:
-    if True:
+    if version == 0:
         stage1_dir = make_file_path(f"{savedir}stage1_output/")
         stage2_dir = make_file_path(f"{savedir}stage2_output/")
     
