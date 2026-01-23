@@ -1,4 +1,5 @@
-#test code based on Unet_Chinese_NOx example_code.ipynb
+# Script to run the U-net model training and prediction
+# Should be launched from the `HPC_slurm.sh` script
 import numpy as np
 import pandas as pd
 import glob
@@ -51,6 +52,7 @@ output_metadata = rf.make_output_metadata_dict(
 # Stage-1 training
 ## Load stage-1 data sets
 
+# Select the appropriate function to prepare the input
 if input_fmt == 'npy':
     from legacy.run_functions_old import prepare_input
 elif input_fmt == 'nc':
@@ -397,10 +399,7 @@ import json
 with open(f"{savedir}output_metadata.json", 'w') as file:
     file.write(json.dumps(output_metadata, indent=4))
 
+print("===== End run_model.py =====")
 print("")
-print("Done running test_unet.py")
-
-
-
 
 
