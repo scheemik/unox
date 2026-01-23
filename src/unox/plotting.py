@@ -49,10 +49,9 @@ def plot_extent(
     >>> fig = plot_extent('inputfiles/no2_2019_JFM/no2_2019_JFM.nc')
     >>> fig = plot_extent('no2_2019_JFM', is_input_set=True)
     """
-    # Make `uarray` object
+    # Verify argument types
+    # Making `uarray` object verifies `dataset`
     u_arr = uarray(dataset, **kwargs)
-    # Verify argument types 
-    # The `verify_dataset()` function is automatically run when creating a `uarray` object
 
     # Find the min and max lat and lon values
     lat_min, lat_max, lon_min, lon_max = udata.get_extent(u_arr.xr)
@@ -104,11 +103,10 @@ def plot_lats_lons(
     >>> fig = plot_lats_lons('inputfiles/no2_2019_JFM/no2_2019_JFM.nc')
     >>> fig = plot_lats_lons('no2_2019_JFM', is_input_set=True)
     """
-    # Make `uarray` object
-    u_arr = uarray(dataset, **kwargs)
     # Verify argument types 
-    # The `verify_dataset()` function is automatically run when creating a `uarray` object
-    # The `verify_number()` function is automatically run in `pad_extent()`
+    # Making `uarray` object verifies `dataset`
+    u_arr = uarray(dataset, **kwargs)
+    # `padding` is verified in `pad_extent()`
     
     # Find the min and max lat and lon values
     this_extent = udata.get_extent(u_arr.xr)
@@ -263,7 +261,7 @@ def plot_var_maps(
     restrict_lat_lon_to=None,
     **kwargs,
 ):
-    """Plots a maps of data in a netCDF.
+    """Plots a maps of the given data.
 
     A wrapper for the `map_ax()` function.
     Creates maps for each specified 'var' using the provided dataset.
@@ -291,17 +289,22 @@ def plot_var_maps(
     --------
     >>> fig = plot_var_maps('no2_example_run', is_predict=True, vars=['no2_pred'], datetime='2019-06-01', avg_over='30D')
     """
-    # Make `uarray` object
-    u_arr = uarray(dataset, **kwargs)
     # Verify argument types 
-    # The `verify_dataset()` function is automatically run when creating a `uarray` object
+    # Making `uarray` object verifies `dataset`
+    u_arr = uarray(dataset, **kwargs)
     if not isinstance(vars, list):
         if isinstance(vars, str):
             vars = [vars]
         else:
             raise TypeError(f"(plot_var_maps) `vars` must be a list of variable names or a single variable name string. Got type: {type(vars)}")
+    else:
+        for var in vars:
+            if not isinstance(var, str):
+                raise TypeError(f"(plot_var_maps) Each entry in `vars` must be a string. Got type: {type(var)}")
     if len(vars) == 0:
         raise ValueError("(plot_var_maps) `vars` list cannot be empty.")
+    if not isinstance(restrict_lat_lon_to, (type(None), str)):
+        raise TypeError(f"(plot_var_maps) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
     
     # Select the time slice to plot
     u_arr.xr, title_segment = select_time(u_arr.xr, **kwargs)
@@ -481,13 +484,22 @@ def plot_run_analysis(
     avg_over='364D', restrict_lat_lon_to='../datafiles/sample_data/nox_2019_t106_US.nc',  add_corr_plots=True)
     """
     # Verify argument types
-    if not isinstance(dataset, (str, xr.Dataset, xr.DataArray, uarray)):
-        raise TypeError(f"(plot_comp_maps) `dataset` must be a string. Got type: {type(dataset)}")
-    if not isinstance(year, int):
-        raise TypeError(f"(plot_comp_maps) `year` must be an integer. Got type: {type(year)}")
-
-    # Get predictions dataset
+    # Making `uarray` object verifies `dataset`
     pred_uarr = uarray(dataset, is_predict=True)
+    if not isinstance(year, int):
+        raise TypeError(f"(plot_run_analysis) `year` must be an integer. Got type: {type(year)}")
+    if not isinstance(restrict_lat_lon_to, (type(None), str)):
+        raise TypeError(f"(plot_run_analysis) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
+    if not isinstance(add_corr_plots, bool):
+        raise TypeError(f"(plot_run_analysis) `add_corr_plots` must be a bool. Got type: {type(add_corr_plots)}")
+    if not isinstance(stage1_only, bool):
+        raise TypeError(f"(plot_run_analysis) `stage1_only` must be a bool. Got type: {type(stage1_only)}")
+    verify_number(clr_bar_scale)
+    if clr_bar_scale < 0 or clr_bar_scale > 1:
+        raise ValueError(f"(plot_run_analysis) `clr_bar_scale` must be between 0 and 1. Got: {clr_bar_scale}")
+    if not isinstance(clr_map, mpl.colors.Colormap):
+        raise TypeError(f"(plot_run_analysis) `clr_map` must be a matplotlib Colormap. Got type: {type(clr_map)}")
+
     # Get the metadata from the predictions uarray
     meta_dict = pred_uarr._get_metadata()
     # Get the input set from the metadata
@@ -866,7 +878,7 @@ def corr_plot(
 
     Examples
     --------
-    >>> fig = corr_plot('no2_example_run', 2019, is_predict=True, x_ax='pred', y_ax='truth')
+    >>> fig = corr_plot('no2_example_run', is_predict=True, x_ax='pred', y_ax='truth')
     """
     # Verify argument types
     # Making a `uarray` object verifies `dataset`
@@ -878,9 +890,11 @@ def corr_plot(
     if isinstance(datetime, int):
         year = datetime
     elif not isinstance(datetime, (str, np.timedelta64)):
-        raise TypeError(f"(select_time) `datetime` must be a string, or a numpy.timedelta64. Got type: {type(datetime)}")
+        raise TypeError(f"(corr_plot) `datetime` must be a string, or a numpy.timedelta64. Got type: {type(datetime)}")
     else:
         year = None
+    if not isinstance(restrict_lat_lon_to, (type(None), str)):
+        raise TypeError(f"(corr_plot) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
 
     # Set the x and y data arrays to `None`
     x_xarr = None
@@ -998,6 +1012,20 @@ def make_colorbar(
     >>> n_rows_maps = 2
     >>> cbar = make_colorbar(fig, axs, cb_label='NOx emissions (kg/m2/s)', rows=(1, n_rows_maps))
     """
+    # Verify argument types
+    if not isinstance(fig, mpl.figure.Figure):
+        raise TypeError(f"(make_colorbar) `fig` must be a matplotlib Figure. Got type: {type(fig)}")
+    if not isinstance(cb_ax, mpl.axes.Axes):
+        raise TypeError(f"(make_colorbar) `cb_ax` must be a matplotlib Axes. Got type: {type(cb_ax)}")
+    if not isinstance(cb_label, str):
+        raise TypeError(f"(make_colorbar) `cb_label` must be a string. Got type: {type(cb_label)}")
+    if not isinstance(num_ticks, int):
+        raise TypeError(f"(make_colorbar) `num_ticks` must be an integer. Got type: {type(num_ticks)}")
+    if not isinstance(cb_loc, str):
+        raise TypeError(f"(make_colorbar) `cb_loc` must be a string. Got type: {type(cb_loc)}")
+    if not isinstance(cb_extend, str):
+        raise TypeError(f"(make_colorbar) `cb_extend` must be a string. Got type: {type(cb_extend)}")
+
     # Add one overall colorbar for the entire figure on the right-hand side
     cbar = fig.colorbar(cb_ax, loc=cb_loc, label=cb_label, extend=cb_extend, **kwargs)
     # Set ticks for the colorbar (use an odd number of ticks to have a zero tick in the middle)
@@ -1057,6 +1085,27 @@ def plot_hist(
     >>> axs[0] = plot_npy_hist([data_arr1, data_arr2], ax=axs[0], n_bins=50, title='Histogram of NO2 emissions, both stages')
     """
     # Verify argument types
+    if not isinstance(data_arrs, list):
+        if isinstance(data_arrs, (np.ndarray, xr.DataArray)):
+            data_arrs = [data_arrs]
+        else:
+            raise TypeError(f"(plot_hist) `data_arrs` must be a list, numpy array, or xarray DataArray. Got type: {type(data_arrs)}")
+    else:
+        for data_arr in data_arrs:
+            if not isinstance(data_arr, (np.ndarray, xr.DataArray)):
+                raise TypeError(f"(plot_hist) Each element of `data_arrs` must be a numpy array or xarray DataArray. Got type: {type(data_arr)}")
+    if not isinstance(ax, (pplt.axes.Axes, type(None))):
+        raise TypeError(f"(plot_hist) `ax` must be a proplot Axes object or None. Got type: {type(ax)}")
+    if not isinstance(n_bins, int):
+        raise TypeError(f"(plot_hist) `n_bins` must be an integer. Got type: {type(n_bins)}")
+    if not isinstance(ax_label, str):
+        raise TypeError(f"(plot_hist) `ax_label` must be a string. Got type: {type(ax_label)}")
+    if not isinstance(ylabel, str):
+        raise TypeError(f"(plot_hist) `ylabel` must be a string. Got type: {type(ylabel)}")
+    if not isinstance(plt_title, (type(None), str)):
+        raise TypeError(f"(plot_hist) `plt_title` must be a string or None. Got type: {type(plt_title)}")
+    if not isinstance(log_scale, bool):
+        raise TypeError(f"(plot_hist) `log_scale` must be a bool. Got type: {type(log_scale)}")
 
     # Create a new figure and axis if none is provided
     if isinstance(ax, type(None)):
@@ -1162,6 +1211,9 @@ def compare_input_vars(
             raise TypeError(f"(compare_input_vars) `var` must be a string. Got type: {type(input_dict['var'])}")
     if not isinstance(abs_tolerance, float):
         raise TypeError(f"(compare_input_vars) `abs_tolerance` must be a float. Got type: {type(abs_tolerance)}")
+    if not isinstance(restrict_lat_lon_to, (type(None), str)):
+        raise TypeError(f"(compare_input_vars) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
+
     # Loop over the two input dictionaries and load the data
     for input_dict in [input_a_dict, input_b_dict]:
         # Load the input data as a uarray
