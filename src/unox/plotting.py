@@ -538,15 +538,18 @@ def plot_run_analysis(
             n_rows = 2
             n_rows_maps = 2
         n_cols = 3
+        n_maps = 6
     else:
         # Set the number of rows and columns in the figure
         if add_corr_plots:
             n_rows = 2
             n_rows_maps = 1
+            n_cols = 2
         else:
             n_rows = 1
             n_rows_maps = 1
-        n_cols = 3
+            n_cols = 3
+        n_maps = 3
     
     # Trim the latitude and longitude extents to match
     pred_uarr.xr, input_uarr.xr = udata.match_domains(pred_uarr.xr, input_uarr.xr)
@@ -586,9 +589,9 @@ def plot_run_analysis(
     else:
         # Create a list of projections for each subplot
         these_projs = []
-        for i in range(n_rows_maps*n_cols):
+        for i in range(n_maps):
             these_projs.append('cyl')
-        for i in range((n_rows - n_rows_maps)*n_cols):
+        for i in range((n_rows * n_cols) - n_maps):
             these_projs.append(None)
     # Create the figure
     ## Setting `share=False` to allow separate axis labels for each subplot
@@ -617,8 +620,8 @@ def plot_run_analysis(
         cbe = 'neither'
 
     # Make blank lists to collect vars and colorbar labels
-    these_vars = [None]*(n_rows_maps*n_cols)
-    these_cblbls = [None]*(n_rows_maps*n_cols)
+    these_vars = [None]*(n_maps)
+    these_cblbls = [None]*(n_maps)
     # Add the plots to the axes
     for i in range(len(vars_to_plot)):
         data_arr = pred_uarr.xr[vars_to_plot[i]]
@@ -654,7 +657,7 @@ def plot_run_analysis(
             x_var='pred',
             y_var='truth',
             datetime=year,
-            ax=axs[-3],
+            ax=axs[n_maps],
             restrict_lat_lon_to=restrict_lat_lon_to,
             **kwargs,
         )
