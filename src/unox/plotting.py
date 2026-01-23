@@ -997,8 +997,8 @@ def make_colorbar(
     ----------
     fig : `matplotlib.figure.Figure`
         The figure on which to add the colorbar.
-    cb_ax : `matplotlib.axes.Axes`
-        The axes on which to add the colorbar.
+    cb_ax : `cartopy.mpl.geocollection.GeoQuadMesh`
+        The geo quad mesh on which to add the colorbar.
     cb_label : `str`
         The label for the colorbar.
     num_ticks : `int`, optional
@@ -1023,11 +1023,12 @@ def make_colorbar(
     >>> n_rows_maps = 2
     >>> cbar = make_colorbar(fig, axs, cb_label='NOx emissions (kg/m2/s)', rows=(1, n_rows_maps))
     """
+    from cartopy.mpl.geocollection import GeoQuadMesh
     # Verify argument types
     if not isinstance(fig, mpl.figure.Figure):
         raise TypeError(f"(make_colorbar) `fig` must be a matplotlib Figure. Got type: {type(fig)}")
-    if not isinstance(cb_ax, mpl.axes.Axes):
-        raise TypeError(f"(make_colorbar) `cb_ax` must be a matplotlib Axes. Got type: {type(cb_ax)}")
+    if not isinstance(cb_ax, GeoQuadMesh):
+        raise TypeError(f"(make_colorbar) `cb_ax` must be a GeoQuadMesh. Got type: {type(cb_ax)}")
     if not isinstance(cb_label, str):
         raise TypeError(f"(make_colorbar) `cb_label` must be a string. Got type: {type(cb_label)}")
     if not isinstance(num_ticks, int):
