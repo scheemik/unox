@@ -38,29 +38,29 @@ class uarray():
     """
     # Initialize the uarray object
     def __init__(self, 
-        xr_array, 
+        dataset, 
         is_input_set=False,
         is_predict=False,
         **kwargs,
     ):
         self.xr = get_dataset(
-            xr_array, 
+            dataset, 
             is_input_set,
             is_predict,
             **kwargs,
         )
         self.years = None
         self.metadata = None
-        # Add name if `xr_array` is a string
-        if isinstance(xr_array, str):
-            self.name = xr_array
+        # Add name if `dataset` is a string
+        if isinstance(dataset, str):
+            self.name = dataset
             # Set input / prediction attributes
             if is_input_set:
-                self.metadata_file = verify_path(f'inputfiles/{xr_array}/input_metadata.json')
+                self.metadata_file = verify_path(f'inputfiles/{dataset}/input_metadata.json')
                 self.is_input_set = True
                 self.is_predict = False
             elif is_predict:
-                self.metadata_file = verify_path(f'HPC_runs/{xr_array}/output_metadata.json')
+                self.metadata_file = verify_path(f'HPC_runs/{dataset}/output_metadata.json')
                 self.is_input_set = False
                 self.is_predict = True
             else:
