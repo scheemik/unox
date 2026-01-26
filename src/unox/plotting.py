@@ -259,6 +259,7 @@ def plot_var_maps(
     dataset,
     vars=['nox'],
     restrict_lat_lon_to=None,
+    ens_mem=None,
     **kwargs,
 ):
     """Plots a maps of the given data.
@@ -276,6 +277,10 @@ def plot_var_maps(
         restrict_lat_lon_to : `str`, `None`, optional
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
+            Default is `None`.
+        ens_mem : `int`, `None`, optional
+            The ID of the ensemble member to plot. 
+            If `None`, the dataset is assumed to not have multiple ensemble members.
             Default is `None`.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `uarray`, `select_time()`, `set_fig_row_col()` and `map_ax()`.
@@ -305,6 +310,14 @@ def plot_var_maps(
         raise ValueError("(plot_var_maps) `vars` list cannot be empty.")
     if not isinstance(restrict_lat_lon_to, (type(None), str)):
         raise TypeError(f"(plot_var_maps) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
+    if isinstance(ens_mem, int):
+        title_ens_ID = f"{ens_mem:02d}"
+        ens_ID = f"_{title_ens_ID}"
+    elif isinstance(ens_mem, type(None)):
+        title_ens_ID = ""
+        ens_ID = ""
+    else:
+        raise TypeError(f"(plot_var_maps) `ens_mem` must be an integer or None. Got type: {type(ens_mem)}")
     
     # Select the time slice to plot
     u_arr.xr, title_segment = select_time(u_arr.xr, **kwargs)
@@ -325,7 +338,7 @@ def plot_var_maps(
 
     # Plot each of the variables
     for i in range(len(vars)):
-        var = vars[i]
+        var = vars[i]+ens_ID
         # Verify that the variable is in the dataset
         verify_var(u_arr.xr, var)
         # Reduce the dataset to just the specified variable
@@ -340,7 +353,7 @@ def plot_var_maps(
         # Add a colorbar
         axs[i].colorbar(this_var, loc='b', label=clrbar_label)
     # Add an overall title
-    fig.suptitle(f"{u_arr.name} {title_segment}", fontsize=title_font_size)
+    fig.suptitle(f"{u_arr.name}({title_ens_ID}) {title_segment}", fontsize=title_font_size)
     # Return the figure
     return fig
 
