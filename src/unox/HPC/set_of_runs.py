@@ -2,8 +2,9 @@ import sys
 import os
 import json
 
-# -------- Get input arguments --------
-print('Starting set_of_runs.py with arguments:')
+# -------- Get input arguments --------print("")
+print("===== Begin set_of_runs.py =====")
+print('Given input arguments:')
 # Load first input argument, if it exists: the job name
 try:
     jobname = sys.argv[1]
@@ -114,3 +115,6 @@ if 'no2' in x_vars and 'no2_tm1' in x_vars:
         run_type,
         config_dict,
     )
+
+print("===== End set_of_runs.py =====")
+print("")
