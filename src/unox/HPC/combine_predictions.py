@@ -64,10 +64,19 @@ for i in range(1, ens_size + 1):
     # Verify the output metadata file exists
     ens_dicts[i-1]['output_metadata'] = verify_path(f"{ens_dicts[i-1]['member_dir']}output_metadata.json")
 
-# Verify that all the input configuration files are the same
-## Load the first input configuration file
+# Compare the input configuration and output metadata files across all ensemble members
+## Load those files for the first ensemble member
 with open(ens_dicts[0]['input_config'], 'r') as file:
     base_input_config = json.load(file)
+with open(ens_dicts[0]['output_metadata'], 'r') as file:
+    base_output_metadata = json.load(file)
+    # Get the name of the `savedir` entry
+    base_savedir = base_output_metadata['savedir']
+    # Remove the child directory from that path
+    base_output_metadata['savedir'] = f"{os.path.dirname(base_savedir.rstrip('/'))}/"
+    # Get just the child directory name, skipping the first three characters as those will be
+    # a 2-digit number and an underscore
+    base_child_dir = os.path.basename(base_savedir.rstrip('/'))[3:]
 for i in range(1, ens_size):
     # Load the input configuration file for this ensemble member
     with open(ens_dicts[i]['input_config'], 'r') as file:
@@ -75,7 +84,33 @@ for i in range(1, ens_size):
     # Compare to the base input configuration
     if this_input_config != base_input_config:
         raise ValueError(f"Input configuration file for ensemble member {i+1} does not match that of member 1.")
+    # Load the output metadata file for this ensemble member
+    with open(ens_dicts[i]['output_metadata'], 'r') as file:
+        this_output_metadata = json.load(file)
+        # Get the name of the `savedir` entry
+        this_savedir = this_output_metadata['savedir']
+        # Remove the child directory from that path
+        this_output_metadata['savedir'] = f"{os.path.dirname(this_savedir.rstrip('/'))}/"
+        # Get just the child directory name, skipping the first three characters as those will be
+        # a 2-digit number and an underscore
+        this_child_dir = os.path.basename(this_savedir.rstrip('/'))[3:]
+    # Compare to the base output metadata, excluding the `savedir` entry
+    if this_output_metadata != base_output_metadata:
+        raise ValueError(f"Output metadata file for ensemble member {i+1} does not match that of member 1.")
+    # Compare the child directory names, skipping the first three characters as those will be 
+    # a 2-digit number and an underscore
+    if this_child_dir != base_child_dir:
+        raise ValueError(f"The child directory in the `savedir` entry in output metadata file for ensemble member {i+1} does not match that of member 1.\n\tMember 1: {base_savedir}\n\tMember {i+1}: {this_savedir}")
+# Save the input configuration file from the first ensemble member to the base directory
 print(f"All `input_config.json` files match across the {ens_size} ensemble members.")
+print(f"\tSaving `input_config.json` to {savedir}")
+with open(f"{savedir}input_config.json", 'w') as file:
+    json.dump(base_input_config, file, indent=4)
+# Save the output metadata file from the first ensemble member to the base directory
+print(f"All `output_metadata.json` files match across the {ens_size} ensemble members.")
+print(f"\tSaving `output_metadata.json` to {savedir}")
+with open(f"{savedir}output_metadata.json", 'w') as file:
+    json.dump(base_output_metadata, file, indent=4)
 
 # -------- Combine the predictions --------
 
