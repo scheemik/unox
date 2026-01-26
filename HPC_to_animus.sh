@@ -79,8 +79,7 @@ else
     exit 1
 fi
 
-# If copying a job, only copy the contents of `stage1_output` and 
-# `stage2_output`. Also copy the `.txt` file with the same name
+# If copying a job, copy the contents of the directory, with the specified exclusions
 if [ "$HPC_JOB" = j ]; then
     # Copy job directories from HPC to Animus
     for FILE in "${FILENAMES[@]}"; do
@@ -104,4 +103,18 @@ else
     echo $FILES
     scp -r -i $IDENTITY_FILE $HPC_USERNAME@$REMOTE_SERVER:"$FILES" .$DIR_PREFIX
 fi
+
+# Check whether to combine predictions of an ensemble run
+if [ "$HPC_JOB" = j ]; then
+    # Copy job directories from HPC to Animus
+    for FILE in "${FILENAMES[@]}"; do
+        # Check whether there is a file called `ENSEMBLE_SIZE.txt` in the copied directory
+        if [ -f ".$DIR_PREFIX/${FILENAMES[0]}/ENSEMBLE_SIZE.txt" ]; then
+            echo "Found .$DIR_PREFIX/${FILENAMES[0]}/ENSEMBLE_SIZE.txt"
+            echo "    Combining predictions from ensemble run for $FILE"
+            python src/unox/HPC/combine_predictions.py $FILE
+        fi
+    done
+fi
+
 echo "Completed file transfer to Animus"
