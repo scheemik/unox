@@ -1,6 +1,9 @@
 import sys
 import os
 import json
+import xarray as xr
+import pandas as pd
+
 from data0.paths import verify_path
 
 # -------- Get input arguments --------
@@ -113,6 +116,29 @@ with open(f"{savedir}output_metadata.json", 'w') as file:
     json.dump(base_output_metadata, file, indent=4)
 
 # -------- Combine the predictions --------
+
+# Load the predictions from each ensemble member and combine them into a single xarray Dataset
+print(f"Combining predictions from {ens_size} ensemble members...")
+
+# Loop over each ensemble member
+prediction_arrays = []
+for i in range(ens_size):
+    # Load the predictions from each ensemble member
+    prediction_arrays.append(xr.open_dataset(ens_dicts[0]['pred_file']))
+    # Get a list of the prediction variables, if the first ensemble member
+    if i == 0:
+        pred_vars = list(prediction_arrays[0].data_vars)
+    # Append the ensemble number to each data variable name
+    for j in range(len(pred_vars)):
+        prediction_arrays[i] = prediction_arrays[i].rename({f"{pred_vars[j]}": f"{pred_vars[j]}_{i+1:02d}"})
+# Combine all prediction arrays for each ensemble member into one xarray Dataset
+combined_predictions = xr.merge(prediction_arrays)
+# Update the attributes of the combined predictions Dataset
+combined_predictions.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+combined_predictions.attrs['ensemble_size'] = ens_size
+
+# Save the xarray to a file
+combined_predictions.to_netcdf(f"{savedir}predictions.nc")
 
 print("===== End combine_predictions.py =====")
 print("")
