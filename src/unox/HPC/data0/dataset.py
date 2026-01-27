@@ -1,6 +1,8 @@
 import xarray as xr
+import numpy as np
 import pandas as pd
 import json
+import warnings
 
 # Necessary to use relative imports (starting with a dot) to avoid
 # errors when running on HPC as the `unox` package is not available
@@ -77,6 +79,8 @@ class uarray():
     # Verify aspects of the dataset
     def _verify(self, **kwargs):
         self.xr = verify_dataset(self.xr, **kwargs)
+    def _is_ensemble(self):
+        return is_ensemble(self)
     # Get aspects of the dataset
     def _get_years(self):
         # Check whether years have already been computed
@@ -404,3 +408,37 @@ def get_metadata(
         return metadata
     else:
         raise ValueError(f"(get_metadata) `uarray` must be either an input set or a prediction set to load metadata.")
+
+def is_ensemble(
+    dataset,
+    **kwargs
+):
+    """ Check whether the given dataset has ensemble members.
+
+        Parameters
+        ----------
+        dataset : str, uarray, xarray.Dataset, xarray.DataArray
+            The name of the dataset to get.
+        **kwargs : keyword arguments
+            Additional keyword arguments to pass to `load_dataset()` and `verify_dataset()`.
+
+        Returns
+        -------
+        is_ensemble : `bool`
+            Whether the given dataset has ensemble members.
+    """
+    # Verify argument types
+    # Making `uarray` object verifies `dataset`
+    if not isinstance(dataset, uarray):
+        dataset = uarray(dataset, **kwargs)
+    # Check whether the dataset is a prediction set
+    if not dataset.is_predict:
+        warnings.warn(f"(is_ensemble) `dataset` must be a prediction set to check for ensemble members.")
+        return False
+    # Check for the `ensemble_size` attribute
+    g_attrs = dataset.xr.attrs
+    if 'ensemble_size' in g_attrs:
+        ensemble_size = g_attrs['ensemble_size']
+        if isinstance(ensemble_size, (int, np.int64)) and ensemble_size > 1:
+            return True
+    return False
