@@ -179,3 +179,33 @@ def test_get_metadata():
         expected_metadata = json.load(f)
     # Compare the metadata
     assert metadata == expected_metadata, f"Expected metadata: \n{expected_metadata}\n Got: \n{metadata}"
+
+def test_is_ensemble():
+    """Test the is_ensemble function."""
+    # Define valid test cases
+    test_cases = [
+        {
+            'dataset': 'no2_2019_JFM',
+            'is_input_set': True,
+            'is_predict': False,
+            'expected_result': False,
+        },
+        {
+            'dataset': 'no2_example_run',
+            'is_input_set': False,
+            'is_predict': True,
+            'expected_result': False,
+        },
+        {
+            'dataset': 'test_ens0',
+            'is_input_set': False,
+            'is_predict': True,
+            'expected_result': True,
+        },
+    ]
+    # Test each case
+    for case in test_cases:
+        # Get the actual result
+        actual_result = udata.is_ensemble(case['dataset'], is_input_set=case['is_input_set'], is_predict=case['is_predict'])
+        # Compare to the expected result
+        assert actual_result == case['expected_result'], f"For dataset '{case['dataset']}', expected is_ensemble: {case['expected_result']}, got: {actual_result}"
