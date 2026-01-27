@@ -311,8 +311,8 @@ def plot_var_maps(
     if not isinstance(restrict_lat_lon_to, (type(None), str)):
         raise TypeError(f"(plot_var_maps) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
     if isinstance(ens_mem, int):
-        title_ens_ID = f"{ens_mem:02d}"
-        ens_ID = f"_{title_ens_ID}"
+        title_ens_ID = f"({ens_mem:02d})"
+        ens_ID = f"_{ens_mem:02d}"
     elif isinstance(ens_mem, type(None)):
         title_ens_ID = ""
         ens_ID = ""
@@ -353,7 +353,7 @@ def plot_var_maps(
         # Add a colorbar
         axs[i].colorbar(this_var, loc='b', label=clrbar_label)
     # Add an overall title
-    fig.suptitle(f"{u_arr.name}({title_ens_ID}) {title_segment}", fontsize=title_font_size)
+    fig.suptitle(f"{u_arr.name}{title_ens_ID} {title_segment}", fontsize=title_font_size)
     # Return the figure
     return fig
 
@@ -440,6 +440,7 @@ def plot_run_analysis(
     year,
     datetime=None,
     restrict_lat_lon_to=None,
+    ens_mem=None,
     add_corr_plots=True,
     stage1_only=False,
     clr_bar_scale=0.5,
@@ -473,6 +474,10 @@ def plot_run_analysis(
         restrict_lat_lon_to : `str`, `None`, optional
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
+            Default is `None`.
+        ens_mem : `int`, `None`, optional
+            The ID of the ensemble member to plot. 
+            If `None`, the dataset is assumed to not have multiple ensemble members.
             Default is `None`.
         add_corr_plots : `bool`, optional
             Whether or not to add a row of correlation plots to the figure.
@@ -511,6 +516,14 @@ def plot_run_analysis(
         datetime = f"{year}-01-02"
     if not isinstance(restrict_lat_lon_to, (type(None), str)):
         raise TypeError(f"(plot_run_analysis) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
+    if isinstance(ens_mem, int):
+        title_ens_ID = f"({ens_mem:02d})"
+        ens_ID = f"_{ens_mem:02d}"
+    elif isinstance(ens_mem, type(None)):
+        title_ens_ID = ""
+        ens_ID = ""
+    else:
+        raise TypeError(f"(plot_var_maps) `ens_mem` must be an integer or None. Got type: {type(ens_mem)}")
     if not isinstance(add_corr_plots, bool):
         raise TypeError(f"(plot_run_analysis) `add_corr_plots` must be a bool. Got type: {type(add_corr_plots)}")
     if not isinstance(stage1_only, bool):
@@ -535,12 +548,12 @@ def plot_run_analysis(
     # Make a list for the variables to plot
     vars_to_plot = [y_var]
     # Verify that the prediction array has the correct variable
-    pred_var = f"{y_var}_pred"
+    pred_var = f"{y_var}_pred{ens_ID}"
     verify_var(pred_uarr.xr, pred_var)
     vars_to_plot.append(pred_var)
     # Decide on the number of rows and columns in the figure
     if stage1_only == False:
-        pred_var_s2 = f"{y_var}_pred_s2"
+        pred_var_s2 = f"{y_var}_pred_s2{ens_ID}"
         verify_var(pred_uarr.xr, pred_var_s2)
         vars_to_plot.append(pred_var_s2)
         # Set the number of rows and columns in the figure
@@ -672,6 +685,7 @@ def plot_run_analysis(
             datetime=year,
             ax=axs[n_maps],
             restrict_lat_lon_to=restrict_lat_lon_to,
+            ens_mem=ens_mem,
             **kwargs,
         )
         if stage1_only == False:
@@ -683,6 +697,7 @@ def plot_run_analysis(
                 datetime=year,
                 ax=axs[-2],
                 restrict_lat_lon_to=restrict_lat_lon_to,
+                ens_mem=ens_mem,
                 **kwargs,
             )
             fig_q_list[2] = corr_plot(
@@ -693,13 +708,14 @@ def plot_run_analysis(
                 datetime=year,
                 ax=axs[-1],
                 restrict_lat_lon_to=restrict_lat_lon_to,
+                ens_mem=ens_mem,
                 **kwargs,
             )
         # Add the colorbar
         fig.colorbar(fig_q_list[0], loc='r', label='Count per pixel', extend='both', formatter='sci', rows=(n_rows_maps+1, n_rows))
 
     # Set the figure title
-    fig.suptitle(f"HPC run: {pred_uarr.name}, input set: {input_set}, {time_title}", fontsize=title_font_size)
+    fig.suptitle(f"HPC run: {pred_uarr.name}{title_ens_ID}, input set: {input_set}, {time_title}", fontsize=title_font_size)
     return fig
 
 def plot_comparison(
@@ -864,6 +880,7 @@ def corr_plot(
     y_var = 'truth',
     datetime = 2019,
     restrict_lat_lon_to = None,
+    ens_mem=None,
     **kwargs,
 ):
     """Makes a correlation plot of the two given variables.
@@ -892,6 +909,10 @@ def corr_plot(
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
             Default is `None`.
+        ens_mem : `int`, `None`, optional
+            The ID of the ensemble member to plot. 
+            If `None`, the dataset is assumed to not have multiple ensemble members.
+            Default is `None`.
         **kwargs : dict
             Additional keyword arguments to pass to `select_time()` and `plot_comparison()`.
 
@@ -919,6 +940,14 @@ def corr_plot(
         year = None
     if not isinstance(restrict_lat_lon_to, (type(None), str)):
         raise TypeError(f"(corr_plot) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
+    if isinstance(ens_mem, int):
+        title_ens_ID = f"({ens_mem:02d})"
+        ens_ID = f"_{ens_mem:02d}"
+    elif isinstance(ens_mem, type(None)):
+        title_ens_ID = ""
+        ens_ID = ""
+    else:
+        raise TypeError(f"(plot_var_maps) `ens_mem` must be an integer or None. Got type: {type(ens_mem)}")
 
     # Set the x and y data arrays to `None`
     x_xarr = None
@@ -932,10 +961,10 @@ def corr_plot(
         HPC_y_var = u_arr.xr.attrs['y_var']
         # Add that `y_var` to the predcition axes
         if 'pred' in x_var:
-            x_var = f"{HPC_y_var}_{x_var}"
+            x_var = f"{HPC_y_var}_{x_var}{ens_ID}"
             x_xarr = u_arr.xr[x_var]
         if 'pred' in y_var:
-            y_var = f"{HPC_y_var}_{y_var}"
+            y_var = f"{HPC_y_var}_{y_var}{ens_ID}"
             y_xarr = u_arr.xr[y_var]
     # Check whether to plot the 'truth'
     if x_var == 'truth' or y_var == 'truth':
