@@ -808,13 +808,13 @@ def plot_comparison(
     if not isinstance(log_scale, bool):
         raise TypeError(f"(plot_comparison) `log_scale` must be a bool. Got type: {type(log_scale)}")
     
-    # Convert the xarray DataArrays to numpy arrays, 
+    # Convert the xarray DataArrays to numpy arrays above, 
     # then squeeze and flatten to get one dimensional arrays
     npy_a = np.squeeze(a_xr_arr).flatten()
     npy_b = np.squeeze(b_xr_arr).flatten()
     # Verify these arrays are the same length
-    if len(npy_a) != len(npy_b):
-        raise ValueError(f"(plot_comparison) `a_xr_arr` and `b_xr_arr` must have the same number of elements. Got lengths {len(npy_a)} and {len(npy_b)} respectively.")
+    if len(npy_a) != len(npy_b) or len(npy_a) <= 1 or len(npy_b) <= 1:
+        raise ValueError(f"(plot_comparison) `a_xr_arr` and `b_xr_arr` must have the same number of elements, <= 1. Got lengths {len(npy_a)} and {len(npy_b)} respectively.")
     # Create a new figure and axis if none is provided
     if isinstance(ax, type(None)):
         new_fig = True
