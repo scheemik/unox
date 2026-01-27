@@ -13,27 +13,29 @@ from .latlon import shift_lon_arr
 class uarray():
     """A wrapper class for an xarray Dataset.
 
-    A class that wraps an xarray Dataset of a format specified by `verify_dataset()`.
-    All method names start with an underscore (_) to avoid conflicts.
+        A class that wraps an xarray Dataset of a format specified by `verify_dataset()`.
+        All method names start with an underscore (_) to avoid conflicts.
 
-    Attributes
-    ----------
-    xr : xarray.Dataset or xarray.DataArray
-        The xarray dataset. Expected to have lat and lon coordinates, and optionally 
-        a time coordinate.
-    years : list of int
-        A list of unique years present in the time coordinate of the dataset.
+        Attributes
+        ----------
+        xr : xarray.Dataset or xarray.DataArray
+            The xarray dataset. Expected to have lat and lon coordinates, and optionally 
+            a time coordinate.
+        years : list of int
+            A list of unique years present in the time coordinate of the dataset.
 
-    Methods
-    -------
-    _verify(**kwargs)
-        Verify specified aspects of the dataset using `verify_dataset()`.
-    _get_years()
-        Get a list of unique years present in the time coordinate of the dataset.
-    _select_year(year)
-        Select data for the specified year from the dataset.
-    _shift_lons(**kwargs)
-        Shift the longitude coordinates of the dataset using `shift_lon_arr()`.
+        Methods
+        -------
+        _verify(**kwargs)
+            Verify specified aspects of the dataset using `verify_dataset()`.
+        _get_years()
+            Get a list of unique years present in the time coordinate of the dataset using `get_years()`.
+        _select_year(year)
+            Select data for the specified year from the dataset.
+        _get_metadata()
+            Get the metadata dictionary if the dataset is an input or prediction set using `get_metadata()`.
+        _shift_lons(**kwargs)
+            Shift the longitude coordinates of the dataset using `shift_lon_arr()`.
 
     """
     # Initialize the uarray object
