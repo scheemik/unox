@@ -495,8 +495,9 @@ def select_time(
 
 def plot_run_analysis(
     dataset,
-    year,
-    datetime=None,
+    start_date='2019-01-02',
+    interval='1Y',
+    avg_over=True,
     restrict_lat_lon_to=None,
     ens_mem=None,
     add_corr_plots=True,
@@ -505,7 +506,9 @@ def plot_run_analysis(
     clr_map=pplt.Colormap('Balance'),
     **kwargs,
 ):
-    """Plots a set of maps to compare the 'truth' and the two stages of the model.
+    """ Compares the results of a model run to the 'truth'.
+    
+        Makes a set of maps to compare the 'truth' and the two stages of the model, plus correlation plots, if specified.
 
         Creates a set of 6 maps:
         1. 'Truth'
@@ -524,11 +527,17 @@ def plot_run_analysis(
         ----------
         dataset : `str`, `xarray.Dataset`, `xarray.DataArray`, `uarray`
             The dataset for which to make comparison maps. Must be a predictions dataset.
-        year : `int`
-            The year for which to make comparisons.
-        datetime : `str`, `None`, optional
-            Date and time to select from the data file.
+        start_date : `str`, `None`, optional
+            First date and time to select from the data file.
             Default is `None`.
+        interval : `str`, `numpy.timedelta64`, `None`, optional
+            If provided and `end_date` is `None`, calculate `end_date` based on this interval.
+            If string, must be in the format `XT` where `X` is an integer and `T` is the unit, either `D` for days, `M` for months, or `Y` for years.
+            Default is `None`.
+        avg_over : `bool`, optional
+            Whether to average over all time steps.
+            Cannot have both `avg_over` and `sum_over` set to `True`.
+            Default is `False`.
         restrict_lat_lon_to : `str`, `None`, optional
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
@@ -566,12 +575,12 @@ def plot_run_analysis(
     # Verify argument types
     # Making `uarray` object verifies `dataset`
     pred_uarr = uarray(dataset, is_predict=True)
-    if not isinstance(year, int):
-        raise TypeError(f"(plot_run_analysis) `year` must be an integer. Got type: {type(year)}")
-    if not isinstance(datetime, (type(None), str, np.timedelta64)):
-        raise TypeError(f"(select_time) `datetime` must be None, a string, or a numpy.timedelta64. Got type: {type(datetime)}")
-    elif isinstance(datetime, type(None)):
-        datetime = f"{year}-01-02"
+    if not isinstance(start_date, (type(None), str, np.timedelta64)):
+        raise TypeError(f"(plot_run_analysis) `start_date` must be None, a string, or a numpy.timedelta64. Got type: {type(start_date)}")
+    if not isinstance(interval, (type(None), str, np.timedelta64)):
+        raise TypeError(f"(plot_run_analysis) `interval` must be None, a string, or a numpy.timedelta64. Got type: {type(interval)}")
+    if not isinstance(avg_over, bool):
+        raise TypeError(f"(select_time) `avg_over` must be a bool. Got type: {type(avg_over)}")
     if not isinstance(restrict_lat_lon_to, (type(None), str)):
         raise TypeError(f"(plot_run_analysis) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
     if isinstance(ens_mem, int):
@@ -591,6 +600,18 @@ def plot_run_analysis(
         raise ValueError(f"(plot_run_analysis) `clr_bar_scale` must be between 0 and 1. Got: {clr_bar_scale}")
     if not isinstance(clr_map, mpl.colors.Colormap):
         raise TypeError(f"(plot_run_analysis) `clr_map` must be a matplotlib Colormap. Got type: {type(clr_map)}")
+    
+    # Check whether the dataset is an ensemble of runs
+    if pred_uarr._is_ensemble():
+        # If `ens_mem` was not specified and only one variable given, plot all ensemble members
+        if isinstance(ens_mem, type(None)):
+            # Warn the user that only a single ensemble member will be plotted
+            warnings.warn(f"(plot_run_analysis) `dataset` is an ensemble of runs but `ens_mem` was not specified. Using ensemble member 1 for the plots.")
+            ens_mem = 1
+            title_ens_ID = f"({ens_mem:02d})"
+            ens_ID = f"_{ens_mem:02d}"
+    elif not isinstance(ens_mem, type(None)):
+        raise ValueError(f"(plot_var_maps) `ens_mem` specified as {ens_mem} but dataset is not an ensemble of runs.")
 
     # Get the metadata from the predictions uarray
     meta_dict = pred_uarr._get_metadata()
@@ -641,7 +662,7 @@ def plot_run_analysis(
     pred_uarr.xr[y_var] = input_uarr.xr[y_var]
     # Select the time slice to plot
     ## Note: This will not affect the data used in the correlation plots
-    pred_uarr.xr, time_title = select_time(pred_uarr.xr, datetime, **kwargs)
+    pred_uarr.xr, time_title = select_time(pred_uarr.xr, start_date, interval=interval, avg_over=avg_over, **kwargs)
 
     # Restrict the latitude and longitude range
     ## Note: This will not affect the data used in the correlation plots
@@ -695,7 +716,7 @@ def plot_run_analysis(
     chr = udata.get_max_abs_val(val_list)
     # Scale the color bar
     if clr_bar_scale < 0 or clr_bar_scale > 1:
-        warnings.warn("clr_bar_scale should be between 0 and 1. Setting it to 0.5.")
+        warnings.warn(f"(plot_run_analysis) `clr_bar_scale` should be between 0 and 1. Got {clr_bar_scale}. Setting it to 0.5.")
         clr_bar_scale = 0.5
     if clr_bar_scale != 1:
         chr *= clr_bar_scale
@@ -738,10 +759,11 @@ def plot_run_analysis(
         fig_q_list[0] = corr_plot(
             dataset,
             is_predict=True,
-            x_var='pred',
-            y_var='truth',
-            datetime=year,
-            ax=axs[n_maps],
+            x_vars='pred',
+            y_vars='truth',
+            start_date=start_date,
+            interval=interval,
+            axs=axs[n_maps],
             restrict_lat_lon_to=restrict_lat_lon_to,
             ens_mem=ens_mem,
             **kwargs,
@@ -750,10 +772,11 @@ def plot_run_analysis(
             fig_q_list[1] = corr_plot(
                 dataset,
                 is_predict=True,
-                x_var='pred_s2',
-                y_var='truth',
-                datetime=year,
-                ax=axs[-2],
+                x_vars='pred_s2',
+                y_vars='truth',
+                start_date=start_date,
+                interval=interval,
+                axs=axs[-2],
                 restrict_lat_lon_to=restrict_lat_lon_to,
                 ens_mem=ens_mem,
                 **kwargs,
@@ -761,10 +784,11 @@ def plot_run_analysis(
             fig_q_list[2] = corr_plot(
                 dataset,
                 is_predict=True,
-                x_var='pred',
-                y_var='pred_s2',
-                datetime=year,
-                ax=axs[-1],
+                x_vars='pred',
+                y_vars='pred_s2',
+                start_date=start_date,
+                interval=interval,
+                axs=axs[-1],
                 restrict_lat_lon_to=restrict_lat_lon_to,
                 ens_mem=ens_mem,
                 **kwargs,
