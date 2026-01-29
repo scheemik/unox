@@ -1070,7 +1070,7 @@ def corr_plot(
     if u_arr._is_ensemble():
         # If `ens_mem` was not specified and only one variable given, plot all ensemble members
         if isinstance(ens_mem, type(None)):
-            if len(vars) == 1:
+            if len(x_vars) == 1:
                 # Get the number of ensemble members
                 ens_size = u_arr.xr.attrs['ensemble_size']
                 # Create the list of variables to plot
