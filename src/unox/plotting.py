@@ -260,9 +260,11 @@ def plot_var_maps(
     vars=['nox'],
     restrict_lat_lon_to=None,
     ens_mem=None,
+    avg_over=True,
+    sum_over=False,
     **kwargs,
 ):
-    """Plots a maps of the given data.
+    """ Plots a maps of the given data.
 
         A wrapper for the `map_ax()` function.
         Creates maps for each specified 'var' using the provided dataset.
@@ -318,9 +320,17 @@ def plot_var_maps(
         ens_ID = ""
     else:
         raise TypeError(f"(plot_var_maps) `ens_mem` must be an integer or None. Got type: {type(ens_mem)}")
+    if not isinstance(avg_over, bool):
+        raise TypeError(f"(select_time) `avg_over` must be a bool. Got type: {type(avg_over)}")
+    if not isinstance(sum_over, bool):
+        raise TypeError(f"(select_time) `sum_over` must be a bool. Got type: {type(sum_over)}")
+    if avg_over == True and sum_over == True:
+        raise ValueError("(select_time) Cannot have both `avg_over` and `sum_over` set to `True`.")
+    if avg_over == False and sum_over == False:
+        raise ValueError("(select_time) Cannot have both `avg_over` and `sum_over` set to `False`.")
     
     # Select the time slice to plot
-    u_arr.xr, title_segment = select_time(u_arr.xr, **kwargs)
+    u_arr.xr, title_segment = select_time(u_arr.xr, avg_over=avg_over, sum_over=sum_over, **kwargs)
 
     # Restrict the latitude and longitude range
     if not isinstance(restrict_lat_lon_to, type(None)):
@@ -440,7 +450,7 @@ def select_time(
     if not isinstance(sum_over, bool):
         raise TypeError(f"(select_time) `sum_over` must be a bool. Got type: {type(sum_over)}")
     if avg_over == True and sum_over == True:
-        raise ValueError("(select_time) Cannot have both `avg_over` and `sum_over` set to True.")
+        raise ValueError("(select_time) Cannot have both `avg_over` and `sum_over` set to `True`.")
 
     # Calculate the start and end dates based on the given parameters
     if isinstance(start_date, type(None)):
