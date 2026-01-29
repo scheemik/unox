@@ -1143,8 +1143,12 @@ def corr_plot(
                 input_set = meta_dict['config_dict']['input_set']
                 # Get the input set used in the HPC run
                 input_uarr = uarray(input_set, is_input_set=True)
-                # Select the time slice to plot
-                input_uarr.xr, title_segment = select_time(input_uarr.xr, **kwargs)
+                # Select the time slice to plot such that it matches the prediction array
+                pred_start_date = str(u_arr.xr.time.values[0]).split('T')[0].split(' ')[0]
+                pred_end_date = str(u_arr.xr.time.values[-1]).split('T')[0].split(' ')[0]
+                # Do not pass keyword arguments into this call of `select_time()`
+                # to ensure there aren't multiple occurrences of `start_date` or `end_date`
+                input_uarr.xr, title_segment = select_time(input_uarr.xr, start_date=pred_start_date, end_date=pred_end_date)#, **kwargs)
                 # Restrict the latitude and longitude range, if applicable
                 if not isinstance(restrict_lat_lon_to, type(None)):
                     # Restrict the domain of the data to plot
