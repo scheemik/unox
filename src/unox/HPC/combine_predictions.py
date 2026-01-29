@@ -124,7 +124,7 @@ print(f"Combining predictions from {ens_size} ensemble members...")
 prediction_arrays = []
 for i in range(ens_size):
     # Load the predictions from each ensemble member
-    prediction_arrays.append(xr.open_dataset(ens_dicts[0]['pred_file']))
+    prediction_arrays.append(xr.open_dataset(ens_dicts[i]['pred_file']))
     # Get a list of the prediction variables, if the first ensemble member
     if i == 0:
         pred_vars = list(prediction_arrays[0].data_vars)
