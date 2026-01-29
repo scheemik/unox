@@ -416,11 +416,15 @@ def select_time(
         # Average over the specified amount of time
         # Maintain attributes by using `drop=False` in sel() and `keep_attrs=True` in mean()
         xr_sel_time = xr_data.sel(time=slice(datetime, end_date), drop=False)
+        # Format the start and end date strings for the title before taking mean
+        start_date_string = str(xr_sel_time.time.values[0]).split('T')[0].split(' ')[0]
+        end_date_string = str(xr_sel_time.time.values[-1]).split('T')[0].split(' ')[0]
+        # Take the mean over the time axis
         xr_sel_time = xr_sel_time.mean(dim='time', keep_attrs=True)
         # Get the value and unit of the averaging
         avg_over_num, avg_over_unit = udata.get_increment_info(avg_over)
         # Format a string for the title
-        title_segment = f"Averaged from {str(xr_data.time.values[0]).split('T')[0].split(' ')[0]} to {str(xr_data.time.values[-1]).split('T')[0].split(' ')[0]} ({avg_over_num} {avg_over_unit})"
+        title_segment = f"Averaged from {start_date_string} to {end_date_string} ({avg_over_num} {avg_over_unit})"
     elif sum_vars == True:
         # Sum all the variables over time
         xr_sel_time = xr_data.sum(dim='time', keep_attrs=True).squeeze(drop=True)
