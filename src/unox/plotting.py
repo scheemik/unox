@@ -328,6 +328,25 @@ def plot_var_maps(
         restrict_xr = uarray(restrict_lat_lon_to).xr
         # Restrict the domain of the data to plot
         u_arr.xr, _ = udata.match_domains(u_arr.xr, restrict_xr, require_equal=False)
+    
+    # Check whether the dataset is an ensemble of runs
+    if u_arr._is_ensemble():
+        # If `ens_mem` was not specified and only one variable given, plot all ensemble members
+        if isinstance(ens_mem, type(None)):
+            if len(vars) == 1:
+                # Get the number of ensemble members
+                ens_size = u_arr.xr.attrs['ensemble_size']
+                # Create the list of variables to plot
+                this_var = vars[0]
+                vars = []
+                for i in range(1, ens_size+1):
+                    vars.append(f"{this_var}_{i:02d}")
+                # Add onto the title
+                title_ens_ID = f"(all ensemble members)"
+            else:
+                raise ValueError(f"(plot_var_maps) `dataset` is an ensemble of runs but `ens_mem` was not specified and multiple variables were given to plot. Please specify `ens_mem` or provide a single variable to plot all ensemble members.")
+    elif not isinstance(ens_mem, type(None)):
+        raise ValueError(f"(plot_var_maps) `ens_mem` specified as {ens_mem} but dataset is not an ensemble of runs.")
 
     # Create the figure
     fig = pplt.figure(refwidth=10)
