@@ -53,8 +53,10 @@ class uarray():
             is_predict,
             **kwargs,
         )
+        # Define other attributes, which are filled later by methods
         self.years = None
         self.metadata = None
+        self.is_ensemble = None
         # Add name if `dataset` is a string
         if isinstance(dataset, str):
             self.name = dataset
@@ -63,6 +65,7 @@ class uarray():
                 self.metadata_file = verify_path(f'inputfiles/{dataset}/input_metadata.json')
                 self.is_input_set = True
                 self.is_predict = False
+                self.is_ensemble = False
             elif is_predict:
                 self.metadata_file = verify_path(f'HPC_runs/{dataset}/output_metadata.json')
                 self.is_input_set = False
@@ -80,7 +83,8 @@ class uarray():
     def _verify(self, **kwargs):
         self.xr = verify_dataset(self.xr, **kwargs)
     def _is_ensemble(self):
-        return is_ensemble(self)
+        self.is_ensemble = is_ensemble(self)
+        return self.is_ensemble
     # Get aspects of the dataset
     def _get_years(self):
         # Check whether years have already been computed
