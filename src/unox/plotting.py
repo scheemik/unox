@@ -1104,6 +1104,8 @@ def corr_plot(
         fig = pplt.figure(refwidth=4)
         n_rows, n_cols = uplt_fmt.set_fig_row_col(len(x_vars), **kwargs)
         axs = fig.subplots(nrows=n_rows, ncols=n_cols)
+    else:
+        new_plot = False
     
     # Loop across each axis
     for i in range(len(x_vars)):
