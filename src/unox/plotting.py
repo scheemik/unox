@@ -934,14 +934,14 @@ def plot_comparison(
 
 def corr_plot(
     dataset,
-    x_var = 'pred',
-    y_var = 'truth',
-    datetime = 2019,
+    x_vars = ['pred'],
+    y_vars = ['truth'],
+    axs = None,
     restrict_lat_lon_to = None,
     ens_mem=None,
     **kwargs,
 ):
-    """Makes a correlation plot of the two given variables.
+    """ Makes correlation plots between given variables.
 
         Creates a heatmap correlation plot with the specified variables on each axis
         using the data from the specified dataset, filtering based on the given datetime,
@@ -951,18 +951,18 @@ def corr_plot(
         ----------
         dataset : `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
             The dataset from which to get the data for the correlation plot.
-        x_var : `str`, optional
-            The variable to plot on the x-axis.
+        x_vars : `list`, `str`, optional
+            The variable(s) to plot on the x-axis.
             Can be `truth`, `pred`, `pred_s2`, or any variable in the dataset.
             Default is `pred`.
-        y_var : `str`, optional
-            The variable to plot on the y-axis.
+        y_vars : `list`, `str`, optional
+            The variable(s) to plot on the y-axis.
             Can be `truth`, `pred`, `pred_s2`, or any variable in the dataset.
             Default is `truth`.
-        datetime : `int`, `str`, or `numpy.timedelta64`, optional
-            If an integer year is provided, all the data from that year will be used.
-            If a datetime is given, the data will be filtered by `select_time()`, using
-            that datetime and the value of `avg_over`, if included in `**kwargs`. 
+        axs : `list`, `matplotlib.axes.Axes`, `None`, optional
+            The axes on which to plot the data.
+            If `None`, a new figure is created.
+            Default is `None`.
         restrict_lat_lon_to : `str`, `None`, optional
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
@@ -976,8 +976,10 @@ def corr_plot(
 
         Returns
         -------
-        fig_q : `matplotlib.figure.Figure`
-            The figure object containing the plot.
+        fig : `matplotlib.figure.Figure`
+            If no axes were given, return the figure object containing the plot.
+        fig_q : `QuadMesh`
+            If axes were given, return the QuadMesh object created by the 2D histogram.
 
         Examples
         --------
@@ -986,16 +988,39 @@ def corr_plot(
     # Verify argument types
     # Making a `uarray` object verifies `dataset`
     u_arr = uarray(dataset, **kwargs)
-    if not isinstance(x_var, str):
-        raise ValueError(f"(corr_plot) `x_var` must be a string. Got type: {type(x_var)}")
-    if not isinstance(y_var, str):
-        raise ValueError(f"(corr_plot) `y_var` must be a string. Got type: {type(y_var)}")
-    if isinstance(datetime, int):
-        year = datetime
-    elif not isinstance(datetime, (str, np.timedelta64)):
-        raise TypeError(f"(corr_plot) `datetime` must be a string, or a numpy.timedelta64. Got type: {type(datetime)}")
+    if not isinstance(x_vars, list):
+        if isinstance(x_vars, str):
+            x_vars = [x_vars]
+        else:
+            raise ValueError(f"(corr_plot) `x_var` must be a list of variable names or a single variable name string. Got type: {type(x_var)}")
     else:
-        year = None
+        for var in x_vars:
+            if not isinstance(var, str):
+                raise TypeError(f"(corr_plot) Each entry in `x_vars` must be a string. Got type: {type(var)}")
+    if not isinstance(y_vars, list):
+        if isinstance(y_vars, str):
+            y_vars = [y_vars]
+        else:
+            raise ValueError(f"(corr_plot) `y_var` must be a list of variable names or a single variable name string. Got type: {type(y_var)}")
+    else:
+        for var in y_vars:
+            if not isinstance(var, str):
+                raise TypeError(f"(corr_plot) Each entry in `y_vars` must be a string. Got type: {type(var)}")
+    if not isinstance(axs, (list, type(None))):
+        if isinstance(axs, pplt.axes.Axes):
+            axs = [axs]
+        else:
+            raise TypeError(f"(corr_plot) `axs` must be a proplot Axes object, a list of proplot Axes objects, or None. Got type: {type(axs)}")
+    elif not isinstance(axs, type(None)):
+        for ax in axs:
+            if not isinstance(ax, pplt.axes.Axes):
+                raise TypeError(f"(corr_plot) Each entry in `axs` must be a proplot Axes object. Got type: {type(ax)}")
+    if isinstance(axs, type(None)):
+        if len(x_vars) != len(y_vars):
+            raise ValueError(f"(corr_plot) `x_vars` and `y_vars` must be the same length. Got lengths {len(x_vars)} and {len(y_vars)}, respectively.")
+    else:
+        if len(x_vars) != len(y_vars) and len(x_vars) != len(axs):
+            raise ValueError(f"(corr_plot) `x_vars`, `y_vars`, and `axs` (if given) must all be the same length. Got lengths {len(x_vars)}, {len(y_vars)}, and {len(axs)}, respectively.")
     if not isinstance(restrict_lat_lon_to, (type(None), str)):
         raise TypeError(f"(corr_plot) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
     if isinstance(ens_mem, int):
@@ -1006,81 +1031,124 @@ def corr_plot(
         ens_ID = ""
     else:
         raise TypeError(f"(plot_var_maps) `ens_mem` must be an integer or None. Got type: {type(ens_mem)}")
+    
+    # Select the time slice to plot
+    u_arr.xr, title_segment = select_time(u_arr.xr, **kwargs)
 
-    # Set the x and y data arrays to `None`
-    x_xarr = None
-    y_xarr = None
-    # Verify the specified x and y axes are in the dataset
-    if x_var in ['pred', 'pred_s2'] or y_var in ['pred', 'pred_s2']:
-        # Make sure the dataset is a prediction uarray
-        if not u_arr.is_predict:
-            raise ValueError(f"(corr_plot) To plot 'pred' or 'pred_s2', `dataset` {u_arr.name} must be a prediction HPC run. Got {u_arr.name}.is_predict: {u_arr.is_predict}")
-        # Get the name of the `y_var` used in the HPC run
-        HPC_y_var = u_arr.xr.attrs['y_var']
-        # Add that `y_var` to the predcition axes
-        if 'pred' in x_var:
-            x_var = f"{HPC_y_var}_{x_var}{ens_ID}"
-            x_xarr = u_arr.xr[x_var]
-        if 'pred' in y_var:
-            y_var = f"{HPC_y_var}_{y_var}{ens_ID}"
-            y_xarr = u_arr.xr[y_var]
-    # Check whether to plot the 'truth'
-    if x_var == 'truth' or y_var == 'truth':
-        # Get the name of the `y_var` used in the input set
-        HPC_y_var = u_arr.xr.attrs['y_var']
-        # If the dataset is a prediction uarray
-        if u_arr.is_predict:
-            # Get the metadata from the predictions uarray
-            meta_dict = u_arr._get_metadata()
-            # Get the input set from the metadata
-            input_set = meta_dict['config_dict']['input_set']
-            # Get the input set used in the HPC run
-            input_uarr = uarray(input_set, is_input_set=True)
-        elif u_arr.is_input_set:
-            input_uarr = u_arr
-        else:
-            raise ValueError(f"(corr_plot) To plot 'truth', `dataset` {u_arr.name} must be either a prediction HPC run or an input set. Got is_predict: {u_arr.is_predict}, is_input_set: {u_arr.is_input_set}")
-        if x_var == 'truth':
-            x_xarr = input_uarr.xr[HPC_y_var]
-        if y_var == 'truth':
-            y_xarr = input_uarr.xr[HPC_y_var]
-    # Check whether both x and y data arrays have been set
-    if isinstance(x_xarr, type(None)):
-        # Verify the specified variable is in the dataset
-        verify_var(u_arr.xr, x_var)
-        # Set the x data array
-        x_xarr = u_arr.xr[x_var]
-    if isinstance(y_xarr, type(None)):
-        # Verify the specified variable is in the dataset
-        verify_var(u_arr.xr, y_var)
-        # Set the x data array
-        y_xarr = u_arr.xr[y_var]
-    
-    # Narrow the time range of the data
-    if not isinstance(year, type(None)):
-        # If `year` is set, select that year from the x and y data arrays
-        x_xarr = x_xarr.sel(time=str(year))
-        y_xarr = y_xarr.sel(time=str(year))
-    else:
-        # Otherwise, select the time over which to plot the correlation
-        x_xarr, x_time_title = select_time(x_xarr, datetime=datetime, **kwargs)
-        y_xarr, y_time_title = select_time(y_xarr, datetime=datetime, **kwargs)
-    
     # Restrict the latitude and longitude range
     if not isinstance(restrict_lat_lon_to, type(None)):
         # Load the specified data set to restrict to
         restrict_xr = uarray(restrict_lat_lon_to).xr
         # Restrict the domain of the data to plot
-        x_xarr, _ = udata.match_domains(x_xarr, restrict_xr, require_equal=False)
-        y_xarr, _ = udata.match_domains(y_xarr, restrict_xr, require_equal=False)
+        u_arr.xr, _ = udata.match_domains(u_arr.xr, restrict_xr, require_equal=False)
+    
+    # Check whether the dataset is an ensemble of runs
+    if u_arr._is_ensemble():
+        # If `ens_mem` was not specified and only one variable given, plot all ensemble members
+        if isinstance(ens_mem, type(None)):
+            if len(vars) == 1:
+                # Get the number of ensemble members
+                ens_size = u_arr.xr.attrs['ensemble_size']
+                # Create the list of variables to plot
+                this_x_var = x_vars[0]
+                this_y_var = y_vars[0]
+                x_vars = []
+                y_vars = []
+                for i in range(1, ens_size+1):
+                    x_vars.append(f"{this_x_var}_{i:02d}")
+                    y_vars.append(f"{this_y_var}_{i:02d}")
+                # Add onto the title
+                title_ens_ID = f"(all ensemble members)"
+            else:
+                raise ValueError(f"(plot_var_maps) `dataset` is an ensemble of runs but `ens_mem` was not specified and multiple variables were given to plot. Please specify `ens_mem` or provide a single variable to plot all ensemble members.")
+    elif not isinstance(ens_mem, type(None)):
+        raise ValueError(f"(plot_var_maps) `ens_mem` specified as {ens_mem} but dataset is not an ensemble of runs.")
+    
+    # If no axes are given, create a new figure
+    if isinstance(axs, type(None)):
+        new_plot = True
+        fig = pplt.figure(refwidth=4)
+        n_rows, n_cols = uplt_fmt.set_fig_row_col(len(x_vars), **kwargs)
+        axs = fig.subplots(nrows=n_rows, ncols=n_cols)
+    
+    # Loop across each axis
+    for i in range(len(x_vars)):
+        # Get the parameters
+        ax = axs[i]
+        x_var = x_vars[i]
+        y_var = y_vars[i]
 
-    # Plot the comparison
-    fig_q = plot_comparison(
-        x_xarr,
-        y_xarr,
-        **kwargs,
-    )
-    return fig_q
+        # Set the x and y data arrays to `None`
+        x_xarr = None
+        y_xarr = None
+        # Verify the specified x and y axes are in the dataset
+        if 'pred' in x_var or 'pred' in y_var:
+            # Make sure the dataset is a prediction uarray
+            if not u_arr.is_predict:
+                raise ValueError(f"(corr_plot) To plot 'pred' or 'pred_s2', `dataset` {u_arr.name} must be a prediction HPC run. Got {u_arr.name}.is_predict: {u_arr.is_predict}")
+            # Get the name of the `y_var` used in the HPC run
+            HPC_y_var = u_arr.xr.attrs['y_var']
+            # Add that `y_var` to the predcition axes
+            if 'pred' in x_var:
+                x_var = f"{HPC_y_var}_{x_var}{ens_ID}"
+                x_xarr = u_arr.xr[x_var]
+            if 'pred' in y_var:
+                y_var = f"{HPC_y_var}_{y_var}{ens_ID}"
+                y_xarr = u_arr.xr[y_var]
+        # Check whether to plot the 'truth'
+        if 'truth' in x_var or 'truth' in y_var:
+            # Get the name of the `y_var` used in the input set
+            HPC_y_var = u_arr.xr.attrs['y_var']
+            # If the dataset is a prediction uarray
+            if u_arr.is_predict:
+                # Get the metadata from the predictions uarray
+                meta_dict = u_arr._get_metadata()
+                # Get the input set from the metadata
+                input_set = meta_dict['config_dict']['input_set']
+                # Get the input set used in the HPC run
+                input_uarr = uarray(input_set, is_input_set=True)
+                # Select the time slice to plot
+                input_uarr.xr, title_segment = select_time(input_uarr.xr, **kwargs)
+                # Restrict the latitude and longitude range, if applicable
+                if not isinstance(restrict_lat_lon_to, type(None)):
+                    # Restrict the domain of the data to plot
+                    input_uarr.xr, _ = udata.match_domains(input_uarr.xr, restrict_xr, require_equal=False)
+            elif u_arr.is_input_set:
+                input_uarr = u_arr
+            else:
+                raise ValueError(f"(corr_plot) To plot 'truth', `dataset` {u_arr.name} must be either a prediction HPC run or an input set. Got is_predict: {u_arr.is_predict}, is_input_set: {u_arr.is_input_set}")
+            if 'truth' in x_var:
+                x_xarr = input_uarr.xr[HPC_y_var]
+            if 'truth' in y_var:
+                y_xarr = input_uarr.xr[HPC_y_var]
+        # Check whether both x and y data arrays have been set
+        if isinstance(x_xarr, type(None)):
+            # Verify the specified variable is in the dataset
+            verify_var(u_arr.xr, x_var)
+            # Set the x data array
+            x_xarr = u_arr.xr[x_var]
+        if isinstance(y_xarr, type(None)):
+            # Verify the specified variable is in the dataset
+            verify_var(u_arr.xr, y_var)
+            # Set the x data array
+            y_xarr = u_arr.xr[y_var]
+
+        # Plot the comparison
+        fig_q = plot_comparison(
+            x_xarr,
+            y_xarr,
+            ax=ax,
+            **kwargs,
+        )
+    if new_plot == True:
+        # Add an overall title
+        fig.suptitle(f"{u_arr.name}{title_ens_ID} {title_segment}", fontsize=title_font_size)
+        # Return the figure
+        return fig
+    elif len(x_vars) == 1:
+        return fig_q
+    else:
+        return fig
 
 def make_colorbar(
     fig,
