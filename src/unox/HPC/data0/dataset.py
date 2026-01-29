@@ -103,7 +103,7 @@ class uarray():
         if isinstance(self.metadata, type(None)):
             # Get the metadata dictionary
             self.metadata = get_metadata(self)
-            return self.metadata
+        return self.metadata
     # Modify aspects of the dataset
     def _shift_lons(self, **kwargs):
         self.xr = shift_lon_arr(self.xr, **kwargs)
