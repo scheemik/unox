@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import xarray as xr
+import pandas as pd
 import proplot as pplt
 from datetime import datetime
 import warnings
@@ -1569,3 +1570,121 @@ def compare_input_vars(
         overall_title = f"{input_a_dict['input_set']}-{input_a_dict['year']}-{input_a_dict['var']} vs {input_b_dict['input_set']}-{input_b_dict['year']}-{input_b_dict['var']}"
         fig.suptitle(overall_title)
         return fig
+
+def plot_BaW(
+    var,
+    datasets,
+    ds_kwargs=None,
+    ax=None,
+    **kwargs,
+):
+    """ Plot a box and whisker plot.
+
+    Create a box and whisker plot of the specified variables from the given dataset.
+
+    """ 
+    # Verify argument types 
+    if not isinstance(var, str):
+        raise TypeError(f"(plot_BaW) `var` must be a string. Got type: {type(var)}")
+    if not isinstance(datasets, (list)):
+        # Making `uarray` object verifies `dataset`
+        datasets = [datasets]
+    if not isinstance(ds_kwargs, (list, type(None))):
+        if isinstance(ds_kwargs, type({})):
+            ds_kwargs = [ds_kwargs]
+        else:
+            raise TypeError(f"(plot_BaW) `ds_kwargs` must be a list of dictionaries or `None`. Got type: {type(ds_kwargs)}")
+    else:
+        for these_kwargs in ds_kwargs:
+            if not isinstance(these_kwargs, type({})):
+                raise TypeError(f"(plot_BaW) Each entry in `ds_kwargs` must be a dictionary. Got type: {type(these_kwargs)}")
+    if len(ds_kwargs) == 0:
+        raise ValueError("(plot_BaW) `ds_kwargs` list cannot be empty.")
+    if len(datasets) != len(ds_kwargs):
+        raise ValueError(f"(plot_BaW) Length of `datasets` ({len(datasets)}) must match length of `ds_kwargs` ({len(ds_kwargs)}).")
+    for i in range(len(datasets)):
+        # Making `uarray` object verifies `dataset`
+        datasets[i] = uarray(datasets[i], **ds_kwargs[i])
+    if not isinstance(ax, (pplt.axes.Axes, type(None))):
+        TypeError(f"(plot_BaW) `ax` must be a proplot Axes object, or None. Got type: {type(ax)}")
+    
+    # Create a pandas DataFrame to hold the data to plot
+    box_df = pd.DataFrame()
+
+    # Loop across each dataset
+    for i in range(len(datasets)):
+        # Get the `uarray` object
+        u_arr = datasets[i]
+        # Select the time slice to plot
+        u_arr.xr, title_segment = select_time(u_arr.xr, **ds_kwargs[i])
+        # Restrict the latitude and longitude range
+        if 'restrict_lat_lon_to' in ds_kwargs[i] and not isinstance(ds_kwargs[i]['restrict_lat_lon_to'], type(None)):
+            # Load the specified data set to restrict to
+            restrict_xr = uarray(ds_kwargs[i]['restrict_lat_lon_to']).xr
+            # Restrict the domain of the data to plot
+            u_arr.xr, _ = udata.match_domains(u_arr.xr, restrict_xr, require_equal=False)
+        # Check whether the variable is already in the dataset
+        if var in u_arr.xr.data_vars:
+            # Get the array of that variable and flatten it
+            var_array = u_arr.xr[var].values.flatten()
+            # Format the label for this variable
+            var_label = f"{u_arr.xr[var].attrs['long_name']} ({u_arr.xr[var].attrs['units']})"
+        elif var == 'R2':
+            from unox.evaluate import get_corr_R2
+            # Make sure the dataset is an ensemble run
+            if not u_arr._is_ensemble():
+                raise ValueError(f"(plot_BaW) To plot 'R2', `dataset` {u_arr.name} must be an ensemble of runs. Got `is_ensemble`: {u_arr._is_ensemble()}")
+            # Get the metadata from the predictions uarray
+            meta_dict = u_arr._get_metadata()
+            # Get the input set from the metadata
+            input_set = meta_dict['config_dict']['input_set']
+            # Get the input set used in the HPC run
+            input_uarr = uarray(input_set, is_input_set=True)
+            # Select the time slice to plot such that it matches the prediction array
+            pred_start_date = str(u_arr.xr.time.values[0]).split('T')[0].split(' ')[0]
+            pred_end_date = str(u_arr.xr.time.values[-1]).split('T')[0].split(' ')[0]
+            # Do not pass keyword arguments into this call of `select_time()`
+            # to ensure there aren't multiple occurrences of `start_date` or `end_date`
+            input_uarr.xr, title_segment = select_time(input_uarr.xr, start_date=pred_start_date, end_date=pred_end_date)#, **kwargs)
+            # Restrict the latitude and longitude range, if applicable
+            if 'restrict_lat_lon_to' in ds_kwargs[i] and not isinstance(ds_kwargs[i]['restrict_lat_lon_to'], type(None)):
+                # Restrict the domain of the data to plot
+                input_uarr.xr, _ = udata.match_domains(input_uarr.xr, restrict_xr, require_equal=False)
+            # Get the truth array and flatten it
+            truth_array = input_uarr.xr[input_uarr.xr.attrs['y_var']].values.flatten()
+
+            # Find the number of ensemble members
+            ens_size = u_arr.xr.attrs['ensemble_size']
+            # Make an array to collect the R2 values
+            var_array = [None]*ens_size
+            # Calculate the R2 value for each ensemble member
+            for j in range(ens_size):
+                # Get the prediction variable name
+                pred_var = f"{input_uarr.xr.attrs['y_var']}_pred_{j+1:02d}"
+                # Get the prediction array and flatten it
+                pred_array = u_arr.xr[pred_var].values.flatten()
+                # Append that R2 value to the array
+                var_array[j] = get_corr_R2(pred_array, truth_array)
+                # Format the axis label
+                var_label = rf"Correlation R$^2$ (pred vs truth)"
+        # Format the name for this box and whisker plot
+        if 'label_note' in ds_kwargs[i] and not isinstance(ds_kwargs[i]['label_note'], type(None)):
+            box_name = f"{u_arr.name} ({ds_kwargs[i]['label_note']})"
+        else:
+            box_name = u_arr.name
+        # Add that array to the DataFrame
+        box_df[box_name] = var_array
+    
+    # If no axes are given, create a new figure
+    if isinstance(ax, type(None)):
+        new_plot = True
+        fig = pplt.figure(refwidth=4)
+        ax = fig.subplots(nrows=1, ncols=1)
+    else:
+        new_plot = False
+
+    # Plot the box and whisker plot
+    ax.boxploth(box_df, whis=1.5)
+    
+    # Format the axis
+    ax.set_xlabel(var_label)
