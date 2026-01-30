@@ -24,37 +24,80 @@ invalid_datasets = [
     {}
 ]
 
-def test_get_corr_R2():
-    """Test the get_corr_R2 function."""
-    # Define expected R^2 values and data sources
+def test_compare_arrs():
+    """Test the compare_arrs function."""
+    # Define expected values and data sources
     test_cases = [
-        (minimal_xr0['var1'], minimal_xr0['var1'], 1.0),
-        (minimal_xr0['var1'], minimal_xr0['var1']*2, 1.0),
-        (minimal_xr0['var1'], minimal_xr0['var1'].values, 1.0),
-        (minimal_xr0['var1'].values, minimal_xr0['var1'], 1.0),
-        (minimal_xr0['var1'].values, minimal_xr0['var1'].values, 1.0),
-        (minimal_xr0['var1'], minimal_xr0['var2'], 0.0),
-        (minimal_xr0['var1'], minimal_xr0['var3'], 0.238095),
+        {
+            'a_arr': minimal_xr0['var1'],
+            'b_arr': minimal_xr0['var1'],
+            'expected_R2': 1.0,
+            'expected_RMSE': 0.0,
+        },
+        {
+            'a_arr': minimal_xr0['var1'],
+            'b_arr': minimal_xr0['var1']*2,
+            'expected_R2': 1.0,
+            'expected_RMSE': 5.0497524,
+        },
+        {
+            'a_arr': minimal_xr0['var1'],
+            'b_arr': minimal_xr0['var1'].values,
+            'expected_R2': 1.0,
+            'expected_RMSE': 0.0,
+        },
+        {
+            'a_arr': minimal_xr0['var1'].values,
+            'b_arr': minimal_xr0['var1'],
+            'expected_R2': 1.0,
+            'expected_RMSE': 0.0,
+        },
+        {
+            'a_arr': minimal_xr0['var1'].values,
+            'b_arr': minimal_xr0['var1'].values,
+            'expected_R2': 1.0,
+            'expected_RMSE': 0.0,
+        },
+        {
+            'a_arr': minimal_xr0['var1'],
+            'b_arr': minimal_xr0['var2'],
+            'expected_R2': 0.0,
+            'expected_RMSE': 3.2403703,
+        },
+        {
+            'a_arr': minimal_xr0['var1'],
+            'b_arr': minimal_xr0['var3'],
+            'expected_R2': 0.238095,
+            'expected_RMSE': 2.8284271,
+        },
+        {
+            'a_arr': np.array([14,19,17,13,12,7,24,23,17,18,14,16,16,17,22,25,26,21,14,15]),
+            'b_arr': np.array([17,18,18,15,18,11,20,20,15,18,15,16,17,18,25,21,28,22,16,12]),
+            'expected_R2': 0.6921643,
+            'expected_RMSE': 2.6645825,
+        },
     ]
     # Define tolerance for floating point comparison
     tolerance = 1e-6
     # Test each case
     for case in test_cases:
-        # Unpack the case
-        a_arr, b_arr, expected_R2 = case
         # Calculate actual R^2
-        actual_R2 = ueval.get_corr_R2(a_arr, b_arr)
+        actual_R2 = ueval.compare_arrs(case['a_arr'], case['b_arr'], 'R2')
         # Compare to the expected value
-        assert np.isclose(actual_R2, expected_R2, atol=tolerance), f"Expected R^2: {expected_R2}, got: {actual_R2}"
+        assert np.isclose(actual_R2, case['expected_R2'], atol=tolerance), f"Expected R^2: {case['expected_R2']}, got: {actual_R2}"
+        # Calculate actual RMSE
+        actual_RMSE = ueval.compare_arrs(case['a_arr'], case['b_arr'], 'RMSE')
+        # Compare to the expected value
+        assert np.isclose(actual_RMSE, case['expected_RMSE'], atol=tolerance), f"Expected RMSE: {case['expected_RMSE']}, got: {actual_RMSE}"
     # Test invalid inputs
     for invalid_input in invalid_datasets:
         try:
-            ueval.get_corr_R2(invalid_input, minimal_xr0['var1'])
+            ueval.compare_arrs(invalid_input, minimal_xr0['var1'])
             assert False, f"Expected TypeError for `a_xr_arr` input: {invalid_input}"
         except TypeError:
             pass
         try:
-            ueval.get_corr_R2(minimal_xr0['var1'], invalid_input)
+            ueval.compare_arrs(minimal_xr0['var1'], invalid_input)
             assert False, f"Expected TypeError for `b_xr_arr` input: {invalid_input}"
         except TypeError:
             pass

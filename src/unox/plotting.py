@@ -1632,11 +1632,11 @@ def plot_BaW(
             var_label = f"{u_arr.xr[var].attrs['long_name']} ({u_arr.xr[var].attrs['units']})"
             # Format the box label
             box_label = u_arr.name
-        elif var == 'R2':
-            from unox.evaluate import get_corr_R2
+        elif var in ['R2', 'RMSE']:
+            from unox.evaluate import compare_arrs
             # Make sure the dataset is an ensemble run
             if not u_arr._is_ensemble():
-                raise ValueError(f"(plot_BaW) To plot 'R2', `dataset` {u_arr.name} must be an ensemble of runs. Got `is_ensemble`: {u_arr._is_ensemble()}")
+                raise ValueError(f"(plot_BaW) To plot `{var}`, `dataset` {u_arr.name} must be an ensemble of runs. Got `is_ensemble`: {u_arr._is_ensemble()}")
             # Get the metadata from the predictions uarray
             meta_dict = u_arr._get_metadata()
             # Get the input set from the metadata
@@ -1660,18 +1660,21 @@ def plot_BaW(
             ens_size = u_arr.xr.attrs['ensemble_size']
             # Format the box label
             box_label = f"{u_arr.name} (n={ens_size})"
-            # Make an array to collect the R2 values
+            # Make an array to collect the comparison values
             var_array = [None]*ens_size
-            # Calculate the R2 value for each ensemble member
+            # Calculate the comparison value for each ensemble member
             for j in range(ens_size):
                 # Get the prediction variable name
                 pred_var = f"{input_uarr.xr.attrs['y_var']}_pred_{j+1:02d}"
                 # Get the prediction array and flatten it
                 pred_array = u_arr.xr[pred_var].values.flatten()
-                # Append that R2 value to the array
-                var_array[j] = get_corr_R2(pred_array, truth_array)
+                # Append that comparison value to the array
+                var_array[j] = compare_arrs(pred_array, truth_array, var)
                 # Format the axis label
-                var_label = rf"Correlation R$^2$ (pred vs truth)"
+                if var == 'R2':
+                    var_label = rf"Correlation R$^2$ (pred vs truth)"
+                elif var == 'RMSE':
+                    var_label = rf"RMSE (pred vs truth)"
         # Format the name for this box and whisker plot
         if 'label_note' in ds_kwargs[i] and not isinstance(ds_kwargs[i]['label_note'], type(None)):
             box_name = f"{box_label}\n{ds_kwargs[i]['label_note']}"
