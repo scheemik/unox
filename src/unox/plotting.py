@@ -1576,6 +1576,7 @@ def plot_BaW(
     datasets,
     ds_kwargs=None,
     ax=None,
+    violin=False,
     **kwargs,
 ):
     """ Plot a box and whisker plot.
@@ -1692,8 +1693,11 @@ def plot_BaW(
     else:
         new_plot = False
 
-    # Plot the box and whisker plot
-    ax.boxploth(box_df, whis=1.5)
+    # Plot the violin or box and whisker plot
+    if violin:
+        ax.violinploth(box_df)
+    else:
+        ax.boxploth(box_df, whis=1.5)
     
     # Format the axis
     ax.set_xlabel(var_label)
