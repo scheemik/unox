@@ -30,6 +30,8 @@ do
 done
 
 echo "===== Begin HPC_slurm.sh ====="
+# Source parameters from file
+source HPC_params.sh
 ###############################################################################
 # Check which arguments were passed
 if [ -z "$JOBNAME" ]
@@ -92,13 +94,13 @@ then
 		echo "-v $VERSION, using original code"
 		module load StdEnv/2020 gcc/9.3.0 python/3.8.10 cuda/11.4
 		ENVNAME="unoxTrillium"
-		ENVDIR="/home/mschee/.virtualenvs/$ENVNAME"
+		ENVDIR="/home/$HPC_USERNAME/.virtualenvs/$ENVNAME"
 	elif [ "$VERSION" = 1 ]
 	then
 		echo "-v $VERSION, using updated code"
 		module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
 		ENVNAME="unoxTrilliumNC"
-		ENVDIR="/home/mschee/.virtualenvs/$ENVNAME"
+		ENVDIR="/home/$HPC_USERNAME/.virtualenvs/$ENVNAME"
 	else
 		echo "Version $VERSION not recognized, exiting"
 		exit 1
