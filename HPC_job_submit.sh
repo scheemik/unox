@@ -2,6 +2,7 @@
 # Author: Mikhail Schee
 # 2025-03-27
 
+# To be run on HPC.
 # Run this script to submit a job to HPC. Note, by default the code will run 
 # with updated versions of tensorflow and keras, which won't work on Mist. Use
 # `-v 0` to run with the versions that are compatible with Mist.

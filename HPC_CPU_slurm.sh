@@ -6,6 +6,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --output=HPC_runs/%x/log_pred_%x_%j.txt				# %x = job_name, %j = job_number
 
+# To be run on HPC.
 # Submit this script to a HPC with `sbatch`. Note, by default the code will run 
 # with updated versions of tensorflow and keras, which won't work on Mist. Use
 # `-v 0` to run with the versions that are compatible with Mist.
