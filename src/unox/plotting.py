@@ -1608,8 +1608,8 @@ def plot_BaW(
     if not isinstance(ax, (pplt.axes.Axes, type(None))):
         TypeError(f"(plot_BaW) `ax` must be a proplot Axes object, or None. Got type: {type(ax)}")
     
-    # Create a pandas DataFrame to hold the data to plot
-    box_df = pd.DataFrame()
+    # Create a dictionary to hold the data to plot
+    box_dict = {}
 
     # Loop across each dataset
     for i in range(len(datasets)):
@@ -1629,6 +1629,8 @@ def plot_BaW(
             var_array = u_arr.xr[var].values.flatten()
             # Format the label for this variable
             var_label = f"{u_arr.xr[var].attrs['long_name']} ({u_arr.xr[var].attrs['units']})"
+            # Format the box label
+            box_label = u_arr.name
         elif var == 'R2':
             from unox.evaluate import get_corr_R2
             # Make sure the dataset is an ensemble run
@@ -1655,6 +1657,8 @@ def plot_BaW(
 
             # Find the number of ensemble members
             ens_size = u_arr.xr.attrs['ensemble_size']
+            # Format the box label
+            box_label = f"{u_arr.name} (n={ens_size})"
             # Make an array to collect the R2 values
             var_array = [None]*ens_size
             # Calculate the R2 value for each ensemble member
@@ -1669,11 +1673,16 @@ def plot_BaW(
                 var_label = rf"Correlation R$^2$ (pred vs truth)"
         # Format the name for this box and whisker plot
         if 'label_note' in ds_kwargs[i] and not isinstance(ds_kwargs[i]['label_note'], type(None)):
-            box_name = f"{u_arr.name} ({ds_kwargs[i]['label_note']})"
+            box_name = f"{box_label}\n{ds_kwargs[i]['label_note']}"
         else:
-            box_name = u_arr.name
-        # Add that array to the DataFrame
-        box_df[box_name] = var_array
+            box_name = box_label
+        # Add that array to the dictionary
+        box_dict[box_name] = var_array
+    # Create a pandas DataFrame from the dictionary
+    ## using the pd.Series to fill shorter arrays with NaNs
+    box_df = pd.DataFrame(
+        {k:pd.Series(v) for k, v in box_dict.items()}
+    )
     
     # If no axes are given, create a new figure
     if isinstance(ax, type(None)):
@@ -1688,3 +1697,11 @@ def plot_BaW(
     
     # Format the axis
     ax.set_xlabel(var_label)
+
+    if new_plot == True:
+        # Add an overall title
+        # fig.suptitle(f"{u_arr.name}", fontsize=title_font_size)
+        # Return the figure
+        return fig
+    else:
+        return ax
