@@ -1611,6 +1611,16 @@ def plot_BaW(
     if len(ds_kwargs) == 0:
         raise ValueError("(plot_BaW) `ds_kwargs` list cannot be empty.")
     if len(datasets) != len(ds_kwargs):
+        ds_kwargs_len = len(ds_kwargs)
+        # Repeat the list of `ds_kwargs` for each entry in `datasets`
+        ds_kwargs = ds_kwargs * len(datasets)
+        # Create list, repeating each dataset for each entry in `ds_kwargs`
+        new_dataset_list = []
+        for i in range(len(datasets)):
+            for j in range(ds_kwargs_len):
+                new_dataset_list.append(datasets[i])
+        datasets = new_dataset_list
+    if len(datasets) != len(ds_kwargs):
         raise ValueError(f"(plot_BaW) Length of `datasets` ({len(datasets)}) must match length of `ds_kwargs` ({len(ds_kwargs)}).")
     for i in range(len(datasets)):
         # Making `uarray` object verifies `dataset`
@@ -1624,6 +1634,8 @@ def plot_BaW(
         for ax in axs:
             if not isinstance(ax, pplt.axes.Axes):
                 raise TypeError(f"(plot_BaW) Each entry in `axs` must be a proplot Axes object. Got type: {type(ax)}")
+    if not isinstance(violin, bool):
+        raise TypeError(f"(plot_BaW) `violin` must be a bool. Got type: {type(violin)}")
     
     # Create dictionaries to hold the data to plot
     box_dfs = [None]*len(vars)
@@ -1645,6 +1657,9 @@ def plot_BaW(
             restrict_xr = uarray(ds_kwargs[i]['restrict_lat_lon_to']).xr
             # Restrict the domain of the data to plot
             u_arr.xr, _ = udata.match_domains(u_arr.xr, restrict_xr, require_equal=False)
+            box_label_restrict = 'restricted'
+        else:
+            box_label_restrict = 'full'
         # Loop across each variable to plot
         for j in range(len(vars)):
             var = vars[j]
@@ -1683,7 +1698,7 @@ def plot_BaW(
                 # Find the number of ensemble members
                 ens_size = u_arr.xr.attrs['ensemble_size']
                 # Format the box label
-                box_label = f"{u_arr.name} (n={ens_size})"
+                box_label = f"{u_arr.name} (n={ens_size})\n{box_label_restrict}"
                 # Make an array to collect the comparison values
                 var_array = [None]*ens_size
                 # Calculate the comparison value for each ensemble member
@@ -1700,12 +1715,11 @@ def plot_BaW(
                     elif var == 'RMSE':
                         ax_labels[j] = rf"RMSE (pred vs truth)"
             # Format the name for this box and whisker plot
-            if 'label_note' in ds_kwargs[i] and not isinstance(ds_kwargs[i]['label_note'], type(None)):
-                box_name = f"{box_label}\n{ds_kwargs[i]['label_note']}"
-            else:
-                box_name = box_label
+            for ds_kwarg in ['start_date', 'interval', 'label_note']:
+                if ds_kwarg in ds_kwargs[i] and not isinstance(ds_kwargs[i][ds_kwarg], type(None)):
+                    box_label = f"{box_label}, {ds_kwargs[i][ds_kwarg]}"
             # Add that array to the dictionary
-            box_dicts[j][box_name] = var_array
+            box_dicts[j][box_label] = var_array
     
     # If no axes are given, create a new figure
     if isinstance(axs, type(None)):
