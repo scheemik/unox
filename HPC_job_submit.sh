@@ -147,6 +147,10 @@ if [ "$TYPE" = "zfi_set" ]; then
 		echo "Exiting..."
 		exit 1
 	fi
+	# Create a file called SET_OF_RUNS.txt for reference
+	SET_OF_RUNS_FILE="HPC_runs/_${JOBNAME}/SET_OF_RUNS.txt"
+	touch $SET_OF_RUNS_FILE
+	echo "True" > $SET_OF_RUNS_FILE
 	# Loop across the subdirectories in the set directory
 	for SUBDIR in HPC_runs/_$JOBNAME/*/; do
 		# Check whether there is more than one ensemble member
