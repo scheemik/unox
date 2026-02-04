@@ -1575,10 +1575,10 @@ def compare_input_vars(
         return fig
 
 def plot_BaW(
-    var,
+    vars,
     datasets,
     ds_kwargs=None,
-    ax=None,
+    axs=None,
     violin=False,
     **kwargs,
 ):
@@ -1588,8 +1588,14 @@ def plot_BaW(
 
     """ 
     # Verify argument types 
-    if not isinstance(var, str):
-        raise TypeError(f"(plot_BaW) `var` must be a string. Got type: {type(var)}")
+    if not isinstance(vars, list):
+        if isinstance(vars, str):
+            vars = [vars]
+        else:
+            raise TypeError(f"(plot_BaW) `vars` must be a list of strings or a single string. Got type: {type(vars)}")
+    for var in vars:
+        if not isinstance(var, str):
+            raise TypeError(f"(plot_BaW) `var` must be a string. Got type: {type(var)}")
     if not isinstance(datasets, (list)):
         # Making `uarray` object verifies `dataset`
         datasets = [datasets]
@@ -1609,11 +1615,23 @@ def plot_BaW(
     for i in range(len(datasets)):
         # Making `uarray` object verifies `dataset`
         datasets[i] = uarray(datasets[i], **ds_kwargs[i])
-    if not isinstance(ax, (pplt.axes.Axes, type(None))):
-        TypeError(f"(plot_BaW) `ax` must be a proplot Axes object, or None. Got type: {type(ax)}")
+    if not isinstance(axs, (list, type(None))):
+        if isinstance(axs, pplt.axes.Axes):
+            axs = [axs]
+        else:
+            raise TypeError(f"(plot_BaW) `axs` must be a proplot Axes object, a list of proplot Axes objects, or None. Got type: {type(axs)}")
+    elif not isinstance(axs, type(None)):
+        for ax in axs:
+            if not isinstance(ax, pplt.axes.Axes):
+                raise TypeError(f"(plot_BaW) Each entry in `axs` must be a proplot Axes object. Got type: {type(ax)}")
     
-    # Create a dictionary to hold the data to plot
-    box_dict = {}
+    # Create dictionaries to hold the data to plot
+    box_dfs = [None]*len(vars)
+    # I don't know why, but if I try to define a list of dictionaries in one line, every dictionary in that list gets updated, even when calling a specific index
+    box_dicts = []
+    for j in range(len(vars)):
+        box_dicts.append({})
+    ax_labels = [None]*len(vars)
 
     # Loop across each dataset
     for i in range(len(datasets)):
@@ -1627,86 +1645,91 @@ def plot_BaW(
             restrict_xr = uarray(ds_kwargs[i]['restrict_lat_lon_to']).xr
             # Restrict the domain of the data to plot
             u_arr.xr, _ = udata.match_domains(u_arr.xr, restrict_xr, require_equal=False)
-        # Check whether the variable is already in the dataset
-        if var in u_arr.xr.data_vars:
-            # Get the array of that variable and flatten it
-            var_array = u_arr.xr[var].values.flatten()
-            # Format the label for this variable
-            var_label = f"{u_arr.xr[var].attrs['long_name']} ({u_arr.xr[var].attrs['units']})"
-            # Format the box label
-            box_label = u_arr.name
-        elif var in ['R2', 'RMSE']:
-            from unox.evaluate import compare_arrs
-            # Make sure the dataset is an ensemble run
-            if not u_arr._is_ensemble():
-                raise ValueError(f"(plot_BaW) To plot `{var}`, `dataset` {u_arr.name} must be an ensemble of runs. Got `is_ensemble`: {u_arr._is_ensemble()}")
-            # Get the metadata from the predictions uarray
-            meta_dict = u_arr._get_metadata()
-            # Get the input set from the metadata
-            input_set = meta_dict['config_dict']['input_set']
-            # Get the input set used in the HPC run
-            input_uarr = uarray(input_set, is_input_set=True)
-            # Select the time slice to plot such that it matches the prediction array
-            pred_start_date = str(u_arr.xr.time.values[0]).split('T')[0].split(' ')[0]
-            pred_end_date = str(u_arr.xr.time.values[-1]).split('T')[0].split(' ')[0]
-            # Do not pass keyword arguments into this call of `select_time()`
-            # to ensure there aren't multiple occurrences of `start_date` or `end_date`
-            input_uarr.xr, title_segment = select_time(input_uarr.xr, start_date=pred_start_date, end_date=pred_end_date)#, **kwargs)
-            # Restrict the latitude and longitude range, if applicable
-            if 'restrict_lat_lon_to' in ds_kwargs[i] and not isinstance(ds_kwargs[i]['restrict_lat_lon_to'], type(None)):
-                # Restrict the domain of the data to plot
-                input_uarr.xr, _ = udata.match_domains(input_uarr.xr, restrict_xr, require_equal=False)
-            # Get the truth array and flatten it
-            truth_array = input_uarr.xr[input_uarr.xr.attrs['y_var']].values.flatten()
+        # Loop across each variable to plot
+        for j in range(len(vars)):
+            var = vars[j]
+            # Check whether the variable is already in the dataset
+            if var in u_arr.xr.data_vars:
+                # Get the array of that variable and flatten it
+                var_array = u_arr.xr[var].values.flatten()
+                # Format the label for this variable
+                ax_labels[j] = f"{u_arr.xr[var].attrs['long_name']} ({u_arr.xr[var].attrs['units']})"
+                # Format the box label
+                box_label = u_arr.name
+            elif var in ['R2', 'RMSE']:
+                from unox.evaluate import compare_arrs
+                # Make sure the dataset is an ensemble run
+                if not u_arr._is_ensemble():
+                    raise ValueError(f"(plot_BaW) To plot `{var}`, `dataset` {u_arr.name} must be an ensemble of runs. Got `is_ensemble`: {u_arr._is_ensemble()}")
+                # Get the metadata from the predictions uarray
+                meta_dict = u_arr._get_metadata()
+                # Get the input set from the metadata
+                input_set = meta_dict['config_dict']['input_set']
+                # Get the input set used in the HPC run
+                input_uarr = uarray(input_set, is_input_set=True)
+                # Select the time slice to plot such that it matches the prediction array
+                pred_start_date = str(u_arr.xr.time.values[0]).split('T')[0].split(' ')[0]
+                pred_end_date = str(u_arr.xr.time.values[-1]).split('T')[0].split(' ')[0]
+                # Do not pass keyword arguments into this call of `select_time()`
+                # to ensure there aren't multiple occurrences of `start_date` or `end_date`
+                input_uarr.xr, title_segment = select_time(input_uarr.xr, start_date=pred_start_date, end_date=pred_end_date)#, **kwargs)
+                # Restrict the latitude and longitude range, if applicable
+                if 'restrict_lat_lon_to' in ds_kwargs[i] and not isinstance(ds_kwargs[i]['restrict_lat_lon_to'], type(None)):
+                    # Restrict the domain of the data to plot
+                    input_uarr.xr, _ = udata.match_domains(input_uarr.xr, restrict_xr, require_equal=False)
+                # Get the truth array and flatten it
+                truth_array = input_uarr.xr[input_uarr.xr.attrs['y_var']].values.flatten()
 
-            # Find the number of ensemble members
-            ens_size = u_arr.xr.attrs['ensemble_size']
-            # Format the box label
-            box_label = f"{u_arr.name} (n={ens_size})"
-            # Make an array to collect the comparison values
-            var_array = [None]*ens_size
-            # Calculate the comparison value for each ensemble member
-            for j in range(ens_size):
-                # Get the prediction variable name
-                pred_var = f"{input_uarr.xr.attrs['y_var']}_pred_{j+1:02d}"
-                # Get the prediction array and flatten it
-                pred_array = u_arr.xr[pred_var].values.flatten()
-                # Append that comparison value to the array
-                var_array[j] = compare_arrs(pred_array, truth_array, var)
-                # Format the axis label
-                if var == 'R2':
-                    var_label = rf"Correlation R$^2$ (pred vs truth)"
-                elif var == 'RMSE':
-                    var_label = rf"RMSE (pred vs truth)"
-        # Format the name for this box and whisker plot
-        if 'label_note' in ds_kwargs[i] and not isinstance(ds_kwargs[i]['label_note'], type(None)):
-            box_name = f"{box_label}\n{ds_kwargs[i]['label_note']}"
-        else:
-            box_name = box_label
-        # Add that array to the dictionary
-        box_dict[box_name] = var_array
-    # Create a pandas DataFrame from the dictionary
-    ## using the pd.Series to fill shorter arrays with NaNs
-    box_df = pd.DataFrame(
-        {k:pd.Series(v) for k, v in box_dict.items()}
-    )
+                # Find the number of ensemble members
+                ens_size = u_arr.xr.attrs['ensemble_size']
+                # Format the box label
+                box_label = f"{u_arr.name} (n={ens_size})"
+                # Make an array to collect the comparison values
+                var_array = [None]*ens_size
+                # Calculate the comparison value for each ensemble member
+                for k in range(ens_size):
+                    # Get the prediction variable name
+                    pred_var = f"{input_uarr.xr.attrs['y_var']}_pred_{k+1:02d}"
+                    # Get the prediction array and flatten it
+                    pred_array = u_arr.xr[pred_var].values.flatten()
+                    # Append that comparison value to the array
+                    var_array[k] = compare_arrs(pred_array, truth_array, var)
+                    # Format the axis label
+                    if var == 'R2':
+                        ax_labels[j] = rf"Correlation R$^2$ (pred vs truth)"
+                    elif var == 'RMSE':
+                        ax_labels[j] = rf"RMSE (pred vs truth)"
+            # Format the name for this box and whisker plot
+            if 'label_note' in ds_kwargs[i] and not isinstance(ds_kwargs[i]['label_note'], type(None)):
+                box_name = f"{box_label}\n{ds_kwargs[i]['label_note']}"
+            else:
+                box_name = box_label
+            # Add that array to the dictionary
+            box_dicts[j][box_name] = var_array
     
     # If no axes are given, create a new figure
-    if isinstance(ax, type(None)):
+    if isinstance(axs, type(None)):
         new_plot = True
-        fig = pplt.figure(refwidth=4)
-        ax = fig.subplots(nrows=1, ncols=1)
+        fig = pplt.figure(refwidth=4, sharex=False)
+        n_rows, n_cols = uplt_fmt.set_fig_row_col(len(vars), **kwargs)
+        axs = fig.subplots(nrows=n_rows, ncols=n_cols)
     else:
         new_plot = False
 
-    # Plot the violin or box and whisker plot
-    if violin:
-        ax.violinploth(box_df)
-    else:
-        ax.boxploth(box_df, whis=1.5)
-    
-    # Format the axis
-    ax.set_xlabel(var_label)
+    for j in range(len(axs)):
+        # Create a pandas DataFrame from the dictionary
+        ## using the pd.Series to fill shorter arrays with NaNs
+        box_df = pd.DataFrame(
+            {k:pd.Series(v) for k, v in box_dicts[j].items()}
+        )
+        # Plot the violin or box and whisker plot
+        if violin:
+            axs[j].violinploth(box_df)
+        else:
+            axs[j].boxploth(box_df, whis=1.5)
+        
+        # Format the axes
+        axs[j].set_xlabel(ax_labels[j])
 
     if new_plot == True:
         # Add an overall title
@@ -1714,4 +1737,4 @@ def plot_BaW(
         # Return the figure
         return fig
     else:
-        return ax
+        return axs
