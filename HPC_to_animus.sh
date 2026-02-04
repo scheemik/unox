@@ -104,16 +104,40 @@ else
     scp -r -i $IDENTITY_FILE $HPC_USERNAME@$REMOTE_SERVER:"$FILES" .$DIR_PREFIX
 fi
 
+# Define function to combine predictions
+check_to_combine_predictions() {
+    local file=$1
+    # Check whether a config file exists
+    if [ -f ".$DIR_PREFIX/$file/input_config.json" ]; then
+        THIS_CONFIG=".$DIR_PREFIX/$file/input_config.json"
+        echo "Found $THIS_CONFIG"
+    else
+        THIS_CONFIG=""
+        echo "Did not find .$DIR_PREFIX/$file/input_config.json, using sample_config.json"
+    fi
+    echo "Looking for .$DIR_PREFIX/$file/ENSEMBLE_SIZE.sh"
+    if [ -f ".$DIR_PREFIX/$file/ENSEMBLE_SIZE.sh" ]; then
+        echo "Found .$DIR_PREFIX/$file/ENSEMBLE_SIZE.sh"
+        echo "    Combining predictions from ensemble run for $file"
+        python src/unox/HPC/combine_predictions.py $file $THIS_CONFIG
+    fi
+}
+
 # Check whether to combine predictions of an ensemble run
 if [ "$HPC_JOB" = j ]; then
     # Copy job directories from HPC to Animus
     for FILE in "${FILENAMES[@]}"; do
-        # Check whether there is a file called `ENSEMBLE_SIZE.txt` in the copied directory
-        if [ -f ".$DIR_PREFIX/${FILENAMES[0]}/ENSEMBLE_SIZE.txt" ]; then
-            echo "Found .$DIR_PREFIX/${FILENAMES[0]}/ENSEMBLE_SIZE.txt"
-            echo "    Combining predictions from ensemble run for $FILE"
-            python src/unox/HPC/combine_predictions.py $FILE
-        fi
+        # Check whether there is a file called `ENSEMBLE_SIZE.sh` in the copied directory
+        echo "Checking .$DIR_PREFIX/$FILE for ensemble predictions to combine..."
+        check_to_combine_predictions $FILE
+        # Check whether there is a file called `ENSEMBLE_SIZE.sh` in the each subdirectory
+        for SUBDIR in .$DIR_PREFIX/$FILE/*/; do
+            if [ -d "$SUBDIR" ]; then
+                SUBDIR_NAME=$(basename "$SUBDIR")
+                echo "Checking .$DIR_PREFIX/$FILE/$SUBDIR_NAME for ensemble predictions to combine..."
+                check_to_combine_predictions "$FILE/$SUBDIR_NAME"
+            fi
+        done
     done
 fi
 
