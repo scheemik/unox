@@ -23,10 +23,11 @@ print(f"\targv[1], jobname:    {jobname} ({jobname_suffix})")
 try:
     config_file = sys.argv[2]
 except:
-    config_file = 'sample_config'
+    config_file = f"inputfiles/_input_configs/sample_config.json"
+config_file = verify_path(config_file)
 print(f"\targv[2], config_file: {config_file}")
 # Load config file to a dictionary
-with open(f"inputfiles/_input_configs/{config_file}.json", 'r') as file:
+with open(config_file, 'r') as file:
     config_dict = json.load(file)
 
 # Load third input argument, if it exists: the type of set of runs to do
@@ -37,12 +38,12 @@ except:
 print(f"\targv[3], run_type:   {run_type}")
 # Modify the config dictionary based on the run type
 if run_type == 'zfi_set':
-    # Remove any `lsm_vars` entry
-    if 'lsm_vars' in config_dict:
-        del config_dict['lsm_vars']
-    # Remove any `zfi_var` entry
-    if 'zfi_vars' in config_dict:
-        del config_dict['zfi_vars']
+    # # Remove any `lsm_vars` entry
+    # if 'lsm_vars' in config_dict:
+    #     del config_dict['lsm_vars']
+    # # Remove any `zfi_var` entry
+    # if 'zfi_vars' in config_dict:
+    #     del config_dict['zfi_vars']
     savedir = f"HPC_runs/_{jobname}/"
 else:
     savedir = f"HPC_runs/{jobname}/"
