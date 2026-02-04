@@ -199,7 +199,7 @@ else
 			fi
 		done
 		# Create a file called ENSEMBLE_SIZE.sh that contains the ensemble size for reference
-		ENS_SIZE_FILE="HPC_runs/${JOBNAME}/ENSEMBLE_SIZE.txt"
+		ENS_SIZE_FILE="HPC_runs/${JOBNAME}/ENSEMBLE_SIZE.sh"
 		touch $ENS_SIZE_FILE
 		echo "$ENSEMBLE_SIZE" > $ENS_SIZE_FILE
 	else
