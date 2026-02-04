@@ -24,6 +24,9 @@ mpl.rcParams['ytick.labelsize'] = 12
 mpl.rcParams['legend.fontsize'] = 12
 title_font_size = 20
 
+# Add a-b-c labels to subplots
+pplt.rc.abc = True
+
 def plot_extent(
     dataset,
     **kwargs,
