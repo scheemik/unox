@@ -170,12 +170,9 @@ if [ "$TYPE" = "zfi_set" ]; then
 				ENS_DIR="HPC_runs/_${JOBNAME}/${SUBDIR_NAME}/${ENS_NUM}_${SUBDIR_NAME}"
 				# Make the ensemble member subdirectory
 				mkdir $ENS_DIR
-				# Make sure the configuration files are copied to the job directory
-				if [ ! -f "${ENS_DIR}/input_config.json" ]; then
+				# Copy the configuration file ensemble member's directory
 					cp "$SUBDIR/input_config.json" $ENS_DIR/input_config.json
-				fi
-			# Create a file called ENSEMBLE_SIZE.sh that contains the ensemble size for reference
-			echo "$ENSEMBLE_SIZE" > "HPC_runs/_${JOBNAME}/${SUBDIR_NAME}/ENSEMBLE_SIZE.sh"
+			# Create a file called ENSEMBLE_SIZE.txt that contains the ensemble size for reference
 			done
 		fi
 	done
