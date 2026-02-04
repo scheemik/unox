@@ -14,6 +14,7 @@ from unox import data as udata
 from unox.HPC.data0.dataset import uarray
 from unox.HPC.data0.verify_dataset import verify_dataset, verify_var
 from unox.HPC.data0.verify_dtype import verify_number
+from unox.HPC.data0.paths import verify_path
 from unox import plot_format as uplt_fmt
 
 # Set font sizes
@@ -1577,6 +1578,7 @@ def compare_input_vars(
 def plot_BaW(
     vars,
     datasets,
+    set_of_runs=False,
     ds_kwargs=None,
     axs=None,
     violin=False,
@@ -1599,6 +1601,8 @@ def plot_BaW(
     if not isinstance(datasets, (list)):
         # Making `uarray` object verifies `dataset`
         datasets = [datasets]
+    if not isinstance(set_of_runs, bool):
+        raise TypeError(f"(plot_BaW) `set_of_runs` must be a bool. Got type: {type(set_of_runs)}")
     if not isinstance(ds_kwargs, (list, type(None))):
         if isinstance(ds_kwargs, type({})):
             ds_kwargs = [ds_kwargs]
@@ -1622,9 +1626,6 @@ def plot_BaW(
         datasets = new_dataset_list
     if len(datasets) != len(ds_kwargs):
         raise ValueError(f"(plot_BaW) Length of `datasets` ({len(datasets)}) must match length of `ds_kwargs` ({len(ds_kwargs)}).")
-    for i in range(len(datasets)):
-        # Making `uarray` object verifies `dataset`
-        datasets[i] = uarray(datasets[i], **ds_kwargs[i])
     if not isinstance(axs, (list, type(None))):
         if isinstance(axs, pplt.axes.Axes):
             axs = [axs]
@@ -1636,6 +1637,45 @@ def plot_BaW(
                 raise TypeError(f"(plot_BaW) Each entry in `axs` must be a proplot Axes object. Got type: {type(ax)}")
     if not isinstance(violin, bool):
         raise TypeError(f"(plot_BaW) `violin` must be a bool. Got type: {type(violin)}")
+
+    # Check whether to prepare for a set of runs
+    if set_of_runs:
+        new_dataset_list = []
+        # Loop across the given datasets
+        for dataset in datasets:
+            # Check whether they are, in fact, sets of runs
+            try:
+                verify_path(f"HPC_runs/{dataset}/SET_OF_RUNS.txt")
+            except:
+                warnings.warn(f"(plot_BaW) `dataset` {dataset} is not a set of runs, no SET_OF_RUNS.txt file found.")
+                new_dataset_list.append(dataset)
+                continue 
+            # Find the subdirectories
+            sub_dirs = os.listdir(f"HPC_runs/{dataset}")
+            for sub_dir in sub_dirs:
+                # Verify that it is a directory, not a file
+                if os.path.isdir(f"HPC_runs/{dataset}/{sub_dir}"):
+                    # Add the subdirectory to the dataset list
+                    new_dataset_list.append(f"{dataset}/{sub_dir}")
+        datasets = new_dataset_list
+
+    if len(datasets) != len(ds_kwargs):
+        ds_kwargs_len = len(ds_kwargs)
+        # Repeat the list of `ds_kwargs` for each entry in `datasets`
+        ds_kwargs = ds_kwargs * len(datasets)
+        if ds_kwargs_len != 1:
+            # Create list, repeating each dataset for each entry in `ds_kwargs`
+            new_dataset_list = []
+            for i in range(len(datasets)):
+                for j in range(ds_kwargs_len):
+                    new_dataset_list.append(datasets[i])
+            datasets = new_dataset_list
+    if len(datasets) != len(ds_kwargs):
+        raise ValueError(f"(plot_BaW) Length of `datasets` ({len(datasets)}) must match length of `ds_kwargs` ({len(ds_kwargs)}).")
+    
+    for i in range(len(datasets)):
+        # Making `uarray` object verifies `dataset`
+        datasets[i] = uarray(datasets[i], **ds_kwargs[i])
     
     # Create dictionaries to hold the data to plot
     box_dfs = [None]*len(vars)
