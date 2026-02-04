@@ -15,14 +15,16 @@ try:
     jobname = sys.argv[1]
 except:
     jobname = 'test_set_of_runs'
-print('\targv[1], jobname:    ', jobname)
+# Get just the part of the job name after the last slash
+jobname_suffix = jobname.rsplit('/')[-1]
+print(f"\targv[1], jobname:    {jobname} ({jobname_suffix})")
 
 # Load second input argument, if it exists: the config file to use
 try:
     config_file = sys.argv[2]
 except:
     config_file = 'sample_config'
-print('\targv[2], config_file:', config_file)
+print(f"\targv[2], config_file: {config_file}")
 # Load config file to a dictionary
 with open(f"inputfiles/_input_configs/{config_file}.json", 'r') as file:
     config_dict = json.load(file)
@@ -32,7 +34,7 @@ try:
     run_type = int(sys.argv[3])
 except:
     run_type = 'test'
-print('\targv[3], run_type:   ', run_type)
+print(f"\targv[3], run_type:   {run_type}")
 # Modify the config dictionary based on the run type
 if run_type == 'zfi_set':
     # Remove any `lsm_vars` entry
@@ -48,7 +50,7 @@ else:
 # -------- Check the directories --------
 
 # Find the ensemble size file in the savedir
-ens_size_file = verify_path(f"{savedir}ENSEMBLE_SIZE.txt")
+ens_size_file = verify_path(f"{savedir}ENSEMBLE_SIZE.sh")
 # Read in the ensemble size
 with open(ens_size_file, 'r') as file:
     ens_size = int(file.read().strip())
@@ -59,7 +61,7 @@ ens_dicts = [{} for _ in range(ens_size)]
 # Check that all ensemble members exist
 for i in range(1, ens_size + 1):
     # Verify the directory for this ensemble member exists
-    ens_dicts[i-1]['member_dir'] = verify_path(f"{savedir}{i:02d}_{jobname}/")
+    ens_dicts[i-1]['member_dir'] = verify_path(f"{savedir}{i:02d}_{jobname_suffix}/")
     # Verify the predictions file exists
     ens_dicts[i-1]['pred_file'] = verify_path(f"{ens_dicts[i-1]['member_dir']}predictions.nc")
     # Verify the input configuration file exists
