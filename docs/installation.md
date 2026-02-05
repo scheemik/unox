@@ -324,11 +324,15 @@ Resolving deltas: 100% (1768/1768), done.
 Updating files: 100% (102/102), done.
 ```
 
-#### Git ignore
+#### Git exclude
 
 There are many files which are produced by running this code which do not need to be tracked by `git`.
-I would recommend adding these to a list for `git` to ignore, meaning it won't monitor changes.
-How this is done might depend on your version of `git`, but for me, I added the following to my `unox/git/info/exclude` file:
+Some of these files are specified in the `.gitignore` file in the base directory of the repository. 
+Note: this `.gitignore` file is tracked by `git` and will be pushed to the repository, meaning those files will be ignored for everyone who clones it. 
+
+Some files in this repository need to be edited for each individual (e.g., to hold a username) and some directories will hold generated data which is too large to be uploaded to GitHub. 
+For these, add them to the list in the `unox/git/info/exclude` file, meaning that `git` will not monitor changes in them for your instance of the repository.
+Add the following to the `unox/git/info/exclude` file **<ins>on both HPC and Animus</ins>**:
 
 ```bash
 # git ls-files --others --exclude-from=.git/info/exclude
@@ -345,6 +349,7 @@ datafiles/GEOSChem.SpeciesConc_merged/*
 datafiles/HEMCO_diagnostics_merged/*
 HPC_runs/*
 HPC_params.sh
+HPC_GPU_slurm.sh
 sample_data/*
 outputs/*
 inputfiles/*
@@ -358,9 +363,11 @@ The `!` at a start of a line means to specifically _include_ a file to be tracke
 #### Setting the HPC parameters
 
 The `HPC_params.sh` file in the repository contains parameters that will be used to facilitate transferring between the two remote systems. 
-Find this file and change the parameters to reflect those for your user accounts, especially the user names. 
-I would suggest then adding the `HPC_params.sh` file to the `gitignore` to avoid `git` tracking it's changes between different users who are using the repository. 
-Additionally, change the email address in the `HPC_GPU_slurm.sh` file in the `#SBATCH` options to that you are the one who receives email notifications for the model runs you submit.
+Find this file **<ins>on HPC</ins>** and change the parameters to reflect those for your user accounts, especially the user names. 
+Because `HPC_params.sh` will contain information specific to each person, it doesn't make sense to push the changes made there, which would cause a different user to use the wrong parameters after the pull from the repository.
+However, with the `HPC_params.sh` file added to the list in `unox/git/info/exclude` as shown above, it will no longer be tracked by `git` and so it is unlikely you could accidentally push changes to it. 
+
+As an additional step, change the email address in the `HPC_GPU_slurm.sh` file in the `#SBATCH` options to that you are the one who receives email notifications for the model runs you submit.
 
 ```bash
 #!/bin/bash
@@ -374,6 +381,11 @@ Additionally, change the email address in the `HPC_GPU_slurm.sh` file in the `#S
 ```
 
 Unfortunately, I was unable to find a way to have the `#SBATCH` notification email be pulled from the `HPC_params.sh` file and so I set it up to be the other way around. 
+For the same reason as with `HPC_params.sh`, the `HPC_GPU_slurm.sh` file was added to the list in `unox/git/info/exclude`.
+
+Note that the changes to both `HPC_params.sh` and `HPC_GPU_slurm.sh` described in this section only need to be made **<ins>on HPC</ins>**.
+None of the scripts that are meant to be executed on Animus will be affected. 
+You can change the contents of `HPC_params.sh` and `HPC_GPU_slurm.sh` on Animus to match what is on HPC, but it is not necessary.
 
 ---
 <a id='create_venvs'></a>
