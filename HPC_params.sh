@@ -7,7 +7,7 @@
 # The email to use for sending HPC job notifications
 # Read the `HPC_slurm.sh` script to find the email address
 # Go line-by-line until you find `#SBATCH --mail-user`
-SCRIPT="HPC_slurm.sh"
+SCRIPT="HPC_GPU_slurm.sh"
 while read -r line; do
     if [[ $line == \#SBATCH\ --mail-user=* ]]; then
         HPC_EMAIL="${line#*=}"

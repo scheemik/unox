@@ -220,7 +220,7 @@ source HPC_params.sh
 if [ -z "$HPC_EMAIL" ]
 then
 	echo "No email specified for HPC notifications."
-	echo "Please add your email to the \`HPC_slurm.sh\` script at the line with \`#SBATCH --mail-user=\`."
+	echo "Please add your email to the \`HPC_GPU_slurm.sh\` script at the line with \`#SBATCH --mail-user=\`."
 	echo "Exiting..."
 	exit 1
 else

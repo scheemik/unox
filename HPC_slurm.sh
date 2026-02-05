@@ -1,10 +1,4 @@
 #!/bin/bash
-#SBATCH --nodes=1
-#SBATCH --gpus-per-node=1
-#SBATCH --time=1:00:00
-#SBATCH --mail-user=mikhail.schee@mail.utoronto.ca
-#SBATCH --mail-type=ALL
-#SBATCH --output=HPC_runs/%x/log_%j.txt				# %x = job_name, %j = job_number
 
 # To be run on HPC.
 # Submit this script to a HPC with `sbatch`. Note, by default the code will run 
