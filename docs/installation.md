@@ -1103,6 +1103,9 @@ Then, use `poetry` to install the dependencies:
 (env_name) username@animus-c:~unox$ poetry install
 ```
 
+Sometimes this will initially fail. 
+Try running the `poetry install` command again immediately as this will often fix the issue and continue installing the dependencies. 
+
 <details>
 
 <summary>Expand for output</summary>
