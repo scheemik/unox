@@ -31,7 +31,7 @@ This guide assumes you have followed the instructions on the {doc}`Installation 
 ## Data sources
 
 The `datafiles` directory contains data files and scripts to make the input files for the U-net model for estimating North American NOₓ emissions. 
-These scripts pull from data files kept in shared directories on Animus, usually within `/data/high_res/`. 
+These scripts pull from data files kept in shared directories **<ins>on Animus</ins>**, usually within `/data/high_res/`. 
 In the descriptions below, the contents and usage of each data source are described as well as how to obtain the data, if they are publicly available. 
 
 <a id='tcr-2_nox'></a>
@@ -120,7 +120,7 @@ Any of these can be modified from their defaults by:
     - Modify the list of variables in the `variable_names` dictionary in the `era5_download.py` Python script. The keys (short names) are arbitrary, used to rename the files once downloaded, however the values (long names) must be valid variable names within ERA5. To check what the long name of a variable is, go to the [Climate Data Store page](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=download) for this data, select the variables of interest from the list, scroll down to the "Corresponding API request," and copy the "variable" list. The code under "Corresponding API request" is what was used to create the `era5_download.py` Python script.
 
 To start the download, use the `era5_download.sh` Bash script which accepts arguments for the start and end years to download. 
-For example:
+**<ins>Only run this if the data is no longer on Animus in</ins>** `/data/high_res/`:
 ```console
 username@animus-c:~/unox$ bash datafiles/era5_download.sh 2005 2020 > datafiles/era5_download_log.txt 2>&1
 ```
@@ -128,7 +128,7 @@ That will run the `era5_download.py` script for each month within those years (2
 
 When downloaded, the ERA5 data are at 2-hour frequency and 0.25 degree resolution. The U-net model takes daily averages on the grid given by (`datafiles/lats.npy`, `datafiles/lons.npy`).
 Running the `era5_concatenate.py` script will find all the downloaded ERA5 files in `unox/datafiles/era5_downloads/` and concatenate them into one file for each year which are output to `unox/datafiles/ERA5concatenated/`. 
-As this process takes a long time, I recommend launching a `tmux` session before starting so that any network interruption between your local machine and Animus won't stop the script from running. Be sure to activate the `conda` environment _after_ lauching `tmux`.
+As this process takes a long time, I recommend launching a `tmux` session before starting so that any network interruption between your local machine and Animus won't stop the script from running. Be sure to activate the `conda` environment **<ins>on Animus</ins>** _after_ lauching `tmux`.
 ```console
 username@animus-c:~/unox$ tmux
 username@animus-c:~/unox$ conda activate uplt
@@ -207,7 +207,7 @@ That script takes in the following arguments, all of which are optional:
     - Other options: `hourly` or `both`
 
 To run the script and download exactly the same NO₂ data as is currently in the `/data/high_res/US_EPA/` directory on Animus, this script can be run without specifying any of the arguments.
-As an example, the code below will download data for CO between 2000 and 2005 at an hourly frequency:
+As an example, the code below will download data for CO between 2000 and 2005 at an hourly frequency. **<ins>Only do this if the data is no longer on  in</ins>** `/data/high_res/`.
 
 ```console
 username@animus-c:~/unox$ bash datafiles/US_EPA_data_download.sh -s CO -b 2000 -e 2005 -f hourly
@@ -236,7 +236,7 @@ Therefore, after spending the time to create an input file, you should be able t
 The input files are netCDFs. 
 Using `xarray` you can look at the structure of such a file by opening it.
 Below is a text representation of the output. 
-However, if the below python commands are executed in a Jupyter Notebook cell, the structure becomes interactive, allowing for more exploration (see {doc}`Example usage <example>`).
+However, if the below python commands are executed in a Jupyter Notebook cell **<ins>on Animus</ins>**, the structure becomes interactive, allowing for more exploration (see {doc}`Example usage <example>`).
 
 ```python
 import xarray as xr
@@ -323,7 +323,7 @@ If you are working with multiple different input files, the `input_metadata.json
 By default, the `make_all_input_files()` function will add all the data from 2005 through 2020 from the data sources described above associated with NOₓ, including variables for Stage 2 training. 
 However, you can pass keyword arguments to change the behavior in many ways.
 
-Note that it takes a long time, approximately an hour on Animus, to create an input netCDF, as can be seen by the timing information in the output below.
+Note that it takes a long time, approximately an hour **<ins>on Animus</ins>**, to create an input netCDF, as can be seen by the timing information in the output below.
 This is largely due to the process of creating the Stage 2 data variables which involves a nested for-loop. 
 Because there is presently little need to create many input files rapidly, I have not optimized this part of the code. 
 

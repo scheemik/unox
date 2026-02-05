@@ -64,7 +64,7 @@ The script `HPC_from_animus.sh` is set up to facilitate the transfer so you do n
 - `-c`: Cluster
     - The name of the cluster to transfer to, the default being `trillium`.
 
-Here is an example of transferring the `no2_2005-2020` input file from Animus to Trillium:
+Below is an example of transferring the `no2_2005-2020` input file from Animus to Trillium. Note: this must be run **<ins>on Animus</ins>**.
 
 ```console
 (uplt) username@animus-c:~/unox$ bash HPC_from_animus.sh -f no2_2005-2020 -i 
@@ -166,7 +166,7 @@ I have created a script, `HPC_job_submit.sh` which handles much of the boiler-pl
 - `-c`: Cluster
     - The name of the cluster to transfer to, the default being `trillium`.
 
-Here is an example of submitting a job named `no2_example_run` to Trillium:
+Here is an example of submitting a job named `no2_example_run` **<ins>on HPC</ins>**:
 
 ```console
 username@HPC: unox$ bash HPC_job_submit.sh -j no2_example_run
@@ -200,7 +200,7 @@ For more information, see the Alliance Canada documentation on [Monitoring Jobs]
 
 #### Email monitoring
 
-By adding your email to the `HPC_slurm.sh` script as described on the {doc}`Installation <installation>`, you should receive emails every time a job begins or ends.
+By adding your email to the `HPC_slurm.sh` script **<ins>on HPC</ins>** as described on the {doc}`Installation <installation>`, you should receive emails every time a job begins or ends.
 Here's an example email notifying of a job starting:
 
 > Subject line: Trillium-GPU slurm Job_id=199403 Name=no2_example_run Began, Queued time 00:00:01
@@ -293,7 +293,7 @@ Once a job completes, you will receive an email like the one below:
 #### Scheduler queue monitoring
 
 To monitor the jobs you have submitted, including those in the queue, you can use the [`squeue` command](https://slurm.schedmd.com/squeue.html) and add the `-u` flag with your username. 
-To make this command easy to execute, I recommend adding this line to your `~/.bashrc` file on HPC:
+To make this command easy to execute, I recommend adding this line to your `~/.bashrc` file **<ins>on HPC</ins>**:
 ```bash
 # .bashrc
 ...
@@ -323,7 +323,7 @@ scancel: Terminating job 199403
 ### Log file monitoring
 
 The last way to monitor a job is by the log file that is being continuously updated as the job is running. 
-These logs will be in `HPC_runs/<name_of_run>/log_<job_ID>.txt` and capture everything that would go to the standard output from the code like `echo` and `print` statements.
+These logs will be in `HPC_runs/<name_of_run>/log_<job_ID>.txt` **<ins>on HPC</ins>** and capture everything that would go to the standard output from the code like `echo` and `print` statements.
 If you open this file in VSCodium, it will update every time you navigate back to that tab.
 This can be a useful way to see what part of the code a particular run is currently in. 
 Note that the log files are very extensive, reaching 10's of thousands of lines.
@@ -596,7 +596,7 @@ It works by taking in the following arguments:
     - The default behavior will not transfer model files.
     - This flag does not accept any input, it is just a binary.
 
-Here is an example of transferring the `no2_example_run` model run from Animus to Trillium:
+Below is an example of transferring the `no2_example_run` model run from Animus to Trillium. Note: this must be run **<ins>on Animus</ins>**.
 
 ```console
 (uplt) username@animus-c:~/unox$ bash HPC_to_animus.sh -f no2_example_run -j 
