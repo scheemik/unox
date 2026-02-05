@@ -155,8 +155,9 @@ if [ "$TYPE" = "zfi_set" ]; then
 	for SUBDIR in HPC_runs/_$JOBNAME/*/; do
 		# Check whether there is more than one ensemble member
 		if [ "$ENSEMBLE_SIZE" == 1 ]; then
-			# Copy the configuration file to each sub directory in the set
-			if [ ! -f "$SUBDIR/input_config.json" ]; then
+			# Make sure that `set_of_runs.py` copied the config file correctly
+			CONFIG_FILE="${SUBDIR}input_config.json"
+			if [ ! -f "$CONFIG_FILE" ]; then
 				echo "No configuration file found in $SUBDIR."
 				echo "For set of runs jobs, please ensure that `set_of_runs.py` gives each sub directory in HPC_runs/_$JOBNAME an input_config.json file."
 				echo "Exiting..."
@@ -252,6 +253,8 @@ elif [ "$TYPE" = "zfi_set" ]; then
 			if [ "$ENSEMBLE_SIZE" == 1 ]; then
 				# Get just the subdirectory name
 				SUBDIR_NAME=$(basename "$SUBDIR")
+				# Format the path to the config file
+				CONFIG_FILE="${SUBDIR}input_config.json"
 				# Submit a job for each sub directory in the set
 				sbatch --job-name=_$JOBNAME/$SUBDIR_NAME $LAUNCHER -j $JOBNAME/$SUBDIR_NAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
 			else
