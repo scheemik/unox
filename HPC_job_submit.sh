@@ -253,7 +253,7 @@ elif [ "$TYPE" = "zfi_set" ]; then
 				# Get just the subdirectory name
 				SUBDIR_NAME=$(basename "$SUBDIR")
 				# Submit a job for each sub directory in the set
-				sbatch --job-name=_$JOBNAME/$SUBDIR_NAME $LAUNCHER -j $JOBNAME/$SUBDIR_NAME -i default -t $TYPE -v $VERSION -c $CLUSTER
+				sbatch --job-name=_$JOBNAME/$SUBDIR_NAME $LAUNCHER -j $JOBNAME/$SUBDIR_NAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
 			else
 				# Get just the subdirectory name
 				SUBDIR_NAME=$(basename "$SUBDIR")
@@ -264,8 +264,10 @@ elif [ "$TYPE" = "zfi_set" ]; then
 					ENS_NUM=$(printf "%02d" $i)
 					# Format the name of the ensemble member subdirectory
 					ENS_DIR="${ENS_NUM}_${SUBDIR_NAME}"
+					# Format the path to the configuration file
+					CONFIG_PATH="HPC_runs/_${JOBNAME}/${SUBDIR_NAME}/${ENS_NUM}_${SUBDIR_NAME}/input_config.json"
 					# Submit a job for each ensemble member sub directory in the set
-					sbatch --job-name=_$JOBNAME/$SUBDIR_NAME/$ENS_DIR $LAUNCHER -j $JOBNAME/$SUBDIR_NAME/$ENS_DIR -i default -t $TYPE -v $VERSION -c $CLUSTER
+					sbatch --job-name=_$JOBNAME/$SUBDIR_NAME/$ENS_DIR $LAUNCHER -j $JOBNAME/$SUBDIR_NAME/$ENS_DIR -i $CONFIG_PATH -t $TYPE -v $VERSION -c $CLUSTER
 				done
 			fi
 		fi
