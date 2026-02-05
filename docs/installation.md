@@ -1304,7 +1304,25 @@ Installing the current project: unox (0.1.1)
 
 <br/>
 
-If this runs without error, you will then be able to use the `unox` code base.
+If this runs without error, you should then be able to use the `unox` code base.
+To confirm the location of where `unox` is installed, use `pip` to output a list of packages:
+```console
+(env_name) username@animus-c:~unox$ pip list
+Package                       Version        Editable project location
+----------------------------- -------------- -------------------------
+absl-py                       2.3.1
+...
+typing_extensions             4.15.0
+tzdata                        2025.2
+unox                          0.1.1          /home/<username>/unox
+uri-template                  1.3.0
+urllib3                       2.5.0
+...
+```
+
+Ensure the file path listed next to `unox` is the location of where you cloned the repository.
+This will enable you to make changes to the `unox` code base in your cloned repository and have those changes be reflected when running parts of the code using your `conda` environment.
+This is opposed to other installation methods, such as using `pip install` where the source code used would be in a different location.
 
 <a id='config_vscodium'></a>
 [back to top](#top)
