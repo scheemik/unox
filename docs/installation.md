@@ -360,7 +360,7 @@ The `!` at a start of a line means to specifically _include_ a file to be tracke
 The `HPC_params.sh` file in the repository contains parameters that will be used to facilitate transferring between the two remote systems. 
 Find this file and change the parameters to reflect those for your user accounts, especially the user names. 
 I would suggest then adding the `HPC_params.sh` file to the `gitignore` to avoid `git` tracking it's changes between different users who are using the repository. 
-Additionally, change the email address in the `HPC_slurm.sh` file in the `#SBATCH` options to that you are the one who receives email notifications for the model runs you submit.
+Additionally, change the email address in the `HPC_GPU_slurm.sh` file in the `#SBATCH` options to that you are the one who receives email notifications for the model runs you submit.
 
 ```bash
 #!/bin/bash
