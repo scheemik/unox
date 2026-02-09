@@ -115,9 +115,9 @@ check_to_combine_predictions() {
         THIS_CONFIG=""
         echo "Did not find .$DIR_PREFIX/$file/input_config.json, using sample_config.json"
     fi
-    echo "Looking for .$DIR_PREFIX/$file/ENSEMBLE_SIZE.sh"
-    if [ -f ".$DIR_PREFIX/$file/ENSEMBLE_SIZE.sh" ]; then
-        echo "Found .$DIR_PREFIX/$file/ENSEMBLE_SIZE.sh"
+    echo "Looking for .$DIR_PREFIX/$file/ENSEMBLE_SIZE.txt"
+    if [ -f ".$DIR_PREFIX/$file/ENSEMBLE_SIZE.txt" ]; then
+        echo "Found .$DIR_PREFIX/$file/ENSEMBLE_SIZE.txt"
         echo "    Combining predictions from ensemble run for $file"
         python src/unox/HPC/combine_predictions.py $file $THIS_CONFIG
     fi
@@ -127,10 +127,10 @@ check_to_combine_predictions() {
 if [ "$HPC_JOB" = j ]; then
     # Copy job directories from HPC to Animus
     for FILE in "${FILENAMES[@]}"; do
-        # Check whether there is a file called `ENSEMBLE_SIZE.sh` in the copied directory
+        # Check whether there is a file called `ENSEMBLE_SIZE.txt` in the copied directory
         echo "Checking .$DIR_PREFIX/$FILE for ensemble predictions to combine..."
         check_to_combine_predictions $FILE
-        # Check whether there is a file called `ENSEMBLE_SIZE.sh` in the each subdirectory
+        # Check whether there is a file called `ENSEMBLE_SIZE.txt` in the each subdirectory
         for SUBDIR in .$DIR_PREFIX/$FILE/*/; do
             if [ -d "$SUBDIR" ]; then
                 SUBDIR_NAME=$(basename "$SUBDIR")
