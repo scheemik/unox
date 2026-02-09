@@ -51,7 +51,7 @@ else:
 # -------- Check the directories --------
 
 # Find the ensemble size file in the savedir
-ens_size_file = verify_path(f"{savedir}ENSEMBLE_SIZE.sh")
+ens_size_file = verify_path(f"{savedir}ENSEMBLE_SIZE.txt")
 # Read in the ensemble size
 with open(ens_size_file, 'r') as file:
     ens_size = int(file.read().strip())
@@ -100,9 +100,14 @@ for i in range(1, ens_size):
         # Get just the child directory name, skipping the first three characters as those will be
         # a 2-digit number and an underscore
         this_child_dir = os.path.basename(this_savedir.rstrip('/'))[3:]
-    # Compare to the base output metadata, excluding the `savedir` entry
-    if this_output_metadata != base_output_metadata:
-        raise ValueError(f"Output metadata file for ensemble member {i+1} does not match that of member 1.")
+    # Compare to the base output metadata
+    for key in this_output_metadata.keys():
+        this_key = this_output_metadata[key]
+        base_key = base_output_metadata[key]
+        if this_key != base_key and key != 'config_path':
+            raise ValueError(f"Output metadata file for ensemble member {i+1} does not match that of member 1 for key: {key}.")
+    # if this_output_metadata != base_output_metadata:
+    #     raise ValueError(f"Output metadata file for ensemble member {i+1} does not match that of member 1.")
     # Compare the child directory names, skipping the first three characters as those will be 
     # a 2-digit number and an underscore
     if this_child_dir != base_child_dir:
