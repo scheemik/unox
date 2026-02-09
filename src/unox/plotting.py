@@ -1709,8 +1709,8 @@ def plot_BaW(
                 var_array = u_arr.xr[var].values.flatten()
                 # Format the label for this variable
                 ax_labels[j] = f"{u_arr.xr[var].attrs['long_name']} ({u_arr.xr[var].attrs['units']})"
-                # Format the box label
-                box_label = u_arr.name
+                # Format the box label, taking only the name of the child (ensemble member) directory
+                box_label = f"{u_arr.name.split('/')[-1]} (n={len(var_array)})\n{box_label_restrict}"
             elif var in ['R2', 'RMSE']:
                 from unox.evaluate import compare_arrs
                 # Make sure the dataset is an ensemble run
@@ -1737,8 +1737,8 @@ def plot_BaW(
 
                 # Find the number of ensemble members
                 ens_size = u_arr.xr.attrs['ensemble_size']
-                # Format the box label
-                box_label = f"{u_arr.name} (n={ens_size})\n{box_label_restrict}"
+                # Format the box label, taking only the name of the child (ensemble member) directory
+                box_label = f"{u_arr.name.split('/')[-1]} (n={ens_size})\n{box_label_restrict}"
                 # Make an array to collect the comparison values
                 var_array = [None]*ens_size
                 # Calculate the comparison value for each ensemble member
@@ -1787,8 +1787,9 @@ def plot_BaW(
 
     if new_plot == True:
         # Add an overall title
-        # fig.suptitle(f"{u_arr.name}", fontsize=title_font_size)
+        # fig.suptitle(f"{overall_title}", fontsize=title_font_size)
         # Return the figure
         return fig
     else:
+        # Return the axes
         return axs
