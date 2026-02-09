@@ -1578,7 +1578,6 @@ def compare_input_vars(
 def plot_BaW(
     vars,
     datasets,
-    set_of_runs=False,
     ds_kwargs=None,
     axs=None,
     violin=False,
@@ -1588,7 +1587,48 @@ def plot_BaW(
 
     Create a box and whisker plot of the specified variables from the given dataset.
 
-    """ 
+        Parameters
+        ----------
+        vars : `list`, `str`
+            The variable(s) to plot on the x-axis/axes.
+            Can be `R2`, `RMSE`, or any variable in the dataset.
+        datasets : `list`, `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
+            The dataset(s) from which to get the data for the plot.
+        ds_kwargs : `list`, `dict`, optional
+            The dictionaries(s) of keyword arguments to specify the format of each plot.
+            Default is `None`.
+        axs : `list`, `matplotlib.axes.Axes`, `None`, optional
+            The axes on which to plot the data.
+            If `None`, a new figure is created.
+            Default is `None`.
+        violin : `bool`, optional
+            Whether or not to make a violin plot instead of a box and whisker plot.
+            Default is `False`.
+        **kwargs : dict
+            Additional keyword arguments to pass to `set_fig_row_col()`.
+
+        Returns
+        -------
+        fig : `matplotlib.figure.Figure`
+            If no axes were given, return the figure object containing the plot.
+        axs : `QuadMesh`
+            If axes were given, return those axes with the plots on them.
+
+        Examples
+        --------
+        >>> fig = plot_BaW(
+                ['R2', 'RMSE'],
+                '_ZFI_ensemble_run',
+                ds_kwargs=[
+                    {
+                        'is_predict': True,
+                        'start_date': '2019-01-02',
+                        'interval': '1Y',
+                        'restrict_lat_lon_to': 'datafiles/sample_data/nox_2019_t106_US.nc',
+                    },
+                ]
+            )
+    """
     # Verify argument types 
     if not isinstance(vars, list):
         if isinstance(vars, str):
