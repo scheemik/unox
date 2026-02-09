@@ -19,12 +19,9 @@ print("===== Begin run_model.py =====")
 print(f"Current working directory: {os.getcwd()}")
 
 # Set parameters
-n_epochs = 250
 model_fmt = 'keras' # 'h5', 'keras', or 'both'
 input_fmt = 'nc' # 'nc' or 'npy'
 output_fmt = 'nc' # 'nc', 'npy', or 'both'
-split_year = 2019
-split_value = 0.9
 
 # -------- Get input arguments --------
 print("Using input arguments:")
@@ -41,11 +38,8 @@ output_metadata = rf.make_output_metadata_dict(
     config_path,
     config_dict,
     version,
-    n_epochs,
     model_fmt,
     input_fmt,
-    split_year,
-    split_value,
 )
 
 ##################################################################
@@ -62,9 +56,9 @@ uarr = uarray(inputfiles, is_input_set=True)
 # Get the years
 years = uarr._get_years()
 # Prepare the input files
-xtrain, ytrain, output_metadata = prepare_input(uarr, config_path, output_metadata, split_year, stage=1)
+xtrain, ytrain, output_metadata = prepare_input(uarr, config_path, output_metadata, config_dict['split_year'], stage=1)
 # Split into training and validation sets
-xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
+xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, config_dict['split_value'])
 print("After data split:")
 print(f"\tShape of xtrain: {xtrain.shape}")
 print(f"\tShape of ytrain: {ytrain.shape}")
@@ -164,7 +158,7 @@ def begin_training(
         unet.save_model(f"{savedir}unet_stage{stage}_model.keras")
     return unet
 
-unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=model_fmt)
+unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=config_dict['n_epochs'], save_format=model_fmt)
 
 # Generate predictions for evaluation
 ### Load testing data sets
@@ -236,7 +230,7 @@ elif output_fmt == 'nc' or output_fmt == 'both':
     # Create a blank list to add predictions to
     pred_xr_arr = []
     # Make predictions based on x data for years >= split_year
-    for year in range(split_year, max(years)+1):
+    for year in range(config_dict['split_year'], max(years)+1):
         print(f"Generating predictions for year: {year}")
         x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
         # Make the predictions
@@ -309,9 +303,9 @@ elif input_fmt == 'nc':
     # Get the years
     years = uarr._get_years()
     # Prepare the input files
-    xtrain, ytrain, output_metadata = rf.prepare_input(uarr, config_path, output_metadata, split_year, stage=2)
+    xtrain, ytrain, output_metadata = rf.prepare_input(uarr, config_path, output_metadata, config_dict['split_year'], stage=2)
     # Split into training and validation sets
-    xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, split_value)
+    xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, config_dict['split_value'])
     print("After data split:")
     print(f"\tShape of xtrain: {xtrain.shape}")
     print(f"\tShape of ytrain: {ytrain.shape}")
@@ -331,7 +325,7 @@ else:
 
 # Stage-2 training of the Unet
 
-unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=n_epochs, save_format=model_fmt)
+unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=config_dict['n_epochs'], save_format=model_fmt)
 
 if output_fmt == 'npy':
     predict_and_save(savedir, unet, x_files=x_files, stage=2)
@@ -342,7 +336,7 @@ elif output_fmt == 'nc' or output_fmt == 'both':
     # Create a blank list to add predictions to
     pred_xr_arr_s2 = []
     # Make predictions based on x data for years >= split_year
-    for year in range(split_year, max(years)+1):
+    for year in range(config_dict['split_year'], max(years)+1):
         print(f"Generating predictions for year: {year}")
         x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
         # Make the predictions

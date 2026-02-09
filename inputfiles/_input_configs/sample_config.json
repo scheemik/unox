@@ -13,7 +13,8 @@
     ],
     "stage_2": true,
     "stage_2_cutoff": 2013,
-    "lsm_vars": [
-    ],
+    "n_epochs": 250,
+    "split_year": 2019,
+    "split_value": 0.9,
     "grid_size": [56, 120]
 }
