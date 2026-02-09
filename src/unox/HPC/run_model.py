@@ -71,6 +71,7 @@ print(output_metadata['unet_build_shape'])
 
 ##################################################################
 
+from training import begin_training
 # Import packages based on version
 if version == 0: # keras v2.9.0, tensorflow v2.9.2
     from legacy.functions_old import r2_keras
@@ -81,7 +82,6 @@ elif version == 1: # keras v3.10.0, tensorflow v2.17.0
     from utils.functions import msenonzero
     from model.core import Unet
 from tensorflow.keras.optimizers import Adam
-from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
 
 ##################################################################
 # Build and compile the Unet
@@ -98,65 +98,6 @@ unet.summary()
 ##################################################################
 
 # Stage-1 training of the Unet
-
-def begin_training(
-    savedir,
-    stage,
-    xtrain,
-    ytrain,
-    xvalid,
-    yvalid,
-    unet,
-    batch_size=30,
-    n_epochs=250,
-    save_format='keras',
-):
-    """Begin training the Unet model.
-
-    Parameters
-    ----------
-    savedir : str
-        Directory to save outputs.
-    stage : int
-        The stage number (1 or 2).
-    xtrain : np.ndarray
-        Training input features.
-    ytrain : np.ndarray
-        Training target variables.
-    xvalid : np.ndarray
-        Validation input features.
-    yvalid : np.ndarray
-        Validation target variables.
-    unet : Unet
-        The Unet model to be trained.
-    batch_size : int, optional
-        Batch size for training.
-    n_epochs : int, optional
-        Number of epochs for training.
-    save_format : str, optional
-        Format to save the model ('h5', 'keras', or 'both').
-    
-    Returns
-    -------
-    unet : Unet
-        The trained Unet model.
-    """
-    # Check the stage number
-    if stage not in [1, 2]:
-        raise ValueError(f"(begin_training) `stage` must be 1 or 2. Got: {stage}")
-    # Set up callbacks
-    csv_logger = CSVLogger(f"{savedir}unet_stage{stage}_log.csv", append=True, separator=';')
-    earlystopper = EarlyStopping(patience=15, verbose=1)
-    checkpointer = ModelCheckpoint(f"{savedir}checkpts/unet_checkpt_{{val_loss:.2f}}_{{r2_keras:.2f}}_stage{stage}.h5", verbose=1, save_best_only=True)
-    print("")
-    print(f"#### Begin training stage {stage} ####")
-    unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), batch_size=batch_size, epochs=n_epochs, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
-    # Save model weights
-    if save_format in ['h5', 'both']:
-        unet.save_model(f"{savedir}unet_stage{stage}_model.h5")
-    if save_format in ['keras', 'both']:
-        unet.save_model(f"{savedir}unet_stage{stage}_model.keras")
-    return unet
 
 unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=config_dict['n_epochs'], save_format=model_fmt)
 
