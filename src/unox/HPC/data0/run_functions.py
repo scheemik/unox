@@ -129,7 +129,6 @@ def make_output_metadata_dict(
     config_dict,
     version,
     model_fmt,
-    input_fmt,
 ):
     """ Creates the dictionary of metadata for a run to be output to a dictionary. 
 
@@ -148,9 +147,6 @@ def make_output_metadata_dict(
         model_fmt : str
             The format in which to output the trained model for this run.
             Either 'h5', 'keras', or 'both'.
-        input_fmt : str
-            The format of the input data used for this run.
-            Either 'nc' or 'npy'.
         split_year : int
             The year at which to split the training and validation data.
             Defaults to 2019.
@@ -172,16 +168,8 @@ def make_output_metadata_dict(
         raise TypeError(f"(make_output_metadata_dict) `config_dict` must be a str or dict. Got type: {type(config_dict)}")
     if not isinstance(version, int):
         raise TypeError(f"(make_output_metadata_dict) `version` must be an int. Got type: {type(version)}")
-    # if not isinstance(n_epochs, int):
-    #     raise TypeError(f"(make_output_metadata_dict) `n_epochs` must be an int. Got type: {type(n_epochs)}")
     if not isinstance(model_fmt, str):
         raise TypeError(f"(make_output_metadata_dict) `model_fmt` must be a str. Got type: {type(model_fmt)}")
-    if not isinstance(input_fmt, str):
-        raise TypeError(f"(make_output_metadata_dict) `input_fmt` must be a str. Got type: {type(input_fmt)}")
-    # if not isinstance(split_year, int):
-    #     raise TypeError(f"(make_output_metadata_dict) `split_year` must be an int. Got type: {type(split_year)}")
-    # if not verify_number(split_value):
-    #     raise TypeError(f"(make_output_metadata_dict) `split_value` must be a number. Got type: {type(split_value)}")
 
     # Create the metadata dictionary
     output_metadata = {
@@ -189,11 +177,7 @@ def make_output_metadata_dict(
         'config_path': config_path,
         'config_dict': config_dict,
         'version': version,
-        # 'n_epochs': n_epochs,
         'model_fmt': model_fmt,
-        'input_fmt': input_fmt,
-        # 'split_year': split_year,
-        # 'split_value': split_value,
         'train_years': {
             'stage1': [],
             'stage2': [],
