@@ -134,8 +134,10 @@ if [ "$HPC_JOB" = j ]; then
         for SUBDIR in .$DIR_PREFIX/$FILE/*/; do
             if [ -d "$SUBDIR" ]; then
                 SUBDIR_NAME=$(basename "$SUBDIR")
-                echo "Checking .$DIR_PREFIX/$FILE/$SUBDIR_NAME for ensemble predictions to combine..."
-                check_to_combine_predictions "$FILE/$SUBDIR_NAME"
+                if [ "$SUBDIR_NAME" != "checkpts" ]; then
+                    echo "Checking .$DIR_PREFIX/$FILE/$SUBDIR_NAME for ensemble predictions to combine..."
+                    check_to_combine_predictions "$FILE/$SUBDIR_NAME"
+                fi
             fi
         done
     done
