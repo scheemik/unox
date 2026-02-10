@@ -234,13 +234,13 @@ def prepare_input(
         raise TypeError(f"(prepare_input) `output_metadata` must be a dict. Got type: {type(output_metadata)}.")
     # Verify split_year
     if not verify_number(split_year):
-        raise TypeError(f"(get_npy_from_netcdf) `split_year` must be a number. Got type: {type(split_year)}")
+        raise TypeError(f"(prepare_input) `split_year` must be a number. Got type: {type(split_year)}")
     # Verify split_year is present in the dataset
     years = uarr._get_years()
     if split_year not in years:
-        raise ValueError(f"(get_npy_from_netcdf) `split_year` must be a year present in `uarr`. Available years: {years}")
+        raise ValueError(f"(prepare_input) `split_year` must be a year present in `uarr`. Available years: {years}")
     if stage not in [1, 2]:
-        raise ValueError(f"(set_of_maps) `stage` must be either 1 or 2. Got: {stage}.")
+        raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}.")
 
     # Create blank lists to hold x and y training data
     xtrain_list = []
