@@ -1,9 +1,11 @@
 import numpy as np
-from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
+import xarray as xr
+import pandas as pd
 
 from model.core import Unet
 from utils.functions import r2_keras
 from utils.functions import msenonzero
+from data0.load_input import get_npy_from_netcdf
 
 def begin_training(
     savedir,
@@ -69,7 +71,8 @@ def begin_training(
     if save_format not in ['h5', 'keras', 'both']:
         raise ValueError(f"(begin_training) `save_format` must be `h5`, `keras`, or `both`. Got: {save_format}")
 
-    # Set up callbacks
+    # Set up callbacks, do not import keras functions before using xarray on Trillium
+    from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
     csv_logger = CSVLogger(f"{savedir}unet_stage{stage}_log.csv", append=True, separator=';')
     earlystopper = EarlyStopping(patience=15, verbose=1)
     checkpointer = ModelCheckpoint(f"{savedir}checkpts/unet_checkpt_{{val_loss:.2f}}_{{r2_keras:.2f}}_stage{stage}.h5", verbose=1, save_best_only=True)
@@ -82,3 +85,119 @@ def begin_training(
     if save_format in ['keras', 'both']:
         unet.save_model(f"{savedir}unet_stage{stage}_model.keras")
     return unet
+
+
+def make_predictions(
+    uarr,
+    unet,
+    config_dict,
+    config_path,
+    output_metadata,
+    stage = 1,
+):
+    """ Prepare the input data for the model.
+
+        Get the training data from the input NetCDF dataset as numpy arrays
+        and concatenate them along the time dimension.
+
+        Parameters
+        ----------
+        uarr : `unox.uarray`
+            The dataset of the input NetCDF file.
+        unet : `Unet`
+            The Unet model to be trained.
+        config_dict : `dict`
+            A dictionary containing the configuration.
+        config_path : `str` 
+            Path to the input configuration JSON file used to make `config_dict`.
+        output_metadata : `dict`
+            The dictionary of metadata describing the output of a model run.
+        stage : `int`
+            The stage of the data to plot (1 or 2).
+        
+        Returns
+        -------
+        xtrain : np.ndarray
+            Concatenated training input features.
+        ytrain : np.ndarray
+            Concatenated training target variables.
+        output_metadata : dict
+            The dictionary of metadata describing the output of a model run with values added for `train_years` and `unet_build_shape`.
+    """
+    # Verify argument types
+    uarr._verify()
+    if not isinstance(config_dict, (str, type({}))):
+        raise TypeError(f"(make_predictions) `config_dict` must be a str or dict. Got type: {type(config_dict)}.")
+    if not isinstance(output_metadata, type({})):
+        raise TypeError(f"(make_predictions) `output_metadata` must be a dict. Got type: {type(output_metadata)}.")
+    if not isinstance(config_path, str):
+        raise TypeError(f"(make_predictions) `config_path` must be a string. Got type: {type(config_path)}.")
+    if stage not in [1, 2]:
+        raise ValueError(f"(make_predictions) `stage` must be either 1 or 2. Got: {stage}.")
+
+    # Get the years
+    years = uarr._get_years()
+    # Get the long name and units of the y variable to put in the new xarray
+    y_var = uarr.xr.attrs['y_var']
+    y_var_name = uarr.xr[y_var].long_name
+    y_var_unit = uarr.xr[y_var].units
+    # Create a new variable name and long name
+    if stage == 1:
+        pred_var = f"{y_var}_pred"
+        pred_var_name = f"Predicted {y_var_name}"
+    elif stage == 2:
+        pred_var = f"{y_var}_pred_s2"
+        pred_var_name = f"Predicted {y_var_name} (stage 2)"
+    # Create a blank list to add predictions to
+    pred_xr_arr = []
+    # Make predictions based on x data for years >= split_year
+    for year in range(config_dict['split_year'], max(years)+1):
+        print(f"Generating predictions for year: {year}")
+        x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
+        # Make the predictions
+        pred = unet.predict(x_test)
+        # Add year to the list of predictions in the metadata dictionary
+        output_metadata['pred_years'][f'stage{stage}'].append(year)
+
+        # Select the data for the specified year
+        data_for_year = uarr._select_year(year)
+        # Load the output to an xarray Dataset
+        this_year_pred_xr = xr.Dataset(
+            data_vars=dict(
+                # Squeeze the predictions array to reduce dimensions 
+                # from (364, n_lat, n_lon, 1) to (364, n_lat, n_lon)
+                pred_temp=(["time", "lat", "lon"], pred.squeeze())
+            ),
+            coords={
+                "time":data_for_year["time"],
+                "lat":in_lats, 
+                "lon":in_lons,
+            },
+        )
+        pred_xr_arr.append(this_year_pred_xr)
+    # Concatenate the new data with the existing dataset along the time dimension
+    pred_xarray = xr.concat(pred_xr_arr, dim='time')
+    # Rename prediction variable and add attributes
+    pred_xarray = pred_xarray.rename({'pred_temp': pred_var})
+    pred_xarray[pred_var].attrs = {'long_name': pred_var_name, 'units': y_var_unit}
+    # Copy over the attributes for the latitude and longitude
+    for coord in ['lat', 'lon']:
+        for this_attr in data_for_year[coord].attrs.keys():
+            pred_xarray[coord].attrs[this_attr] = data_for_year[coord].attrs[this_attr]
+    # Add global attributes for the prediction file
+    pred_xarray.attrs['description'] = f"Predicted {y_var_name} using a U-net model"
+    pred_xarray.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+    pred_xarray.attrs['y_var'] = f"{y_var}"
+    pred_xarray.attrs['input_set'] = f"{uarr.name}"
+    pred_xarray.attrs['config_path'] = f"{config_path}"
+    pred_xarray.attrs['config_dict'] = f"{config_dict}"
+    # Copy over global attributes from the input xarray
+    for this_attr in uarr.xr.attrs.keys():
+        if this_attr in ['stages']:
+            pred_xarray.attrs[this_attr] = [1]
+        elif this_attr in ['x_vars', 'stage_2_cutoff']:
+            pred_xarray.attrs[this_attr] = config_dict[this_attr]
+        elif this_attr not in ['description', 'modification_date', 'y_var', 'x_vars', 'x1_vars', 'x2_vars']:
+            pred_xarray.attrs[this_attr] = uarr.xr.attrs[this_attr]
+
+    return pred_xarray, output_metadata
