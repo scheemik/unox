@@ -73,9 +73,12 @@ def begin_training(
 
     # Set up callbacks, do not import keras functions before using xarray on Trillium
     from keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint
+    # Log information into a CSV file
     csv_logger = CSVLogger(f"{savedir}unet_stage{stage}_log.csv", append=True, separator=';')
+    # Stop the training early if minimal improvements are made
     earlystopper = EarlyStopping(patience=15, verbose=1)
-    checkpointer = ModelCheckpoint(f"{savedir}checkpts/unet_checkpt_{{val_loss:.2f}}_{{r2_keras:.2f}}_stage{stage}.h5", verbose=1, save_best_only=True)
+    # Save out checkpoints of the model every epoch
+    ## All but the most recent checkpoint will be deleted upon completion of the model run
     print("")
     print(f"#### Begin training stage {stage} ####")
     unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), batch_size=batch_size, epochs=n_epochs, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
