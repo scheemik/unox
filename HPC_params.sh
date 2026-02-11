@@ -39,3 +39,43 @@ MIST_PROJ_DIR="Postdoc/unox"
 # This is the name of the identify file for SSH connections to Mist
 # NOTE: This file is located on Animus
 MIST_IDENTITY_FILE="~/.ssh/id_ed25519"
+
+###############################################################################
+# Function to find the modify dates of `checkpt` files and 
+# only keep the most recent one
+keep_most_recent_checkpoint() {
+    # Expects file path like "HPC_runs/_test_ens_zfi2/test_ens_zfi2_skt/01_test_ens_zfi2_skt/checkpts"
+    local dir=$1
+    # Check whether a config file exists
+    if [ ! -d $dir ]; then
+        echo "$dir is not a directory"
+    else
+        # Set a variable to record the most recent time
+        MOST_RECENT_TIME=0
+        # Set a variable to record the most recent file
+        MOST_RECENT_FILE="None"
+        # Loop through all the files in this directory
+        for FILE in "$dir"/*; do
+            # Check whether it is a checkpoint file
+            if [[ "$FILE" == *"checkpt"* ]]; then
+                # Get the modification date in seconds since epoch
+                THIS_TIME=$(stat --format="%Y" $FILE)
+                # Check whether this is more recent than the last file
+                if [[ $THIS_TIME > $MOST_RECENT_TIME ]]; then
+                    # Set the new values
+                    MOST_RECENT_TIME=$THIS_TIME
+                    MOST_RECENT_FILE=$FILE
+                fi
+            fi
+        done
+        # Loop through all the files in this directory again
+        for FILE in "$dir"/*; do
+            # Check whether it is the most recent file
+            if [[ "$FILE" != "$MOST_RECENT_FILE" ]]; then
+                # Remove that file, if not the most recent
+                rm $FILE
+            fi
+        done
+        echo $MOST_RECENT_FILE
+    fi
+}

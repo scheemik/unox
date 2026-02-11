@@ -137,4 +137,11 @@ echo "Running $CODEFILE with savedir $SAVEDIR"
 echo ""
 python $CODEFILE $SAVEDIR $CONFIG_FILE $VERSION
 
+# Remove all but the most recent `checkpt` file
+CHKPT_DIR="$SAVEDIR/checkpts"
+VAR=$(keep_most_recent_checkpoint $CHKPT_DIR)
+echo "Kept only most recent checkpoint file:"
+echo "    $VAR"
+echo "    Last modified at: $(stat --format="%y" $VAR)"
+
 deactivate
