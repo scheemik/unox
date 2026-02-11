@@ -1,6 +1,8 @@
 import xarray as xr
+import numpy as np
 import pandas as pd
 import json
+import warnings
 
 # Necessary to use relative imports (starting with a dot) to avoid
 # errors when running on HPC as the `unox` package is not available
@@ -13,27 +15,31 @@ from .latlon import shift_lon_arr
 class uarray():
     """A wrapper class for an xarray Dataset.
 
-    A class that wraps an xarray Dataset of a format specified by `verify_dataset()`.
-    All method names start with an underscore (_) to avoid conflicts.
+        A class that wraps an xarray Dataset of a format specified by `verify_dataset()`.
+        All method names start with an underscore (_) to avoid conflicts.
 
-    Attributes
-    ----------
-    xr : xarray.Dataset or xarray.DataArray
-        The xarray dataset. Expected to have lat and lon coordinates, and optionally 
-        a time coordinate.
-    years : list of int
-        A list of unique years present in the time coordinate of the dataset.
+        Attributes
+        ----------
+        xr : xarray.Dataset or xarray.DataArray
+            The xarray dataset. Expected to have lat and lon coordinates, and optionally 
+            a time coordinate.
+        years : list of int
+            A list of unique years present in the time coordinate of the dataset.
 
-    Methods
-    -------
-    _verify(**kwargs)
-        Verify specified aspects of the dataset using `verify_dataset()`.
-    _get_years()
-        Get a list of unique years present in the time coordinate of the dataset.
-    _select_year(year)
-        Select data for the specified year from the dataset.
-    _shift_lons(**kwargs)
-        Shift the longitude coordinates of the dataset using `shift_lon_arr()`.
+        Methods
+        -------
+        _verify(**kwargs)
+            Verify specified aspects of the dataset using `verify_dataset()`.
+        _get_years()
+            Get a list of unique years present in the time coordinate of the dataset using `get_years()`.
+        _select_year(year)
+            Select data for the specified year from the dataset.
+        _get_metadata()
+            Get the metadata dictionary if the dataset is an input or prediction set using `get_metadata()`.
+        _get_epochs_logs()
+            Get the epochs csv logs if the dataset is a prediction set using `get_epochs_logs()`.
+        _shift_lons(**kwargs)
+            Shift the longitude coordinates of the dataset using `shift_lon_arr()`.
 
     """
     # Initialize the uarray object
@@ -49,8 +55,11 @@ class uarray():
             is_predict,
             **kwargs,
         )
+        # Define other attributes, which are filled later by methods
         self.years = None
         self.metadata = None
+        self.epochs_logs = None
+        self.is_ensemble = None
         # Add name if `dataset` is a string
         if isinstance(dataset, str):
             self.name = dataset
@@ -59,6 +68,7 @@ class uarray():
                 self.metadata_file = verify_path(f'inputfiles/{dataset}/input_metadata.json')
                 self.is_input_set = True
                 self.is_predict = False
+                self.is_ensemble = False
             elif is_predict:
                 self.metadata_file = verify_path(f'HPC_runs/{dataset}/output_metadata.json')
                 self.is_input_set = False
@@ -75,6 +85,9 @@ class uarray():
     # Verify aspects of the dataset
     def _verify(self, **kwargs):
         self.xr = verify_dataset(self.xr, **kwargs)
+    def _is_ensemble(self):
+        self.is_ensemble = is_ensemble(self)
+        return self.is_ensemble
     # Get aspects of the dataset
     def _get_years(self):
         # Check whether years have already been computed
@@ -93,7 +106,13 @@ class uarray():
         if isinstance(self.metadata, type(None)):
             # Get the metadata dictionary
             self.metadata = get_metadata(self)
-            return self.metadata
+        return self.metadata
+    def _get_epochs_logs(self):
+        # Check whether the epochs logs have already been loaded
+        if isinstance(self.epochs_logs, type(None)):
+            # Get the epochs logs
+            self.epochs_logs = get_epochs_logs(self)
+        return self.epochs_logs
     # Modify aspects of the dataset
     def _shift_lons(self, **kwargs):
         self.xr = shift_lon_arr(self.xr, **kwargs)
@@ -402,3 +421,87 @@ def get_metadata(
         return metadata
     else:
         raise ValueError(f"(get_metadata) `uarray` must be either an input set or a prediction set to load metadata.")
+
+def is_ensemble(
+    dataset,
+    **kwargs,
+):
+    """ Check whether the given dataset has ensemble members.
+
+        Parameters
+        ----------
+        dataset : str, uarray, xarray.Dataset, xarray.DataArray
+            The name of the dataset to get.
+        **kwargs : keyword arguments
+            Additional keyword arguments to pass to `load_dataset()` and `verify_dataset()`.
+
+        Returns
+        -------
+        is_ensemble : `bool`
+            Whether the given dataset has ensemble members.
+    """
+    # Verify argument types
+    # Making `uarray` object verifies `dataset`
+    if not isinstance(dataset, uarray):
+        dataset = uarray(dataset, **kwargs)
+    # Check whether the dataset is a prediction set
+    if not dataset.is_predict:
+        warnings.warn(f"(is_ensemble) `dataset` must be a prediction set to check for ensemble members.")
+        return False
+    # Check for the `ensemble_size` attribute
+    g_attrs = dataset.xr.attrs
+    if 'ensemble_size' in g_attrs:
+        ensemble_size = g_attrs['ensemble_size']
+        if isinstance(ensemble_size, (int, np.int64)) and ensemble_size > 1:
+            return True
+    return False
+
+def get_epochs_logs(
+    dataset,
+    **kwargs,
+):
+    """ Find and load the relevant epochs csv logs for the given `uarray`.
+
+        Parameters
+        ----------
+        dataset : `uarray`
+            The `uarray` object for which to load the epochs logs.
+        **kwargs : keyword arguments
+            Additional keyword arguments to pass to `uarray()`.
+
+        Returns
+        -------
+        epochs_logs : `xr.Dataset`
+            The dataset of epochs logs for this `uarray`.
+    """
+    # Verify argument types
+    # Making `uarray` object verifies `dataset`
+    if not isinstance(dataset, uarray):
+        dataset = uarray(dataset, **kwargs)
+    # Check whether the dataset is a prediction set
+    if not dataset.is_predict:
+        ValueError(f"(get_epochs_logs) `dataset` must be a prediction set to load epochs logs.")
+
+    # Get the stages of this prediction set
+    stages = dataset.xr.attrs['stages']
+    # Make a blank list to add each stage of epoch logs
+    logs_per_stage = []
+    # Loop across the stages
+    for stage in stages:
+        # Format the path to the epoch log CSV file
+        this_csv = f"HPC_runs/{dataset.name}/unet_stage{stage}_log.csv"
+        # Load the CSV into a Pandas Data Frame
+        this_df = pd.read_csv(this_csv, delimiter=';')
+        # Set `epoch` as the index
+        this_df = this_df.set_index('epoch')
+        # Turn the Data Frame into a DataArray
+        this_xr = this_df.to_xarray()
+        # Add that DataArray to the list
+        logs_per_stage.append(this_xr)
+    
+    # Create an xr.Dataset to hold the epochs data
+    epochs_log_xr = xr.concat(logs_per_stage, dim="stage", coords="all")
+    # Set the values for the `stage` coordinate
+    epochs_log_xr.coords['stage'] = stages
+
+    return epochs_log_xr

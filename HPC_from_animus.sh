@@ -2,8 +2,8 @@
 # Author: Mikhail Schee
 # 2025-09-08
 
-# Run this script to copy files to an HPC cluster from Animus.
 # To be run on Animus.
+# Run this script to copy files to an HPC cluster from Animus.
 # Takes in the following arguments:
 #	$ bash HPC_from_animus.sh -f <filename>      Ex: no2_sample_input
 #                             -i <inputfile>     Look for input file directory based on filename

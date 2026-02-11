@@ -1,7 +1,5 @@
 import numpy as np
 import os
-import matplotlib.pyplot as plt
-import matplotlib as mpl
 import xarray as xr
 import pandas as pd
 import json

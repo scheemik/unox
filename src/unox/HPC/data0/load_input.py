@@ -303,6 +303,9 @@ def apply_mask(
             raise ValueError(f"(apply_mask) Cannot apply both land-sea mask and zero-fill mask to the same variable, {var}.")
         elif var in zfi_vars:
             use_mask = 'zfi'
+        elif zfi_vars == ['none']:
+            use_mask = False
+            print(f"\t{year}: Not zeroing out {var}")
     # If no mask is to be applied, return the original variable
     if use_mask == False:
         return xr_dataset[var]

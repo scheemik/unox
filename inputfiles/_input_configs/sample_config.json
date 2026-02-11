@@ -11,9 +11,14 @@
         "t2m",
         "ssrd"
     ],
-    "stage_2": true,
-    "stage_2_cutoff": 2013,
+    "zfi_vars": [
+    ],
     "lsm_vars": [
     ],
+    "stage_2": true,
+    "stage_2_cutoff": 2013,
+    "n_epochs": 100,
+    "split_year": 2019,
+    "split_value": 0.9,
     "grid_size": [56, 120]
 }

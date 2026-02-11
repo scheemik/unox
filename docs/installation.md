@@ -42,7 +42,7 @@ where `<username>` would correspond to the username on the `local` machine.
 In this guide, the three machines that are referenced are `local` (the computer in front of you), `animus-c`, and `HPC` (the HPC cluster). 
 All command prompts assume a unix-based system (ex: Linux or MacOS). 
 If your local machine runs Windows, you will need to modify the `local` commands. 
-The machine in each console prompt indicates where the command is supposed to be executed. 
+**<ins>The machine in each console prompt indicates where the command is supposed to be executed</ins>**. 
 Command prompts in these `console` blocks are shown on lines which start with the username and the machine.
 Expected output is shown on subsequent lines.
 When executing a command, only enter what is shown in prompt lines after the `$`.
@@ -252,7 +252,7 @@ Follow that guide, entering the suggested commands first from Trillium, then fro
 
 Next, follow the GitHub guide for [Adding a new SSH key to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 
-Then, you can follow the guide on [Testing your SSH connection](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/testing-your-ssh-connection) to make sure you can connect to GitHub from each remote machine.
+Then, you can follow the guide on [Testing your SSH connection](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/testing-your-ssh-connection) to make sure you can connect to GitHub **<ins>from each remote machine</ins>**.
 This amounts to first activating your authentication key:
 ```console
 username@<animus-c_or_HPC>:~$ eval $(ssh-agent -s); ssh-add ~/.ssh/<GH_id>
@@ -283,7 +283,7 @@ According to the [Trillium Quickstart](https://docs.alliancecan.ca/wiki/Trillium
 > "Job output must be written to the scratch file system"
 
 The code is set up to save model run output to the same directory as the repository. 
-For this reason, make sure to clone the repository into the `scratch` filesystem. 
+For this reason, make sure to clone the repository into the `scratch` filesystem **<ins>on HPC</ins>**. 
 You may choose to create a new directory within which to clone the repository, but this is optional:
 ```console
 username@HPC:~$ cd /scratch/<username>/<optional_directory>/
@@ -309,7 +309,7 @@ Then, after sourcing `~/.bashrc`, you can execute the command `cdproj` to automa
 
 #### Animus
 
-Navigate to a directory location in which you have write permissions (ex: your home directory) and clone the repository:
+Navigate to a directory location in which you have write permissions (ex: your home directory) and clone the repository **<ins>on Animus</ins>**:
 
 ```console
 username@animus-c:~$ git clone git@github.com:scheemik/unox.git
@@ -324,11 +324,15 @@ Resolving deltas: 100% (1768/1768), done.
 Updating files: 100% (102/102), done.
 ```
 
-#### Git ignore
+#### Git exclude
 
 There are many files which are produced by running this code which do not need to be tracked by `git`.
-I would recommend adding these to a list for `git` to ignore, meaning it won't monitor changes.
-How this is done might depend on your version of `git`, but for me, I added the following to my `unox/git/info/exclude` file:
+Some of these files are specified in the `.gitignore` file in the base directory of the repository. 
+Note: this `.gitignore` file is tracked by `git` and will be pushed to the repository, meaning those files will be ignored for everyone who clones it. 
+
+Some files in this repository need to be edited for each individual (e.g., to hold a username) and some directories will hold generated data which is too large to be uploaded to GitHub. 
+For these, add them to the list in the `unox/git/info/exclude` file, meaning that `git` will not monitor changes in them for your instance of the repository.
+Add the following to the `unox/git/info/exclude` file **<ins>on both HPC and Animus</ins>**:
 
 ```bash
 # git ls-files --others --exclude-from=.git/info/exclude
@@ -345,6 +349,7 @@ datafiles/GEOSChem.SpeciesConc_merged/*
 datafiles/HEMCO_diagnostics_merged/*
 HPC_runs/*
 HPC_params.sh
+HPC_GPU_slurm.sh
 sample_data/*
 outputs/*
 inputfiles/*
@@ -358,9 +363,11 @@ The `!` at a start of a line means to specifically _include_ a file to be tracke
 #### Setting the HPC parameters
 
 The `HPC_params.sh` file in the repository contains parameters that will be used to facilitate transferring between the two remote systems. 
-Find this file and change the parameters to reflect those for your user accounts, especially the user names. 
-I would suggest then adding the `HPC_params.sh` file to the `gitignore` to avoid `git` tracking it's changes between different users who are using the repository. 
-Additionally, change the email address in the `HPC_slurm.sh` file in the `#SBATCH` options to that you are the one who receives email notifications for the model runs you submit.
+Find this file **<ins>on HPC</ins>** and change the parameters to reflect those for your user accounts, especially the user names. 
+Because `HPC_params.sh` will contain information specific to each person, it doesn't make sense to push the changes made there, which would cause a different user to use the wrong parameters after the pull from the repository.
+However, with the `HPC_params.sh` file added to the list in `unox/git/info/exclude` as shown above, it will no longer be tracked by `git` and so it is unlikely you could accidentally push changes to it. 
+
+As an additional step, change the email address in the `HPC_GPU_slurm.sh` file in the `#SBATCH` options to that you are the one who receives email notifications for the model runs you submit.
 
 ```bash
 #!/bin/bash
@@ -374,6 +381,11 @@ Additionally, change the email address in the `HPC_slurm.sh` file in the `#SBATC
 ```
 
 Unfortunately, I was unable to find a way to have the `#SBATCH` notification email be pulled from the `HPC_params.sh` file and so I set it up to be the other way around. 
+For the same reason as with `HPC_params.sh`, the `HPC_GPU_slurm.sh` file was added to the list in `unox/git/info/exclude`.
+
+Note that the changes to both `HPC_params.sh` and `HPC_GPU_slurm.sh` described in this section only need to be made **<ins>on HPC</ins>**.
+None of the scripts that are meant to be executed on Animus will be affected. 
+You can change the contents of `HPC_params.sh` and `HPC_GPU_slurm.sh` on Animus to match what is on HPC, but it is not necessary.
 
 ---
 <a id='create_venvs'></a>
@@ -398,7 +410,7 @@ The Digital Alliance wiki has instructions for [Creating and using a virtual env
 They actually suggest [Creating a virtual environment inside of your jobs](https://docs.alliancecan.ca/wiki/Python#Creating_virtual_environments_inside_of_your_jobs), however I was unable to get that to work. 
 They suggest that creating a new environment every time might actually speed up performance, but I believe it is more important for the code to run consistently.
 
-To see what environments you have created on Trillium, run:
+To see what environments you have created **<ins>on Trillium</ins>**, run:
 ```console
 username@HPC:~$ ls /home/<username>/.virtualenvs/
 unoxTrillium  unoxTrilliumNC  unoxTrilliumTest
@@ -691,7 +703,7 @@ There is a way to activate and use a `conda` installation in another user's dire
 However, doing so will not allow modifications you make to the `unox` code base in your own cloned repository affect it's behavior in your `conda` environment.
 This makes development very difficult.
 
-If you need to install `conda`, I recommend using `miniconda`, which can be installed by running the following commands from your home directory:
+If you need to install `conda`, I recommend using `miniconda`, which can be installed by running the following commands from your home directory **<ins>on Animus</ins>**:
 ```console
 username@animus-c:~$ mkdir -p ~/miniconda3
 username@animus-c:~$ wget https://repo.anaconda.com/miniconda/Miniconda3-py39_25.1.1-2-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
@@ -741,7 +753,7 @@ username@animus-c:~$ source ~/miniconda3/bin/activate
 
 #### Creating the `conda` environment on Animus with `poetry`
 
-To see what `conda` environments you have created on Animus, run:
+To see what `conda` environments you have created **<ins>on Animus</ins>**, run:
 ```console
 (base) username@animus-c:~$ conda env list
 /home/<username>/miniconda3/lib/python3.12/site-packages/conda/base/context.py:891: FutureWarning: Adding the 'free' channel as it existed prior to conda 4.7. is deprecated and will be removed in 25.3. See https://docs.conda.io/projects/conda/en/stable/user-guide/configuration/free-channel.html for more details.
@@ -758,7 +770,7 @@ If you haven't created a `conda` environment on Animus yet, you will only see th
 It is highly discouraged to modify the `base` environment. 
 If you have an environment activated when running this command, that environment will have a `*` next to it's path.
 
-Create a new `conda` environment:
+Create a new `conda` environment **<ins>on Animus</ins>**:
 ```console
 username@animus-c:~$ conda create -n <env_name> python=3.9
 ```
@@ -1091,6 +1103,9 @@ Then, use `poetry` to install the dependencies:
 (env_name) username@animus-c:~unox$ poetry install
 ```
 
+Sometimes this will initially fail. 
+Try running the `poetry install` command again immediately as this will often fix the issue and continue installing the dependencies. 
+
 <details>
 
 <summary>Expand for output</summary>
@@ -1289,7 +1304,25 @@ Installing the current project: unox (0.1.1)
 
 <br/>
 
-If this runs without error, you will then be able to use the `unox` code base.
+If this runs without error, you should then be able to use the `unox` code base.
+To confirm the location of where `unox` is installed, use `pip` to output a list of packages:
+```console
+(env_name) username@animus-c:~unox$ pip list
+Package                       Version        Editable project location
+----------------------------- -------------- -------------------------
+absl-py                       2.3.1
+...
+typing_extensions             4.15.0
+tzdata                        2025.2
+unox                          0.1.1          /home/<username>/unox
+uri-template                  1.3.0
+urllib3                       2.5.0
+...
+```
+
+Ensure the file path listed next to `unox` is the location of where you cloned the repository.
+This will enable you to make changes to the `unox` code base in your cloned repository and have those changes be reflected when running parts of the code using your `conda` environment.
+This is opposed to other installation methods, such as using `pip install` where the source code used would be in a different location.
 
 <a id='config_vscodium'></a>
 [back to top](#top)
@@ -1309,7 +1342,7 @@ Much of the functionality is the same as VS Code, but VSCodium does not send tel
 
 VSCodium can connect via SSH to a server and interact with code using their nice GUI, including all the extensions you might want installed, such as GitHub Copilot.
 
-First, install the ["Open Remote - SSH" extension by `jeanp413`](https://github.com/jeanp413/open-remote-ssh). It is very similar to the "Remote - SSH" extension available with VSCode, however "Remote - SSH" is written in a way that is incompatible with VSCodium.
+First, open the "Extensions" pane (the symbol is four squares next to each other) in VSCodium, and install the ["Open Remote - SSH" extension by `jeanp413`](https://github.com/jeanp413/open-remote-ssh) **<ins>on your local machine</ins>**. It is very similar to the "Remote - SSH" extension available with VSCode, however "Remote - SSH" is written in a way that is incompatible with VSCodium.
 
 Once installed, I needed to go to the extension settings, and enable "Remote.SSH: Remote Server Listen On Socket" to get the connection to work. Your mileage may vary. 
 
@@ -1325,6 +1358,9 @@ Now, you should be able to select the "File explorer" side panel and see all the
 Repeat the same process for the `animus` target, opening it in a new window.
 You should now be able to see the `unox` repository on both remote machines in VSCodium.
 
+**<ins>On both Animus and HPC</ins>**, open the "Extensions" pane and insure any extensions you use on a regular basis locally are installed on the remote system as well.
+You are very unlikely to need the "Open Remote - SSH" extension on either Animus or HPC.
+
 <a id='vsc_setup'></a>
 [back to top](#top)
 
@@ -1333,6 +1369,7 @@ You should now be able to see the `unox` repository on both remote machines in V
 If you are already familiar with VSCodium (or VSCode) you probably have a setup that you prefer. 
 If that is the case, feel free to move on to the guide on {doc}`data <data>` the development {doc}`workflow <workflow>`.
 Below, I list a few of the features that I find invaluable when I am coding as suggestions.
+Remember to verify that the changes you make in VSCodium are propagated to both Animus and HPC.
 
 #### Terminal panel
 

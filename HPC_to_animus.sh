@@ -2,8 +2,8 @@
 # Author: Mikhail Schee
 # 2025-06-02
 
-# Run this script to copy a file or directory from an HPC cluster to Animus.
 # To be run on Animus.
+# Run this script to copy a file or directory from an HPC cluster to Animus.
 # Takes in the following arguments:
 #	$ bash HPC_to_animus.sh -f <filename>      Ex: test_unet_601760
 #                           -j <HPC_job>       Whether to look for HPC job based on filename (default: False)
@@ -79,8 +79,7 @@ else
     exit 1
 fi
 
-# If copying a job, only copy the contents of `stage1_output` and 
-# `stage2_output`. Also copy the `.txt` file with the same name
+# If copying a job, copy the contents of the directory, with the specified exclusions
 if [ "$HPC_JOB" = j ]; then
     # Copy job directories from HPC to Animus
     for FILE in "${FILENAMES[@]}"; do
@@ -104,4 +103,44 @@ else
     echo $FILES
     scp -r -i $IDENTITY_FILE $HPC_USERNAME@$REMOTE_SERVER:"$FILES" .$DIR_PREFIX
 fi
+
+# Define function to combine predictions
+check_to_combine_predictions() {
+    local file=$1
+    # Check whether a config file exists
+    if [ -f ".$DIR_PREFIX/$file/input_config.json" ]; then
+        THIS_CONFIG=".$DIR_PREFIX/$file/input_config.json"
+        echo "Found $THIS_CONFIG"
+    else
+        THIS_CONFIG=""
+        echo "Did not find .$DIR_PREFIX/$file/input_config.json, using sample_config.json"
+    fi
+    echo "Looking for .$DIR_PREFIX/$file/ENSEMBLE_SIZE.txt"
+    if [ -f ".$DIR_PREFIX/$file/ENSEMBLE_SIZE.txt" ]; then
+        echo "Found .$DIR_PREFIX/$file/ENSEMBLE_SIZE.txt"
+        echo "    Combining predictions from ensemble run for $file"
+        python src/unox/HPC/combine_predictions.py $file $THIS_CONFIG
+    fi
+}
+
+# Check whether to combine predictions of an ensemble run
+if [ "$HPC_JOB" = j ]; then
+    # Copy job directories from HPC to Animus
+    for FILE in "${FILENAMES[@]}"; do
+        # Check whether there is a file called `ENSEMBLE_SIZE.txt` in the copied directory
+        echo "Checking .$DIR_PREFIX/$FILE for ensemble predictions to combine..."
+        check_to_combine_predictions $FILE
+        # Check whether there is a file called `ENSEMBLE_SIZE.txt` in the each subdirectory
+        for SUBDIR in .$DIR_PREFIX/$FILE/*/; do
+            if [ -d "$SUBDIR" ]; then
+                SUBDIR_NAME=$(basename "$SUBDIR")
+                if [ "$SUBDIR_NAME" != "checkpts" ]; then
+                    echo "Checking .$DIR_PREFIX/$FILE/$SUBDIR_NAME for ensemble predictions to combine..."
+                    check_to_combine_predictions "$FILE/$SUBDIR_NAME"
+                fi
+            fi
+        done
+    done
+fi
+
 echo "Completed file transfer to Animus"
