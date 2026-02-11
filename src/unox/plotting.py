@@ -1641,6 +1641,10 @@ def plot_BaW(
     if not isinstance(datasets, (list)):
         # Making `uarray` object verifies `dataset`
         datasets = [datasets]
+    if len(datasets) == 1:
+        one_dataset = True
+    else:
+        one_dataset = False
     if not isinstance(ds_kwargs, (list, type(None))):
         if isinstance(ds_kwargs, type({})):
             ds_kwargs = [ds_kwargs]
@@ -1652,6 +1656,10 @@ def plot_BaW(
                 raise TypeError(f"(plot_BaW) Each entry in `ds_kwargs` must be a dictionary. Got type: {type(these_kwargs)}")
     if len(ds_kwargs) == 0:
         raise ValueError("(plot_BaW) `ds_kwargs` list cannot be empty.")
+    elif len(ds_kwargs) == 1:
+        one_ds_kwargs = True
+    else:
+        one_ds_kwargs = False
     if len(datasets) != len(ds_kwargs):
         ds_kwargs_len = len(ds_kwargs)
         # Repeat the list of `ds_kwargs` for each entry in `datasets`
@@ -1710,6 +1718,12 @@ def plot_BaW(
         # Making `uarray` object verifies `dataset`
         datasets[i] = uarray(datasets[i], **ds_kwargs[i])
     
+    # Get name for overall title
+    if one_dataset:
+        # Take the name of the first dataset before the slash
+        overall_name = datasets[0].name.split('/')[0].strip('_')
+    else:
+        overall_name = ""
     # Create dictionaries to hold the data to plot
     box_dfs = [None]*len(vars)
     # I don't know why, but if I try to define a list of dictionaries in one line, every dictionary in that list gets updated, even when calling a specific index
@@ -1742,8 +1756,13 @@ def plot_BaW(
                 var_array = u_arr.xr[var].values.flatten()
                 # Format the label for this variable
                 ax_labels[j] = f"{u_arr.xr[var].attrs['long_name']} ({u_arr.xr[var].attrs['units']})"
+                # Get the name of this dataset, if multiple datasets given
+                if one_dataset:
+                    this_name = f"{var} "
+                else:
+                    this_name = f"{u_arr.name.split('/')[-1]} "
                 # Format the box label, taking only the name of the child (ensemble member) directory
-                box_label = f"{u_arr.name.split('/')[-1]} (n={len(var_array)})\n{box_label_restrict}"
+                box_label = f"{this_name}(n={len(var_array)})\n{box_label_restrict}"
             elif var in ['R2', 'RMSE']:
                 from unox.evaluate import compare_arrs
                 # Make sure the dataset is an ensemble run
@@ -1770,8 +1789,13 @@ def plot_BaW(
 
                 # Find the number of ensemble members
                 ens_size = u_arr.xr.attrs['ensemble_size']
+                # Get the name of this dataset, if multiple datasets given
+                if one_dataset:
+                    this_name = u_arr.name.split('/')[-1].replace(overall_name, "").strip('_')
+                else:
+                    this_name = u_arr.name.split('/')[-1]
                 # Format the box label, taking only the name of the child (ensemble member) directory
-                box_label = f"{u_arr.name.split('/')[-1]} (n={ens_size})\n{box_label_restrict}"
+                box_label = f"{this_name} (n={ens_size})"
                 # Make an array to collect the comparison values
                 var_array = [None]*ens_size
                 # Calculate the comparison value for each ensemble member
@@ -1788,9 +1812,17 @@ def plot_BaW(
                     elif var == 'RMSE':
                         ax_labels[j] = rf"RMSE (pred vs truth)"
             # Format the name for this box and whisker plot
+            box_label_extras = ""
             for ds_kwarg in ['start_date', 'interval', 'label_note']:
                 if ds_kwarg in ds_kwargs[i] and not isinstance(ds_kwargs[i][ds_kwarg], type(None)):
-                    box_label = f"{box_label}, {ds_kwargs[i][ds_kwarg]}"
+                    box_label_extras = f"{box_label_extras}, {ds_kwargs[i][ds_kwarg]}"
+            if one_ds_kwargs:
+                title_extras = f"{box_label_restrict}{box_label_extras}"
+                if one_dataset:
+                    title_extras = f", {title_extras}"
+            else:
+                title_extras = ""
+                box_label = f"{box_label}\n{box_label_restrict}{box_label_extras}"
             # Add that array to the dictionary
             box_dicts[j][box_label] = var_array
     
@@ -1820,7 +1852,7 @@ def plot_BaW(
 
     if new_plot == True:
         # Add an overall title
-        # fig.suptitle(f"{overall_title}", fontsize=title_font_size)
+        fig.suptitle(f"{overall_name}{title_extras}", fontsize=title_font_size)
         # Return the figure
         return fig
     else:
