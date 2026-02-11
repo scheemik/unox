@@ -1762,7 +1762,7 @@ def plot_BaW(
                 else:
                     this_name = f"{u_arr.name.split('/')[-1]} "
                 # Format the box label, taking only the name of the child (ensemble member) directory
-                box_label = f"{this_name}(n={len(var_array)})\n{box_label_restrict}"
+                box_label = f"{this_name}(n={len(var_array)})"
             elif var in ['R2', 'RMSE']:
                 from unox.evaluate import compare_arrs
                 # Make sure the dataset is an ensemble run
