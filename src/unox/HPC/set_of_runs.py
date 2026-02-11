@@ -95,6 +95,14 @@ def create_run_sub_dir(
     with open(this_input_config, 'w') as file:
         json.dump(this_config_dict, file, indent=4)
 
+# Make a subdirectory and copy of the config file when no variables are zeroed
+create_run_sub_dir(
+    savedir,
+    jobname,
+    ['none'],
+    run_type,
+    config_dict,
+)
 # Get the list of x variables from the config dictionary
 x_vars = config_dict['x_vars']
 # For each x variable, make a subdirectory and copy of the config file
@@ -106,15 +114,21 @@ for x_var in x_vars:
         run_type,
         config_dict,
     )
-# If both `no2` and `no2_tm1` are in the x variables, make another subdirectory
-if 'no2' in x_vars and 'no2_tm1' in x_vars:
-    create_run_sub_dir(
-        savedir,
-        jobname,
-        ['no2', 'no2_tm1'],
-        run_type,
-        config_dict,
-    )
+# Make subdirectories for pairs of variables
+var_pairs = [
+    ['no2', 'no2_tm1'],
+    ['ssrd', 'sp'],
+    ['u10', 'v10'],
+]
+for var_pair in var_pairs:
+    if var_pair[0] in x_vars and var_pair[1] in x_vars:
+        create_run_sub_dir(
+            savedir,
+            jobname,
+            [var_pair[0], var_pair[1]],
+            run_type,
+            config_dict,
+        )
 
 print("===== End set_of_runs.py =====")
 print("")
