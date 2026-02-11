@@ -209,3 +209,39 @@ def test_is_ensemble():
         actual_result = udata.is_ensemble(case['dataset'], is_input_set=case['is_input_set'], is_predict=case['is_predict'])
         # Compare to the expected result
         assert actual_result == case['expected_result'], f"For dataset '{case['dataset']}', expected is_ensemble: {case['expected_result']}, got: {actual_result}"
+
+def test_get_epochs_logs():
+    """Test the get_epochs_logs function."""
+    # Define valid test cases
+    test_cases = [
+        {
+            'dataset': 'no2_example_run',
+            'is_input_set': False,
+            'is_predict': True,
+            'expected_result': False,
+        },
+        # {
+        #     'dataset': 'test_ens0',
+        #     'is_input_set': False,
+        #     'is_predict': True,
+        #     'expected_result': True,
+        # },
+    ]
+    # Test each case
+    for case in test_cases:
+        # Get the `uarray` object
+        this_uarr = udata.uarray(case['dataset'], is_predict=True)
+        # Get the actual result
+        actual_logs = udata.get_epochs_logs(this_uarr)
+        # Get the stages of this prediction set
+        stages = this_uarr.xr.attrs['stages']
+        # Loop across the stages of this prediction set
+        for stage in stages:
+            # Assemble the file name of the CSV 
+            csv_filename = f"HPC_runs/{this_uarr.name}/unet_stage{stage}_log.csv"
+            # Load the CSV into a Pandas Data Frame
+            this_df = pd.read_csv(csv_filename, delimiter=';')
+            # Get just this stage from the actual logs
+            this_stage = actual_logs.sel(stage=1)
+            # Compare to the expected result
+            assert this_stage == this_df.to_xarray(), f"For dataset '{case['dataset']}', epoch logs from `get_epochs_logs()` does not match the expected for stage {stage}."
