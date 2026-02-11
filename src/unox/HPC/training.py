@@ -79,6 +79,7 @@ def begin_training(
     earlystopper = EarlyStopping(patience=15, verbose=1)
     # Save out checkpoints of the model every epoch
     ## All but the most recent checkpoint will be deleted upon completion of the model run
+    checkpointer = ModelCheckpoint(f"{savedir}checkpts/unet_checkpt_{{val_loss:.2f}}_{{r2_keras:.2f}}_stage{stage}.keras", verbose=0, save_best_only=True)
     print("")
     print(f"#### Begin training stage {stage} ####")
     unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), batch_size=batch_size, epochs=n_epochs, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
