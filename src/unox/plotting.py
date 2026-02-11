@@ -1195,6 +1195,117 @@ def corr_plot(
     else:
         return fig
 
+def plot_epochs_logs(
+    dataset,
+    vars=None,
+    axs=None,
+    plt_title=None,
+    **kwargs,
+):
+    """ Plot the epochs logs for the given predictions dataset.
+
+        Creates a line plot showing how certain values changed across the epochs when the model was being trained.
+
+        Parameters
+        ----------
+        dataset : `str`, `xarray.Dataset`, `xarray.DataArray`, `uarray`
+            The dataset for which to make comparison maps. Must be a predictions dataset.
+        vars : `str`, `list`, or `None`, optional
+            The variables to plot. Each variable is given it's own axis. Each variable must be from the list of `epochs_logs_vars` defined below. If `None` is given, all variables are plotted.
+            Default is `['loss']`.
+        ax : `matplotlib.axes.Axes`, optional
+            The axes on which to plot the data.
+            Default is `None`.
+        plt_title : `str`, optional
+            The title for the plot. 
+            Default is `None`.
+        **kwargs : keyword arguments
+            Additional keyword arguments accepted to facilitate wrapper functions.
+        
+        Returns
+        -------
+        fig : `matplotlib.figure.Figure`
+            The figure object containing the plot. Returned if `ax` is `None`.
+        q : `QuadMesh`
+            The QuadMesh object created by the 2D histogram. Returned if `ax` is given.
+    """
+    # Verify argument types
+    # Making `uarray` object verifies `dataset`
+    dataset = uarray(dataset, **kwargs)
+    # Check whether the dataset is a prediction set
+    if not dataset.is_predict:
+        ValueError(f"(plot_epochs_logs) `dataset` must be a prediction set to plot epochs logs.")
+    # Check whether the dataset is an ensemble run
+    if dataset.is_ensemble:
+        ValueError(f"(plot_epochs_logs) `dataset` cannot be an ensemble run to plot epochs logs (not yet implemented).")
+    # Define the available vars in the epochs logs
+    epochs_logs_vars = [
+        'loss',
+        'msenonzero', 
+        'r2_keras',
+        'val_loss',
+        'val_msenonzero',
+        'val_r2_keras'
+    ]
+    if isinstance(vars, type(None)):
+        vars = epochs_logs_vars
+    elif not isinstance(vars, list):
+        if isinstance(vars, str):
+            vars = [vars]
+        else:
+            raise TypeError(f"(plot_epochs_logs) `vars` must be a list of strings, a single string, or `None`. Got type: {type(vars)}")
+    for var in vars:
+        if not isinstance(var, str):
+            raise TypeError(f"(plot_epochs_logs) `var` must be a string. Got type: {type(var)}")
+    if not isinstance(axs, (list, type(None))):
+        if isinstance(axs, pplt.axes.Axes):
+            axs = [axs]
+        else:
+            raise TypeError(f"(plot_epochs_logs) `axs` must be a proplot Axes object, a list of proplot Axes objects, or None. Got type: {type(axs)}")
+    elif not isinstance(axs, type(None)):
+        for ax in axs:
+            if not isinstance(ax, pplt.axes.Axes):
+                raise TypeError(f"(plot_epochs_logs) Each entry in `axs` must be a proplot Axes object. Got type: {type(ax)}")
+    if not isinstance(plt_title, (type(None), str)):
+        raise TypeError(f"(plot_epochs_logs) `plt_title` must be a string or None. Got type: {type(plt_title)}")
+    
+    # Get the epochs data for the given dataset
+    epochs_logs = dataset._get_epochs_logs()
+
+    # If no axes are given, create a new figure
+    if isinstance(axs, type(None)):
+        new_plot = True
+        fig = pplt.figure(refwidth=4, sharey=False)
+        n_rows, n_cols = uplt_fmt.set_fig_row_col(len(vars), **kwargs)
+        axs = fig.subplots(nrows=n_rows, ncols=n_cols)
+        if isinstance(plt_title, type(None)):
+            plt_title = dataset.name
+    else:
+        new_plot = False
+
+    # Get the stages of this prediction set
+    stages = dataset.xr.attrs['stages']
+    # Loop across the variables
+    for i in range(len(vars)):
+        var = vars[i]
+        # Check to make sure it is a valid variable
+        if not var in epochs_logs_vars:
+            raise ValueError(f"(plot_epochs_logs) `vars` index {i} is {var}, however all variables must one from the following list:\n\t{epochs_logs_vars}")
+        # Loop across the stages
+        for stage in stages:
+            # Get the epoch logs for this stage
+            this_stage = epochs_logs.sel(stage=stage)
+            # Plot the data, depending on the scale
+            axs[i].plot(this_stage[var], label=f'stage {stage}')
+        axs[i].legend()
+    # If new plot, return the figure
+    if new_plot:
+        # Set the figure title
+        fig.suptitle(plt_title, fontsize=title_font_size) 
+        return fig
+    else:
+        return axs
+
 def make_colorbar(
     fig,
     cb_ax,
