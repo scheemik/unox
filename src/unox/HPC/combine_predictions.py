@@ -146,5 +146,13 @@ combined_predictions.attrs['ensemble_size'] = ens_size
 # Save the xarray to a file
 combined_predictions.to_netcdf(f"{savedir}predictions.nc")
 
+# Delete the `predictions.nc` files for each individual ensemble member
+for i in range(ens_size):
+    # Get the name of the file to delete
+    pred_file_to_delete = verify_path(ens_dicts[i]['pred_file'])
+    # Delete that file
+    print(f"\tRemoving redundant file: {pred_file_to_delete}")
+    os.remove(pred_file_to_delete)
+
 print("===== End combine_predictions.py =====")
 print("")
