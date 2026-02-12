@@ -9,6 +9,7 @@ installation.md
 data.md
 run_model.md
 analysis.ipynb
+repo_management.md
 workflow.md
 example.ipynb
 autoapi/index
