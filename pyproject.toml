@@ -28,6 +28,7 @@ myst-nb = "^1.2.0"
 sphinx-autoapi = "^3.6.0"
 sphinx-rtd-theme = "^3.0.2"
 cdsapi = ">=0.7.7"
+matplotlib-inline = "<0.2.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
