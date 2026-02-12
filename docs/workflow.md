@@ -9,6 +9,14 @@ TLDR: Create a link to a different document by typing `{doc}`, followed by the n
 ## Contents
 
 - [Introduction](#intro)
+- Writing functions
+    - Separating into modules
+    - Verifying input arguments
+    - Writing docstrings
+- Using a Jupyter notebook for initial testing
+- Writing tests
+    - Using the "Testing" panel in VSCodium
+    - Using `pytest`
 
 ---
 <a id='intro'></a>
