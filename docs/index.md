@@ -5,16 +5,39 @@
 :maxdepth: 1
 :hidden:
 
-installation.md
-data.md
-run_model.md
+example.ipynb
+```
+
+```{toctree}
+:maxdepth: 1
+:hidden:
+:caption: Setup
+
+docs_setup/installation.md
+docs_setup/data.md
+docs_setup/run_model.md
 analysis.ipynb
+```
+
+```{toctree}
+:maxdepth: 1
+:hidden:
+:caption: Development
+
+docs_dev/repo_management.md
+docs_dev/workflow.md
 repo_management.md
 workflow.md
 example.ipynb
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Reference
+
 autoapi/index
-changelog.md
-CONTRIBUTING.md
-CONDUCT.md
-license.md
+docs_ref/changelog.md
+docs_ref/CONTRIBUTING.md
+docs_ref/CONDUCT.md
+docs_ref/license.md
 ```
