@@ -26,9 +26,9 @@ analysis.ipynb
 
 docs_dev/repo_management.md
 docs_dev/workflow.md
-repo_management.md
-workflow.md
-example.ipynb
+docs_dev/todo_list.md
+docs_dev/write_docs.md
+docs_dev/troubleshooting.md
 ```
 
 ```{toctree}
