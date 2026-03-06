@@ -76,6 +76,8 @@ keep_most_recent_checkpoint() {
                 rm $FILE
             fi
         done
-        echo $MOST_RECENT_FILE
+        echo "Kept only most recent checkpoint file:"
+        echo "    $MOST_RECENT_FILE"
+        echo "    Last modified at: $(stat --format="%y" $MOST_RECENT_FILE)"
     fi
 }
