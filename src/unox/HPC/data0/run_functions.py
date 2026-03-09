@@ -109,6 +109,8 @@ def process_cmd_args(
     
     # If using the old version of the packages, create directories for staged output
     if version == 0:
+        print(f"You have specified to use version {version} of the code, however, this version is not fully supported. Please use version 1 of the code, or make the necessary changes to support version {version}.")
+        exit(0)
         stage1_dir = make_file_path(f"{savedir}stage1_output/")
         stage2_dir = make_file_path(f"{savedir}stage2_output/")
     
