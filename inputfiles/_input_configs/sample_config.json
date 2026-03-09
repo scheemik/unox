@@ -20,5 +20,7 @@
     "n_epochs": 100,
     "split_year": 2019,
     "split_value": 0.9,
-    "grid_size": [56, 120]
+    "grid_size": [56, 120],
+    "act_reg": "None",
+    "act_reg_factor": 1
 }
