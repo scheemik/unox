@@ -304,3 +304,108 @@ def make_stage_comp_arrs(
         out_arrs['t_m_st2'] = t_m_st2[:,:,0]
         out_arrs['st1_m_st2'] = st1_m_st2[:,:,0]
     return out_arrs, overall_title
+
+def format_sci_notation(
+    x, 
+    ndp=2, 
+    sci_lims_f=(-3, 3), 
+    pm_val=None, 
+    condense=False
+):
+    """ Formats a number into scientific notation.
+
+        Returns a formatted string of a number in scientific notation if the exponent is outside the specified limits. Uses LaTeX formatting for the string to be used in plot labels.
+
+        Parameters
+        ----------
+        x : `float`, `int`
+            The number to format.
+        ndp : `int`, optional
+            The number of decimal places to include in the formatted string.
+            Default is 2.
+        sci_lims_f : `tuple` of `int`, optional
+            The limits on the powers of 10 between which scientific notation will not be used.
+            Default is (-3, 3).
+        pm_val : `float`, `int`, `None`, optional
+            The plus-minus uncertainty value to include in the formatted string after a `\pm` symbol.
+            If `None`, no uncertainty will be included.
+            Default is `None`. 
+        condense : `bool`, optional
+            Whether to remove spaces around `\pm` and `\times` operators in the formatted string.
+            Default is `False`.
+            
+        Returns
+        -------
+        formatted_str : `str`
+            The formatted string of the number in scientific notation if the exponent is outside the specified limits, or in normal decimal notation otherwise. If `pm_val` is provided, the uncertainty will be included in the formatted string.
+        
+        Examples
+        --------
+        >>> format_sci_notation(0.00012345)
+        '1.23\\times10^{-4}'
+        >>> format_sci_notation(12345, ndp=3)
+        '1.234\\times10^{4}'
+        >>> format_sci_notation(0.00012345, sci_lims_f=(-5, 5))
+        '0.00'
+        >>> format_sci_notation(12345, sci_lims_f=(-5, 5))
+        '12345.00'
+    """
+    # Verify argument types
+    if not verify_number(x):
+        raise TypeError(f"(format_sci_notation) `x` must be a number. Got type: {type(x)}.")
+    if not isinstance(ndp, int):
+        raise TypeError(f"(format_sci_notation) `ndp` must be an integer. Got type: {type(ndp)}.")
+    if not isinstance(sci_lims_f, tuple) or len(sci_lims_f) != 2 or not all(isinstance(i, int) for i in sci_lims_f):
+        raise TypeError(f"(format_sci_notation) `sci_lims_f` must be a tuple of two integers. Got type: {type(sci_lims_f)} with values: {sci_lims_f}.")
+    if not (isinstance(pm_val, type(None)) or verify_number(pm_val)):
+        raise TypeError(f"(format_sci_notation) `pm_val` must be a number or `None`. Got type: {type(pm_val)}.")
+    if not isinstance(condense, bool):
+        raise TypeError(f"(format_sci_notation) `condense` must be a boolean. Got type: {type(condense)}.")
+
+    if isinstance(pm_val, type(None)):
+        try:
+            s = '{x:0.{ndp:d}e}'.format(x=x, ndp=ndp)
+            m, e = s.split('e')
+        except:
+            print('Warning: could not format',x,'with',ndp,'decimal places')
+            return r'{x:0.{ndp:d}f}'.format(x=x, ndp=ndp)
+        # Check to see whether it's outside the scientific notation exponent limits
+        if int(e) < min(sci_lims_f) or int(e) > max(sci_lims_f):
+            if condense:
+                return r'{m:s}{{\times}}10^{{{e:d}}}'.format(m=m, e=int(e))
+            else:
+                return r'{m:s}\times10^{{{e:d}}}'.format(m=m, e=int(e))
+        else:
+            return r'{x:0.{ndp:d}f}'.format(x=x, ndp=ndp)
+    else:
+        try:
+            # Find magnitude and base 10 exponent for x
+            s = '{x:0.{ndp:d}e}'.format(x=x, ndp=ndp)
+            m, e = s.split('e')
+        except:
+            print('Warning: could not format',x,'with',ndp,'decimal places and pm_val:',pm_val)
+            if condense:
+                return r'{x:0.{ndp:d}f}{{\pm}}{pm_val:0.{ndp:d}f}'.format(x=x, ndp=ndp, pm_val=pm_val)
+            else:
+                return r'{x:0.{ndp:d}f}{{\pm}}{pm_val:0.{ndp:d}f}'.format(x=x, ndp=ndp, pm_val=pm_val)
+        # Find magnitude and base 10 exponent for pm_val
+        pm_s = '{pm_val:0.{ndp:d}e}'.format(pm_val=pm_val, ndp=ndp)
+        pm_m, pm_e = pm_s.split('e')
+        # Find difference between exponents to use as new number of decimal places
+        new_ndp = max(2, int(e)-int(pm_e))
+        # Reformat x
+        s = '{x:0.{ndp:d}e}'.format(x=x, ndp=new_ndp)
+        m, e = s.split('e')
+        # Shift value of pm_val to correct exponent
+        pm_m = '{pm_val:0.{ndp:d}f}'.format(pm_val=pm_val/(10**int(e)), ndp=new_ndp)
+        # Check to see whether it's outside the scientific notation exponent limits
+        if int(e) < min(sci_lims_f) or int(e) > max(sci_lims_f):
+            if condense:
+                return r'({m:s}{{\pm}}{pm_m:s}){{\times}} 10^{{{e:d}}}'.format(m=m, pm_m=pm_m, e=int(e))
+            else:
+                return r'({m:s}\pm{pm_m:s})\times 10^{{{e:d}}}'.format(m=m, pm_m=pm_m, e=int(e))
+        else:
+            if condense:
+                return r'{x:0.{ndp:d}f}{{\pm}}{pm_val:0.{ndp:d}f}'.format(x=x, ndp=new_ndp, pm_val=pm_val)
+            else:
+                return r'{x:0.{ndp:d}f}\pm{pm_val:0.{ndp:d}f}'.format(x=x, ndp=new_ndp, pm_val=pm_val)
