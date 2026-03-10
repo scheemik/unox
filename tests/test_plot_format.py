@@ -145,3 +145,81 @@ def test_get_var_label_and_units():
             assert True, f"get_var_label_and_units raised an exception on invalid input {invalid_var}: {e}"
         else:
             assert False, f"get_var_label_and_units did not raise an exception for invalid variable {invalid_var}."
+
+def test_format_sci_notation():
+    """Test the format_sci_notation function."""
+    # Define valid test cases
+    test_cases = [
+        {
+            'value': 0.000123,
+            'ndp': 2,
+            'sci_lims_f': (-3,3),
+            'pm_val': None,
+            'condense': False,
+            'expected_str': '1.23\\times10^{-4}'
+        },
+        {
+            'value': 0.000123,
+            'ndp': 3,
+            'sci_lims_f': (-3,3),
+            'pm_val': None,
+            'condense': False,
+            'expected_str': '1.230\\times10^{-4}'
+        },
+        {
+            'value': 12345,
+            'ndp': 3,
+            'sci_lims_f': (-3,3),
+            'pm_val': None,
+            'condense': False,
+            'expected_str': '1.234\\times10^{4}'
+        },
+        {
+            'value': 12345,
+            'ndp': 3,
+            'sci_lims_f': (-3,5),
+            'pm_val': None,
+            'condense': False,
+            'expected_str': '12345.000'
+        },
+        {
+            'value': 1.2,
+            'ndp': 2,
+            'sci_lims_f': (-3,3),
+            'pm_val': 0.5,
+            'condense': False,
+            'expected_str': '1.20\\pm0.50'
+        },
+        {
+            'value': 12345,
+            'ndp': 2,
+            'sci_lims_f': (-3,3),
+            'pm_val': 1234,
+            'condense': False,
+            'expected_str': '(1.23\\pm0.12)\\times 10^{4}'
+        },
+    ]
+    for case in test_cases:
+        actual_str = uplt_fmt.format_sci_notation(
+            case['value'],
+            ndp=case['ndp'],
+            sci_lims_f=case['sci_lims_f'],
+            pm_val=case['pm_val'],
+            condense=case['condense']
+        )
+        assert actual_str == case['expected_str'], f"Expected '{case['expected_str']}', but got '{actual_str}' for value {case['value']} with ndp={case['ndp']}, sci_lims_f={case['sci_lims_f']}, pm_val={case['pm_val']}, condense={case['condense']}."
+    
+    # Test with invalid inputs
+    invalid_inputs = [
+        'not_a_number',
+        None,
+        [1, 2, 3],
+        {'value': 0.000123},
+    ]
+    for invalid_input in invalid_inputs:
+        try:
+            uplt_fmt.format_sci_notation(invalid_input)
+        except (ValueError, TypeError) as e:
+            assert True, f"format_sci_notation raised an exception on invalid input {invalid_input}: {e}"
+        else:
+            assert False, f"format_sci_notation did not raise an exception on invalid input {invalid_input}"
