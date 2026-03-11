@@ -164,6 +164,7 @@ def test_make_output_metadata_dict():
 
 def test_prepare_input():
     """Test the prepare_input function."""
+    # NOTE: This test requires having made the `no2_2005-2020` input file first
     # Define a test cases
     test_cases = [
         {
@@ -205,11 +206,7 @@ def test_prepare_input():
             this_case['config_path'],
             config_dict,
             this_case['version'],
-            this_case['n_epochs'],
             this_case['model_fmt'],
-            this_case['input_fmt'],
-            this_case['split_year'],
-            this_case['split_value'],
         )
         # Prepare the input data
         xtrain, ytrain, actual_output_metadata = rf.prepare_input(uarr, config_dict, output_metadata, this_case['split_year'], stage=this_case['stage'])
@@ -282,11 +279,7 @@ def test_prepare_input():
             this_case['config_path'],
             config_dict,
             this_case['version'],
-            this_case['n_epochs'],
             this_case['model_fmt'],
-            this_case['input_fmt'],
-            this_case['split_year'],
-            this_case['split_value'],
         )
         try:
             # Prepare the input data
