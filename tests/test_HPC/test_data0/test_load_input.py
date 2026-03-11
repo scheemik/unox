@@ -26,8 +26,7 @@ input_config = {
 def test_get_npy_from_netcdf():
     """Test the get_npy_from_netcdf function."""
     # Define valid input parameters
-    input_file = 'inputfiles/no2_2005-2020/no2_2005-2020.nc'
-    # input_config = 'inputfiles/_input_configs/sample_config.json'
+    input_file = 'inputfiles/no2_2019_JFM/no2_2019_JFM.nc'
     # Define valid test cases
     test_cases = [
         {   # Test for just one variable
@@ -36,7 +35,7 @@ def test_get_npy_from_netcdf():
             'config': input_config,
             'type': 'var',
             'data_select': 'u10',
-            'expected_shape': (364, 56, 120),
+            'expected_shape': (89, 56, 120),
         },
         {   # Test for y variable
             'netcdf_file': input_file,
@@ -44,15 +43,15 @@ def test_get_npy_from_netcdf():
             'config': input_config,
             'type': 'x_or_y',
             'data_select': 'y',
-            'expected_shape': (364, 56, 120, 1),
+            'expected_shape': (89, 56, 120, 1),
         },
         {   # Test for x variables (stage 1)
             'netcdf_file': input_file,
-            'year': 2005,
+            'year': 2019,
             'config': input_config,
             'type': 'x_or_y',
             'data_select': 'x',
-            'expected_shape': (364, 56, 120, 9),
+            'expected_shape': (89, 56, 120, 9),
         },
         {   # Test for x variables (stage 2)
             'netcdf_file': input_file,
@@ -60,7 +59,7 @@ def test_get_npy_from_netcdf():
             'config': input_config,
             'type': 'x_or_y',
             'data_select': 'x2',
-            'expected_shape': (364, 56, 120, 9),
+            'expected_shape': (89, 56, 120, 9),
         },
     ]
     # Test each case
