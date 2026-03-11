@@ -20,11 +20,25 @@ class uarray():
 
         Attributes
         ----------
-        xr : xarray.Dataset or xarray.DataArray
+        name : `str`
+            The name of the dataset, matching the string given to load the dataset, if applicable.
+        xr : `xr.Dataset` or `xr.DataArray`
             The xarray dataset. Expected to have lat and lon coordinates, and optionally 
             a time coordinate.
-        years : list of int
+        years : list of `int`
             A list of unique years present in the time coordinate of the dataset.
+        metadata_file : `str`
+            The file path to the metadata file for the dataset, if it is an input or prediction set.
+        metadata : `dict`
+            A dictionary of metadata for the dataset, coming from `metadata_file`.
+        epochs_logs : `xr.Dataset`
+            An xarray Dataset of the epochs logs for the dataset, if it is a prediction set.
+        is_input_set : `bool`
+            Whether the dataset is an input set. If this is `True`, then `is_predict` must be `False`.
+        is_predict : `bool`
+            Whether the dataset is a prediction set. If this is `True`, then `is_input_set` must be `False`.
+        is_ensemble : `bool`
+            Whether the dataset has ensemble members. Only applicable for prediction sets.
 
         Methods
         -------
@@ -49,39 +63,51 @@ class uarray():
         is_predict=False,
         **kwargs,
     ):
-        self.xr = get_dataset(
-            dataset, 
-            is_input_set,
-            is_predict,
-            **kwargs,
-        )
-        # Define other attributes, which are filled later by methods
-        self.years = None
-        self.metadata = None
-        self.epochs_logs = None
-        self.is_ensemble = None
-        # Add name if `dataset` is a string
-        if isinstance(dataset, str):
-            self.name = dataset
-            # Set input / prediction attributes
-            if is_input_set:
-                self.metadata_file = verify_path(f'inputfiles/{dataset}/input_metadata.json')
-                self.is_input_set = True
-                self.is_predict = False
-                self.is_ensemble = False
-            elif is_predict:
-                self.metadata_file = verify_path(f'HPC_runs/{dataset}/output_metadata.json')
-                self.is_input_set = False
-                self.is_predict = True
+        # If a `uarray` object is passed `dataset`, copy all attributes
+        if isinstance(dataset, uarray):
+            self.name = dataset.name
+            self.xr = dataset.xr 
+            self.years = dataset.years
+            self.metadata_file = dataset.metadata_file
+            self.metadata = dataset.metadata
+            self.epochs_logs = dataset.epochs_logs 
+            self.is_input_set = dataset.is_input_set
+            self.is_predict = dataset.is_predict
+            self.is_ensemble = dataset.is_ensemble
+        else:
+            self.xr = get_dataset(
+                dataset, 
+                is_input_set,
+                is_predict,
+                **kwargs,
+            )
+            # Define other attributes, which are filled later by methods
+            self.years = None
+            self.metadata = None
+            self.epochs_logs = None
+            self.is_ensemble = None
+            # Add name if `dataset` is a string
+            if isinstance(dataset, str):
+                self.name = dataset
+                # Set input / prediction attributes
+                if is_input_set:
+                    self.metadata_file = verify_path(f'inputfiles/{dataset}/input_metadata.json')
+                    self.is_input_set = True
+                    self.is_predict = False
+                    self.is_ensemble = False
+                elif is_predict:
+                    self.metadata_file = verify_path(f'HPC_runs/{dataset}/output_metadata.json')
+                    self.is_input_set = False
+                    self.is_predict = True
+                else:
+                    self.metadata_file = None
+                    self.is_input_set = False
+                    self.is_predict = False
             else:
+                self.name = 'xarray dataset'
                 self.metadata_file = None
                 self.is_input_set = False
                 self.is_predict = False
-        else:
-            self.name = 'xarray dataset'
-            self.metadata_file = None
-            self.is_input_set = False
-            self.is_predict = False
     # Verify aspects of the dataset
     def _verify(self, **kwargs):
         self.xr = verify_dataset(self.xr, **kwargs)

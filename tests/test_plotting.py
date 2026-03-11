@@ -3,6 +3,81 @@ from unox import data as udata
 from unox.HPC.data0.dataset import uarray
 import xarray as xr
 
+# Load the example prediction dataset
+pred_u_arr = uarray('no2_example_run', is_predict=True)
+
+def test_BaW_label():
+    """Test the BaW_label function."""
+    # Define the test cases
+    test_cases = [
+        {
+            'uarray': pred_u_arr,
+            'label_with': ['name'],
+            'var': 'nox_pred',
+            'one_dataset': True,
+            'expected_label': 'no2_example_run',
+        },
+        {
+            'uarray': pred_u_arr,
+            'label_with': ['name'],
+            'var': None,
+            'one_dataset': False,
+            'expected_label': 'no2_example_run',
+        },
+        {
+            'uarray': pred_u_arr,
+            'label_with': ['name', 'size', 'grid_size'],
+            'var': 'nox_pred',
+            'one_dataset': False,
+            'expected_label': 'no2_example_run, n=4892160, [56, 120]',
+        },
+    ]
+    # Test each case
+    for case in test_cases:
+        actual_label = uplt.BaW_label(
+            case['uarray'],
+            label_with=case['label_with'],
+            var=case['var'],
+            one_dataset=case['one_dataset'],
+        )
+        assert actual_label == case['expected_label'], f"Expected label '{case['expected_label']}', but got '{actual_label}'"
+    # Define invalid test cases
+    invalid_cases = [
+        {
+            'uarray': pred_u_arr,
+            'label_with': ['size'],
+            'var': None,
+            'one_dataset': False,
+            'expected_label': 'no2_example_run',
+        },
+        {
+            'uarray': pred_u_arr,
+            'label_with': ['name'],
+            'var': ['R2'],
+            'one_dataset': False,
+            'expected_label': 'no2_example_run',
+        },
+        {
+            'uarray': pred_u_arr,
+            'label_with': ['invalid_label'],
+            'var': None,
+            'one_dataset': False,
+            'expected_label': 'no2_example_run',
+        },
+    ]
+    # Test invalid cases
+    for case in invalid_cases:
+        try:
+            uplt.BaW_label(
+                case['uarray'],
+                label_with=case['label_with'],
+                var=case['var'],
+                one_dataset=case['one_dataset'],
+            )
+            assert False, f"Expected an exception for invalid case with label_with={case['label_with']} and var={case['var']}."
+        except Exception:
+            pass
+
 def test_select_time():
     """Test the select_time function."""
     # Define xarray objects

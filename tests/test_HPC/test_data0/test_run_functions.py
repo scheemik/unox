@@ -114,11 +114,7 @@ def test_make_output_metadata_dict():
             'config_path': 'tests/data_for_tests/test_config.json',
             'config_dict': None,
             'version': 1,
-            'n_epochs': 250,
             'model_fmt': 'keras',
-            'input_fmt': 'nc',
-            'split_year': 2019,
-            'split_value': 0.9,
         }
     ]
     # Test each case
@@ -140,11 +136,7 @@ def test_make_output_metadata_dict():
             this_case['config_path'],
             this_case['config_dict'],
             this_case['version'],
-            this_case['n_epochs'],
             this_case['model_fmt'],
-            this_case['input_fmt'],
-            this_case['split_year'],
-            this_case['split_value'],
         )
         # Compare to the expected value
         assert output_metadata == this_case, f"Expected output metadata dictionary: \n{this_case}\nGot: \n{output_metadata}"
@@ -154,11 +146,7 @@ def test_make_output_metadata_dict():
         'config_path': [1234, None, True, [], {}],
         'config_dict': ['invalid', 1234, None, True, []],
         'version': ['invalid', None, True, [], {}],
-        'n_epochs': ['invalid', None, True, [], {}],
         'model_fmt': [1234, None, True, [], {}],
-        'input_fmt': [1234, None, True, [], {}],
-        'split_year': ['invalid', None, True, [], {}],
-        'split_value': ['invalid', None, True, [], {}],
     }
     for invalid_key in invalid_inputs.keys():
         for i_key in invalid_inputs[invalid_key]:
@@ -176,6 +164,7 @@ def test_make_output_metadata_dict():
 
 def test_prepare_input():
     """Test the prepare_input function."""
+    # NOTE: This test requires having made the `no2_2005-2020` input file first
     # Define a test cases
     test_cases = [
         {
@@ -217,11 +206,7 @@ def test_prepare_input():
             this_case['config_path'],
             config_dict,
             this_case['version'],
-            this_case['n_epochs'],
             this_case['model_fmt'],
-            this_case['input_fmt'],
-            this_case['split_year'],
-            this_case['split_value'],
         )
         # Prepare the input data
         xtrain, ytrain, actual_output_metadata = rf.prepare_input(uarr, config_dict, output_metadata, this_case['split_year'], stage=this_case['stage'])
@@ -294,11 +279,7 @@ def test_prepare_input():
             this_case['config_path'],
             config_dict,
             this_case['version'],
-            this_case['n_epochs'],
             this_case['model_fmt'],
-            this_case['input_fmt'],
-            this_case['split_year'],
-            this_case['split_value'],
         )
         try:
             # Prepare the input data
