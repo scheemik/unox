@@ -21,6 +21,6 @@
     "split_year": 2019,
     "split_value": 0.9,
     "grid_size": [56, 120],
-    "act_reg": "None",
-    "act_reg_factor": 1
+    "act_reg": "L1",
+    "act_reg_factor": 1e-08
 }
