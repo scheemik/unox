@@ -173,7 +173,7 @@ When this is set, you should see a chronological list of all the commit messages
 Click the "<ins>Create pull request</ins>" button.
 
 On the "<ins>Open a pull request</ins>" page, you will be able to document the pull request you are making to merge your changes. 
-Add a title and description following the [Angular Commit Style Guide](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines). For example, the title and description for [pull request #25](https://github.com/<username>/unox/pull/25) was:
+Add a title and description following the [Angular Commit Style Guide](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines). For example, the title and description for [pull request #25](https://github.com/scheemik/unox/pull/25) was:
 
 > **Title:**  
 > feat: run ensembles of runs and plot their statistics
