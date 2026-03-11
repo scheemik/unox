@@ -20,11 +20,25 @@ class uarray():
 
         Attributes
         ----------
-        xr : xarray.Dataset or xarray.DataArray
+        name : `str`
+            The name of the dataset, matching the string given to load the dataset, if applicable.
+        xr : `xr.Dataset` or `xr.DataArray`
             The xarray dataset. Expected to have lat and lon coordinates, and optionally 
             a time coordinate.
-        years : list of int
+        years : list of `int`
             A list of unique years present in the time coordinate of the dataset.
+        metadata_file : `str`
+            The file path to the metadata file for the dataset, if it is an input or prediction set.
+        metadata : `dict`
+            A dictionary of metadata for the dataset, coming from `metadata_file`.
+        epochs_logs : `xr.Dataset`
+            An xarray Dataset of the epochs logs for the dataset, if it is a prediction set.
+        is_input_set : `bool`
+            Whether the dataset is an input set. If this is `True`, then `is_predict` must be `False`.
+        is_predict : `bool`
+            Whether the dataset is a prediction set. If this is `True`, then `is_input_set` must be `False`.
+        is_ensemble : `bool`
+            Whether the dataset has ensemble members. Only applicable for prediction sets.
 
         Methods
         -------
