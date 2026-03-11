@@ -10,6 +10,8 @@ If a particular point becomes resolved, it should be deleted from this document 
 - [Features](#feat)
     - [Regularization](#reg)
         - Implementing a regularizer
+        - Update examples that I use in the Analysis and Example notebooks to use regularizers
+            - Include more documentation to show the difference between using a regularizer or not (perhaps in a section about ensemble runs?)
     - Generating input files
         - Can I do this not by year? I would like to be able to specify the start and end date, to allow for more granular control of what time span the input files cover.
         - Generating the CO input files
@@ -25,6 +27,11 @@ If a particular point becomes resolved, it should be deleted from this document 
         - How did I set up the way it auto updates?
         - Links between internal pages.
         - Auto API and why writing good docstrings is important.
+    - Documentation of stuff I've figured out, kinda like some results?
+        - Results of using a regularizer
+        - Results from running ZFI across the different input variables
+        - Results from investigating the match outside where input values of `nox` are available
+            - Do the spatial patterns of `nox_pred` match up with the spatial patterns of `no2`?
 - To be categorized
     - Explaining `**kwargs` and how they're used in functions.
     - `input_metadata.json` files, created only just to be able to look more easily, not to be used by code.
@@ -32,6 +39,19 @@ If a particular point becomes resolved, it should be deleted from this document 
         - Should we be shifting just the mean of the values? Or also the standard deviation?
     - `plot_var_maps()` bug in choosing the start and end date for averaging over, the title is wrong.
     - Emphasize that changing part of `unox` requires restarting the kernel when testing new plotting functions in a jupyter notebook.
+    - Explaining ensemble runs
+        - Will this be either:
+            - A jupyter notebook, in which case I would need to add an example prediction set that is an ensemble run
+            - A markdown file, in which case I would need to figure out a system for adding images so I can show plots. I might need to do that anyway if I want to have some explanation of results
+        - The following sections should take an example ensemble and show how I would run it
+        - How to submit the jobs
+        - How do they interact with ZFI sweeps?
+        - Need to wait until all members (which run as separate jobs) complete
+        - Bringing them to Animus automatically consolidates the outputs to one `.nc` file
+        - Plotting one ensemble member for maps and correlation plots
+        - Plotting box and whisker plots
+            - All the different variations
+
 
 ---
 <a id='feat'></a>
