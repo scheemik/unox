@@ -80,7 +80,7 @@ from tensorflow.keras.optimizers import Adam
 unet = Unet()
 # The input shape for `build` should be [lat, lon, var]
 print(f"\tShape of model input layer to build: ({output_metadata['unet_build_shape']})")
-unet.build(output_metadata['unet_build_shape'])
+unet.build(output_metadata['unet_build_shape'], act_reg=config_dict['act_reg'], act_reg_factor=config_dict['act_reg_factor'])
 opt = Adam(learning_rate=1e-5) 
 
 unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])

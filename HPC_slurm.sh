@@ -6,18 +6,16 @@
 # `-v 0` to run with the versions that are compatible with Mist.
 # Takes in optional arguments:
 #	$ sbatch HPC_slurm.sh -j <job name> 				Default: test_unet
-#                         -i <config file>              Default: no2_sample_input
 #						  -t <run type>					Default: test, other options: zfi_set
 #                         -v <version>                  Default: 1, use updates
 #                         -c <cluster>                  Default: trillium
 
 # Having a ":" after a flag means an option is required to invoke that flag
-while getopts j:i:t:v:c: option
+while getopts j:t:v:c: option
 do
 	case "${option}"
 		in
 		j) JOBNAME=${OPTARG};;
-		i) CONFIG_FILE=${OPTARG};;
 		t) TYPE=${OPTARG};;
 		v) VERSION=${OPTARG};;
 		c) CLUSTER=${OPTARG};;
@@ -36,14 +34,7 @@ then
 else
 	echo "-j, Name specified, using JOBNAME=$JOBNAME"
 fi
-SAVEDIR="HPC_runs/${JOBNAME}" #_${SLURM_JOB_ID}"
-if [ -z "$CONFIG_FILE" ]
-then
-	CONFIG_FILE='sample_config'
-	echo "-i, No input files specified, using CONFIG_FILE=$CONFIG_FILE"
-else
-	echo "-i, Input files specified, using CONFIG_FILE=$CONFIG_FILE"
-fi
+SAVEDIR="HPC_runs/${JOBNAME}"
 if [ -z "$TYPE" ]
 then
 	TYPE="test"
@@ -135,13 +126,11 @@ export HDF5_USE_FILE_LOCKING=FALSE
 echo ""
 echo "Running $CODEFILE with savedir $SAVEDIR"
 echo ""
-python $CODEFILE $SAVEDIR $CONFIG_FILE $VERSION
+python $CODEFILE $SAVEDIR $VERSION
 
 # Remove all but the most recent `checkpt` file
 CHKPT_DIR="$SAVEDIR/checkpts"
 VAR=$(keep_most_recent_checkpoint $CHKPT_DIR)
-echo "Kept only most recent checkpoint file:"
-echo "    $VAR"
-echo "    Last modified at: $(stat --format="%y" $VAR)"
+echo "$VAR"
 
 deactivate

@@ -24,8 +24,7 @@ def process_cmd_args(
                 Assumes the arguments are:
                 - arg 0: script name (i.e., `run_model.py`)
                 - arg 1: savedir, the directory in which to save model outputs
-                - arg 2: config_file, the model configuration file to use
-                - arg 3: version, the version of the packages to import (0 or 1)
+                - arg 2: version, the version of the packages to import (0 or 1)
             verbose : bool, optional
                 Whether to print the processed command line arguments.
                 Default is True.
@@ -73,15 +72,8 @@ def process_cmd_args(
     if verbose:
         print(f"\targv[1], savedir: {savedir}")
 
-    # Load the second input argument: the config file
-    try:
-        # If a specific config file was given, pull from `inputfiles/_input_configs/`
-        config_file = cmd_args[2]
-        config_path = config_file
-    except:
-        # If no config file was specified, use default config
-        # that was copied to `savedir` at the start of the run
-        config_path = f"{savedir}{default_config}.json"
+    # Use the save directory to load the config file
+    config_path = f"{savedir}input_config.json"
     # Get the config dictionary (`get_config` verifies type of `config_path`)
     try:
         config_dict = get_config(config_path)
@@ -90,16 +82,15 @@ def process_cmd_args(
         config_path = "inputfiles/_input_configs/sample_config.json"
         config_dict = get_config(config_path)
     if verbose:
-        print(f"\targv[2], config_file: {config_path}")
-    # If wasn't already present, write the config dictionary to 
-    # a json file in `savedir``
+        print(f"\t     config_file: {config_path}")
+    # If wasn't already present, write the config dictionary to a json file in `savedir``
     if not savedir in config_path:
         with open(f"{savedir}input_config.json", 'w') as file:
             file.write(json.dumps(config_dict, indent=4))
 
     # Load the third input argument: the version of the packages to use
     try:
-        version = cmd_args[3]
+        version = cmd_args[2]
     except:
         version = default_version 
     # Command line arguments are sometimes typed into a string
@@ -114,10 +105,12 @@ def process_cmd_args(
     else:
         version = int(version)
     if verbose:
-        print(f"\targv[3], version: {version}")
+        print(f"\targv[2], version: {version}")
     
     # If using the old version of the packages, create directories for staged output
     if version == 0:
+        print(f"You have specified to use version {version} of the code, however, this version is not fully supported. Please use version 1 of the code, or make the necessary changes to support version {version}.")
+        exit(0)
         stage1_dir = make_file_path(f"{savedir}stage1_output/")
         stage2_dir = make_file_path(f"{savedir}stage2_output/")
     

@@ -209,8 +209,6 @@ else
 		# Make sure the configuration files are copied to the job directory
 		if [ ! -f "HPC_runs/$JOBNAME/input_config.json" ]; then
 			cp inputfiles/_input_configs/$CONFIG_FILE.json HPC_runs/$JOBNAME/input_config.json
-			# Set the config file to `default` so the job pulls `input_config.json` from the job directory as opposed to from the `inputfiles/_input_configs/` directory
-			CONFIG_FILE='default'
 		fi
 	fi
 fi
@@ -233,7 +231,7 @@ fi
 if [ "$TYPE" = "test" ]; then
 	# Check whether there is more than one ensemble member
 	if [ "$ENSEMBLE_SIZE" == 1 ]; then
-		sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
+		sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -t $TYPE -v $VERSION -c $CLUSTER
 	else
 		for (( i=1; i<=$ENSEMBLE_SIZE; i++ ))
 		do
@@ -241,7 +239,7 @@ if [ "$TYPE" = "test" ]; then
 			ENS_NUM=$(printf "%02d" $i)
 			# Format the name of the ensemble member subdirectory
 			ENS_DIR="${ENS_NUM}_${JOBNAME}"
-			sbatch --job-name=$JOBNAME/$ENS_DIR $LAUNCHER -j $JOBNAME/$ENS_DIR -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
+			sbatch --job-name=$JOBNAME/$ENS_DIR $LAUNCHER -j $JOBNAME/$ENS_DIR -t $TYPE -v $VERSION -c $CLUSTER
 		done
 	fi
 elif [ "$TYPE" = "zfi_set" ]; then
@@ -253,10 +251,8 @@ elif [ "$TYPE" = "zfi_set" ]; then
 			if [ "$ENSEMBLE_SIZE" == 1 ]; then
 				# Get just the subdirectory name
 				SUBDIR_NAME=$(basename "$SUBDIR")
-				# Format the path to the config file
-				CONFIG_FILE="${SUBDIR}input_config.json"
 				# Submit a job for each sub directory in the set
-				sbatch --job-name=_$JOBNAME/$SUBDIR_NAME $LAUNCHER -j $JOBNAME/$SUBDIR_NAME -i $CONFIG_FILE -t $TYPE -v $VERSION -c $CLUSTER
+				sbatch --job-name=_$JOBNAME/$SUBDIR_NAME $LAUNCHER -j $JOBNAME/$SUBDIR_NAME -t $TYPE -v $VERSION -c $CLUSTER
 			else
 				# Get just the subdirectory name
 				SUBDIR_NAME=$(basename "$SUBDIR")
@@ -267,10 +263,8 @@ elif [ "$TYPE" = "zfi_set" ]; then
 					ENS_NUM=$(printf "%02d" $i)
 					# Format the name of the ensemble member subdirectory
 					ENS_DIR="${ENS_NUM}_${SUBDIR_NAME}"
-					# Format the path to the configuration file
-					CONFIG_PATH="HPC_runs/_${JOBNAME}/${SUBDIR_NAME}/${ENS_NUM}_${SUBDIR_NAME}/input_config.json"
 					# Submit a job for each ensemble member sub directory in the set
-					sbatch --job-name=_$JOBNAME/$SUBDIR_NAME/$ENS_DIR $LAUNCHER -j $JOBNAME/$SUBDIR_NAME/$ENS_DIR -i $CONFIG_PATH -t $TYPE -v $VERSION -c $CLUSTER
+					sbatch --job-name=_$JOBNAME/$SUBDIR_NAME/$ENS_DIR $LAUNCHER -j $JOBNAME/$SUBDIR_NAME/$ENS_DIR -t $TYPE -v $VERSION -c $CLUSTER
 				done
 			fi
 		fi

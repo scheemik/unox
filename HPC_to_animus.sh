@@ -107,19 +107,13 @@ fi
 # Define function to combine predictions
 check_to_combine_predictions() {
     local file=$1
-    # Check whether a config file exists
-    if [ -f ".$DIR_PREFIX/$file/input_config.json" ]; then
-        THIS_CONFIG=".$DIR_PREFIX/$file/input_config.json"
-        echo "Found $THIS_CONFIG"
-    else
-        THIS_CONFIG=""
-        echo "Did not find .$DIR_PREFIX/$file/input_config.json, using sample_config.json"
-    fi
-    echo "Looking for .$DIR_PREFIX/$file/ENSEMBLE_SIZE.txt"
+    # Check whether an ensemble size file exists
     if [ -f ".$DIR_PREFIX/$file/ENSEMBLE_SIZE.txt" ]; then
-        echo "Found .$DIR_PREFIX/$file/ENSEMBLE_SIZE.txt"
+        echo "    Found .$DIR_PREFIX/$file/ENSEMBLE_SIZE.txt"
         echo "    Combining predictions from ensemble run for $file"
-        python src/unox/HPC/combine_predictions.py $file $THIS_CONFIG
+        python src/unox/HPC/combine_predictions.py $file
+    else
+        echo "    No predictions within .$DIR_PREFIX/$file to combine"
     fi
 }
 
