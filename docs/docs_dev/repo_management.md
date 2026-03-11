@@ -301,6 +301,8 @@ From github.com:<username>/unox
 
 **<ins>Note: It is important to repeat the above process on all relevant machines (Animus, HPC, etc.) where you have developed the code on `<new_branch>`.</ins>**
 
+Below repeats many of the steps under [Creating a new branch](#new_branch), however includes the commands needed to restore any changes you may have saved with the `git stash` command. 
+
 #### On first machine only
 
 **<ins>Note: This should only be done from the first machine. For subsequent machines, skip to [On subsequent machines](#on-subsequent-machines).</ins>**
