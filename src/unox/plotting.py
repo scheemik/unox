@@ -1868,12 +1868,12 @@ def plot_BaW(
                 # Format the label for this variable
                 ax_labels[j] = f"{u_arr.xr[var].attrs['long_name']} ({u_arr.xr[var].attrs['units']})"
                 # Get the name of this dataset, if multiple datasets given
-                if one_dataset:
-                    this_name = f"{var} "
-                else:
-                    this_name = f"{u_arr.name.split('/')[-1]} "
+                # if one_dataset:
+                #     this_name = f"{var} "
+                # else:
+                #     this_name = f"{u_arr.name.split('/')[-1]} "
                 # Format the box label, taking only the name of the child (ensemble member) directory
-                box_label = f"{this_name}(n={len(var_array)})"
+                # box_label = f"{this_name}(n={len(var_array)})"
             elif var in ['R2', 'RMSE']:
                 from unox.evaluate import compare_arrs
                 # Make sure the dataset is an ensemble run
@@ -1905,8 +1905,6 @@ def plot_BaW(
                     this_name = u_arr.name.split('/')[-1].replace(overall_name, "").strip('_')
                 else:
                     this_name = u_arr.name.split('/')[-1]
-                # Format the box label, taking only the name of the child (ensemble member) directory
-                box_label = f"{this_name} (n={ens_size})"
                 # Make an array to collect the comparison values
                 var_array = [None]*ens_size
                 # Calculate the comparison value for each ensemble member
@@ -1923,6 +1921,12 @@ def plot_BaW(
                     elif var == 'RMSE':
                         ax_labels[j] = rf"RMSE (pred vs truth)"
             # Format the name for this box and whisker plot
+            box_label = BaW_label(
+                u_arr, 
+                var=var,
+                one_dataset=one_dataset,
+                **kwargs,
+            )
             box_label_extras = ""
             for ds_kwarg in ['start_date', 'interval', 'label_note']:
                 if ds_kwarg in ds_kwargs[i] and not isinstance(ds_kwargs[i][ds_kwarg], type(None)):
@@ -1933,7 +1937,7 @@ def plot_BaW(
                     title_extras = f", {title_extras}"
             else:
                 title_extras = ""
-                box_label = f"{box_label}\n{box_label_restrict}{box_label_extras}"
+                # box_label = f"{box_label}\n{box_label_restrict}{box_label_extras}"
             # Add that array to the dictionary
             box_dicts[j][box_label] = var_array
     
@@ -1969,3 +1973,103 @@ def plot_BaW(
     else:
         # Return the axes
         return axs
+
+def BaW_label(
+    u_arr,
+    label_with=None,
+    var=None,
+    one_dataset=False,
+    **kwargs,
+):
+    """ Assemble the label for one box and whisker plot.
+
+        Format a label for a box and whisker in a BaW plot based on the metadata of the given `uarray`, the specified label components in `label_with`, and the keyword arguments in `ds_kwargs`. 
+
+        Parameters
+        ----------
+        dataset : `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
+            The dataset from which to get the data for the correlation plot.
+        vars : `list`, `str`
+            The variable(s) to plot on the x-axis/axes.
+            Can be `R2`, `RMSE`, or any variable in the dataset.
+        datasets : `list`, `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
+            The dataset(s) from which to get the data for the plot.
+        ds_kwargs : `list`, `dict`, optional
+            The dictionaries(s) of keyword arguments to specify the format of each plot.
+            Default is `None`.
+        axs : `list`, `matplotlib.axes.Axes`, `None`, optional
+            The axes on which to plot the data.
+            If `None`, a new figure is created.
+            Default is `None`.
+        violin : `bool`, optional
+            Whether or not to make a violin plot instead of a box and whisker plot.
+            Default is `False`.
+        **kwargs : dict
+            Additional keyword arguments to pass to `format_sci_notation()`.
+
+        Returns
+        -------
+        fig : `matplotlib.figure.Figure`
+            If no axes were given, return the figure object containing the plot.
+        axs : `QuadMesh`
+            If axes were given, return those axes with the plots on them.
+
+        Examples
+        --------
+        >>> BaW_label(
+                uarray('no2_example_run', is_predict=True),
+                label_with=['name', 'size'],
+                var='nox_pred',
+                one_dataset=False,
+            )
+        no2_example_run (n=4892160)
+    """
+    # Verify argument types 
+    if not isinstance(u_arr, uarray):
+        raise TypeError(f"(BaW_label) `u_arr` must be a `uarray` object. Got type: {type(dataset)}")
+    if isinstance(label_with, type(None)):
+        label_with = ['name', 'size']
+
+    # Get the metadata from the `uarray` object
+    meta_dict = u_arr._get_metadata()
+
+    # Check for presence of particular components in `label_with` and add those to the label
+    box_label = ""
+    spacer=""
+    # Loop through the components of `label_with`
+    for label_with_this in label_with:
+        # Check for specific components to add to the label
+        if label_with_this == 'name':
+            if one_dataset:
+                if var in ['R2', 'RMSE']:
+                    add_this = u_arr.name.split('/')[-1].replace(u_arr.name.split('/')[0].strip('_'), "").strip('_')
+                elif not isinstance(var, type(None)):
+                    add_this = f"{u_arr.name.split('/')[-1]}"
+                else:
+                    raise ValueError(f"(BaW_label) To label with 'name' when `one_dataset` is True, `var` must be specified. Got: {var}")
+            else:
+                add_this = f"{u_arr.name.split('/')[-1]}"
+        elif label_with_this == 'size':
+            if var in u_arr.xr.data_vars:
+                this_size = len(u_arr.xr[var].values.flatten())
+            elif var in ['R2', 'RMSE']:
+                this_size = u_arr.xr.attrs['ensemble_size']
+            else:
+                raise ValueError(f"(BaW_label) To label with 'size', `var` must be a variable in the dataset or 'R2' or 'RMSE'. Got: {var}")
+            add_this = f"n={this_size}"
+        # Check the metadata dictionary for components to add to the label
+        elif label_with_this in meta_dict:
+            add_this = meta_dict[label_with_this]
+        elif label_with_this in meta_dict['config_dict']:
+            add_this = meta_dict['config_dict'][label_with_this]
+        else:
+            raise ValueError(f"(BaW_label) Component to label with '{label_with_this}' not found. \nComponents must either be 'name', 'size', a variable in the given dataset, or a key in the metadata dictionary.")
+        # Check whether the component to add to the label is a number
+        if udata.verify_number(add_this):
+            # Format the number
+            add_this = rf"${uplt_fmt.format_sci_notation(add_this, **kwargs)}$"
+        # Add the component to the label
+        box_label = rf"{box_label}{spacer}{add_this}"
+        # Set the spacer for the next loop to be a comma and a space
+        spacer=", "
+    return box_label
