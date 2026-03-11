@@ -142,17 +142,9 @@ def make_output_metadata_dict(
             The dictionary of the configuration file.
         version : int
             The version of the code used in this run (0 or 1).
-        n_epochs : int
-            The number of epochs the model was run over.
         model_fmt : str
             The format in which to output the trained model for this run.
             Either 'h5', 'keras', or 'both'.
-        split_year : int
-            The year at which to split the training and validation data.
-            Defaults to 2019.
-        split_value : float
-            The ratio with which the data was split between training and validation.
-            For example, a value of 0.9 would give 90% to training and 10% to validation. 
         
         Returns
         -------
