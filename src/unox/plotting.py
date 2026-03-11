@@ -1696,7 +1696,7 @@ def plot_BaW(
 ):
     """ Plot a box and whisker plot.
 
-    Create a box and whisker plot of the specified variables from the given dataset.
+        Create a box and whisker plot of the specified variables from the given dataset.
 
         Parameters
         ----------
