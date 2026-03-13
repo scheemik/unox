@@ -529,6 +529,7 @@ def match_domains(
     xr_a,
     xr_b,
     require_equal=True,
+    require_len_gt_1=True,
 ):
     """Restrict the domain of the given xarray Datasets to match each other.
 
@@ -542,6 +543,12 @@ def match_domains(
             The first dataset.
         xr_b : xarray.Dataset or xarray.DataArray
             The second dataset.
+        require_equal : `bool`, optional
+            Whether to check that the latitude and longitude values in the two datasets are exactly the same after trimming.
+            Default is `True`.
+        require_len_gt_1 : `bool`, optional
+            Whether to check to make sure that the trimmed datasets have more than 1 value in each of the lat and lon dimensions, to catch cases where the datasets only overlap at a single point, resulting in either the lat or lon dimension being dropped.
+            Default is `True`.
         
         Returns
         -------
@@ -574,14 +581,24 @@ def match_domains(
     tr_xr_a = xr_a.sel(lat=slice(lat_min, lat_max), lon=slice(lon_min, lon_max))
     tr_xr_b = xr_b.sel(lat=slice(lat_min, lat_max), lon=slice(lon_min, lon_max))
 
+    # Verify these two datasets have the same latitude and longitude values
     if require_equal == True:
-        # Verify these two datasets have the same latitude and longitude values
         lats_a, lons_a = get_lats_lons(tr_xr_a, check_time=False)
         lats_b, lons_b = get_lats_lons(tr_xr_b, check_time=False)
         if not np.array_equal(lats_a, lats_b):
             raise ValueError(f"(match domains) Latitude values do not match between the two datasets.")
         if not np.array_equal(lons_a, lons_b):
             raise ValueError(f"(match domains) Longitude values do not match between the two datasets.")
+    # Verify that the xarray datasets have more than 1 value in each of the lat and lon dimensions
+    if require_len_gt_1 == True:
+        if len(tr_xr_a.lat) <= 1:
+            raise ValueError(f"(match_domains) `xr_a` has 1 or fewer values in the lat dimension after trimming.")
+        if len(tr_xr_a.lon) <= 1:
+            raise ValueError(f"(match_domains) `xr_a` has 1 or fewer values in the lon dimension after trimming.")
+        if len(tr_xr_b.lat) <= 1:
+            raise ValueError(f"(match_domains) `xr_b` has 1 or fewer values in the lon dimension after trimming.")
+        if len(tr_xr_b.lon) <= 1:
+            raise ValueError(f"(match_domains) `xr_b` has 1 or fewer values in the lon dimension after trimming.")
     return tr_xr_a, tr_xr_b
 
 def verify_npy(
