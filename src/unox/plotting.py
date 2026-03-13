@@ -281,7 +281,7 @@ def plot_var_maps(
         vars : `str`, `list`, optional
             The name(s) of the variable(s) to plot from the dataset.
             Default is `nox`.
-        restrict_lat_lon_to : `str`, `None`, optional
+        restrict_lat_lon_to : `str`, `xr.DataArray`, `None`, optional
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
             Default is `None`.
@@ -315,8 +315,8 @@ def plot_var_maps(
                 raise TypeError(f"(plot_var_maps) Each entry in `vars` must be a string. Got type: {type(var)}")
     if len(vars) == 0:
         raise ValueError("(plot_var_maps) `vars` list cannot be empty.")
-    if not isinstance(restrict_lat_lon_to, (type(None), str)):
-        raise TypeError(f"(plot_var_maps) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
+    if not isinstance(restrict_lat_lon_to, (type(None), str, xr.DataArray)):
+        raise TypeError(f"(plot_run_analysis) `restrict_lat_lon_to` must be a string, `xr.DataArray`, or `None`. Got type: {type(restrict_lat_lon_to)}")
     if isinstance(ens_mem, int):
         title_ens_ID = f"({ens_mem:02d})"
         ens_ID = f"_{ens_mem:02d}"
@@ -553,7 +553,7 @@ def plot_run_analysis(
             Whether to average over all time steps.
             Cannot have both `avg_over` and `sum_over` set to `True`.
             Default is `False`.
-        restrict_lat_lon_to : `str`, `None`, optional
+        restrict_lat_lon_to : `str`, `xr.DataArray`, `None`, optional
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
             Default is `None`.
@@ -596,8 +596,8 @@ def plot_run_analysis(
         raise TypeError(f"(plot_run_analysis) `interval` must be None, a string, or a numpy.timedelta64. Got type: {type(interval)}")
     if not isinstance(avg_over, bool):
         raise TypeError(f"(select_time) `avg_over` must be a bool. Got type: {type(avg_over)}")
-    if not isinstance(restrict_lat_lon_to, (type(None), str)):
-        raise TypeError(f"(plot_run_analysis) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
+    if not isinstance(restrict_lat_lon_to, (type(None), str, xr.DataArray)):
+        raise TypeError(f"(plot_run_analysis) `restrict_lat_lon_to` must be a string, `xr.DataArray`, or `None`. Got type: {type(restrict_lat_lon_to)}")
     if isinstance(ens_mem, int):
         title_ens_ID = f"({ens_mem:02d})"
         ens_ID = f"_{ens_mem:02d}"
@@ -1002,7 +1002,7 @@ def corr_plot(
             The axes on which to plot the data.
             If `None`, a new figure is created.
             Default is `None`.
-        restrict_lat_lon_to : `str`, `None`, optional
+        restrict_lat_lon_to : `str`, `xr.DataArray`, `None`, optional
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
             Default is `None`.
@@ -1060,8 +1060,8 @@ def corr_plot(
     else:
         if len(x_vars) != len(y_vars) and len(x_vars) != len(axs):
             raise ValueError(f"(corr_plot) `x_vars`, `y_vars`, and `axs` (if given) must all be the same length. Got lengths {len(x_vars)}, {len(y_vars)}, and {len(axs)}, respectively.")
-    if not isinstance(restrict_lat_lon_to, (type(None), str)):
-        raise TypeError(f"(corr_plot) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
+    if not isinstance(restrict_lat_lon_to, (type(None), str, xr.DataArray)):
+        raise TypeError(f"(plot_run_analysis) `restrict_lat_lon_to` must be a string, `xr.DataArray`, or `None`. Got type: {type(restrict_lat_lon_to)}")
     if isinstance(ens_mem, int):
         title_ens_ID = f"({ens_mem:02d})"
         ens_ID = f"_{ens_mem:02d}"
@@ -1502,7 +1502,7 @@ def compare_input_vars(
         abs_tolerance : `float`, optional
             The absolute tolerance for comparing the input files. 
             Default is `2e-5`.
-        restrict_lat_lon_to : `str`, `None`, optional
+        restrict_lat_lon_to : `str`, `xr.DataArray`, `None`, optional
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
             Default is `None`.
@@ -1546,8 +1546,8 @@ def compare_input_vars(
             raise TypeError(f"(compare_input_vars) `var` must be a string. Got type: {type(input_dict['var'])}")
     if not isinstance(abs_tolerance, float):
         raise TypeError(f"(compare_input_vars) `abs_tolerance` must be a float. Got type: {type(abs_tolerance)}")
-    if not isinstance(restrict_lat_lon_to, (type(None), str)):
-        raise TypeError(f"(compare_input_vars) `restrict_lat_lon_to` must be a string or None. Got type: {type(restrict_lat_lon_to)}")
+    if not isinstance(restrict_lat_lon_to, (type(None), str, xr.DataArray)):
+        raise TypeError(f"(plot_run_analysis) `restrict_lat_lon_to` must be a string, `xr.DataArray`, or `None`. Got type: {type(restrict_lat_lon_to)}")
 
     # Loop over the two input dictionaries and load the data
     for input_dict in [input_a_dict, input_b_dict]:
