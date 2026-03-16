@@ -32,18 +32,18 @@ def plot_extent(
     dataset,
     **kwargs,
 ):
-    """Plots the extent of the given dataset.
+    """ Plot the geographic extent of a dataset.
 
-        Creates a map with the Robin projection of the entire world
-        with a box showing the maximum N,S,E,W extent of the dataset.
+        Create a Robinson projection map showing the min/max latitude and longitude
+        of the dataset.
 
         Parameters
         ----------
         dataset : `str`, `xarray.Dataset`, `xarray.DataArray`
-            The dataset for which to plot the latitude / longitude extent.
+            The dataset for which to plot the latitude/longitude extent.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `uarray()`.
-        
+
         Returns
         -------
         fig : `matplotlib.figure.Figure`
@@ -83,26 +83,26 @@ def plot_lats_lons(
     padding=0.1,
     **kwargs,
 ):
-    """Plot the latitude and longitude values of the given dataset.
+    """ Plot the latitude/longitude grid of a dataset.
 
-        Creates a map showing the longitude and latitude resolution of the 
-        given dataset in a checkerboard pattern.
+        Create a checkerboard map showing the latitude and longitude resolution of
+        the dataset.
 
         Parameters
         ----------
         dataset : `str`, `xarray.Dataset`, `xarray.DataArray`
             The dataset for which to plot the latitude and longitude grid.
         padding : `float`, optional
-            The padding (in a fraction of total extent) to add to the extent of the map. 
+            The padding (in a fraction of total extent) to add to the extent of the map.
             Default is `0.1`.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `uarray()`.
-        
+
         Returns
         -------
         fig : `matplotlib.figure.Figure`
             The figure object containing the plot.
-        
+
         Examples
         --------
         >>> fig = plot_lats_lons('inputfiles/no2_2019_JFM/no2_2019_JFM.nc')
@@ -149,10 +149,10 @@ def map_ax(
     padding=0.1,
     **kwargs,
 ):
-    """Plots a map of the given data array.
+    """ Plot a geographic map from an xarray DataArray.
 
-        Creates a map of the given xarray DataArray on the axes provided. 
-        The latitude and longitude values from `xr_arr` are used to set the extent of the map.
+        Create a map of the provided xarray DataArray on the given axes using the
+        latitude and longitude coordinates from the data.
 
         Parameters
         ----------
@@ -161,33 +161,33 @@ def map_ax(
         ax : `matplotlib.axes.Axes`
             The axes on which to plot the data.
         plt_title : `str`, optional
-            The title for the plot. 
+            The title for the plot.
             Default is `None`.
         cmap : `matplotlib.colors.Colormap`, optional
-            The colormap to use for the plot. 
+            The colormap to use for the plot.
             Default is `pplt.cm.Fire`.
         cbar_max : `float`, optional
-            Maximum value for the colorbar. When `None`, the colorbar max is set to the max value to plot.
+            Maximum value for the colorbar. When `None`, it uses the max value in the data.
             Default is `None`.
         cbar_min : `float`, optional
-            Minimum value for the colorbar. When `None`, the colorbar max is set to the min value to plot.
+            Minimum value for the colorbar. When `None`, it uses the min value in the data.
             Default is `None`.
         cb_ext : `str`, optional
             How to extend the ends of the colorbar. Can be `'neither'`, `'both'`, `'min'`, or `'max'`.
             Default is `'neither'`.
         padding : `float`, optional
-            The padding (in a fraction of total extent) to add to the extent of the map. 
+            The padding (fraction of total extent) to add to the map extent.
             Default is `0.1`.
         **kwargs : keyword arguments
             Additional keyword arguments accepted to facilitate wrapper functions.
-        
+
         Returns
         -------
         this_map_ax : `matplotlib.axes.Axes`
             The axes object containing the plot.
         clrbar_label : `str`
             The label for the colorbar containing the variable name and units.
-        
+
         Examples
         --------
         >>> import proplot as pplt
@@ -269,10 +269,9 @@ def plot_var_maps(
     sum_over=False,
     **kwargs,
 ):
-    """ Plots a maps of the given data.
+    """ Plot maps for one or more variables in a dataset.
 
-        A wrapper for the `map_ax()` function.
-        Creates maps for each specified 'var' using the provided dataset.
+        A wrapper around `map_ax()` that creates a map for each specified variable.
 
         Parameters
         ----------
@@ -280,23 +279,31 @@ def plot_var_maps(
             The dataset for which to plot the specified variables.
         vars : `str`, `list`, optional
             The name(s) of the variable(s) to plot from the dataset.
-            Default is `nox`.
+            Default is `['nox']`.
         restrict_lat_lon_to : `str`, `xr.DataArray`, `None`, optional
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
             Default is `None`.
         ens_mem : `int`, `None`, optional
-            The ID of the ensemble member to plot. 
-            If `None`, the dataset is assumed to not have multiple ensemble members.
+            The ID of the ensemble member to plot.
+            If `None`, the dataset is assumed not to have multiple ensemble members.
             Default is `None`.
+        avg_over : `bool`, optional
+            Whether to average over all time steps.
+            Cannot be `True` at the same time as `sum_over`.
+            Default is `True`.
+        sum_over : `bool`, optional
+            Whether to sum over all time steps.
+            Cannot be `True` at the same time as `avg_over`.
+            Default is `False`.
         **kwargs : keyword arguments
-            Additional keyword arguments to pass to `uarray`, `select_time()`, `set_fig_row_col()` and `map_ax()`.
-        
+            Additional keyword arguments to pass to `uarray`, `select_time()`, `set_fig_row_col()`, and `map_ax()`.
+
         Returns
         -------
         fig : `matplotlib.figure.Figure`
             The figure object containing the plot.
-        
+
         Examples
         --------
         >>> fig = plot_var_maps('no2_example_run', is_predict=True, vars=['no2_pred'], datetime='2019-06-01', interval='30D', avg_over=True)
@@ -400,9 +407,10 @@ def select_time(
     sum_over=False,
     **kwargs,
 ):
-    """ Selects the time from an xarray to plot.
+    """ Select a time slice from an xarray dataset.
 
-        Either selects a single time slice, averages over a time period, or sums over the entire available time dimension to result in an xarray without a time dimension, only lat-lon dimensions.
+        Either select a single time slice, average over a time period, or sum over the
+        entire available time dimension to return an xarray without a time dimension.
 
         Parameters
         ----------
@@ -415,16 +423,17 @@ def select_time(
             Last date and time to select from the data file.
             Default is `None`.
         interval : `str`, `numpy.timedelta64`, `None`, optional
-            If provided and `end_date` is `None`, calculate `end_date` based on this interval.
-            If string, must be in the format `XT` where `X` is an integer and `T` is the unit, either `D` for days, `M` for months, or `Y` for years.
+            If provided and `end_date` is `None`, calculates `end_date` based on this
+            interval. If a string, must be in the format `XT` where `X` is an integer
+            and `T` is the unit (`D` for days, `M` for months, or `Y` for years).
             Default is `None`.
         avg_over : `bool`, optional
             Whether to average over all time steps.
-            Cannot have both `avg_over` and `sum_over` set to `True`.
+            Cannot be `True` at the same time as `sum_over`.
             Default is `False`.
         sum_over : `bool`, optional
-            Whether to sum across all time steps. 
-            Cannot have both `avg_over` and `sum_over` set to `True`.
+            Whether to sum across all time steps.
+            Cannot be `True` at the same time as `avg_over`.
             Default is `False`.
         **kwargs : keyword arguments
             Additional keyword arguments accepted to facilitate wrapper functions.
@@ -433,7 +442,7 @@ def select_time(
         -------
         xr_sel_time : `xarray.Dataset`, `xarray.DataArray`
             The input xarray over the specified time interval.
-            If either `avg_over` or `sum_over` was `True`, it will not have a time dimension.
+            If either `avg_over` or `sum_over` is `True`, the return will not have a time dimension.
         title_segment : `str`
             A segment of the title string for the plot with time information.
 
@@ -521,22 +530,19 @@ def plot_run_analysis(
     clr_map=pplt.Colormap('Balance'),
     **kwargs,
 ):
-    """ Compares the results of a model run to the 'truth'.
-    
-        Makes a set of maps to compare the 'truth' and the two stages of the model, plus correlation plots, if specified.
+    """ Compare a model run to the truth with maps and optional correlation plots.
 
-        Creates a set of 6 maps:
-        1. 'Truth'
-        2. Stage 1
-        3. Stage 2
-        4. Difference: 'Truth' - Stage 1
-        5. Difference: 'Truth' - Stage 2
-        6. Difference: Stage 1 - Stage 2
-
-        Additionally adds correlation plots between:
-        7. 'Truth' and Stage 1
-        8. 'Truth' and Stage 2
-        9. Stage 1 and Stage 2
+        Create a set of maps comparing the truth and model predictions (stages 1 and 2), and optionally add correlation plots.
+        If both stages and correlations are plotted, the figure will have 9 subplots:
+        1. 'Truth' map
+        2. Stage 1 prediction map
+        3. Stage 2 prediction map
+        4. Difference between 'Truth' and Stage 1 map
+        5. Difference between 'Truth' and Stage 2 map
+        6. Difference between Stage 1 and Stage 2 map
+        7. Correlation plot between 'Truth' and Stage 1
+        8. Correlation plot between 'Truth' and Stage 2
+        9. Correlation plot between Stage 1 and Stage 2
 
         Parameters
         ----------
@@ -547,36 +553,36 @@ def plot_run_analysis(
             Default is `None`.
         interval : `str`, `numpy.timedelta64`, `None`, optional
             If provided and `end_date` is `None`, calculate `end_date` based on this interval.
-            If string, must be in the format `XT` where `X` is an integer and `T` is the unit, either `D` for days, `M` for months, or `Y` for years.
+            If a string, it must be in the format `XT` where `X` is an integer and `T` is the unit
+            (`D`, `M`, or `Y`).
             Default is `None`.
         avg_over : `bool`, optional
             Whether to average over all time steps.
-            Cannot have both `avg_over` and `sum_over` set to `True`.
-            Default is `False`.
+            Default is `True`.
         restrict_lat_lon_to : `str`, `xr.DataArray`, `None`, optional
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
             Default is `None`.
         ens_mem : `int`, `None`, optional
-            The ID of the ensemble member to plot. 
-            If `None`, the dataset is assumed to not have multiple ensemble members.
+            The ID of the ensemble member to plot.
+            If `None`, the dataset is assumed not to have multiple ensemble members.
             Default is `None`.
         add_corr_plots : `bool`, optional
-            Whether or not to add a row of correlation plots to the figure.
+            Whether to add a row of correlation plots to the figure.
             Default is `True`.
         stage1_only : `bool`, optional
-            If `True`, produce graphs just corresponding to stage 1. If `False`, produce graphs
-            for stage 1 and stage 2. 
+            If `True`, produce graphs only for stage 1.
+            If `False`, produce graphs for both stage 1 and stage 2.
             Default is `False`.
         clr_bar_scale : `float`, optional
-            Scale factor for the color bar, must be between `0` and `1`. If set to `1`, the color bar will be scaled to the maximum absolute value of the data. 
+            Scale factor for the colorbar, between 0 and 1.
             Default is `0.5`.
         clr_map : `matplotlib.colors.Colormap`, optional
-            The colormap to use for the map plots. 
+            The colormap to use for the map plots.
             Default is `pplt.cm.Balance`.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `select_time()`, `map_ax()`, and `corr_plot()`.
-        
+
         Returns
         -------
         fig : `matplotlib.figure.Figure`
@@ -584,8 +590,8 @@ def plot_run_analysis(
 
         Examples
         --------
-        >>> fig = plot_run_analysis('no2_example_run', year = 2019, datetime='2019-01-02',
-        avg_over='364D', restrict_lat_lon_to='../datafiles/sample_data/nox_2019_t106_US.nc',  add_corr_plots=True)
+        >>> fig = plot_run_analysis('no2_example_run', year=2019, datetime='2019-01-02', \
+        ...     avg_over='364D', restrict_lat_lon_to='../datafiles/sample_data/nox_2019_t106_US.nc', add_corr_plots=True)
     """
     # Verify argument types
     # Making `uarray` object verifies `dataset`
@@ -828,41 +834,42 @@ def plot_comparison(
     log_scale=True,
     **kwargs,
 ):
-    """Plot a comparison of two arrays.
+    """ Plot a comparison of two arrays using a 2D histogram.
 
-        Creates a correlation plot between the values of the two given arrays.
+        Create a correlation plot between the values of the two provided arrays.
 
         Parameters
         ----------
         a_xr_arr : `xarray.DataArray`, `numpy.ndarray`
-            The first xarray DataArray or numpy array to compare.
+            The first array to compare.
         b_xr_arr : `xarray.DataArray`, `numpy.ndarray`
-            The second xarray DataArray or numpy array to compare.
+            The second array to compare.
         ax : `matplotlib.axes.Axes`, optional
             The axes on which to plot the data.
+            If `None`, a new figure is created.
             Default is `None`.
         plt_title : `str`, optional
-            The title for the plot. 
+            The title for the plot.
             Default is `None`.
         a_label : `str`, optional
             The label to use for the first array.
         b_label : `str`, optional
             The label to use for the second array.
         cmap : `matplotlib.colors.Colormap`, optional
-            The colormap to use for the plot. 
+            The colormap to use for the plot.
             Default is `pplt.cm.viridis`.
         set_under_val : `float`, optional
-            The value below which to set the colormap to white.
+            The value below which the colormap is set to white.
             Default is `1`.
         hist_params : `dict`, optional
-            The dictionary of values to set the 2D histogram parameters.
-            Default is `{'bins':100, 'vmax':1000, 'vmin':10}`.
+            Parameters for the 2D histogram.
+            Default is `{'bins': 100, 'vmax': 1000, 'vmin': 10}`.
         log_scale : `bool`, optional
             Whether to use a logarithmic scale for the histogram.
             Default is `True`.
         **kwargs : keyword arguments
             Additional keyword arguments accepted to facilitate wrapper functions.
-        
+
         Returns
         -------
         fig : `matplotlib.figure.Figure`
@@ -980,11 +987,11 @@ def corr_plot(
     ens_mem=None,
     **kwargs,
 ):
-    """ Makes correlation plots between given variables.
+    """ Create correlation plots between specified variables.
 
-        Creates a heatmap correlation plot with the specified variables on each axis
-        using the data from the specified dataset, filtering based on the given datetime,
-        period over which to average, and latitude/longitude restrictions.
+        Create a heatmap correlation plot with the specified variables on each axis using
+        data from the given dataset, filtering by datetime, averaging period, and
+        optional latitude/longitude restrictions.
 
         Parameters
         ----------
@@ -993,11 +1000,11 @@ def corr_plot(
         x_vars : `list`, `str`, optional
             The variable(s) to plot on the x-axis.
             Can be `truth`, `pred`, `pred_s2`, or any variable in the dataset.
-            Default is `pred`.
+            Default is `['pred']`.
         y_vars : `list`, `str`, optional
             The variable(s) to plot on the y-axis.
             Can be `truth`, `pred`, `pred_s2`, or any variable in the dataset.
-            Default is `truth`.
+            Default is `['truth']`.
         axs : `list`, `matplotlib.axes.Axes`, `None`, optional
             The axes on which to plot the data.
             If `None`, a new figure is created.
@@ -1007,8 +1014,8 @@ def corr_plot(
             If `None`, the entire dataset is used.
             Default is `None`.
         ens_mem : `int`, `None`, optional
-            The ID of the ensemble member to plot. 
-            If `None`, the dataset is assumed to not have multiple ensemble members.
+            The ID of the ensemble member to plot.
+            If `None`, the dataset is assumed not to have multiple ensemble members.
             Default is `None`.
         **kwargs : dict
             Additional keyword arguments to pass to `select_time()` and `plot_comparison()`.
@@ -1202,32 +1209,34 @@ def plot_epochs_logs(
     plt_title=None,
     **kwargs,
 ):
-    """ Plot the epochs logs for the given predictions dataset.
+    """ Plot training epoch logs for a prediction dataset.
 
-        Creates a line plot showing how certain values changed across the epochs when the model was being trained.
+        Create a line plot showing how specified metrics changed across training epochs.
 
         Parameters
         ----------
         dataset : `str`, `xarray.Dataset`, `xarray.DataArray`, `uarray`
-            The dataset for which to make comparison maps. Must be a predictions dataset.
-        vars : `str`, `list`, or `None`, optional
-            The variables to plot. Each variable is given it's own axis. Each variable must be from the list of `epochs_logs_vars` defined below. If `None` is given, all variables are plotted.
-            Default is `['loss']`.
-        ax : `matplotlib.axes.Axes`, optional
+            The dataset for which to plot epoch logs. Must be a predictions dataset.
+        vars : `str`, `list`, `None`, optional
+            The variables to plot. Each variable is plotted on its own axis.
+            If `None`, all available variables are plotted.
+            Default is `None` (which plots all variables).
+        axs : `matplotlib.axes.Axes`, `None`, optional
             The axes on which to plot the data.
+            If `None`, a new figure is created.
             Default is `None`.
         plt_title : `str`, optional
-            The title for the plot. 
+            The title for the plot.
             Default is `None`.
         **kwargs : keyword arguments
             Additional keyword arguments accepted to facilitate wrapper functions.
-        
+
         Returns
         -------
         fig : `matplotlib.figure.Figure`
-            The figure object containing the plot. Returned if `ax` is `None`.
-        q : `QuadMesh`
-            The QuadMesh object created by the 2D histogram. Returned if `ax` is given.
+            The figure object containing the plot. Returned if `axs` is `None`.
+        axs : `matplotlib.axes.Axes`
+            The axes containing the plot. Returned if `axs` was provided.
     """
     # Verify argument types
     # Making `uarray` object verifies `dataset`
@@ -1315,7 +1324,7 @@ def make_colorbar(
     cb_extend='neither',
     **kwargs,
 ):
-    """Creates a colorbar for the given figure and axes.
+    """ Create a colorbar for the given figure and axis.
 
         Parameters
         ----------
@@ -1326,11 +1335,12 @@ def make_colorbar(
         cb_label : `str`
             The label for the colorbar.
         num_ticks : `int`, optional
-            The number of ticks for the colorbar. 
+            The number of ticks for the colorbar.
             Default is `9`.
         cb_loc : `str`, optional
-            The location of the colorbar. Default is 'r' (right).
-        cb_ext : `str`, optional
+            The location of the colorbar.
+            Default is `'r'`.
+        cb_extend : `str`, optional
             How to extend the ends of the colorbar. Can be `'neither'`, `'both'`, `'min'`, or `'max'`.
             Default is `'neither'`.
         **kwargs : keyword arguments
@@ -1378,10 +1388,11 @@ def plot_hist(
     plt_title=None,
     log_scale=False,
 ):
-    """Plots a histogram of the given array(s).
+    """ Plot a histogram of one or more data arrays.
 
-        Creates a histogram of the given data on the given axis, or creates a new figure and axis if none is provided.
-        Each array in `data_arrs` is plotted as a separate histogram on the same axes.
+        Create a histogram of the given data on the provided axis, or create a new
+        figure and axis if none is provided. Each array in `data_arrs` is plotted as
+        a separate histogram.
 
         Parameters
         ----------
@@ -1391,34 +1402,34 @@ def plot_hist(
             The axes on which to plot the histogram. If `None`, a new figure and axes are created.
             Default is `None`.
         n_bins : `int`, optional
-            The number of bins to use for the histogram. 
+            The number of bins to use for the histogram.
             Default is `100`.
         ax_label : `str`, optional
-            The label for the x-axis. 
+            The label for the x-axis.
             Default is `'NOx emissions (kg/m2/s)'`.
         ylabel : `str`, optional
-            The label for the y-axis. 
+            The label for the y-axis.
             Default is `'Frequency'`.
         plt_title : `str`, optional
-            The title of the plot. If `None`, no title is set.
+            The title of the plot.
             Default is `None`.
         log_scale : `bool`, optional
-            If `True`, the y-axis will be set to a logarithmic scale. 
+            If `True`, the y-axis will be set to a logarithmic scale.
             Default is `False`.
 
         Returns
         -------
-        fig / ax : `matplotlib.figure.Figure` or `matplotlib.axes.Axes`
+        fig or ax : `matplotlib.figure.Figure` or `matplotlib.axes.Axes`
             The figure or axes containing the histogram.
 
         Examples
         --------
         >>> data_arr1 = uarray('nox_2019_JFM', is_input_set=True).xr['no2'].values
         >>> data_arr2 = uarray('nox_2019_JFM', is_input_set=True).xr['no2_s2'].values
-        >>> fig = plot_npy_hist(data_arr1)
-        
+        >>> fig = plot_hist(data_arr1)
+
         >>> fig, axs = pplt.subplots(nrows=2, ncols=1)
-        >>> axs[0] = plot_npy_hist([data_arr1, data_arr2], ax=axs[0], n_bins=50, title='Histogram of NO2 emissions, both stages')
+        >>> axs[0] = plot_hist([data_arr1, data_arr2], ax=axs[0], n_bins=50, plt_title='Histogram of NO2 emissions, both stages')
     """
     # Verify argument types
     if not isinstance(data_arrs, list):
@@ -1489,31 +1500,31 @@ def compare_input_vars(
     abs_tolerance=2e-5,
     restrict_lat_lon_to=None,
 ):
-    """Compares the data for two input variables.
+    """ Compare two input variables and optionally plot their differences.
 
         Parameters
         ----------
-        input_dict_a : `dict`, optional
+        input_a_dict : `dict`, optional
             Dictionary containing the parameters for the first input variable.
-            Must contain `'input_set'`, `'year'`, and `'var'`. 
-        input_dict_b : `dict`, optional
+            Must contain `'input_set'`, `'year'`, and `'var'`.
+        input_b_dict : `dict`, optional
             Dictionary containing the parameters for the second input variable.
-            Must contain `'input_set'`, `'year'`, and `'var'`. 
+            Must contain `'input_set'`, `'year'`, and `'var'`.
         abs_tolerance : `float`, optional
-            The absolute tolerance for comparing the input files. 
+            The absolute tolerance for comparing the input files.
             Default is `2e-5`.
         restrict_lat_lon_to : `str`, `xr.DataArray`, `None`, optional
             Path to a netCDF file to restrict the latitude and longitude range.
             If `None`, the entire dataset is used.
             Default is `None`.
-        
+
         Returns
         -------
         None
             If the input files match within the given tolerance.
         fig : `matplotlib.figure.Figure`
             If the input files differ more than the given tolerance, a figure is returned.
-        
+
         Examples
         --------
         >>> fig = compare_input_vars(
@@ -1694,9 +1705,10 @@ def plot_BaW(
     violin=False,
     **kwargs,
 ):
-    """ Plot a box and whisker plot.
+    """ Plot box-and-whisker (or violin) plots for specified variables.
 
-        Create a box and whisker plot of the specified variables from the given dataset.
+        Create a box-and-whisker plot (or optional violin plot) of the specified
+        variables from one or more datasets.
 
         Parameters
         ----------
@@ -1706,14 +1718,14 @@ def plot_BaW(
         datasets : `list`, `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
             The dataset(s) from which to get the data for the plot.
         ds_kwargs : `list`, `dict`, optional
-            The dictionaries(s) of keyword arguments to specify the format of each plot.
+            Dictionaries of keyword arguments to specify the format of each plot.
             Default is `None`.
         axs : `list`, `matplotlib.axes.Axes`, `None`, optional
             The axes on which to plot the data.
             If `None`, a new figure is created.
             Default is `None`.
         violin : `bool`, optional
-            Whether or not to make a violin plot instead of a box and whisker plot.
+            Whether to make a violin plot instead of a box-and-whisker plot.
             Default is `False`.
         **kwargs : dict
             Additional keyword arguments to pass to `set_fig_row_col()`.
@@ -1721,24 +1733,24 @@ def plot_BaW(
         Returns
         -------
         fig : `matplotlib.figure.Figure`
-            If no axes were given, return the figure object containing the plot.
-        axs : `QuadMesh`
-            If axes were given, return those axes with the plots on them.
+            If no axes were provided, return the figure object containing the plot.
+        axs : `matplotlib.axes.Axes`
+            If axes were provided, return those axes with the plots on them.
 
         Examples
         --------
         >>> fig = plot_BaW(
-                ['R2', 'RMSE'],
-                '_ZFI_ensemble_run',
-                ds_kwargs=[
-                    {
-                        'is_predict': True,
-                        'start_date': '2019-01-02',
-                        'interval': '1Y',
-                        'restrict_lat_lon_to': 'datafiles/sample_data/nox_2019_t106_US.nc',
-                    },
-                ]
-            )
+        ...     ['R2', 'RMSE'],
+        ...     '_ZFI_ensemble_run',
+        ...     ds_kwargs=[
+        ...         {
+        ...             'is_predict': True,
+        ...             'start_date': '2019-01-02',
+        ...             'interval': '1Y',
+        ...             'restrict_lat_lon_to': 'datafiles/sample_data/nox_2019_t106_US.nc',
+        ...         },
+        ...     ]
+        ... )
     """
     # Verify argument types 
     if not isinstance(vars, list):
@@ -1981,48 +1993,40 @@ def BaW_label(
     one_dataset=False,
     **kwargs,
 ):
-    """ Assemble the label for one box and whisker plot.
+    """ Assemble a label for a box-and-whisker plot.
 
-        Format a label for a box and whisker in a BaW plot based on the metadata of the given `uarray`, the specified label components in `label_with`, and the keyword arguments in `ds_kwargs`. 
+        Construct a label for a box-and-whisker plot based on metadata from a `uarray`,
+        the requested components in `label_with`, and any formatting kwargs.
 
         Parameters
         ----------
-        dataset : `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
-            The dataset from which to get the data for the correlation plot.
-        vars : `list`, `str`
-            The variable(s) to plot on the x-axis/axes.
-            Can be `R2`, `RMSE`, or any variable in the dataset.
-        datasets : `list`, `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
-            The dataset(s) from which to get the data for the plot.
-        ds_kwargs : `list`, `dict`, optional
-            The dictionaries(s) of keyword arguments to specify the format of each plot.
-            Default is `None`.
-        axs : `list`, `matplotlib.axes.Axes`, `None`, optional
-            The axes on which to plot the data.
-            If `None`, a new figure is created.
-            Default is `None`.
-        violin : `bool`, optional
-            Whether or not to make a violin plot instead of a box and whisker plot.
+        u_arr : `uarray`
+            The uarray object from which to derive label metadata.
+        label_with : `list`, `None`, optional
+            Components to include in the label (e.g., `['name', 'size']`).
+            Default is `None`, which uses `['name', 'size']`.
+        var : `str`, optional
+            The variable name to use when computing label components like size.
+        one_dataset : `bool`, optional
+            Whether the plot is for a single dataset.
             Default is `False`.
         **kwargs : dict
-            Additional keyword arguments to pass to `format_sci_notation()`.
+            Additional keyword arguments passed to `format_sci_notation()`.
 
         Returns
         -------
-        fig : `matplotlib.figure.Figure`
-            If no axes were given, return the figure object containing the plot.
-        axs : `QuadMesh`
-            If axes were given, return those axes with the plots on them.
+        str
+            The formatted label.
 
         Examples
         --------
         >>> BaW_label(
-                uarray('no2_example_run', is_predict=True),
-                label_with=['name', 'size'],
-                var='nox_pred',
-                one_dataset=False,
-            )
-        no2_example_run (n=4892160)
+        ...     uarray('no2_example_run', is_predict=True),
+        ...     label_with=['name', 'size'],
+        ...     var='nox_pred',
+        ...     one_dataset=False,
+        ... )
+        'no2_example_run (n=4892160)'
     """
     # Verify argument types 
     if not isinstance(u_arr, uarray):
