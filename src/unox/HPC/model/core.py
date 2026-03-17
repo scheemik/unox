@@ -18,26 +18,31 @@ def build_Unet(
     act_reg=None,
     act_reg_factor=0.0001,
 ):
-    """Build the Unet.
+    """ Build the Unet.
 
-    Constructs the architecture of the Unet model based on the given parameters.
+        Construct the architecture of the Unet model based on the given parameters.
 
-    Parameters
-    ----------
-    input_shape : tuple of int
-        The shape of the input (n_lat, n_lon, n_in_vars), where n_lat is the 
-        number of latitude grid cells, n_lon is the number of longitude grid
-        cells, and n_in_vars is the number of input variables.
-    n_c_fltr : int
-        The number of filters for the initial convolutional layer. 
-    k_size : tuple of int
-        The kernel size to use in the convolutional layers.
-    p_size : tuple of int
-        The factors by which to downscale in the Max Pooling layers.
-    act_reg : str
-        The name of the regularization function (of type keras.regularizers.Regularizer) to apply to the activations of the layers.
-    act_reg_factor : float
-        The regularization factor to apply to the activations of the layers.
+        Parameters
+        ----------
+        input_shape : `tuple` of `int`
+            The shape of the input (n_lat, n_lon, n_in_vars), where n_lat is the
+            number of latitude grid cells, n_lon is the number of longitude grid
+            cells, and n_in_vars is the number of input variables.
+        n_c_fltr : `int`, optional
+            The number of filters for the initial convolutional layer.
+        k_size : `tuple` of `int`, optional
+            The kernel size to use in the convolutional layers.
+        p_size : `tuple` of `int`, optional
+            The factors by which to downscale in the Max Pooling layers.
+        act_reg : `str`, optional
+            The name of the regularization function (of type keras.regularizers.Regularizer) to apply to the activations of the layers.
+        act_reg_factor : `float`, optional
+            The regularization factor to apply to the activations of the layers.
+
+        Returns
+        -------
+        model : `keras.Model`
+            The constructed Unet model.
     """
     # Verify argument types
     if not isinstance(input_shape, tuple):

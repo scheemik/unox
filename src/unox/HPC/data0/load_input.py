@@ -18,32 +18,32 @@ def get_npy_from_netcdf(
     x_or_y=None,
     var=None,
 ):
-    """Extract a numpy array for a specific year (and variable if requested) from a netcdf file.
+    """ Extract a numpy array for a specific year (and variable if requested) from a netcdf file.
 
         Parameters
         ----------
-        netcdf : str or xr.Dataset
+        netcdf : `str` or `xr.Dataset`
             Path to the netcdf file or an xarray Dataset.
-        year : int
+        year : `int`
             The year for which to extract the data.
-        input_config : str or dict
+        input_config : `str` or `dict`
             Path to the input configuration JSON file or a dictionary containing the configuration.
-        x_or_y : str, optional
-            If 'x', return the stage 1 x variables, if 'x2', return the stage 2 x variables, 
+        x_or_y : `str`, optional
+            If 'x', return the stage 1 x variables, if 'x2', return the stage 2 x variables,
             if 'y', return the y variables. If None, return all variables.
-        var : str, optional
-            The variable to extract from the netcdf file. Overrides the `x_or_y` argument. 
+        var : `str`, optional
+            The variable to extract from the netcdf file. Overrides the `x_or_y` argument.
             If None, all variables are returned.
 
         Returns
         -------
-        data_array : numpy.ndarray
+        data_array : `numpy.ndarray`
             The extracted data as a numpy array.
-        lats : numpy.ndarray
+        lats : `numpy.ndarray`
             The latitude values of the arrays to restrict.
-        lons : numpy.ndarray
+        lons : `numpy.ndarray`
             The longitude values of the arrays to restrict.
-        
+
         Examples
         --------
         >>> input_set = 'my_inputs'
@@ -153,23 +153,20 @@ def apply_config(
     input_netcdf,
     input_config,
 ):
-    """Apply the conditions in the config to the netcdf.
+    """ Apply the conditions in the config to the netcdf.
 
-        Based on the parameters in the input configuration, modify the xarray in the 
-        input netcdf and return the resulting xarray dataset.
+        Based on the parameters in the input configuration, modify the xarray in the input netcdf and return the resulting xarray dataset.
 
         Parameters
         ----------
-        netcdf : str or xr.Dataset
+        input_netcdf : `str` or `xr.Dataset`
             Path to the netcdf file or an xarray Dataset.
-        year : int
-            The year for which to extract the data.
-        input_config : str or dict
+        input_config : `str` or `dict`
             Path to the input configuration JSON file or a dictionary containing the configuration.
 
         Returns
         -------
-        prepped_dataset : xr.Dataset
+        prepped_dataset : `xr.Dataset`
             The dataset from the input netcdf with the configuration rules applied.
     """
     # Verify argument types
@@ -261,20 +258,19 @@ def apply_mask(
     config_dict,
     year,
 ):
-    """Apply specified mask to the given variable.
+    """ Apply specified mask to the given variable.
 
-        Determine the mask to apply based on the configuration dictionary
-        and apply it to the specified variable in the xarray dataset.
+        Determine the mask to apply based on the configuration dictionary and apply it to the specified variable in the xarray dataset.
 
         Parameters
         ----------
-        xr_dataset : xr.Dataset
+        xr_dataset : `xr.Dataset`
             The xarray dataset containing the variable to be masked.
-        var : str
+        var : `str`
             The variable to which the mask will be applied.
-        config_dict : dict
+        config_dict : `dict`
             Configuration dictionary specifying mask details.
-        year : int
+        year : `int`
             The year for which the data is being processed.
 
         Returns

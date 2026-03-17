@@ -7,26 +7,24 @@ def shift_lon(
     lon_value,
     PM_centered=True,
 ):
-    """Shift the given longitude value between ranges [0, 360] and [-180, 180].
+    """ Shift the given longitude value between ranges [0, 360] and [-180, 180].
 
-        If the Prime Meridian is centered and the longitude value is in the range [0, 360],
-        shift it to the range [-180, 180]. If the Prime Meridian is not centered (i.e. the
-        International Date Line is centered) and the longitude value is in the range 
-        [-180, 180], shift it to the range [0, 360]. Otherwise, return the same value.
-        If the longitude value is not a number or is NaN, or is outside the relevant range
-        for the specified PM_centered, raise a ValueError.
+        If the Prime Meridian is centered and the longitude value is in the range [0, 360], shift it to the range [-180, 180]. 
+        If the Prime Meridian is not centered (i.e. the International Date Line is centered) and the longitude value is in the range [-180, 180], shift it to the range [0, 360]. 
+        Otherwise, return the same value.
+        If the longitude value is not a number or is NaN, or is outside the relevant range for the specified PM_centered, raise a ValueError.
 
         Parameters
         ----------
-        lon_value : float
+        lon_value : `float`
             The longitude value to shift.
-        PM_centered : bool, optional
+        PM_centered : `bool`, optional
             If True, shift the longitude value from the range [0, 360] to [-180, 180].
             If False, shift from [-180, 180] to [0, 360]. Defaults to True.
 
         Returns
         -------
-        lon_value : float
+        lon_value : `float`
             The shifted longitude value.
 
         Examples
@@ -67,13 +65,13 @@ def shift_lon_arr(
     in_array,
     **kwargs,
 ):
-    """Shift the given array of longitude values between ranges [0, 360] and [-180, 180].
+    """ Shift the given array of longitude values between ranges [0, 360] and [-180, 180].
 
         Map the `shift_lon` function to shift each value in the array.
 
         Parameters
         ----------
-        in_array : numpy.ndarray or xarray.Dataset
+        in_array : `numpy.ndarray` or `xarray.Dataset`
             The array of longitude values to shift.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `shift_lon()`.

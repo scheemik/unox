@@ -149,22 +149,22 @@ def get_dataset(
     is_predict=False,
     **kwargs,
 ):
-    """Get the given dataset.
+    """ Get the given dataset.
 
         Parameters
         ----------
-        dataset : str, uarray, xarray.Dataset, xarray.DataArray
+        dataset : `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
             The name of the dataset to get.
-        is_input_set : bool, optional
+        is_input_set : `bool`, optional
             If True, treat the dataset as an input set.
-        is_predict : bool, optional
+        is_predict : `bool`, optional
             If True, treat the dataset as a model output prediction set.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `load_dataset()` and `verify_dataset()`.
 
         Returns
         -------
-        xr_dataset : xarray.Dataset or xarray.DataArray
+        xr_dataset : `xarray.Dataset` or `xarray.DataArray`
             The loaded and verified xarray dataset.
     """
     # If dataset is a string, load the dataset
@@ -197,21 +197,20 @@ def load_dataset(
     file_path,
     **kwargs,
 ):
-    """Load the data from the given filepath into an xarray dataset.
+    """ Load the data from the given filepath into an xarray dataset.
 
-        Verifies the given filepath, ensures the file contains an applicable format,
-        and loads the data into an xarray dataset.
+        Verifies the given filepath, ensures the file contains an applicable format, and loads the data into an xarray dataset.
 
         Parameters
         ----------
-        file_path : str
+        file_path : `str`
             The filepath to the data file to load.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `csv_to_xr()` and `verify_dataset()`.
 
         Returns
         -------
-        xr_dataset : xarray.Dataset or xarray.DataArray
+        xr_dataset : `xarray.Dataset` or `xarray.DataArray`
             The loaded xarray dataset.
     """
     # Verify the filepath
@@ -230,16 +229,15 @@ def csv_to_pd(
     is_US_EPA=True,
     **kwargs,
 ):
-    """Load a CSV file into a pandas DataFrame.
+    """ Load a CSV file into a pandas DataFrame.
 
-        Loads a CSV file into a pandas DataFrame, ensuring that the
-        required columns are present if the file is from the US EPA.
+        Loads a CSV file into a pandas DataFrame, ensuring that the required columns are present if the file is from the US EPA.
 
         Parameters
         ----------
-        csv_filepath : str
+        csv_filepath : `str`
             The path to the CSV file to load.
-        is_US_EPA : bool, optional
+        is_US_EPA : `bool`, optional
             If True, verify that the CSV file has the required columns
             for US EPA data. Defaults to True.
         **kwargs : keyword arguments
@@ -247,15 +245,15 @@ def csv_to_pd(
 
         Returns
         -------
-        df : pandas.DataFrame
+        df : `pandas.DataFrame`
             The loaded DataFrame.
 
         Examples
         --------
         >>> df = csv_to_pd('datafiles/US_EPA/daily_42602_2019.csv')
-        >>> df.head()   
+        >>> df.head()
                     Latitude	Longitude	Arithmetic Mean
-        Date			
+        Date
         2019-01-01	33.553056	-86.815	    4.314286
         2019-01-08	33.553056	-86.815	    6.263636
         2019-01-09	33.553056	-86.815	    4.957143
@@ -293,16 +291,15 @@ def csv_to_xr(
     is_US_EPA=True,
     **kwargs,
 ):
-    """Load a CSV file into an xarray Dataset.
+    """ Load a CSV file into an xarray Dataset.
 
-        Loads a CSV file into an xarray Dataset, ensuring that the
-        required columns are present if the file is from the US EPA.
+        Load a CSV file into an xarray Dataset, ensuring that the required columns are present if the file is from the US EPA.
 
         Parameters
         ----------
-        csv_filepath : str
+        csv_filepath : `str`
             The path to the CSV file to load.
-        is_US_EPA : bool, optional
+        is_US_EPA : `bool`, optional
             If True, verify that the CSV file has the required columns
             for US EPA data. Defaults to True.
         **kwargs : keyword arguments
@@ -310,7 +307,7 @@ def csv_to_xr(
 
         Returns
         -------
-        xr_dataset : xarray.Dataset
+        xr_dataset : `xarray.Dataset`
             The loaded Dataset.
 
         Examples
@@ -331,18 +328,18 @@ def csv_to_xr(
 def get_US_EPA_species_name(
     ID
 ):
-    """Get the US EPA species name from the ID.
+    """ Get the US EPA species name from the ID.
 
-        Maps the US EPA species ID to the corresponding species name.
+        Map the US EPA species ID to the corresponding species name.
 
         Parameters
         ----------
-        ID : str
+        ID : `str`
             The US EPA species ID to map.
 
         Returns
         -------
-        species_name : str
+        species_name : `str`
             The corresponding US EPA species name.
 
         Examples
@@ -386,16 +383,18 @@ def get_US_EPA_species_name(
 def get_years(
     dataset,
 ):
-    """Get a list of unique years from the time coordinate of the given dataset.
+    """ Get the years present in the dataset.
+    
+        Get a list of unique years from the time coordinate of the given dataset.
 
         Parameters
         ----------
-        dataset : str, uarray, xarray.Dataset, xarray.DataArray
+        dataset : `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
             The dataset from which to extract the years.
 
         Returns
         -------
-        years : list of int
+        years : `list` of `int`
             A list of unique years in the dataset.
     """
     # Verify argument types
@@ -419,16 +418,16 @@ def get_years(
 def get_metadata(
     this_uarr,
 ):
-    """Find and load the relevant metadata dictionary for the given uarray.
+    """ Find and load the relevant metadata dictionary for the given uarray.
 
         Parameters
         ----------
-        this_uarr : uarray
+        this_uarr : `uarray`
             The uarray object for which to load the metadata.
 
         Returns
         -------
-        metadata : dict
+        metadata : `dict`
             The metadata dictionary for this uarray.
     """
     # Verify argument types
@@ -456,7 +455,7 @@ def is_ensemble(
 
         Parameters
         ----------
-        dataset : str, uarray, xarray.Dataset, xarray.DataArray
+        dataset : `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
             The name of the dataset to get.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `load_dataset()` and `verify_dataset()`.
