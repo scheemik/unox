@@ -32,7 +32,7 @@ Animus also holds the data used to create the inputs for the model.
 Generally, I use Animus for all tasks related to this project except for running the model itself. 
 
 This guide details how to prepare a model run on Animus, transfer that preparation to Trillium and run the model, then transfer the model output back to Animus. 
-A demonstration of how to use the analysis tools can be found in the {doc}`Example usage <example>`.
+A demonstration of how to use the analysis tools can be found in the {doc}`Example usage <../example>`.
 
 ---
 <a id='prep_model_run'></a>
@@ -615,4 +615,4 @@ Completed file transfer to Animus
 ```
 
 Now that the output from the model run is back on Animus, it can be analyzed.
-See the {doc}`Analysis <analysis>` page for details.
+See the {doc}`Analysis <../analysis>` page for details.

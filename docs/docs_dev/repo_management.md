@@ -427,7 +427,7 @@ cdsapi = ">=0.7.7"
 
 This list of packages is much shorter than the one you will see by running `pip list` with the environment activated.
 That is because the list above only specifies the needed packages for the project, however each of those packages specify their own list of dependencies. 
-When creating the environment as shown in the {doc}`Installation <installation>` guide, the `poetry` package uses the list in `pyproject.toml` to determine the full list of packages and their versions to install. 
+When creating the environment as shown in the {doc}`Installation <../docs_setup/installation>` guide, the `poetry` package uses the list in `pyproject.toml` to determine the full list of packages and their versions to install. 
 This depends on the developers of each of those packages to have correctly defined their own dependencies. 
 
 Under the `dev` group of dependencies in `pyproject.toml` is the `jupyter` package. 
@@ -447,7 +447,7 @@ AttributeError: module 'matplotlib' has no attribute '__version_info__'
 
 Before making changes to the packages in your main `conda` environment, I highly recommend making a new `conda` environment in which to test out the new build.
 
-To create a new `conda` environment, follow the instructions in the {doc}`Installation <installation>` guide under "Creating virtual environments" -> "Virtual environment on Animus" -> "Creating the `conda` environment on Animus with `poetry`", using a new, unique environment name.
+To create a new `conda` environment, follow the instructions in the {doc}`Installation <../docs_setup/installation>` guide under "Creating virtual environments" -> "Virtual environment on Animus" -> "Creating the `conda` environment on Animus with `poetry`", using a new, unique environment name.
 
 Remember to remove the `poetry.lock` file.
 
