@@ -33,6 +33,9 @@ This guide assumes you have followed the instructions on the {doc}`Installation 
 The `datafiles` directory contains data files and scripts to make the input files for the U-net model for estimating North American NOₓ emissions. 
 These scripts pull from data files kept in shared directories **<ins>on Animus</ins>**, usually within `/data/high_res/`. 
 In the descriptions below, the contents and usage of each data source are described as well as how to obtain the data, if they are publicly available. 
+When listing the latitude and longitude resolutions, a "±" symbol indicates that the resolution is irregular.
+That is, the value before the symbol is the average difference in values while the value after the symbol is the standard deviation of the difference in values.
+For example, the [TCR-2 NOₓ emissions](#tcr-2_nox) latitude values have an average resolution of 1.121483870967742 with a standard deviation of 0.0004997397866077013.
 
 <a id='tcr-2_nox'></a>
 [back to top](#top)
@@ -184,6 +187,8 @@ To close the `tmux` session when done, simply run the `exit` command.
 - Example file: `datafiles/sample_data/daily_42602_2019.csv`
     - 42602 is the ID for NO₂
     - Note: The latitude and longitude extents and resolutions were calculated solely on this example file.
+
+Note that the USA EPA Air Quality Data is provided in `.csv` format where each (I should check whether I remove zero values from the list of differences in lat/lon before calculating the average and standard deviation)
 
 <a id='download_us_epa'></a>
 [back to top](#top)
