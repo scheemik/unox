@@ -123,6 +123,22 @@ Note that `.json` files have slightly different syntax compared to a Python dict
 
 When preparing for a model run, make sure the configuration file you wish to use is present on the HPC cluster in the `inputfiles/_input_configs/` directory. 
 This can be accomplished by creating a configuration file on Animus, then using the `HPC_from_animus.sh` script to transfer it. 
+
+```console
+(uplt) username@animus-c:~/unox$ bash HPC_from_animus.sh -f inputfiles/_input_configs/my_new_config.json 
+-c, No cluster specified, defaulting to trillium
+Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
+(<username>@trillium.alliancecan.ca) Duo two-factor login for <username>
+
+Enter a passcode or select one of the following options:
+
+1. Duo Push to <mobile device>
+
+Passcode or option (1-1): 1
+Success. Logging you in...
+my_new_config.json         100%  443   137.4KB/s   00:00
+```
+
 Or, one can simply create a new configuration file on HPC directly, which is what I usually do.
 
 ---
@@ -606,3 +622,4 @@ Completed file transfer to Animus
 
 Now that the output from the model run is back on Animus, it can be analyzed.
 See the {doc}`Analysis <../analysis>` page for details.
+To run multiple jobs at once, see the guide on {doc}`Running ensemble models <ensemble_runs>`.
