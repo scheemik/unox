@@ -89,31 +89,13 @@ no2_2005-2020.nc            100% 3882MB  77.1MB/s   00:50
 ### Input configuration files
 
 The parameters that a model run will use are defined in "input configuration" files. 
-These are `.json` files stored in `inputfiles/_input_configs/` and follow the following format:
+These are `.json` files stored in `inputfiles/_input_configs/`.
+The contents of the default configuration file, `inputfiles/_input_configs/sample_config.json` are shown below.
 
-```json
-{
-    "input_set": "no2_2005-2020",
-    "x_vars": [
-        "no2",
-        "no2_tm1",
-        "u10",
-        "v10",
-        "blh",
-        "sp",
-        "skt",
-        "t2m",
-        "ssrd"
-    ],
-    "stage_2": true,
-    "stage_2_cutoff": 2013,
-    "lsm_vars": [
-    ],
-    "grid_size": [35, 46]
-}
+```{literalinclude} ../../inputfiles/_input_configs/sample_config.json
 ```
 
-The attributes of this file are explained below:
+All configuration files should follow that format and the attributes are explained below:
 - `input_set`: The name of the input netCDF to use.
 - `x_vars`: The list of variables to use as input to the model.
     - See the {doc}`Data <data>` page for documentation of these variables.
