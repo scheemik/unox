@@ -99,11 +99,27 @@ All configuration files should follow that format and the attributes are explain
 - `input_set`: The name of the input netCDF to use.
 - `x_vars`: The list of variables to use as input to the model.
     - See the {doc}`Data <data>` page for documentation of these variables.
+    - Note, the y-variable is determined by an attribute in the input file.
+- `zfi_vars`: A list of variables for which to run Zeroed-Feature Importance experiments.
+- `lsm_vars`: A list of variables on which to apply the land-sea mask (`lsm`).
 - `stage_2`: A boolean as to whether to run Stage 2 of training.
 - `stage_2_cutoff`: The cutoff year for Stage 2 training.
     - Stage 2 training will start the year after the one specified here.
-- `lsm_vars`: A list of variables on which to apply the land-sea mask (`lsm`).
+- `n_epochs`: The number of epochs for which to run the training.
+    - More epochs gives the chance for the model to improve its predictions, but extends the run time.
+- `split_year`: The year on which to make the split between the training / testing data and the validation data.
+    - Note that this is inclusive. For example, if `split_year` is 2019, the data from 2019 and all following years will be kept for validation. The y-variable in the validation data is never shown to the model.
+- `split_value`: The fraction of the data to be used for training, the remaining to be used for testing.
+    - Note that this applies to the data left over after splitting off the validation data. 
 - `grid_size`: A list of the number of grid cells to use in latitude and longitude.
+- `act_reg`: The type of activity regularizer to use in the model.
+    - See the guide on {doc}`Running ensemble models <ensemble_runs>` for details.
+- `act_reg_factor`: The value of the factor to use in the activity regularizer.
+    - See the guide on {doc}`Running ensemble models <ensemble_runs>` for details.
+
+Note that `.json` files have slightly different syntax compared to a Python dictionary.
+- Lists cannot have a comma after the last item in the list.
+- Boolean values must be lower case. That is, `true` and `false`.
 
 When preparing for a model run, make sure the configuration file you wish to use is present on the HPC cluster in the `inputfiles/_input_configs/` directory. 
 This can be accomplished by creating a configuration file on Animus, then using the `HPC_from_animus.sh` script to transfer it. 
