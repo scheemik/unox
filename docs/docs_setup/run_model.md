@@ -79,17 +79,9 @@ Enter a passcode or select one of the following options:
 
 Passcode or option (1-1): 1
 Success. Logging you in...
-input_metadata.json         100% 1307    90.1KB/s   00:00
-Y_2005.npy                  100%   19MB  24.6MB/s   00:00
-Y_2006.npy                  100%   19MB  61.1MB/s   00:00
-...
-X_2019.npy                  100%  168MB  84.3MB/s   00:01
-X_2020.npy                  100%  168MB  89.4MB/s   00:01
 input_metadata.json         100% 1319   232.4KB/s   00:00    
 no2_2005-2020.nc            100% 3882MB  77.1MB/s   00:50
 ```
-
-Note that the `.npy` files are now deprecated and the only files that should transfer are the `.json` and `.nc`.
 
 <a id='config_files'></a>
 [back to top](#top)
