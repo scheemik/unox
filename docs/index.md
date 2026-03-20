@@ -17,6 +17,7 @@ docs_setup/installation.md
 docs_setup/data.md
 docs_setup/run_model.md
 analysis.ipynb
+docs_setup/ensemble_runs.md
 ```
 
 ```{toctree}
