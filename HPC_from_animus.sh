@@ -73,29 +73,15 @@ else
     exit 1
 fi
 
-# If copying a job, only copy the contents of `stage1_output` and 
-# `stage2_output`. Also copy the `.txt` file with the same name
-if [ "$INPUT_FILES" = i ]; then
-    # Copy job directories from HPC to Animus
-    for FILE in "${FILENAMES[@]}"; do
-        FILES=""
+# Copy files or directories from Animus to HPC
+for FILE in "${FILENAMES[@]}"; do
+    if [ "$INPUT_FILES" = i ]; then
         # Check whether the corresponding directory exists on Animus
         if [ ! -d ".$DIR_PREFIX/$FILE" ]; then
             echo "Directory .$DIR_PREFIX/$FILE does not exist on Animus, aborting."
             exit 1
         fi
-        # Copy the entire input file directory
-        FILES+=".$DIR_PREFIX/$FILE"
-        # Copy the files over
-        # echo $FILES
-        scp -r -i $IDENTITY_FILE "$FILES" $HPC_USERNAME@$REMOTE_SERVER:$PROJECT_DIR$DIR_PREFIX/
-    done
-else
-    # Copy files or directories from HPC to Animus
-    FILES=""
-    for FILE in "${FILENAMES[@]}"; do
-        FILES+="$PROJECT_DIR$DIR_PREFIX/$FILE "
-    done
-    # echo $FILES
-    scp -r -i $IDENTITY_FILE "$FILES" $HPC_USERNAME@$REMOTE_SERVER:$PROJECT_DIR$DIR_PREFIX/
-fi
+        FILE=".$DIR_PREFIX/$FILE"
+    fi
+    scp -r -i $IDENTITY_FILE "$FILE" $HPC_USERNAME@$REMOTE_SERVER:$PROJECT_DIR$DIR_PREFIX/$FILE
+done
