@@ -188,8 +188,19 @@ AttributeError: module 'matplotlib' has no attribute '__version_info__'
 ```
 
 This was happening in the {doc}`Analysis <../analysis>` notebook, but only when it was pushed to the Read the Docs site. 
-It was also occurring when someone else was trying to run a function which imported `matplotlib` in a Jupyter notebook.
+It was also occurring when someone else was trying to run a function which imported `matplotlib.pyplot` in a Jupyter notebook.
+They were able to import just `matplotlib` without error. 
 That notebook was running fine on my Animus environment and it was also running fine when that other person imported `matplotlib` in the Python interpreter using the same environment. 
+
+```console
+<username>@animus-c:unox$ conda activate uplt
+(uplt) <username>@animus-c:unox$ python
+Python 3.9.25 (main, Nov 3 2025, 22:33:05)
+[GCC 11.2.0] :: Anaconda, Inc. on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import matplotlib.pyplot
+>>>
+```
 
 Looking through the error message, I saw that the error was occurring in the `backend_inline.py` script in the `matplotlib-inline` package. 
 That explains why it was only occurring when running in a Jupyter notebook and not in the interpreter. 
