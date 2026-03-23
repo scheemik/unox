@@ -241,7 +241,7 @@ Therefore, after spending the time to create an input file, you should be able t
 The input files are netCDFs. 
 Using `xarray` you can look at the structure of such a file by opening it.
 Below is a text representation of the output. 
-However, if the below python commands are executed in a Jupyter Notebook cell **<ins>on Animus</ins>**, the structure becomes interactive, allowing for more exploration (see {doc}`Example usage <../example>`).
+However, if the below python commands are executed in a Jupyter Notebook cell **<ins>on Animus</ins>**, the structure becomes interactive, allowing for more exploration (see {doc}`Analysis <../analysis>`).
 
 ```python
 import xarray as xr
