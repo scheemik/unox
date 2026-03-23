@@ -16,8 +16,15 @@ example.ipynb
 docs_setup/installation.md
 docs_setup/data.md
 docs_setup/run_model.md
+```
+
+```{toctree}
+:maxdepth: 1
+:hidden:
+:caption: Analysis
+
 analysis.ipynb
-docs_setup/ensemble_runs.md
+docs_analysis/ensemble_runs.md
 ```
 
 ```{toctree}

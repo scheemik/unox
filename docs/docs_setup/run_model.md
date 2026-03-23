@@ -113,9 +113,9 @@ All configuration files should follow that format and the attributes are explain
     - Note that this applies to the data left over after splitting off the validation data. 
 - `grid_size`: A list of the number of grid cells to use in latitude and longitude.
 - `act_reg`: The type of activity regularizer to use in the model.
-    - See the guide on {doc}`Running ensemble models <ensemble_runs>` for details.
+    - See the guide on {doc}`Running ensemble models <../docs_analysis/ensemble_runs>` for details.
 - `act_reg_factor`: The value of the factor to use in the activity regularizer.
-    - See the guide on {doc}`Running ensemble models <ensemble_runs>` for details.
+    - See the guide on {doc}`Running ensemble models <../docs_analysis/ensemble_runs>` for details.
 
 Note that `.json` files have slightly different syntax compared to a Python dictionary.
 - Lists cannot have a comma after the last item in the list.
@@ -622,4 +622,4 @@ Completed file transfer to Animus
 
 Now that the output from the model run is back on Animus, it can be analyzed.
 See the {doc}`Analysis <../analysis>` page for details.
-To run multiple jobs at once, see the guide on {doc}`Running ensemble models <ensemble_runs>`.
+To run multiple jobs at once, see the guide on {doc}`Running ensemble models <../docs_analysis/ensemble_runs>`.
