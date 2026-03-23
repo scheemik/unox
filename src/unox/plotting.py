@@ -275,7 +275,7 @@ def plot_var_maps(
 
         Parameters
         ----------
-        dataset : `str`, `xarray.Dataset`, `xarray.DataArray`
+        dataset : `uarray`, `str`, `xarray.Dataset`, `xarray.DataArray`
             The dataset for which to plot the specified variables.
         vars : `str`, `list`, optional
             The name(s) of the variable(s) to plot from the dataset.
@@ -323,7 +323,7 @@ def plot_var_maps(
     if len(vars) == 0:
         raise ValueError("(plot_var_maps) `vars` list cannot be empty.")
     if not isinstance(restrict_lat_lon_to, (type(None), str, xr.DataArray)):
-        raise TypeError(f"(plot_run_analysis) `restrict_lat_lon_to` must be a string, `xr.DataArray`, or `None`. Got type: {type(restrict_lat_lon_to)}")
+        raise TypeError(f"(plot_var_maps) `restrict_lat_lon_to` must be a string, `xr.DataArray`, or `None`. Got type: {type(restrict_lat_lon_to)}")
     if isinstance(ens_mem, int):
         title_ens_ID = f"({ens_mem:02d})"
         ens_ID = f"_{ens_mem:02d}"
@@ -333,13 +333,13 @@ def plot_var_maps(
     else:
         raise TypeError(f"(plot_var_maps) `ens_mem` must be an integer or None. Got type: {type(ens_mem)}")
     if not isinstance(avg_over, bool):
-        raise TypeError(f"(select_time) `avg_over` must be a bool. Got type: {type(avg_over)}")
+        raise TypeError(f"(plot_var_maps) `avg_over` must be a bool. Got type: {type(avg_over)}")
     if not isinstance(sum_over, bool):
-        raise TypeError(f"(select_time) `sum_over` must be a bool. Got type: {type(sum_over)}")
+        raise TypeError(f"(plot_var_maps) `sum_over` must be a bool. Got type: {type(sum_over)}")
     if avg_over == True and sum_over == True:
-        raise ValueError("(select_time) Cannot have both `avg_over` and `sum_over` set to `True`.")
+        raise ValueError("(plot_var_maps) Cannot have both `avg_over` and `sum_over` set to `True`.")
     if avg_over == False and sum_over == False:
-        raise ValueError("(select_time) Cannot have both `avg_over` and `sum_over` set to `False`.")
+        raise ValueError("(plot_var_maps) Cannot have both `avg_over` and `sum_over` set to `False`.")
     
     # Select the time slice to plot
     u_arr.xr, title_segment = select_time(u_arr.xr, avg_over=avg_over, sum_over=sum_over, **kwargs)
