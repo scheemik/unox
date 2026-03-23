@@ -5,17 +5,17 @@ from .paths import verify_path
 def get_config(
     config_file
 ):
-    """Load the configuration from a JSON file.
+    """ Load the configuration from a JSON file.
 
         Parameters
         ----------
-        config_file : str or dict
+        config_file : `str` or `dict`
             The name or path to the configuration JSON file, 
             or a dictionary in the format of a configuration file.
 
         Returns
         -------
-        config_dict : dict
+        config_dict : `dict`
             The configuration as a dictionary.
     """
     # Verify argument types

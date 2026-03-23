@@ -1,20 +1,19 @@
 def verify_number(
     value,
 ):
-    """Verify that the given value is a number.
+    """ Verify that the given value is a number.
 
-        If the given value is a number that can be converted to an integer
-        but is not a string, character, or bool, return True. 
+        If the given value is a number that can be converted to an integer but is not a string, character, or bool, return True.
         Otherwise, return False.
 
         Parameters
         ----------
-        value : any
+        value : `any`
             The value to verify.
 
         Returns
         -------
-        bool
+        `bool`
             True if the value is a number, False otherwise.
 
         Examples

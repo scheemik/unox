@@ -188,8 +188,19 @@ AttributeError: module 'matplotlib' has no attribute '__version_info__'
 ```
 
 This was happening in the {doc}`Analysis <../analysis>` notebook, but only when it was pushed to the Read the Docs site. 
-It was also occurring when someone else was trying to run a function which imported `matplotlib` in a Jupyter notebook.
+It was also occurring when someone else was trying to run a function which imported `matplotlib.pyplot` in a Jupyter notebook.
+They were able to import just `matplotlib` without error. 
 That notebook was running fine on my Animus environment and it was also running fine when that other person imported `matplotlib` in the Python interpreter using the same environment. 
+
+```console
+<username>@animus-c:unox$ conda activate uplt
+(uplt) <username>@animus-c:unox$ python
+Python 3.9.25 (main, Nov 3 2025, 22:33:05)
+[GCC 11.2.0] :: Anaconda, Inc. on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import matplotlib.pyplot
+>>>
+```
 
 Looking through the error message, I saw that the error was occurring in the `backend_inline.py` script in the `matplotlib-inline` package. 
 That explains why it was only occurring when running in a Jupyter notebook and not in the interpreter. 
@@ -198,12 +209,12 @@ My environment was using `v0.1.7`, which was released on 2024-04-15.
 The other environments were using `v0.2.1`, which was released on 2025-10-23.
 I created my environment between those two dates, so it installed `v0.1.7`, the most up-to-date release at the time. 
 
-I made a post  about this on the `matplotlib-inline` GitHub, copy that and link it here.
+I made a post  about this on the `matplotlib-inline` GitHub, [GitHub - Matplotlib-Inline Issue #60: AttributeError: module 'matplotlib' has no attribute '__version_info__'](https://github.com/ipython/matplotlib-inline/issues/60).
 
 I encountered this error in the Analysis Notebook when it gets pushed to the Read the Docs site.
 I don't see the error when running the notebook on Animus. 
 It happens the first time `matplotlib` is imported. 
-Harshil also encountered the same error when he tried creating the input files as the `input` module imported `matplotlib`. 
+Harshil also encountered the same error when he tried creating the input files as the `input` module imported `matplotlib.pyplot`. 
 I've since removed the import of `matplotlib` from the `input` module because it is not needed, but it is still an issue.
 
 ## Disk quota exceeded
@@ -428,4 +439,234 @@ File ~/miniconda3/envs/uplt/lib/python3.9/site-packages/xarray/core/common.py:28
     287 )
 
 AttributeError: 'DataArray' object has no attribute 'dt'
+```
+
+## Some variables aren't defined all the way to the end of 2020
+
+I was trying to just make a correlation plot of data from an ensemble run, but got an error:
+
+```python
+from unox.plotting import corr_plot
+
+this_plt = corr_plot(
+    'ens_reg4',
+    is_predict=True,
+    ens_mem=1,
+    start_date='2019-01-01',
+    x_vars=['pred'],
+    y_vars=['truth'],
+)
+```
+
+```console
+---------------------------------------------------------------------------
+ValueError                                Traceback (most recent call last)
+Cell In[2], line 3
+      1 from unox.plotting import corr_plot
+----> 3 this_plt = corr_plot(
+      4     'ens_reg4',
+      5     is_predict=True,
+      6     ens_mem=1,
+      7     start_date='2019-01-01',
+      8     # interval='1Y',
+      9     # x_vars=['pred', 'pred_s2', 'pred'],
+     10     # y_vars=['truth', 'truth', 'pred_s2'],
+     11     x_vars=['pred'],
+     12     y_vars=['truth'],
+     13     # restrict_lat_lon_to=minimal_xr0,
+     14 )
+
+File ~/unox/src/unox/plotting.py:1182, in corr_plot(dataset, x_vars, y_vars, axs, restrict_lat_lon_to, ens_mem, **kwargs)
+   1179         y_xarr = u_arr.xr[y_var]
+   1181     # Plot the comparison
+-> 1182     fig_q = plot_comparison(
+   1183         x_xarr,
+   1184         y_xarr,
+   1185         ax=ax,
+   1186         **kwargs,
+   1187     )
+   1188 if new_plot == True:
+   1189     # Add an overall title
+   1190     fig.suptitle(f"{u_arr.name}{title_ens_ID} {title_segment}", fontsize=title_font_size)
+
+File ~/unox/src/unox/plotting.py:928, in plot_comparison(a_xr_arr, b_xr_arr, ax, plt_title, a_label, b_label, cmap, set_under_val, hist_params, log_scale, **kwargs)
+    926 # Plot the data, depending on the scale
+    927 if log_scale:
+--> 928     this_hist, xedges, yedges, q = ax.hist2d(npy_a, npy_b, bins=hist_params['bins'], norm='log', cmap=cmap, vmin=hist_params['vmin'], vmax=hist_params['vmax'], extend='both')
+    929 else:
+    930     this_hist, xedges, yedges, q = ax.hist2d(npy_a, npy_b, bins=hist_params['bins'], norm='linear', cmap=cmap)
+
+File ~/miniconda3/envs/uplt/lib/python3.9/site-packages/proplot/internals/process.py:284, in _preprocess_args.<locals>.decorator.<locals>._redirect_or_standardize(self, *args, **kwargs)
+    281             ureg.setup_matplotlib(True)
+    283 # Call main function
+--> 284 return func(self, *args, **kwargs)
+
+File ~/miniconda3/envs/uplt/lib/python3.9/site-packages/proplot/axes/plot.py:3805, in PlotAxes.hist2d(self, x, y, bins, **kwargs)
+   3803 if bins is not None:
+   3804     kwargs['bins'] = bins
+-> 3805 return super().hist2d(x, y, default_discrete=False, **kwargs)
+
+File ~/miniconda3/envs/uplt/lib/python3.9/site-packages/matplotlib/__init__.py:1361, in _preprocess_data.<locals>.inner(ax, data, *args, **kwargs)
+   1358 @functools.wraps(func)
+   1359 def inner(ax, *args, data=None, **kwargs):
+   1360     if data is None:
+-> 1361         return func(ax, *map(sanitize_sequence, args), **kwargs)
+   1363     bound = new_sig.bind(ax, *args, **kwargs)
+   1364     auto_label = (bound.arguments.get(label_namer)
+   1365                   or bound.kwargs.get(label_namer))
+
+File ~/miniconda3/envs/uplt/lib/python3.9/site-packages/matplotlib/axes/_axes.py:7093, in Axes.hist2d(self, x, y, bins, range, density, weights, cmin, cmax, **kwargs)
+   6999 @_preprocess_data(replace_names=["x", "y", "weights"])
+   7000 @docstring.dedent_interpd
+   7001 def hist2d(self, x, y, bins=10, range=None, density=False, weights=None,
+   7002            cmin=None, cmax=None, **kwargs):
+   7003     """
+   7004     Make a 2D histogram plot.
+   7005 
+   (...)
+   7090       `.colors.PowerNorm`.
+   7091     """
+-> 7093     h, xedges, yedges = np.histogram2d(x, y, bins=bins, range=range,
+   7094                                        density=density, weights=weights)
+   7096     if cmin is not None:
+   7097         h[h < cmin] = None
+
+File ~/miniconda3/envs/uplt/lib/python3.9/site-packages/numpy/lib/twodim_base.py:808, in histogram2d(x, y, bins, range, density, weights)
+    806     xedges = yedges = asarray(bins)
+    807     bins = [xedges, yedges]
+--> 808 hist, edges = histogramdd([x, y], bins, range, density, weights)
+    809 return hist, edges[0], edges[1]
+
+File ~/miniconda3/envs/uplt/lib/python3.9/site-packages/numpy/lib/histograms.py:1003, in histogramdd(sample, bins, range, density, weights)
+   1000 if bins[i] < 1:
+   1001     raise ValueError(
+   1002         '`bins[{}]` must be positive, when an integer'.format(i))
+-> 1003 smin, smax = _get_outer_edges(sample[:,i], range[i])
+   1004 try:
+   1005     n = operator.index(bins[i])
+
+File ~/miniconda3/envs/uplt/lib/python3.9/site-packages/numpy/lib/histograms.py:323, in _get_outer_edges(a, range)
+    321     first_edge, last_edge = a.min(), a.max()
+    322     if not (np.isfinite(first_edge) and np.isfinite(last_edge)):
+--> 323         raise ValueError(
+    324             "autodetected range of [{}, {}] is not finite".format(first_edge, last_edge))
+    326 # expand empty range to avoid divide by zero
+    327 if first_edge == last_edge:
+
+ValueError: autodetected range of [nan, nan] is not finite
+```
+
+The issue is, when trying to pull the `truth` variable (which is `nox` in this case), it finds a different length of time than the `pred` variable. Then, it tries to compare actual values of `pred` to the `nan` values of `nox` at the end of 2020, resulting in the above error. 
+
+This error doesn't occur when plotting with `plot_run_analysis` because that by default only includes data for 1 year using `interval='1Y'`.
+
+## Unable to install `tensorflow` locally
+
+When trying to create a conda environment on my mac:
+
+```console
+(uplt0) Grey@Audron:unox$ poetry install
+Updating dependencies
+Resolving dependencies... (52.1s)
+
+Package operations: 158 installs, 21 updates, 0 removals
+
+  - Installing attrs (25.4.0)
+  - Installing rpds-py (0.27.1)
+  ...
+  - Installing sphinx-rtd-theme (3.1.0)
+  - Installing tensorflow (2.17.0): Failed
+
+    | Unable to find installation candidates for tensorflow (2.17.0)
+    | 
+    | This is likely not a Poetry issue.
+    | 
+    |   - 16 candidate(s) were identified for the package
+    |   - 16 wheel(s) were skipped as your project's environment does not support the identified abi tags
+    | 
+    | Solutions:
+    | Make sure the lockfile is up-to-date. You can try one of the following;
+    | 
+    |     1. Regenerate lockfile: poetry lock --no-cache --regenerate
+    |     2. Update package     : poetry update --no-cache tensorflow
+    | 
+    | If neither works, please first check to verify that the tensorflow has published wheels available from your configured source that are compatible with your environment- ie. operating system, architecture (x86_64, arm64 etc.), python interpreter.
+    | 
+    | You can also run your poetry command with -v to see more information.
+
+  - Installing xarray (2024.3.0)
+(uplt0) Grey@Audron:unox$ pip install tensorflow==2.17.0
+ERROR: Could not find a version that satisfies the requirement tensorflow==2.17.0 (from versions: 2.5.0, 2.5.1, 2.5.2, 2.5.3, 2.6.0rc0, 2.6.0rc1, 2.6.0rc2, 2.6.0, 2.6.1, 2.6.2, 2.6.3, 2.6.4, 2.6.5, 2.7.0rc0, 2.7.0rc1, 2.7.0, 2.7.1, 2.7.2, 2.7.3, 2.7.4, 2.8.0rc0, 2.8.0rc1, 2.8.0, 2.8.1, 2.8.2, 2.8.3, 2.8.4, 2.9.0rc0, 2.9.0rc1, 2.9.0rc2, 2.9.0, 2.9.1, 2.9.2, 2.9.3, 2.10.0rc0, 2.10.0rc1, 2.10.0rc2, 2.10.0rc3, 2.10.0, 2.10.1, 2.11.0rc0, 2.11.0rc1, 2.11.0rc2, 2.11.0, 2.11.1, 2.12.0rc0, 2.12.0rc1, 2.12.0, 2.12.1, 2.13.0rc0, 2.13.0rc1, 2.13.0rc2, 2.13.0, 2.13.1, 2.14.0rc0, 2.14.0rc1, 2.14.0, 2.14.1, 2.15.0rc0, 2.15.0rc1, 2.15.0, 2.15.1, 2.16.0rc0, 2.16.1, 2.16.2)
+ERROR: No matching distribution found for tensorflow==2.17.0
+```
+
+I found the answer on a GitHub issue [TensorFlow 2.17 for macOS x86_64 is not on PyPI
+#75279](https://github.com/tensorflow/tensorflow/issues/75279) which pointed to the [TensorFlow 2.16 release notes](https://github.com/tensorflow/tensorflow/releases/tag/v2.16.1):
+> "Mac x86 users: Mac x86 builds are being deprecated and will no longer be
+released as a Pip package from TF 2.17 onwards."
+
+So, version 2.17 just isn't available for my local computer any more. Good to know. I should add this to the troubleshooting guide.
+
+I'm just gonna try doing a `pip install tensorflow==2.16.2` and hope that works well enough for things I want to test locally.
+
+```console
+pip install tensorflow==2.16.2
+Collecting tensorflow==2.16.2
+  Downloading tensorflow-2.16.2-cp39-cp39-macosx_10_15_x86_64.whl.metadata (4.1 kB)
+Requirement already satisfied: absl-py>=1.0.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (2.3.1)
+Requirement already satisfied: astunparse>=1.6.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (1.6.3)
+Requirement already satisfied: flatbuffers>=23.5.26 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (25.12.19)
+Requirement already satisfied: gast!=0.5.0,!=0.5.1,!=0.5.2,>=0.2.1 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (0.7.0)
+Requirement already satisfied: google-pasta>=0.1.1 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (0.2.0)
+Requirement already satisfied: h5py>=3.10.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (3.14.0)
+Requirement already satisfied: libclang>=13.0.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (18.1.1)
+Collecting ml-dtypes~=0.3.1 (from tensorflow==2.16.2)
+  Downloading ml_dtypes-0.3.2-cp39-cp39-macosx_10_9_universal2.whl.metadata (20 kB)
+Requirement already satisfied: opt-einsum>=2.3.2 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (3.4.0)
+Requirement already satisfied: packaging in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (23.2)
+Requirement already satisfied: protobuf!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0dev,>=3.20.3 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (4.25.8)
+Requirement already satisfied: requests<3,>=2.21.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (2.32.5)
+Requirement already satisfied: setuptools in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (80.10.2)
+Requirement already satisfied: six>=1.12.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (1.17.0)
+Requirement already satisfied: termcolor>=1.1.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (3.1.0)
+Requirement already satisfied: typing-extensions>=3.6.6 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (4.15.0)
+Requirement already satisfied: wrapt>=1.11.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (2.1.2)
+Requirement already satisfied: grpcio<2.0,>=1.24.3 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (1.78.0)
+Collecting tensorboard<2.17,>=2.16 (from tensorflow==2.16.2)
+  Downloading tensorboard-2.16.2-py3-none-any.whl.metadata (1.6 kB)
+Requirement already satisfied: keras>=3.0.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (3.10.0)
+Requirement already satisfied: tensorflow-io-gcs-filesystem>=0.23.1 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (0.37.1)
+Requirement already satisfied: numpy<2.0.0,>=1.23.5 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorflow==2.16.2) (1.26.4)
+Requirement already satisfied: charset_normalizer<4,>=2 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from requests<3,>=2.21.0->tensorflow==2.16.2) (3.4.6)
+Requirement already satisfied: idna<4,>=2.5 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from requests<3,>=2.21.0->tensorflow==2.16.2) (3.11)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from requests<3,>=2.21.0->tensorflow==2.16.2) (2.6.3)
+Requirement already satisfied: certifi>=2017.4.17 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from requests<3,>=2.21.0->tensorflow==2.16.2) (2026.2.25)
+Requirement already satisfied: markdown>=2.6.8 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorboard<2.17,>=2.16->tensorflow==2.16.2) (3.9)
+Requirement already satisfied: tensorboard-data-server<0.8.0,>=0.7.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorboard<2.17,>=2.16->tensorflow==2.16.2) (0.7.2)
+Requirement already satisfied: werkzeug>=1.0.1 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from tensorboard<2.17,>=2.16->tensorflow==2.16.2) (3.1.6)
+Requirement already satisfied: wheel<1.0,>=0.23.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from astunparse>=1.6.0->tensorflow==2.16.2) (0.45.1)
+Requirement already satisfied: rich in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from keras>=3.0.0->tensorflow==2.16.2) (14.3.3)
+Requirement already satisfied: namex in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from keras>=3.0.0->tensorflow==2.16.2) (0.1.0)
+Requirement already satisfied: optree in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from keras>=3.0.0->tensorflow==2.16.2) (0.19.0)
+Requirement already satisfied: importlib-metadata>=4.4 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from markdown>=2.6.8->tensorboard<2.17,>=2.16->tensorflow==2.16.2) (8.7.1)
+Requirement already satisfied: zipp>=3.20 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from importlib-metadata>=4.4->markdown>=2.6.8->tensorboard<2.17,>=2.16->tensorflow==2.16.2) (3.23.0)
+Requirement already satisfied: markupsafe>=2.1.1 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from werkzeug>=1.0.1->tensorboard<2.17,>=2.16->tensorflow==2.16.2) (3.0.3)
+Requirement already satisfied: markdown-it-py>=2.2.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from rich->keras>=3.0.0->tensorflow==2.16.2) (3.0.0)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from rich->keras>=3.0.0->tensorflow==2.16.2) (2.19.2)
+Requirement already satisfied: mdurl~=0.1 in /Users/Grey/miniconda3/envs/uplt0/lib/python3.9/site-packages (from markdown-it-py>=2.2.0->rich->keras>=3.0.0->tensorflow==2.16.2) (0.1.2)
+Downloading tensorflow-2.16.2-cp39-cp39-macosx_10_15_x86_64.whl (259.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 259.5/259.5 MB 6.2 MB/s eta 0:00:00
+Downloading ml_dtypes-0.3.2-cp39-cp39-macosx_10_9_universal2.whl (389 kB)
+Downloading tensorboard-2.16.2-py3-none-any.whl (5.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.5/5.5 MB 7.2 MB/s eta 0:00:00
+Installing collected packages: ml-dtypes, tensorboard, tensorflow
+  Attempting uninstall: ml-dtypes
+    Found existing installation: ml-dtypes 0.4.1
+    Uninstalling ml-dtypes-0.4.1:
+      Successfully uninstalled ml-dtypes-0.4.1
+  Attempting uninstall: tensorboard
+    Found existing installation: tensorboard 2.17.1
+    Uninstalling tensorboard-2.17.1:
+      Successfully uninstalled tensorboard-2.17.1
+Successfully installed ml-dtypes-0.3.2 tensorboard-2.16.2 tensorflow-2.16.2
 ```

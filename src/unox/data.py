@@ -24,23 +24,23 @@ def generate_lats_lons(
     dataset='datafiles/sample_data/2019u10.nc',
     output_dir='datafiles/',
 ):
-    """Generate latitude and longitude arrays from the given dataset.
+    """ Generate latitude and longitude arrays from the given dataset.
 
-        Creates the `lats.npy` and `lons.npy` files from the latitude and 
-        longitude values in the given dataset. They were originally generated 
-        from the ERA5 concatenated data files created by the `download_era5`
-        and `concatenate` scripts in the `datafiles` directory.
+        Create the `lats.npy` and `lons.npy` files from the latitude and longitude values in the given dataset. 
+        They were originally generated from the ERA5 concatenated data files created by the `download_era5` and `concatenate` scripts in the `datafiles` directory.
 
         Parameters
         ----------
-        dataset : str or xarray.Dataset, optional
+        dataset : `str` or `xarray.Dataset`, optional
             The filepath to the dataset or an xarray Dataset object from which to extract latitude and longitude values.
+        output_dir : `str`, optional
+            The directory in which to save the generated `lats.npy` and `lons.npy` files.
 
         Returns
         -------
-        lats : numpy.ndarray
+        lats : `numpy.ndarray`
             The latitude values extracted from the dataset.
-        lons : numpy.ndarray
+        lons : `numpy.ndarray`
             The longitude values extracted from the dataset.
     """
     # Load or verify the dataset
@@ -62,35 +62,35 @@ def get_extent(
     shift_lons=False,
     **kwargs,
 ):
-    """Get the latitude and longitude extent of the given xarray dataset.
+    """ Get the latitude and longitude extent of the given xarray dataset.
 
-        Finds the maximum and minimum latitude and longitude values in the given dataset.
+        Find the maximum and minimum latitude and longitude values in the given dataset.
 
         Parameters
         ----------
-        xr_dataset : xarray.Dataset or xarray.DataArray, optional
+        xr_dataset : `xarray.Dataset` or `xarray.DataArray`, optional
             The xarray data of which to find the extent.
-        lats : numpy.ndarray, optional
+        lats : `numpy.ndarray`, optional
             The latitude values to use instead of those in the dataset.
-        lons : numpy.ndarray, optional
+        lons : `numpy.ndarray`, optional
             The longitude values to use instead of those in the dataset.
-        shift_lons : bool, optional
+        shift_lons : `bool`, optional
             If True, shift the longitude values based on the PM_centered kwarg.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `verify_dataset()` and `shift_lon_arr()`.
-        
+
         Returns
         -------
-        extent : tuple
+        extent : `tuple`
             A tuple of np.float64 in the form (lat_min, lat_max, lon_min, lon_max).
-        
+
         Examples
         --------
         >>> nox = xr.open_dataset('datafiles/nox_2019_t106_US.nc')
         >>> extent = get_extent(nox)
         (24.112, 58.878, -126.0, -59.625)
-        
-        >>> lats, lons= get_lats_lons(nox)
+
+        >>> lats, lons = get_lats_lons(nox)
         >>> extent = get_extent(lats=lats, lons=lons)
         (24.112, 58.878, -126.0, -59.625)
     """
@@ -132,23 +132,22 @@ def get_lats_lons(
     xr_dataset,
     **kwargs,
 ):
-    """Get the latitude and longitude values from the given dataset.
+    """ Get the latitude and longitude values from the given dataset.
 
-        Loads the latitude and longitude values from the given dataset
-        and returns them as numpy arrays.
+        Load the latitude and longitude values from the given dataset and return them as numpy arrays.
 
         Parameters
         ----------
-        xr_dataset : xarray.Dataset or xarray.DataArray
+        xr_dataset : `xarray.Dataset` or `xarray.DataArray`
             The xarray data to verify.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `verify_dataset()`.
 
         Returns
         -------
-        lats : numpy.ndarray
+        lats : `numpy.ndarray`
             Array of latitude values.
-        lons : numpy.ndarray
+        lons : `numpy.ndarray`
             Array of longitude values.
 
         Examples
@@ -171,27 +170,26 @@ def get_latlon_resolution(
     lons=None,
     **kwargs,
 ):
-    """Get the latitude and longitude resolution of the given dataset.
+    """ Get the latitude and longitude resolution of the given dataset.
 
-        Calculates the resolution of coordinate values in the dataset
-        to find the resolution in latitude and longitude separately.
+        Calculate the resolution of coordinate values in the dataset to find the resolution in latitude and longitude separately.
 
         Parameters
         ----------
-        xr_dataset : xarray.Dataset or xarray.DataArray, optional
+        xr_dataset : `xarray.Dataset` or `xarray.DataArray`, optional
             The xarray data of which to find the extent.
-        lats : numpy.ndarray, optional
+        lats : `numpy.ndarray`, optional
             The latitude values to use instead of those in the dataset.
-        lons : numpy.ndarray, optional
+        lons : `numpy.ndarray`, optional
             The longitude values to use instead of those in the dataset.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `verify_dataset()` and `get_lats_lons()`.
-        
+
         Returns
         -------
-        lat_res : str
+        lat_res : `str`
             The resolution in latitude.
-        lon_res : str
+        lon_res : `str`
             The resolution in longitude.
 
         Examples
@@ -238,23 +236,20 @@ def print_latlon_info(
     lons=None,
     **kwargs,
 ):
-    """Print information about the latitude and longitude values.
+    """ Print information about the latitude and longitude values.
 
-        Prints the extent and resolution of the latitude and longitude
-        values in the given dataset or arrays.
+        Print the extent and resolution of the latitude and longitude values in the given dataset or arrays.
 
         Parameters
         ----------
-        xr_dataset : str or xarray.Dataset or xarray.DataArray, optional
-            The filepath to, or the xarray data for which to print the 
-            latitude and longitude information.
-        lats : numpy.ndarray, optional
+        xr_dataset : `str` or `xarray.Dataset` or `xarray.DataArray`, optional
+            The filepath to, or the xarray data for which to print the latitude and longitude information.
+        lats : `numpy.ndarray`, optional
             The latitude values to use instead of those in the dataset.
-        lons : numpy.ndarray, optional
+        lons : `numpy.ndarray`, optional
             The longitude values to use instead of those in the dataset.
         **kwargs : keyword arguments
-            Additional keyword arguments to pass to `verify_dataset()`, 
-            `get_extent()` and `get_latlon_resolution()`.
+            Additional keyword arguments to pass to `verify_dataset()`, `get_extent()` and `get_latlon_resolution()`.
     """
     # Initialize a variable to hold the name of the output
     output_name = 'provided lat/lon arrays'
@@ -285,19 +280,19 @@ def print_latlon_info(
 def clean_num_list(
     val_list,
 ):
-    """Clean the list of values that cannot be converted to a number.
+    """ Clean the list of values that cannot be converted to a number.
 
-        For each value in the list, if it cannot be converted to a number, 
-        all instances of that value are removed from the list.
+        For each value in the list, if it cannot be converted to a number, all instances
+        of that value are removed from the list.
 
         Parameters
         ----------
-        val_list : list
+        val_list : `list`
             The list of values to clean.
 
         Returns
         -------
-        return_list : list
+        return_list : `list`
             The cleaned list of values.
 
         Examples
@@ -321,19 +316,19 @@ def clean_num_list(
 def verify_lat(
     lat_val,
 ):
-    """Verify that the given latitude value is valid.
+    """ Verify that the given latitude value is valid.
 
-        If the given latitude value is within the range [-90, 90],
-        return that value. Otherwise, raise a ValueError.
+        If the given latitude value is within the range [-90, 90], return that value.
+        Otherwise, raise a ValueError.
 
         Parameters
         ----------
-        lat_val : float
+        lat_val : `float`
             The latitude value to verify.
 
         Returns
         -------
-        lat_val : float
+        lat_val : `float`
             The verified latitude value.
 
         Examples
@@ -355,23 +350,23 @@ def verify_lon(
     lon_val,
     PM_centered=None,
 ):
-    """Verify that the given longitude value is valid.
+    """ Verify that the given longitude value is valid.
 
-        If the given longitude value is within the range [-180, 180],
-        return that value. Otherwise, raise a ValueError.
+        If the given longitude value is within the range [-180, 180], return that value.
+        Otherwise, raise a ValueError.
 
         Parameters
         ----------
-        lon_val : float
+        lon_val : `float`
             The longitude value to verify.
-        PM_centered : bool, optional
+        PM_centered : `bool`, optional
             If None, verify that the longitude value is in the range [-180, 360].
             If True, verify that the longitude value is in the range [-180, 180].
             If False, verify that the longitude value is in the range [0, 360].
 
         Returns
         -------
-        lon_val : float
+        lon_val : `float`
             The verified longitude value.
 
         Examples
@@ -399,21 +394,20 @@ def verify_lon(
 def get_vminmax(
     arrays,
 ):
-    """Get the minimum and maximum values across the given arrays.
+    """ Get the minimum and maximum values across the given arrays.
 
-        Flattens and concatenates the given arrays and returns the minimum
-        and maximum values, ignoring NaN values.
+        Flatten and concatenate the given arrays and return the minimum and maximum values, ignoring NaN values.
 
         Parameters
         ----------
-        arrays : list of numpy.ndarray
+        arrays : `list` of `numpy.ndarray`
             The arrays to get the minimum and maximum values from.
 
         Returns
         -------
-        vmin : float
+        vmin : `float`
             The minimum value across the arrays.
-        vmax : float
+        vmax : `float`
             The maximum value across the arrays.
 
         Examples
@@ -438,19 +432,18 @@ def get_vminmax(
 def get_max_abs_val(
     val_list,
 ):
-    """Get the maximum absolute value from the given list.
+    """ Get the maximum absolute value from the given list.
 
-        Removes invalid numbers from the given list of values, then takes the 
-        absolute value of the remaining values, and returns the largest.
+        Remove invalid numbers from the given list of values, then take the absolute value of the remaining values, and return the largest.
 
         Parameters
         ----------
-        val_list : list of numbers or numpy.ndarray
+        val_list : `list` of numbers or `numpy.ndarray`
             The list of values to get the maximum absolute value from.
 
         Returns
         -------
-        max_abs : float
+        max_abs : `float`
             The maximum absolute value of the given values.
 
         Examples
@@ -473,32 +466,31 @@ def restrict_domain(
     lons, 
     restricting_data,
 ):
-    """Restrict the domain of the given arrays
+    """ Restrict the domain of the given arrays.
 
-        Restricts the domain of the given arrays to the same extent as that 
-        in the restricting data. The values of lats, lons are the latitude and
-        longitude values of the arrays to restrict.
+        Restrict the domain of the given arrays to the same extent as that in the restricting data. 
+        The values of lats, lons are the latitude and longitude values of the arrays to restrict.
 
         Parameters
         ----------
-        arrs_to_restrict : list of numpy.ndarray
+        arrs_to_restrict : `list` of `numpy.ndarray`
             The arrays to restrict in latitude and longitude.
-        lats : numpy.ndarray
+        lats : `numpy.ndarray`
             The latitude values of the arrays to restrict.
-        lons : numpy.ndarray
+        lons : `numpy.ndarray`
             The longitude values of the arrays to restrict.
-        restricting_data : xarray.Dataset or xarray.DataArray
+        restricting_data : `xarray.Dataset` or `xarray.DataArray`
             The dataset to restrict the arrays to.
-        
+
         Returns
         -------
-        arrs_to_return : list of numpy.ndarray
+        arrs_to_return : `list` of `numpy.ndarray`
             The restricted arrays.
-        lat_r : numpy.ndarray
+        lat_r : `numpy.ndarray`
             The latitude values of the restricting data.
-        lon_r : numpy.ndarray
+        lon_r : `numpy.ndarray`
             The longitude values of the restricting data.
-        
+
         Examples
         --------
         >>> stage1 = np.load(get_pred_data(stage=1, 'HPC_run'='no2_example_run', 'year'=2019))
@@ -529,25 +521,31 @@ def match_domains(
     xr_a,
     xr_b,
     require_equal=True,
+    require_len_gt_1=True,
 ):
-    """Restrict the domain of the given xarray Datasets to match each other.
+    """ Restrict the domain of the given xarray Datasets to match each other.
 
-        Finds the maximum extent covered by both given datasets and restricts both
-        to match. Requires that at least some of the actual latitude and longitude
-        values are present in both datasets.
+        Find the maximum extent covered by both given datasets and restrict both to match.
+        Requires that at least some of the actual latitude and longitude values are present in both datasets.
 
         Parameters
         ----------
-        xr_a : xarray.Dataset or xarray.DataArray
+        xr_a : `xarray.Dataset` or `xarray.DataArray`
             The first dataset.
-        xr_b : xarray.Dataset or xarray.DataArray
+        xr_b : `xarray.Dataset` or `xarray.DataArray`
             The second dataset.
-        
+        require_equal : `bool`, optional
+            Whether to check that the latitude and longitude values in the two datasets are exactly the same after trimming.
+            Default is `True`.
+        require_len_gt_1 : `bool`, optional
+            Whether to check to make sure that the trimmed datasets have more than 1 value in each of the lat and lon dimensions, to catch cases where the datasets only overlap at a single point, resulting in either the lat or lon dimension being dropped.
+            Default is `True`.
+
         Returns
         -------
-        xr_a : xarray.Dataset or xarray.DataArray
+        xr_a : `xarray.Dataset` or `xarray.DataArray`
             The first dataset, with the latitude and longitude extents trimmed to match `xr_b`.
-        xr_b : xarray.Dataset or xarray.DataArray
+        xr_b : `xarray.Dataset` or `xarray.DataArray`
             The first dataset, with the latitude and longitude extents trimmed to match `xr_a`.
     """
     # Verify argument types
@@ -574,32 +572,42 @@ def match_domains(
     tr_xr_a = xr_a.sel(lat=slice(lat_min, lat_max), lon=slice(lon_min, lon_max))
     tr_xr_b = xr_b.sel(lat=slice(lat_min, lat_max), lon=slice(lon_min, lon_max))
 
+    # Verify these two datasets have the same latitude and longitude values
     if require_equal == True:
-        # Verify these two datasets have the same latitude and longitude values
         lats_a, lons_a = get_lats_lons(tr_xr_a, check_time=False)
         lats_b, lons_b = get_lats_lons(tr_xr_b, check_time=False)
         if not np.array_equal(lats_a, lats_b):
             raise ValueError(f"(match domains) Latitude values do not match between the two datasets.")
         if not np.array_equal(lons_a, lons_b):
             raise ValueError(f"(match domains) Longitude values do not match between the two datasets.")
+    # Verify that the xarray datasets have more than 1 value in each of the lat and lon dimensions
+    if require_len_gt_1 == True:
+        if len(tr_xr_a.lat) <= 1:
+            raise ValueError(f"(match_domains) `xr_a` has 1 or fewer values in the lat dimension after trimming.")
+        if len(tr_xr_a.lon) <= 1:
+            raise ValueError(f"(match_domains) `xr_a` has 1 or fewer values in the lon dimension after trimming.")
+        if len(tr_xr_b.lat) <= 1:
+            raise ValueError(f"(match_domains) `xr_b` has 1 or fewer values in the lon dimension after trimming.")
+        if len(tr_xr_b.lon) <= 1:
+            raise ValueError(f"(match_domains) `xr_b` has 1 or fewer values in the lon dimension after trimming.")
     return tr_xr_a, tr_xr_b
 
 def verify_npy(
     array,
 ):
-    """Determine if a variable or file holds a valid numpy array.
+    """ Determine if a variable or file holds a valid numpy array.
 
         If a numpy array or a path to a file containing a numpy array was passed,
         return True. Otherwise, raise a TypeError, ValueError or FileNotFoundError.
 
         Parameters
         ----------
-        array : numpy.array or string
+        array : `numpy.array` or `string`
             A numpy array or a path to a file containing a numpy array.
 
         Returns
         -------
-        nparray : np.ndarray
+        nparray : `np.ndarray`
             The array being passed or pointed to as a
             np.ndarray.
 
@@ -621,30 +629,6 @@ def verify_npy(
         >>> loaded = verify_npy(f.name)
         >>> isinstance(loaded, np.ndarray)
         True
-
-        >>> verify_npy(42)
-        Traceback (most recent call last):
-            ...
-        TypeError: Not a numpy array.
-
-        >>> verify_npy("nonexistent/path.npy")
-        Traceback (most recent call last):
-            ...
-        FileNotFoundError: File does not exist.
-
-        >>> import os
-        >>> os.makedirs("some/folder", exist_ok=True)
-        >>> verify_npy("some/folder")
-        Traceback (most recent call last):
-            ...
-        FileNotFoundError: Path leads to a folder.
-
-        >>> with NamedTemporaryFile(suffix=".txt", mode="w", delete=False) as f:
-        ...     pass  # Empty file
-        >>> verify_npy(f.name)
-        Traceback (most recent call last):
-            ...
-        ValueError: File does not contain a readable numpy array.
     """
     if isinstance(array, str):
         if os.path.isdir(array):
@@ -681,19 +665,19 @@ def verify_npy(
 def get_num_from_string(
     str,
 ):
-    """Extract numbers from a string.
+    """ Extract numbers from a string.
 
         If the string contains numbers, return those numbers in a list.
         Otherwise, raise a ValueError.
 
         Parameters
         ----------
-        str : str
+        str : `str`
             The string to extract the number from.
 
         Returns
         -------
-        nums : list of int or float
+        nums : `list` of `int` or `float`
             A list of numbers extracted from the string.
 
         Examples
@@ -715,19 +699,18 @@ def get_num_from_string(
 def get_DOY(
     date,
 ):
-    """Get the day of the year from a date.
+    """ Get the day of the year from a date.
 
-        Extracts the day of the year from a given date
-        and returns it as an integer.
+        Extract the day of the year from a given date and return it as an integer.
 
         Parameters
         ----------
-        date : np.datetime64 or str
+        date : `np.datetime64` or `str`
             The date to extract the day of the year from.
 
         Returns
         -------
-        doy : int
+        doy : `int`
             The day of the year of the date.
 
         Examples
@@ -757,23 +740,22 @@ def increment_month(
     month, 
     increment,
 ):
-    """Increment the month by a given number of months.
+    """ Increment the month by a given number of months.
 
-        Increments the month by the given number of months, wrapping around
-        if the increment goes beyond December (12).
+        Increment the month by the given number of months, wrapping around if the increment goes beyond December (12).
 
         Parameters
         ----------
-        month : int or str
+        month : `int` or `str`
             The month to increment (1 for January, 2 for February, ..., 12 for December).
-        increment : int or str
+        increment : `int` or `str`
             The number of months to increment by.
 
         Returns
         -------
-        new_month : int or str
+        new_month : `int` or `str`
             The new month after incrementing. The type will match the type of `month`.
-        increment_year : bool
+        increment_year : `bool`
             Whether the increment caused a year change.
             True if the month is December and increment > 0.
 
@@ -823,23 +805,22 @@ def increment_month(
 def get_YMD_from_date(
     this_date,
 ):
-    """Get the year, month, and day from a date.
+    """ Get the year, month, and day from a date.
 
-        Extracts the year, month, and day from a given date
-        and returns them as integers.
+        Extract the year, month, and day from a given date and return them as integers.
 
         Parameters
         ----------
-        this_date : np.datetime64 or str
+        this_date : `np.datetime64` or `str`
             The date to extract the year, month, and day from.
 
         Returns
         -------
-        year : int
+        year : `int`
             The year of the date.
-        month : int
+        month : `int`
             The month of the date.
-        day : int
+        day : `int`
             The day of the date.
 
         Examples
@@ -869,14 +850,13 @@ def get_YMD_from_date(
 def get_increment_info(
     increment,
 ):
-    """Get the increment value and unit from a string.
+    """ Get the increment value and unit from a string.
 
-        Parses a string that represents an increment in the format 'XD', 'XM', or 'XY',
-        where X is an integer and D, M, or Y are the units for days, months, or years respectively.
-        
+        Parse a string that represents an increment in the format 'XD', 'XM', or 'XY', where X is an integer and D, M, or Y are the units for days, months, or years respectively.
+
         Parameters
         ----------
-        increment : np.timedelta64 or str
+        increment : `np.timedelta64` or `str`
             The amount of time to add to the date.
             If a string, it should be in the format 'XD', 'XM', or 'XY'
             where X is an integer and D, M, or Y are the units for days, 
@@ -884,9 +864,9 @@ def get_increment_info(
 
         Returns
         -------
-        value : int
+        value : `int`
             The numeric value of the increment.
-        unit : str
+        unit : `str`
             The unit of the increment ('D', 'M', or 'Y').
 
         Raises
@@ -895,7 +875,7 @@ def get_increment_info(
             If the increment string is not in the expected format.
         TypeError
             If the increment is not a np.timedelta64 or str.
-        
+
         Examples
         --------
         >>> value, unit = get_increment_info('20D')
@@ -938,28 +918,27 @@ def add_amount_to_date(
     increment,
     keep_within_year=False,
 ):
-    """Add an amount of time to a date.
+    """ Add an amount of time to a date.
 
-        Adds the given amount of time to the given date and 
-        returns the new date.
+        Add the given amount of time to the given date and return the new date.
 
         Parameters
         ----------
-        this_date : np.datetime64 or str
+        this_date : `np.datetime64` or `str`
             The date to add the time to.
-        increment : np.timedelta64 or str
+        increment : `np.timedelta64` or `str`
             The amount of time to add to the date.
             If a string, it should be in the format 'XD', 'XM', or 'XY'
             where X is an integer and D, M, or Y are the units for days, 
             months, or years respectively.
-        keep_within_year : bool, optional
+        keep_within_year : `bool`, optional
             If True, the new date will be kept within the same year as `this_date`.
 
         Returns
         -------
-        new_date : np.datetime64 or str
+        new_date : `np.datetime64` or `str`
             The new date after adding the time.
-        
+
         Examples
         --------
         >>> add_amount_to_date('2019-12-20', '20D')

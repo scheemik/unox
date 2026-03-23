@@ -272,3 +272,14 @@ This will use the Sphinx package (hence including `sphinx-autoapi` and
 Sometimes, a change you make to the docs will not be picked up when regenerating the `html` files. 
 This can often be solved by running `make clean html` instead, which takes a bit longer as it does a complete rebuild. 
 If you are still having errors, see the troubleshooting guide. 
+
+#### Live Preview
+
+The `Live Preview` extension allows you to preview how `html` pages will look. 
+I find this particularly helpful when editing the documentation files you are viewing right now. 
+If you want to edit the documentation, open the `unox/docs/_build/html/index.html` file in VSCodium and in the top right corner, there is a symbol which looks like a rectangle divided in half with a magnifying glass over it.
+This will open a live preview in a split view. 
+I find it helpful to have this preview in a separate window. 
+You can also open this preview in your browser to see how it will render by copying the URL at the top of the preview window and pasting it into your browser.
+The URL will look something like `http://127.0.0.1:3000/docs/_build/html/index.html?serverWindowId=e5e229ba-5ee5-4dbf-9a86-4ffa71911f91`. 
+For more information on editing the documentation, see `to be added`. 

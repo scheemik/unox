@@ -9,26 +9,28 @@ def set_fig_row_col(
     n_cols=None,
     **kwargs,
 ):
-    """Determine the number of rows and columns in a figure based on the number of subplots.
+    """ Set the number of rows and columns in a figure.
+    
+        Determine the number of rows and columns in a figure based on the number of subplots.
 
         Parameters
         ----------
-        n_subplots : int
+        n_subplots : `int`
             The total number of subplots in the figure.
-        n_rows : in or None
+        n_rows : `int`, `None`, optional
             The number of rows to use in the figure. Default is `None`.
-        n_cols : int or None
+        n_cols : `int`, `None`, optional
             The number of columns to use in the figure. Default is `None`.
         **kwargs : keyword arguments
             Additional keyword arguments accepted to facilitate wrapper functions.
-        
+
         Returns
         -------
-        n_rows : int
+        n_rows : `int`
             The number of rows in the figure.
-        n_cols : int
+        n_cols : `int`
             The number of columns in the figure.
-        
+
         Examples
         --------
         >>> n_rows, n_cols = set_fig_row_col(4)
@@ -86,21 +88,20 @@ def pad_extent(
     extent, 
     padding=0.1,
 ):
-    """Pads the given extent.
+    """ Pad the given extent.
 
-        Pads the latitude and longitude extent of a dataset by enlarging
-        the extent by the padding value.
+        Pad the latitude and longitude extent of a dataset by enlarging the extent by the padding value.
 
         Parameters
         ----------
-        extent : tuple
+        extent : `tuple`
             A tuple of np.float64 in the form (lat_min, lat_max, lon_min, lon_max).
-        padding : float
+        padding : `float`, optional
             The amount to pad the extent by in a fraction.
 
         Returns
         -------
-        padded_extent : tuple
+        padded_extent : `tuple`
             A tuple of np.float64 in the form (p_lat_min, p_lat_max, p_lon_min, p_lon_max).
 
         Examples
@@ -144,20 +145,20 @@ def pad_extent(
 def get_var_label_and_units(
     var,
 ):
-    """Get the label and units for a variable.
+    """ Get the label and units for a variable.
 
-        Returns the label and units for a variable based on its name.
+        Return the label and units for a variable based on its name.
 
         Parameters
         ----------
-        var : str
+        var : `str`
             The name of the variable.
 
         Returns
         -------
-        label : str
+        label : `str`
             The label for the variable.
-        units : str
+        units : `str`
             The units for the variable.
 
         Examples
@@ -203,39 +204,39 @@ def make_stage_comp_arrs(
     avg_over=None,
     stage1_only=False,
 ):
-    """Create arrays for stage comparison plots.
+    """ Create arrays for stage comparison plots.
 
-        Creates a dictionary of arrays for stage comparison, where each key is a stage
-        and the value is an array of the variable for that stage. For use with the 
-        `unox.plotting.plot_stage_comp_maps()` function.
+        Create a dictionary of arrays for stage comparison, where each key is a stage and the value is an array of the variable for that stage. 
+        For use with the `unox.plotting.plot_stage_comp_maps()` function.
 
         Parameters
         ----------
-        in_arrs : dict
+        in_arrs : `dict`
             A dictionary of input arrays, where the keys are stage names and the values are arrays.
             Expects format like: {'truth': truth_arr, 'stage1': stage1_arr, 'stage2': stage2_arr}
-        this_date : np.datetime64 or str
+        this_date : `np.datetime64` or `str`
             Date and time to select from the data file.
             Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
-        var : str
+        var : `str`
             The variable which will be plotted.
-        avg_over : str, numpy.timedelta64, or None
+        avg_over : `str`, `numpy.timedelta64`, `None`, optional
             If provided, averages the data over the specified time period.
             If None, takes just the time slice specified in `datetime`.
-        stage1_only : bool
+        stage1_only : `bool`, optional
             If True, produce arrays just corresponding to stage 1. If False, produce arrays
             for stage 1 and stage 2. Default is False.
 
         Returns
         -------
-        out_arrs : dict
+        out_arrs : `dict`
             A dictionary of output arrays for each stage.
-        overall_title : str
+        overall_title : `str`
             A title for the overall plot, based on the variable and date(s).
-        
+
         Examples
         --------
-        >>> 
+        >>> # Example usage
+        >>> out_arrs, title = make_stage_comp_arrs(in_arrs, '2019-01-01', 'no2')
     """
     out_arrs = {}
     
@@ -312,9 +313,10 @@ def format_sci_notation(
     pm_val=None, 
     condense=False
 ):
-    """ Formats a number into scientific notation.
+    """ Format a number into scientific notation.
 
-        Returns a formatted string of a number in scientific notation if the exponent is outside the specified limits. Uses LaTeX formatting for the string to be used in plot labels.
+        Return a formatted string of a number in scientific notation if the exponent is outside the specified limits. 
+        Uses LaTeX formatting for the string to be used in plot labels.
 
         Parameters
         ----------

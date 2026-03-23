@@ -3,14 +3,14 @@ import os
 def verify_path(
     path,
 ):
-    """Verify that the filepath exists.
+    """ Verify that the filepath exists.
 
-        Checks if the path to the data files exists and is valid.
-        If not, it raises an error.
+        Check if the path to the data files exists and is valid.
+        If not, raise an error.
 
         Parameters
         ----------
-        path : str
+        path : `str`
             Relative path to the directory containing data files.
 
         Raises
@@ -20,12 +20,13 @@ def verify_path(
 
         Returns
         -------
-        path : str
+        path : `str`
             The verified path to the data files.
 
         Examples
         --------
-        >>> verify_path()
+        >>> verify_path('datafiles/')
+        'datafiles/'
     """
     # Verify argument types
     if not isinstance(path, str):
@@ -46,13 +47,13 @@ def verify_path(
 def remove_non_empty_directory(
     base_dir,
 ):
-    """Remove a non-empty directory and all its contents.
+    """ Remove a non-empty directory and all its contents.
 
-        This function will recursively delete all files and directories in the given path.
+        Recursively delete all files and directories in the given path.
 
         Parameters
         ----------
-        base_dir : str
+        base_dir : `str`
             Relative path to the directory to be removed.
     """
     # Verify the path
@@ -74,18 +75,18 @@ def remove_non_empty_directory(
 def make_file_path(
     path,
 ):
-    """Create a file path.
+    """ Create a file path.
 
-        If the given path doesn't exist, create the specified directory structure.
+        Create the specified directory structure if the given path doesn't exist.
 
         Parameters
         ----------
-        path : str
+        path : `str`
             Relative path to make.
 
         Returns
         -------
-        path : str
+        path : `str`
             The verified path to the data files.
 
         Examples

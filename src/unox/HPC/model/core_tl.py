@@ -9,7 +9,15 @@ import tensorflow as tf
 
 @keras.saving.register_keras_serializable(package="unox", name="build_Unet")
 def build_Unet():
-    inputs = Input( ( 35, 46, 9 ), name='model_input') # (None, 35, 46, 9)
+    """ Build the Unet model with transfer learning modifications.
+
+        Construct a Unet model with LSTM layers and transfer learning adjustments.
+
+        Returns
+        -------
+        model : `keras.Model`
+            The constructed Unet model.
+    """
 
     # Conv2D(filters, kernel_size, **kwargs)
     ## filters is the dimension of the output space, the number of filters in the convolution

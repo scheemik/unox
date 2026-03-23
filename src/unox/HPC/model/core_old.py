@@ -7,7 +7,15 @@ from keras.layers.merging import concatenate
 # import tensorflow as tf
 
 def build_Unet():
-    inputs = Input( ( 56, 120, 9 ), name='model_input')
+    """ Build the Unet model.
+
+        Constructs a legacy Unet model with LSTM layers for sequence processing.
+
+        Returns
+        -------
+        model : `keras.Model`
+            The constructed Unet model.
+    """
 
     c1 = Conv2D(128, (3, 3), activation='softplus', padding='same', name='Block1_Conv1') (inputs)    # 56, 120
     c1 = Conv2D(256, (3, 3), activation='softplus', padding='same', name='Block1_Conv2') (c1)   # 56, 120

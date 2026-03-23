@@ -7,11 +7,13 @@ from unox.HPC.data0.paths import verify_path
 def time_this(
     func
 ):
-    """A decorator which can be applied to a function to print the execution time.
+    """ Time how long a function takes to execute.
+    
+        A decorator which can be applied to a function to print the execution time.
 
         Parameters
         ----------
-        func : function
+        func : `function`
             The function for which to time.
 
         Returns
@@ -43,21 +45,20 @@ def time_this(
 def load_lats_lons(
     path='datafiles/',
 ):
-    """Load latitude and longitude data from files.
+    """ Load latitude and longitude data from files.
 
-        Loads arrays of latitude and longitude values that cover 
-        the region of interest.
+        Load arrays of latitude and longitude values that cover the region of interest.
 
         Parameters
         ----------
-        path : str
+        path : `str`, optional
             Relative path to the directory containing data files.
 
         Returns
         -------
-        lats : numpy.ndarray
+        lats : `numpy.ndarray`
             Array of latitude values.
-        lons : numpy.ndarray
+        lons : `numpy.ndarray`
             Array of longitude values.
 
         Examples
@@ -77,20 +78,20 @@ def show_available_data(
     path='inputfiles/no2_sample_input/', 
     verb=False,
 ):
-    """Print a list of available data in the given directory.
-        
-        For the given path, this function will print all the files in the directory.
+    """ Print a list of available data.
+
+        For the given path, print all the files in the given directory.
 
         Parameters
         ----------
-        path : str
+        path : `str`, optional
             Relative path to the directory containing data files.
-        verb : bool
+        verb : `bool`, optional
             Verbose mode. If True, print the file paths. Defaults to False.
 
         Returns
         -------
-        data_files : list
+        data_files : `list`
             List of file paths in the given directory.
 
         Examples
@@ -116,20 +117,19 @@ def show_available_data(
 def recursive_paths(
     path,
 ):
-    """Create list recursively of all files in the given path.
+    """ Create list recursively of all files in the given path.
 
-        Calls itself recursively to get all files in the given path.
-        Assumes the path is a directory that exists, as is confirmed
-        when called from show_available_data()
+        Get all files in the given path by recursively calling the function itself. 
+        Assumes the path is a directory that exists, as is confirmed when called from show_available_data()
 
         Parameters
         ----------
-        path : str
+        path : `str`
             Relative path to the directory containing data files.
 
         Returns
         -------
-        path_list : list
+        path_list : `list`
             List of file paths in the given directory.
 
         Examples
@@ -169,29 +169,28 @@ def get_input_data(
     input_set='no2_sample_input',
     path_prefix='',
 ):
-    """Get the path of a input data file.
+    """ Get the path of a input data file.
 
-        Builds the path to a specific input data file
-        based on the stage, x_or_y, and year.
+        Build the path to a specific input data file based on the stage, x_or_y, and year.
 
         Parameters
         ----------
-        stage : int
+        stage : `int`, optional
             Stage of the data (1 or 2).
-        x_or_y : str
+        x_or_y : `str`, optional
             'x' or 'y' to specify the type of data.
-        year : int
+        year : `int`, optional
             Year of the data.
-        input_set : str
+        input_set : `str`, optional
             Name of the directory under `inputfiles/` containing the data files.
-        path_prefix : str
+        path_prefix : `str`, optional
             Prefix to the path to the directory containing data files.
-        
+
         Returns
         -------
-        file_path : str
+        file_path : `str`
             Path to the input data file.
-        
+
         Examples
         --------
         >>> file_path = get_input_data(stage=1, x_or_y='y', year=2019)
@@ -217,21 +216,21 @@ def get_one_input_var_array(
     var,
     **kwargs,
 ):
-    """Get the array of a single input variable for a given year.
+    """ Get the array of a single input variable for a given year.
 
         Parameters
         ----------
-        var : str
+        var : `str`
             Name of the variable to get.
-        **kwargs : dict
+        **kwargs : `dict`
             Additional keyword arguments to pass to `get_input_data()`.
             Should include `stage`, `year`, and `input_set`.
-        
+
         Returns
         -------
-        var_array : numpy.ndarray
+        var_array : `numpy.ndarray`
             Array of the specified variable.
-        var_index : int
+        var_index : `int`
             Index of the specified variable in the input data array.
     """
     # Determine if the variable is an x or y variable
@@ -254,22 +253,22 @@ def get_one_t_input_var_array(
     this_date,
     **kwargs,
 ):
-    """Get an array of a single variable at the given date from the given input file.
+    """ Get an array of a single variable at the given date from the given input file.
 
         Parameters
         ----------
-        var : str
+        var : `str`
             Name of the variable to get.
-        this_date : np.datetime64 or str
+        this_date : `np.datetime64` or `str`
             Date and time to select from the data file.
             Expected format is 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD'.
-        **kwargs : dict
+        **kwargs : `dict`
             Additional keyword arguments to pass to `get_input_data()`.
             Should include `var`, `stage`, and `input_set`.
-        
+
         Returns
         -------
-        var_array : numpy.ndarray
+        var_array : `numpy.ndarray`
             Array of the specified variable at the given date.
     """
     # Get the year from the date
@@ -288,25 +287,24 @@ def get_pred_data(
     year=2019,
     path_prefix='',
 ):
-    """Get the path of a prediction data file.
+    """ Get the path of a prediction data file.
 
-        Builds the path to a specific prediction data file
-        based on the stage, HPC_run ID, and year.
+        Build the path to a specific prediction data file based on the stage, HPC_run ID, and year.
 
         Parameters
         ----------
-        stage : int
+        stage : `int`, optional
             Stage of the data (1 or 2).
-        HPC_run : str
+        HPC_run : `str`, optional
             ID of the HPC run.
-        year : int
+        year : `int`, optional
             Year of the data.
-        path_prefix : str
+        path_prefix : `str`, optional
             Prefix to the path to the directory containing data files.
 
         Returns
         -------
-        file_path : str
+        file_path : `str`
             Path to the prediction data file.
 
         Examples
@@ -331,18 +329,18 @@ def get_pred_data(
 def interpret_user_input(
     user_input,
 ):
-    """Interprets a yes/no input from the user.
+    """ Interprets a yes/no input from the user.
 
         Takes input from prompting the user for a yes/no input and returns True/False appropriately.
 
         Parameters
         ----------
-        user_input : str
+        user_input : `str`
             The input the user entered.
 
         Returns
         -------
-        bool
+        `bool`
             True if the user input is 'y' or 'yes', False if 'n' or 'no'.
 
         Examples

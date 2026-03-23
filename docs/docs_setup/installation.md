@@ -2,7 +2,7 @@
 # Installation
 
 The documentation below describes how to install this package in a way that enables active development. 
-If you are interested in simply using `unox`, refer to the installation instructions in the {doc}`README <index>`.
+If you are interested in simply using `unox`, refer to the installation instructions in the {doc}`README <../index>`.
 <!-- Note: for linking between documents, use the `doc` role defined in the [Sphinx documentation](https://docs.readthedocs.com/platform/stable/guides/cross-referencing-with-sphinx.html#the-doc-role). 
 TLDR: Create a link to a different document by typing `{doc}`, followed by the name of the file surrounded by backticks, excluding the extension. If you would like to change the rendered text of the link, surround the desired link text in backticks, then add the name of the file in angle brackets, in the format: "{doc}`Click here <filename>`".
 In order to link to the README file as I did above, I need to actually link to the `index.html` file which is in the same directory as this current file. Linking to a file up the directory structure is difficult, but the README is included in the `index.html` file, and therefore I can link to it that way.  -->
@@ -1367,7 +1367,7 @@ You are very unlikely to need the "Open Remote - SSH" extension on either Animus
 ### Setting up VSCodium
 
 If you are already familiar with VSCodium (or VSCode) you probably have a setup that you prefer. 
-If that is the case, feel free to move on to the guide on {doc}`data <data>` the development {doc}`workflow <workflow>`.
+If that is the case, feel free to move on to the guide on {doc}`data <data>` the development {doc}`workflow <../docs_dev/workflow>`.
 Below, I list a few of the features that I find invaluable when I am coding as suggestions.
 Remember to verify that the changes you make in VSCodium are propagated to both Animus and HPC.
 
@@ -1414,9 +1414,4 @@ Once this is installed, you can load and run Jupyter Notebooks using the virtual
 
 The `Live Preview` extension allows you to preview how `html` pages will look. 
 I find this particularly helpful when editing the documentation files you are viewing right now. 
-If you want to edit the documentation, open the `unox/docs/_build/html/index.html` file in VSCodium and in the top right corner, there is a symbol which looks like a rectangle divided in half with a magnifying glass over it.
-This will open a live preview in a split view. 
-I find it helpful to have this preview in a separate window. 
-You can also open this preview in your browser to see how it will render by copying the URL at the top of the preview window and pasting it into your browser.
-The URL will look something like `http://127.0.0.1:3000/docs/_build/html/index.html?serverWindowId=e5e229ba-5ee5-4dbf-9a86-4ffa71911f91`. 
-For more information on editing the documentation, see `to be added`. 
+To learn more about how to edit this documentation, see the guide on {doc}`Writing Documentation <../docs_dev/write_docs>`.

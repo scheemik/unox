@@ -32,7 +32,7 @@ Animus also holds the data used to create the inputs for the model.
 Generally, I use Animus for all tasks related to this project except for running the model itself. 
 
 This guide details how to prepare a model run on Animus, transfer that preparation to Trillium and run the model, then transfer the model output back to Animus. 
-A demonstration of how to use the analysis tools can be found in the {doc}`Example usage <example>`.
+A demonstration of how to use the analysis tools can be found in the {doc}`Example usage <../example>`.
 
 ---
 <a id='prep_model_run'></a>
@@ -79,17 +79,9 @@ Enter a passcode or select one of the following options:
 
 Passcode or option (1-1): 1
 Success. Logging you in...
-input_metadata.json         100% 1307    90.1KB/s   00:00
-Y_2005.npy                  100%   19MB  24.6MB/s   00:00
-Y_2006.npy                  100%   19MB  61.1MB/s   00:00
-...
-X_2019.npy                  100%  168MB  84.3MB/s   00:01
-X_2020.npy                  100%  168MB  89.4MB/s   00:01
 input_metadata.json         100% 1319   232.4KB/s   00:00    
 no2_2005-2020.nc            100% 3882MB  77.1MB/s   00:50
 ```
-
-Note that the `.npy` files are now deprecated and the only files that should transfer are the `.json` and `.nc`.
 
 <a id='config_files'></a>
 [back to top](#top)
@@ -97,42 +89,56 @@ Note that the `.npy` files are now deprecated and the only files that should tra
 ### Input configuration files
 
 The parameters that a model run will use are defined in "input configuration" files. 
-These are `.json` files stored in `inputfiles/_input_configs/` and follow the following format:
+These are `.json` files stored in `inputfiles/_input_configs/`.
+The contents of the default configuration file, `inputfiles/_input_configs/sample_config.json` are shown below.
 
-```json
-{
-    "input_set": "no2_2005-2020",
-    "x_vars": [
-        "no2",
-        "no2_tm1",
-        "u10",
-        "v10",
-        "blh",
-        "sp",
-        "skt",
-        "t2m",
-        "ssrd"
-    ],
-    "stage_2": true,
-    "stage_2_cutoff": 2013,
-    "lsm_vars": [
-    ],
-    "grid_size": [35, 46]
-}
+```{literalinclude} ../../inputfiles/_input_configs/sample_config.json
 ```
 
-The attributes of this file are explained below:
+All configuration files should follow that format and the attributes are explained below:
 - `input_set`: The name of the input netCDF to use.
 - `x_vars`: The list of variables to use as input to the model.
     - See the {doc}`Data <data>` page for documentation of these variables.
+    - Note, the y-variable is determined by an attribute in the input file.
+- `zfi_vars`: A list of variables for which to run Zeroed-Feature Importance experiments.
+- `lsm_vars`: A list of variables on which to apply the land-sea mask (`lsm`).
 - `stage_2`: A boolean as to whether to run Stage 2 of training.
 - `stage_2_cutoff`: The cutoff year for Stage 2 training.
     - Stage 2 training will start the year after the one specified here.
-- `lsm_vars`: A list of variables on which to apply the land-sea mask (`lsm`).
+- `n_epochs`: The number of epochs for which to run the training.
+    - More epochs gives the chance for the model to improve its predictions, but extends the run time.
+- `split_year`: The year on which to make the split between the training / testing data and the validation data.
+    - Note that this is inclusive. For example, if `split_year` is 2019, the data from 2019 and all following years will be kept for validation. The y-variable in the validation data is never shown to the model.
+- `split_value`: The fraction of the data to be used for training, the remaining to be used for testing.
+    - Note that this applies to the data left over after splitting off the validation data. 
 - `grid_size`: A list of the number of grid cells to use in latitude and longitude.
+- `act_reg`: The type of activity regularizer to use in the model.
+    - See the guide on {doc}`Running ensemble models <../docs_analysis/ensemble_runs>` for details.
+- `act_reg_factor`: The value of the factor to use in the activity regularizer.
+    - See the guide on {doc}`Running ensemble models <../docs_analysis/ensemble_runs>` for details.
+
+Note that `.json` files have slightly different syntax compared to a Python dictionary.
+- Lists cannot have a comma after the last item in the list.
+- Boolean values must be lower case. That is, `true` and `false`.
 
 When preparing for a model run, make sure the configuration file you wish to use is present on the HPC cluster in the `inputfiles/_input_configs/` directory. 
 This can be accomplished by creating a configuration file on Animus, then using the `HPC_from_animus.sh` script to transfer it. 
+
+```console
+(uplt) username@animus-c:~/unox$ bash HPC_from_animus.sh -f inputfiles/_input_configs/my_new_config.json 
+-c, No cluster specified, defaulting to trillium
+Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
+(<username>@trillium.alliancecan.ca) Duo two-factor login for <username>
+
+Enter a passcode or select one of the following options:
+
+1. Duo Push to <mobile device>
+
+Passcode or option (1-1): 1
+Success. Logging you in...
+my_new_config.json         100%  443   137.4KB/s   00:00
+```
+
 Or, one can simply create a new configuration file on HPC directly, which is what I usually do.
 
 ---
@@ -615,4 +621,5 @@ Completed file transfer to Animus
 ```
 
 Now that the output from the model run is back on Animus, it can be analyzed.
-See the {doc}`Analysis <analysis>` page for details.
+See the {doc}`Analysis <../analysis>` page for details.
+To run multiple jobs at once, see the guide on {doc}`Running ensemble models <../docs_analysis/ensemble_runs>`.

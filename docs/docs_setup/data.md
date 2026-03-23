@@ -33,6 +33,9 @@ This guide assumes you have followed the instructions on the {doc}`Installation 
 The `datafiles` directory contains data files and scripts to make the input files for the U-net model for estimating North American NOₓ emissions. 
 These scripts pull from data files kept in shared directories **<ins>on Animus</ins>**, usually within `/data/high_res/`. 
 In the descriptions below, the contents and usage of each data source are described as well as how to obtain the data, if they are publicly available. 
+When listing the latitude and longitude resolutions, a "±" symbol indicates that the resolution is irregular.
+That is, the value before the symbol is the average difference in values while the value after the symbol is the standard deviation of the difference in values.
+For example, the [TCR-2 NOₓ emissions](#tcr-2_nox) latitude values have an average resolution of 1.121483870967742 with a standard deviation of 0.0004997397866077013.
 
 <a id='tcr-2_nox'></a>
 [back to top](#top)
@@ -185,6 +188,8 @@ To close the `tmux` session when done, simply run the `exit` command.
     - 42602 is the ID for NO₂
     - Note: The latitude and longitude extents and resolutions were calculated solely on this example file.
 
+Note that the USA EPA Air Quality Data is provided in `.csv` format where each (I should check whether I remove zero values from the list of differences in lat/lon before calculating the average and standard deviation)
+
 <a id='download_us_epa'></a>
 [back to top](#top)
 
@@ -225,7 +230,7 @@ When running the U-net model, the input data are loaded from a netCDF input file
 These files are created to have a consistent structure, with data from all the above sources interpolated onto a common grid in space and time. 
 You will generally only need to create new input files when investigating a new geographic area, a different species, or adding new variables.
 The process of creating new input files can take some time. 
-However, the model run configuration files (discussed in the {doc}`Workflow <workflow>` guide) can be used to specify exactly what data are pulled from the input netCDF files for a particular run. 
+However, the model run configuration files (discussed in the {doc}`Workflow <../docs_dev/workflow>` guide) can be used to specify exactly what data are pulled from the input netCDF files for a particular run. 
 Therefore, after spending the time to create an input file, you should be able to try many different kinds of model runs by modifying the configuration file.
 
 <a id='input_file_structure'></a>
@@ -236,7 +241,7 @@ Therefore, after spending the time to create an input file, you should be able t
 The input files are netCDFs. 
 Using `xarray` you can look at the structure of such a file by opening it.
 Below is a text representation of the output. 
-However, if the below python commands are executed in a Jupyter Notebook cell **<ins>on Animus</ins>**, the structure becomes interactive, allowing for more exploration (see {doc}`Example usage <example>`).
+However, if the below python commands are executed in a Jupyter Notebook cell **<ins>on Animus</ins>**, the structure becomes interactive, allowing for more exploration (see {doc}`Analysis <../analysis>`).
 
 ```python
 import xarray as xr
@@ -397,4 +402,4 @@ Completed making all input files.
 Note that, in the process of making an input file, all instances of February 29th are dropped using the method `convert_calendar('noleap')`.
 This is to make the years all the same length.
 
-Once an input file has been created, you can now go through the {doc}`workflow <workflow>` of setting up a run on Animus, transferring that to Trillium, running the U-net model, and bringing the result back to Animus for analysis.
+Once an input file has been created, you can now go through the {doc}`Workflow <../docs_dev/workflow>` of setting up a run on Animus, transferring that to Trillium, running the U-net model, and bringing the result back to Animus for analysis.

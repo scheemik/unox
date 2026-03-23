@@ -18,7 +18,7 @@ This package is not currently available for installation with `pip`.
 $ pip install unox
 ``` -->
 
-See the [installation](https://unox.readthedocs.io/en/latest/example.html) guide for instructions on how to get set up developing the code.
+See the [installation](https://unox.readthedocs.io/en/latest/docs_setup/installation.html) guide for instructions on how to get set up developing the code.
 <!-- See {doc}`installation`  -->
 
 ## Requirements

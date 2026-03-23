@@ -7,7 +7,20 @@ from keras.layers.merging import concatenate  #Evelyn changed merge to merging
 import tensorflow as tf
 
 def build_Unet(num_feature=12):
-    inputs = Input( ( 35, 46, num_feature ), name='model_input')
+    """ Build the Unet model.
+
+        Construct a Unet model with LSTM layers for sequence processing.
+
+        Parameters
+        ----------
+        num_feature : `int`, optional
+            The number of input features. Default is 12.
+
+        Returns
+        -------
+        model : `keras.Model`
+            The constructed Unet model.
+    """
 
     c1 = Conv2D(128, (3, 3), activation='softplus', padding='same', name='Block1_Conv1') (inputs)    # 56, 120
     c1 = Conv2D(256, (3, 3), activation='softplus', padding='same', name='Block1_Conv2') (c1)   # 56, 120

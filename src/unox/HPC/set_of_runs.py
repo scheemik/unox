@@ -54,22 +54,21 @@ def create_run_sub_dir(
 ):
     """ Create a subdirectory given the set of parameters.
 
-    Make a subdirectory fora run in a set of runs specified by the jobname and
-    create the appropriate configuration file for that run. 
+        Make a subdirectory for a run in a set of runs specified by the jobname and create the appropriate configuration file for that run.
 
-    Parameters
-    ----------
-    savedir : str
-        The base directory in which to create the subdirectory.
-    jobname : str
-        The name of the job / set of runs.
-    x_vars : list
-        The list of x variables to consider for this run
-    run_type : str
-        The type of set of runs to do.
-        Example: 'zfi_set' for a set of runs to test Zeroed Feature Importance.
-    config_dict : dict
-        The configuration dictionary to modify for this run.
+        Parameters
+        ----------
+        savedir : `str`
+            The base directory in which to create the subdirectory.
+        jobname : `str`
+            The name of the job / set of runs.
+        x_vars : `list`
+            The list of x variables to consider for this run
+        run_type : `str`
+            The type of set of runs to do.
+            Example: 'zfi_set' for a set of runs to test Zeroed Feature Importance.
+        config_dict : `dict`
+            The configuration dictionary to modify for this run.
     """
     # Assemble the subdirectory path
     if len(x_vars) > 1:
