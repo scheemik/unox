@@ -19,10 +19,13 @@ If a particular point becomes resolved, it should be deleted from this document 
             - See: https://code.mpimet.mpg.de/projects/cdo/wiki/Cdo#Documentation
 - [Documentation](#docs)
     - Installation and setup
+        - Configuring the test environment
+            - Need to show how to set up and run tests that I've made in the `tests` directory
         - Generating / copying the ERA5 files
             - Am I currently having the `input.py` functions pull from Evelyn's directory? Make sure I document where the files are that are being used by default. 
         - Generating CO input files
             - Document how to change the `**kwargs` given to the `input.py` functions to create input files for other than NOx.
+        - References to `Workflow` in a lot of the setup documentation should probably actually reference `run_model`
     - Documenting how to update the documentation
         - How did I set up the way it auto updates?
         - Links between internal pages.
@@ -51,6 +54,8 @@ If a particular point becomes resolved, it should be deleted from this document 
         - Plotting one ensemble member for maps and correlation plots
         - Plotting box and whisker plots
             - All the different variations
+    - ZFI runs
+        - Don't actually use the `zfi_vars` attribute of configuration `.json` files
 
 
 ---
