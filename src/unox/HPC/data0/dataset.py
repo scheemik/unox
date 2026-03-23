@@ -515,6 +515,8 @@ def get_epochs_logs(
     for stage in stages:
         # Format the path to the epoch log CSV file
         this_csv = f"HPC_runs/{dataset.name}/unet_stage{stage}_log.csv"
+        # Verify that this file exists
+        this_csv = verify_path(this_csv)
         # Load the CSV into a Pandas Data Frame
         this_df = pd.read_csv(this_csv, delimiter=';')
         # Set `epoch` as the index
