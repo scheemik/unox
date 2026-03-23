@@ -15,6 +15,7 @@ TLDR: Create a link to a different document by typing `{doc}`, followed by the n
     - [Monitoring ensemble jobs](#monitor_ensemble)
     - [Collecting ensemble results](#collect_results)
 - [Analyzing ensemble output](#analyze_ensemble)
+    - [Exploring an ensemble dataset](#explore_ensemble)
     - [Plotting ensemble members](#plot_ensemble_member)
     - [Box and whisker plots](#BaW_plots)
 - [Example: Assessing impact of regularizers](#regularizers)
@@ -212,3 +213,367 @@ That Python script will find all the individual `.nc` files from each ensemble m
 During that process, the prediction variable names will have their ensemble number appended to them such that you can easily distinguish the predictions of each ensemble member later.
 Finally, it deletes the now-redundant `.nc` files in each ensemble member's directory.
 This will save on the storage space required on Animus.
+
+---
+<a id='analyze_ensemble'></a>
+[back to top](#top)
+
+## Analyzing ensemble output
+
+With ensemble outputs on Animus, you can visualize and compare predictions across members to understand uncertainty and robustness.
+This section demonstrates how to use the plotting functions provided in this repository to analyze ensemble run outputs, following similar approaches as described in the {doc}`Analyzing model output <analysis>` guide.
+
+<a id='explore_ensemble'></a>
+[back to top](#top)
+
+### Exploring an ensemble dataset
+
+To see what is in an ensemble run predictions dataset, you can load it as a `uarray` object and call the `.xr` attribute.
+Below is a text representation of the output. 
+However, if the below python commands are executed in a Jupyter Notebook cell **<ins>on Animus</ins>**, the structure becomes interactive, allowing for more exploration (see {doc}`Analysis <../analysis>`).
+
+```python
+from unox.HPC.data0.dataset import uarray 
+
+my_ensemble = uarray('no2_ens_test', is_predict=True)
+my_ensemble.xr
+```
+
+```console
+<xarray.Dataset> Size: 196MB
+Dimensions:         (time: 728, lat: 56, lon: 120)
+Coordinates:
+  * time            (time) object 6kB 2019-01-02 00:00:00 ... 2020-12-31 00:0...
+  * lat             (lat) float32 224B 11.78 12.9 14.02 ... 71.21 72.34 73.46
+  * lon             (lon) float32 480B -174.4 -173.2 -172.1 ... -41.62 -40.5
+Data variables:
+    nox_pred_01     (time, lat, lon) float32 20MB ...
+    nox_pred_s2_01  (time, lat, lon) float32 20MB ...
+    nox_pred_02     (time, lat, lon) float32 20MB ...
+    nox_pred_s2_02  (time, lat, lon) float32 20MB ...
+    nox_pred_03     (time, lat, lon) float32 20MB ...
+    nox_pred_s2_03  (time, lat, lon) float32 20MB ...
+    nox_pred_04     (time, lat, lon) float32 20MB ...
+    nox_pred_s2_04  (time, lat, lon) float32 20MB ...
+    nox_pred_05     (time, lat, lon) float32 20MB ...
+    nox_pred_s2_05  (time, lat, lon) float32 20MB ...
+Attributes: (12/19)
+    description:        Predicted Surface NOx emissions using a U-net model
+    modification_date:  2026-03-09 15:21:02
+    y_var:              nox
+    input_set:          no2_2005-2020
+    config_path:        HPC_runs/no2_ens_test/01_no2_ens_test/input_config.json
+    config_dict:        {'input_set': 'no2_2005-2020', 'x_vars': ['no2', 'no2...
+    ...                 ...
+    data_dir:           /data/high_res
+    chemra_path:        emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_...
+    insitu_path:        US_EPA/NO2/daily_NO2/daily_42602_
+    era5_path:          ERA5concatenated
+    stages:             [1 2]
+    ensemble_size:      5
+```
+
+This is similar to a `predictions.nc` file that was not an ensemble run.
+The difference is that, with an ensemble, there is a separate data variable for each output (stage 1 and/or 2) for each ensemble member.
+Each data variable has it's ensemble member ID appended to its name.
+For example, the predicted NOx for stage 2 for ensemble member 1 has the name `nox_pred_s2_01`.
+
+<a id='plot_ensemble_member'></a>
+[back to top](#top)
+
+### Plotting ensemble members
+
+Most plotting functions will accept the argument `ens_mem` to specify which ensemble member to plot.
+This allows you to make plots for each individual ensemble member in the same way as non-ensemble runs, no need to append the ensemble member ID to the name of the variable to plot.
+
+```python
+from unox.plotting import plot_var_maps 
+
+this_plt = plot_var_maps(
+    'no2_ens_test',
+    ens_mem=1,
+    is_predict=True,
+    vars=['nox_pred', 'nox_pred_s2'],
+    start_date='2019-01-01',
+    interval='1Y',
+)
+```
+
+The ensemble member ID will be automatically added to the title.
+
+Similarly, the results of a model run can be quickly visualized using the `plot_run_analysis()` function for a particular ensemble member.
+
+```python
+from unox.plotting import plot_run_analysis
+
+this_plt = plot_run_analysis(
+    'no2_ens_test',
+    ens_mem=1,
+    start_date='2019-01-01',
+)
+```
+
+---
+
+<a id='BaW_plots'></a>
+[back to top](#top)
+
+### Box and whisker plots
+
+The major benefit of running an ensemble is to be able to view the statistical spread in performance among the members.
+Box and whisker plots provide a compact way to visualize these distributions.
+
+```python
+from unox.plotting import plot_BaW 
+
+this_plot = plot_BaW(
+    ['R2', 'RMSE'],
+    'no2_example_ens_run',
+    ds_kwargs=[
+        {
+            'is_predict': True,
+            'start_date': '2019-01-02',
+            'interval': '1Y',
+        },
+    ]
+)
+```
+
+This shows the spread in $R^2$ and root mean squared error (RMSE) for the ensemble run.
+Note that the box and whisker function will create a plot regardless of how many ensemble members there are.
+Use caution when analyzing box and whisker plots for ensembles with 3 or fewer members. 
+
+Box and whisker plots can also be used to visualize the spread in any variable, whether from prediction datasets or input files.
+
+```python
+from unox.plotting import plot_BaW 
+
+this_plot = plot_BaW(
+    ['nox_pred', 'nox_pred_s2'],
+    'no2_example_run',
+    ds_kwargs=[
+        {
+            'is_predict': True,
+            'start_date': '2019-01-02',
+            'interval': '1Y',
+        },
+    ],
+)
+```
+
+```python
+from unox.plotting import plot_BaW 
+
+this_plot = plot_BaW(
+    ['nox', 'u10'],
+    'no2_2019_JFM',
+    ds_kwargs=[
+        {
+            'is_input_set': True,
+            'start_date': '2019-01-02',
+            'interval': '1Y',
+        },
+    ],
+)
+```
+
+---
+<a id='regularizers'></a>
+[back to top](#top)
+
+## Example: Assessing impact of regularizers
+
+Ensemble runs are particularly useful for assessing the impact of specific model components or hyperparameters on prediction robustness and uncertainty.
+In this section, we demonstrate how to use ensemble runs to systematically evaluate the effect on model performance of using a regularizer.
+
+<a id='what_is_regularizer'></a>
+[back to top](#top)
+
+### What is a regularizer?
+
+Regularizers are techniques used during neural network training to prevent overfitting and improve generalization.
+A common regularization method is called **L1/L2 regularization**, which involves adding penalty terms to the loss function based on weight magnitudes. 
+This can help prevent erroneous values in the predictions, especially in regions where values close to zero are expected.
+
+In the [Keras documentation of regularizers](https://keras.io/api/layers/regularizers/), they mention that three different types of regularizers are available for use:
+> - `kernel_regularizer`: Regularizer to apply a penalty on the layer's kernel.
+> - `bias_regularizer`: Regularizer to apply a penalty on the layer's bias.
+> - `activity_regularizer`: Regularizer to apply a penalty on the layer's output.
+
+As the goal is to prevent the output of the model to have erroneous non-zero values, I decided to use the activity regularizer.
+I applied this to all every `Conv2D`, `Conv2DTranspose`, and `LSTM` layer in the Unet, as can be seen in the `src/unox/HPC/model/core.py` file. 
+I have implemented 4 different options for a regularizer to use:
+1. `L1`
+2. `L2`
+3. `L1L2`
+4. `None`
+
+By running multiple ensemble members with and without specific regularizers, you can quantitatively assess:
+- Whether a regularizer reduces ensemble uncertainty.
+- If the regularizer improves spatial consistency of predictions.
+- How the regularizer affects prediction accuracy at different locations.
+
+<a id='config_reg_ens'></a>
+[back to top](#top)
+
+### Configuring regularizer ensemble runs
+
+To compare the impact of regularizers, we can create multiple input configuration files that differ only in regularization settings.
+For example:
+
+**Configuration 0: Without a regularizer** (`config_ens_reg0.json`):
+```json
+{
+    "input_set": "no2_2005-2020",
+    "x_vars": [
+        "no2",
+        "no2_tm1",
+        "u10",
+        "v10",
+        "blh",
+        "sp",
+        "skt",
+        "t2m",
+        "ssrd"
+    ],
+    "zfi_vars": [
+    ],
+    "lsm_vars": [
+    ],
+    "stage_2": true,
+    "stage_2_cutoff": 2013,
+    "n_epochs": 100,
+    "split_year": 2019,
+    "split_value": 0.9,
+    "grid_size": [56, 120],
+    "act_reg": "None",
+    "act_reg_factor": 1
+}
+```
+
+**Configuration 1: With L1 regularizer and a factor of $1\times10^{-5}$** (`config_ens_reg1.json`):
+```json
+{
+    "input_set": "no2_2005-2020",
+    "x_vars": [
+        "no2",
+        "no2_tm1",
+        "u10",
+        "v10",
+        "blh",
+        "sp",
+        "skt",
+        "t2m",
+        "ssrd"
+    ],
+    "zfi_vars": [
+    ],
+    "lsm_vars": [
+    ],
+    "stage_2": true,
+    "stage_2_cutoff": 2013,
+    "n_epochs": 100,
+    "split_year": 2019,
+    "split_value": 0.9,
+    "grid_size": [56, 120],
+    "act_reg": "L1",
+    "act_reg_factor": 1e-05
+}
+```
+
+With both of these configuration files **<ins>on HPC</ins>** in `inputfiles/_input_configs/`, you can submit two separate ensemble runs:
+
+```console
+username@HPC: unox$ bash HPC_job_submit.sh -j ens_reg0 -i config_ens_reg0 -e 5
+
+username@HPC: unox$ bash HPC_job_submit.sh -j ens_reg1 -i config_ens_reg1 -e 5
+```
+
+For this example, I submitted 5 more ensemble runs, each with 5 members, using regularizer factors each order of magnitude from $1\times10^{-6}$ to $1\times10^{-10}$.
+
+<a id='plot_reg_impact'></a>
+[back to top](#top)
+
+### Plotting regularizer impact
+
+Once all ensemble runs are complete and transferred to Animus, you can compare predictions **<ins>on Animus</ins>**. 
+First, we can take a look at the results for particular ensemble members in select ensemble runs.
+
+```python
+from unox.plotting import plot_run_analysis
+
+var_plots = plot_run_analysis(
+    'ens_reg0',
+    ens_mem=1,
+)
+```
+
+Above, we can see that running with no regularizer results in artifacts in the predictions, notably non-zero values around the edges of the domain and over the ocean. 
+
+```python
+from unox.plotting import plot_run_analysis
+
+var_plots = plot_run_analysis(
+    'ens_reg0',
+    ens_mem=1,
+)
+```
+
+In the above example, we can see that the regularizer factor was set too high and resulted in all the predictions being far too small across the entire domain.
+
+```python
+from unox.plotting import plot_run_analysis
+
+var_plots = plot_run_analysis(
+    'ens_reg4',
+    ens_mem=1,
+)
+```
+
+Here, we can see in the plot above that, with a regularizer factor of $1\times10^{-8}$, the model does a much better job at predicting the output.
+
+To see the statistical spread of all these ensembles at once, we can make a box and whisker plot.
+Below, I have used the `label_with` attribute to specify that I want the labels of each ensemble run to be the activity regularizer used (`act_reg`) and the regularizer factor used in the activity regularizer (`act_reg_factor`).
+
+```python
+from unox.plotting import plot_BaW 
+
+this_plot = plot_BaW(
+    ['R2', 'RMSE'],
+    ['ens_reg0', 'ens_reg1', 'ens_reg2', 'ens_reg3', 'ens_reg4', 'ens_reg5', 'ens_reg6'],
+    ds_kwargs=[
+        {
+            'is_predict': True,
+            'start_date': '2019-01-02',
+            'interval': '1Y',
+        },
+    ],
+    label_with=['act_reg', 'act_reg_factor']
+)
+```
+
+Here, we can see that using a factor of $1\times10^{-8}$ improves the model the most out of the factors used across the ensemble runs.
+
+We can also make the same plot, but restrict the latitude and longitude extent to be just over the continental United States.
+
+```python
+from unox.plotting import plot_BaW 
+
+this_plot = plot_BaW(
+    ['R2', 'RMSE'],
+    ['ens_reg0', 'ens_reg1', 'ens_reg2', 'ens_reg3', 'ens_reg4', 'ens_reg5', 'ens_reg6'],
+    ds_kwargs=[
+        {
+            'is_predict': True,
+            'start_date': '2019-01-02',
+            'interval': '1Y',
+        },
+    ],
+    label_with=['act_reg', 'act_reg_factor']
+)
+```
+
+I have found similar results for using the `L2` function in the regularizer.
+
+---
+
