@@ -209,12 +209,12 @@ My environment was using `v0.1.7`, which was released on 2024-04-15.
 The other environments were using `v0.2.1`, which was released on 2025-10-23.
 I created my environment between those two dates, so it installed `v0.1.7`, the most up-to-date release at the time. 
 
-I made a post  about this on the `matplotlib-inline` GitHub, copy that and link it here.
+I made a post  about this on the `matplotlib-inline` GitHub, [GitHub - Matplotlib-Inline Issue #60: AttributeError: module 'matplotlib' has no attribute '__version_info__'](https://github.com/ipython/matplotlib-inline/issues/60).
 
 I encountered this error in the Analysis Notebook when it gets pushed to the Read the Docs site.
 I don't see the error when running the notebook on Animus. 
 It happens the first time `matplotlib` is imported. 
-Harshil also encountered the same error when he tried creating the input files as the `input` module imported `matplotlib`. 
+Harshil also encountered the same error when he tried creating the input files as the `input` module imported `matplotlib.pyplot`. 
 I've since removed the import of `matplotlib` from the `input` module because it is not needed, but it is still an issue.
 
 ## Disk quota exceeded
