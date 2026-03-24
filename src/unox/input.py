@@ -63,6 +63,7 @@ input_vars_dict = {
     }
 }
 
+@unox.time_this
 def make_input_file(
     name,
     target_var='no2',
@@ -218,10 +219,9 @@ def make_input_file(
             ds_dictionary[key] = xr.open_mfdataset(files)
         # Rename the ERA5 latitude and longitude coordinates
         if 'ERA5' in files[0]:
-            # Drop the `number` coordinate
-            ds_dictionary[key] = ds_dictionary[key].drop_vars('number')
-            # Rename coordinates to match the other datasets
-            ds_dictionary[key] = ds_dictionary[key].rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
+            ds_dictionary[key] = process_ERA5_met(
+                ds_dictionary[key],
+            )
         # Interpolate to latitude and longitude grid, resample to daily mean, and fill NaNs
         ds_dictionary[key] = ds_dictionary[key].interp(lat=lats, lon=lons).resample(time='d').mean().fillna(nan_fill)
         # Save the attributes from that dataset
@@ -358,6 +358,31 @@ def process_TROPESS_chemra(
     # Concatenate the chemical reanalysis datasets for each year together
     ds_chemra = xr.concat(these_ds_chemra, dim='time')
     return ds_chemra
+
+@unox.time_this
+def process_ERA5_met(
+    ds_met,
+):
+    """ Process ERA5 meteorological data for input file creation.
+
+        Rename the latitude and longitude coordinates to match the other datasets and drop the `number` coordinate.
+
+        Parameters
+        ----------
+        ds_met : `xarray.Dataset`
+            The ERA5 meteorological dataset to be processed.
+        
+        Returns
+        -------
+        ds_met : `xarray.Dataset`
+            The processed ERA5 meteorological dataset with renamed coordinates and dropped `number` coordinate.
+    """
+    # Rename the ERA5 latitude and longitude coordinates
+    ds_met = ds_met.rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
+    # Drop the `number` coordinate
+    ds_met = ds_met.drop_vars('number')
+    return ds_met
+
 def add_tm1_var(
     xr_dataset,
     var,
@@ -378,8 +403,8 @@ def add_tm1_var(
 
         Returns
         -------
-        `xarray.Dataset`
-            The dataset with the shifted variable.
+        xr_dataset : `xarray.Dataset`
+            The dataset with the shifted variable added.
     """
     # Verify argument types
     if not isinstance(xr_dataset, xr.Dataset):
