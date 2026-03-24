@@ -373,6 +373,148 @@ def add_tm1_var(
         xr_dataset = set_var_attrs(xr_dataset, var_s2_tm1, var_s2_attrs)
     return xr_dataset
 
+def write_input_netcdf(
+    ds_input,
+    name,
+    g_attr_dict=None,
+    overwrite_file=True,
+    overwrite_data=True,
+    sort=True,
+    **kwargs,
+):
+    """ Write an xarray Dataset to a netcdf file, appending or overwriting as needed.
+
+        Parameters
+        ----------
+        ds_input : `xarray.Dataset`
+            The dataset to write to the netcdf file.
+        output_filepath : `str`
+            Path to the output netcdf file.
+        g_attr_dict : `dict`, optional
+            Dictionary of global attributes to add to the dataset if creating a new file.
+        overwrite_file : `bool`, optional
+            Whether to overwrite the existing netcdf file if it exists.
+            Default is True.
+        overwrite_data : `bool`, optional
+            Whether to overwrite existing data in the netcdf file if there are overlapping times.
+            Default is True.
+        sort : `bool`, optional
+            Whether to sort the xarray before writing to netcdf. Sorting takes a long time.
+            Default is True.
+
+        Returns
+        -------
+        ds_input : `xarray.Dataset`
+            The dataset that was written to the netcdf file.
+    """
+    output_filepath = f"inputfiles/{name}/{name}.nc"
+    # Check whether the netcdf file already exists
+    if os.path.exists(output_filepath) and overwrite_file==False:
+        # Load the existing netcdf file
+        existing_ds = xr.load_dataset(output_filepath)
+        # Verify the dataset
+        try:
+            existing_ds = verify_dataset(existing_ds)
+            skip_existing = False
+        except:
+            print(f"Existing netcdf file at {output_filepath} is not a valid xarray Dataset. Overwriting with new dataset.")
+            skip_existing = True
+        if skip_existing == False:
+            # Check if the existing dataset and the new one have the same lat/lon values
+            existing_lats = existing_ds.coords['lat'].values
+            existing_lons = existing_ds.coords['lon'].values
+            new_lats = ds_input.coords['lat'].values
+            new_lons = ds_input.coords['lon'].values
+            if not np.array_equal(existing_lats, new_lats):
+                raise ValueError(f"(write_input_netcdf) Latitude values of the existing netcdf file and the new data do not match. \nExisting lats: \n{existing_lats} \nNew lats: \n{new_lats}")
+            if not np.array_equal(existing_lons, new_lons):
+                raise ValueError(f"(write_input_netcdf) Longitude values of the existing netcdf file and the new data do not match. \nExisting lons: \n{existing_lons} \nNew lons: \n{new_lons}")
+            # Get lists of variables from both datasets
+            new_vars = list(ds_input.data_vars)
+            existing_vars = list(existing_ds.data_vars)
+            # Find the variables in common, if any
+            shared_vars = set(new_vars) & set(existing_vars)
+            if len(shared_vars) > 0:
+                # Check whether any time values are already present in the existing dataset
+                existing_times = set(existing_ds.coords['time'].values)
+                new_times = set(ds_input.coords['time'].values)
+                overlapping_times = existing_times.intersection(new_times)
+                if len(overlapping_times) > 1:
+                    # Get the first and last overlapping times
+                    first_overlap = min(overlapping_times)
+                    last_overlap = max(overlapping_times)
+                    # Format them to YYYY-MM-DD
+                    first_overlap = pd.to_datetime(str(first_overlap)).strftime('%Y-%m-%d')
+                    last_overlap = pd.to_datetime(str(last_overlap)).strftime('%Y-%m-%d')
+                if overlapping_times and overwrite_data==False:
+                    raise ValueError(f"(write_input_netcdf) The new data overlaps with the existing file in {output_filepath} between {first_overlap} and {last_overlap}. To overwrite, set overwrite_data=True.")
+                elif overlapping_times and overwrite_data==True:
+                    print(f"Overwriting overlapping data in {output_filepath} for times between {first_overlap} and {last_overlap}.")
+                    # Remove the overlapping times from the existing dataset
+                    existing_ds = existing_ds.drop_sel(time=list(overlapping_times))
+                # Concatenate the new data with the existing dataset along the time dimension
+                ds_input = xr.concat([existing_ds, ds_input], dim='time')
+            else:
+                # Merge the datasets
+                ds_input = xr.merge([existing_ds, ds_input])
+            # Sort the dataset by time
+            if sort:
+                print("Sorting the dataset by time.")
+                ds_input = ds_input.sortby('time')
+    # Add a description
+    ds_input.attrs['description'] = f"Input data for the Unet model."
+    # Make sure the output directory exists
+    make_file_path(output_filepath)
+    # Save the netcdf file
+    ds_input.to_netcdf(output_filepath)
+    return ds_input
+
+def set_global_attrs(
+    xr_dataset,
+    attr_dict,
+):
+    """ Add attributes to an xarray Dataset.
+
+        Parameters
+        ----------
+        xr_dataset : `xarray.Dataset`
+            The dataset to which attributes will be added.
+        attr_dict : `dict`
+            Dictionary of attributes to add to the dataset.
+
+        Returns
+        -------
+        `xarray.Dataset`
+            The dataset with added attributes.
+    """
+    # Verify the dataset
+    xr_dataset = verify_dataset(xr_dataset)
+    # Verify the attribute dictionary
+    if not isinstance(attr_dict, dict):
+        raise TypeError(f"(set_global_attrs) `attr_dict` must be a dictionary. Got type: {type(attr_dict)}")
+    # Add each attribute to the dataset
+    xr_dataset = xr_dataset.assign_attrs(attr_dict)
+    # Certain data types cannot be saved in netcdf files
+    # Convert the data types and save extra attributes to note the original types
+    for key, value in attr_dict.items():
+        # Convert boolean types to integer
+        if isinstance(value, bool):
+            value = int(value)
+            xr_dataset.attrs[f'{key}_original_type'] = 'bool'
+        elif isinstance(value, type({})):
+            value = str(value)
+            xr_dataset.attrs[f'{key}_original_type'] = 'dict'
+        elif isinstance(value, type(None)):
+            value = 'None'
+            xr_dataset.attrs[f'{key}_original_type'] = 'NoneType'
+        elif isinstance(value, (np.datetime64, pd.Timestamp)):
+            value = str(value)
+            xr_dataset.attrs[f'{key}_original_type'] = 'datetime'
+        xr_dataset.attrs[key] = value
+    # Update the modification date
+    xr_dataset.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+    return xr_dataset
+
 ###############################################################
 # Can I delete what is below? Have all the functions been replaced by the above?
 
@@ -580,148 +722,6 @@ def make_y_input_file(
                 print(f"Saved y input data to {output_filepath}")
                 return xr.load_dataset(output_filepath), g_attr_dict
     return input_netcdf_xr, g_attr_dict
-
-def write_input_netcdf(
-    ds_input,
-    name,
-    g_attr_dict=None,
-    overwrite_file=True,
-    overwrite_data=True,
-    sort=True,
-    **kwargs,
-):
-    """ Write an xarray Dataset to a netcdf file, appending or overwriting as needed.
-
-        Parameters
-        ----------
-        ds_input : `xarray.Dataset`
-            The dataset to write to the netcdf file.
-        output_filepath : `str`
-            Path to the output netcdf file.
-        g_attr_dict : `dict`, optional
-            Dictionary of global attributes to add to the dataset if creating a new file.
-        overwrite_file : `bool`, optional
-            Whether to overwrite the existing netcdf file if it exists.
-            Default is True.
-        overwrite_data : `bool`, optional
-            Whether to overwrite existing data in the netcdf file if there are overlapping times.
-            Default is True.
-        sort : `bool`, optional
-            Whether to sort the xarray before writing to netcdf. Sorting takes a long time.
-            Default is True.
-
-        Returns
-        -------
-        ds_input : `xarray.Dataset`
-            The dataset that was written to the netcdf file.
-    """
-    output_filepath = f"inputfiles/{name}/{name}.nc"
-    # Check whether the netcdf file already exists
-    if os.path.exists(output_filepath) and overwrite_file==False:
-        # Load the existing netcdf file
-        existing_ds = xr.load_dataset(output_filepath)
-        # Verify the dataset
-        try:
-            existing_ds = verify_dataset(existing_ds)
-            skip_existing = False
-        except:
-            print(f"Existing netcdf file at {output_filepath} is not a valid xarray Dataset. Overwriting with new dataset.")
-            skip_existing = True
-        if skip_existing == False:
-            # Check if the existing dataset and the new one have the same lat/lon values
-            existing_lats = existing_ds.coords['lat'].values
-            existing_lons = existing_ds.coords['lon'].values
-            new_lats = ds_input.coords['lat'].values
-            new_lons = ds_input.coords['lon'].values
-            if not np.array_equal(existing_lats, new_lats):
-                raise ValueError(f"(write_input_netcdf) Latitude values of the existing netcdf file and the new data do not match. \nExisting lats: \n{existing_lats} \nNew lats: \n{new_lats}")
-            if not np.array_equal(existing_lons, new_lons):
-                raise ValueError(f"(write_input_netcdf) Longitude values of the existing netcdf file and the new data do not match. \nExisting lons: \n{existing_lons} \nNew lons: \n{new_lons}")
-            # Get lists of variables from both datasets
-            new_vars = list(ds_input.data_vars)
-            existing_vars = list(existing_ds.data_vars)
-            # Find the variables in common, if any
-            shared_vars = set(new_vars) & set(existing_vars)
-            if len(shared_vars) > 0:
-                # Check whether any time values are already present in the existing dataset
-                existing_times = set(existing_ds.coords['time'].values)
-                new_times = set(ds_input.coords['time'].values)
-                overlapping_times = existing_times.intersection(new_times)
-                if len(overlapping_times) > 1:
-                    # Get the first and last overlapping times
-                    first_overlap = min(overlapping_times)
-                    last_overlap = max(overlapping_times)
-                    # Format them to YYYY-MM-DD
-                    first_overlap = pd.to_datetime(str(first_overlap)).strftime('%Y-%m-%d')
-                    last_overlap = pd.to_datetime(str(last_overlap)).strftime('%Y-%m-%d')
-                if overlapping_times and overwrite_data==False:
-                    raise ValueError(f"(write_input_netcdf) The new data overlaps with the existing file in {output_filepath} between {first_overlap} and {last_overlap}. To overwrite, set overwrite_data=True.")
-                elif overlapping_times and overwrite_data==True:
-                    print(f"Overwriting overlapping data in {output_filepath} for times between {first_overlap} and {last_overlap}.")
-                    # Remove the overlapping times from the existing dataset
-                    existing_ds = existing_ds.drop_sel(time=list(overlapping_times))
-                # Concatenate the new data with the existing dataset along the time dimension
-                ds_input = xr.concat([existing_ds, ds_input], dim='time')
-            else:
-                # Merge the datasets
-                ds_input = xr.merge([existing_ds, ds_input])
-            # Sort the dataset by time
-            if sort:
-                print("Sorting the dataset by time.")
-                ds_input = ds_input.sortby('time')
-    # Add a description
-    ds_input.attrs['description'] = f"Input data for the Unet model."
-    # Make sure the output directory exists
-    make_file_path(output_filepath)
-    # Save the netcdf file
-    ds_input.to_netcdf(output_filepath)
-    return ds_input
-
-def set_global_attrs(
-    xr_dataset,
-    attr_dict,
-):
-    """ Add attributes to an xarray Dataset.
-
-        Parameters
-        ----------
-        xr_dataset : `xarray.Dataset`
-            The dataset to which attributes will be added.
-        attr_dict : `dict`
-            Dictionary of attributes to add to the dataset.
-
-        Returns
-        -------
-        `xarray.Dataset`
-            The dataset with added attributes.
-    """
-    # Verify the dataset
-    xr_dataset = verify_dataset(xr_dataset)
-    # Verify the attribute dictionary
-    if not isinstance(attr_dict, dict):
-        raise TypeError(f"(set_global_attrs) `attr_dict` must be a dictionary. Got type: {type(attr_dict)}")
-    # Add each attribute to the dataset
-    xr_dataset = xr_dataset.assign_attrs(attr_dict)
-    # Certain data types cannot be saved in netcdf files
-    # Convert the data types and save extra attributes to note the original types
-    for key, value in attr_dict.items():
-        # Convert boolean types to integer
-        if isinstance(value, bool):
-            value = int(value)
-            xr_dataset.attrs[f'{key}_original_type'] = 'bool'
-        elif isinstance(value, type({})):
-            value = str(value)
-            xr_dataset.attrs[f'{key}_original_type'] = 'dict'
-        elif isinstance(value, type(None)):
-            value = 'None'
-            xr_dataset.attrs[f'{key}_original_type'] = 'NoneType'
-        elif isinstance(value, (np.datetime64, pd.Timestamp)):
-            value = str(value)
-            xr_dataset.attrs[f'{key}_original_type'] = 'datetime'
-        xr_dataset.attrs[key] = value
-    # Update the modification date
-    xr_dataset.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
-    return xr_dataset
 
 def set_var_attrs(
     xr_dataset,
