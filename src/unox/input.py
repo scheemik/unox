@@ -15,21 +15,266 @@ from unox.plot_format import pad_extent
 
 # emiss = Emissions (TCR-2 t106)
 # chemra = Chemical Reanalysis (TROPESS TCR-2)
-# insitu = Insitu data (EPA)
+# insitu = Insitu data (USA EPA)
 # era5 = ERA5 reanalysis data
 
 # Define a dictionary of the variables to be used for each model variable
 era5_vars_list = ['u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd', 'lsm']
 input_vars_dict = {
     'no2': {
+        'y_var': 'nox',
+        'chemra_var': 'no2',
         'x_vars': ['no2', 'no2_tm1'] + era5_vars_list,
-        'y_vars': ['nox'],
+        'data_sources': {
+            'emissions_directory': '/data/high_res/emacdonald/unet/datafiles/t106',
+            'emissions_file_prefix': 'nox_',
+            'emissions_file_postfix': '_t106_US.nc',
+            'chemra_directory': '/data/high_res/emacdonald/unet/datafiles/TROPESS',
+            'chemra_file_prefix': 'TROPESS_reanalysis_2hr_no2_sfc_',
+            'chemra_file_postfix': '.nc',
+            'insitu_directory': '/data/high_res/US_EPA/NO2/daily_NO2',
+            'insitu_file_prefix': 'daily_42602_',
+            'insitu_file_postfix': '.csv',
+            'era5_directory': '/data/high_res/ERA5concatenated',
+            'era5_file_prefix': '',
+            'era5_file_postfix': '.nc',
+        },
     },
     'co': {
+        'y_var': 'EmisCO_Total',
+        'chemra_var': 'SpeciesConcVV_CO',
         'x_vars': ['SpeciesConcVV_CO', 'SpeciesConcVV_CO_tm1'] + era5_vars_list,
-        'y_vars': ['EmisCO_Total'],
+        'data_sources': {
+            'emissions_directory': '',
+            'emissions_file_prefix': '',
+            'emissions_file_postfix': '',
+            'chemra_directory': '',
+            'chemra_file_prefix': '',
+            'chemra_file_postfix': '',
+            'insitu_directory': '/data/high_res/US_EPA/CO/daily_CO',
+            'insitu_file_prefix': 'daily_42101_',
+            'insitu_file_postfix': '.csv',
+            'era5_directory': '/data/high_res/ERA5concatenated',
+            'era5_file_prefix': '',
+            'era5_file_postfix': '.nc',
+        },
     }
 }
+
+def make_input_file(
+    filename,
+    target_var='no2',
+    start_date='2005-01-01',
+    end_date='2020-12-31',
+    stage_2=True,
+    stage_2_cutoff=2013,
+    nan_fill=0,
+    overwrite=True,
+):
+    """ Make an input file for the Unet model.
+
+        Create a netCDF input file with corresponding metadata `.json` for the Unet model with the specified name and date range.
+        The input file will use the parameters specified in the `input_vars_dict` for the target variable.
+
+        Parameters
+        ----------
+        filename : `str`
+            The name of the input file to be created (without file extension).
+        target_var : `str`, optional
+            The target variable for which to create the input file. 
+            Must be a key in `input_vars_dict`.
+            Default is 'no2'.
+        start_date :  `str`, `np.datetime64`, `None`, optional
+            First date and time to include in the input file.
+            Default is `2005-01-01`.
+        end_date : `str`, `np.datetime64`, `None`, optional
+            Last date and time to include in the input file.
+            Default is `2020-12-31`.
+        stage_2 : `bool`, optional
+            Whether or not to make stage 2 in addition to stage 1 for the input.
+            Default is True.
+        stage_2_cutoff : `int`, optional
+            Year after which input files will also be generated for stage 2. 
+            Default is 2013.
+        nan_fill : `float`, optional
+            Value to fill NaNs in the dataset. 
+            Default is `0`.
+        overwrite : `bool`, optional
+            Whether to overwrite existing files with the same name. 
+            Default is `True`.
+    """
+    # Verify argument types
+    if not isinstance(filename, str):
+        raise TypeError(f"(make_input_file) `filename` must be a string. Got type: {type(filename)}")
+    if not isinstance(target_var, str):
+        raise TypeError(f"(make_input_file) `target_var` must be a string. Got type: {type(target_var)}")
+    if not isinstance(start_date, (np.datetime64, type(None))):
+        try:
+            start_date = np.datetime64(start_date)
+        except:
+            raise TypeError(f"(make_input_file) `start_date` must be a string, `np.datetime64`, or `None`. Got type: {type(start_date)}")
+    if not isinstance(end_date, (np.datetime64, type(None))):
+        try:
+            end_date = np.datetime64(end_date)
+        except:
+            raise TypeError(f"(make_input_file) `end_date` must be a string, `np.datetime64`, or `None`. Got type: {type(end_date)}")
+    if not isinstance(stage_2, bool):
+        raise TypeError(f"(make_input_file) `stage_2` must be a boolean. Got type: {type(stage_2)}")
+    if not isinstance(stage_2_cutoff, int):
+        raise TypeError(f"(make_input_file) `stage_2_cutoff` must be an integer. Got type: {type(stage_2_cutoff)}")
+    if not isinstance(nan_fill, (int, float)):
+        raise TypeError(f"(make_input_file) `nan_fill` must be a number. Got type: {type(nan_fill)}")
+    if not isinstance(overwrite, bool):
+        raise TypeError(f"(make_input_file) `overwrite` must be a boolean. Got type: {type(overwrite)}")
+    
+    # Verify that the target variable is in the `input_vars_dict`
+    input_vars = input_vars_dict.keys()
+    if target_var not in input_vars:
+        raise ValueError(f"(make_input_file) `target_var` must be one of the following: {input_vars}. Got: {target_var}")
+    # Get the parameters for the target variable
+    y_var = input_vars_dict[target_var]['y_var']
+    chemra_var = input_vars_dict[target_var]['chemra_var']
+    x_vars = input_vars_dict[target_var]['x_vars']
+    data_sources = input_vars_dict[target_var]['data_sources']
+
+    # Using the start and end dates, make a list of years for which to find data files
+    if isinstance(start_date, type(None)):
+        start_date = np.datetime64('2005-01-01')
+    if isinstance(end_date, type(None)):
+        end_date = np.datetime64('2020-12-31')
+    ## Note: The year from a `np.datetime64` will be the years since 1970
+    start_year = start_date.astype('datetime64[Y]').astype(int) + 1970
+    end_year = end_date.astype('datetime64[Y]').astype(int) + 1970
+    years = list(range(start_year, end_year + 1))
+
+    # Loading the latitude and longitude values ahead of time is necessary to make the processing of the chemical reanalysis dataset take significantly less time.
+    # Get latitude and longitude values
+    lats, lons = unox.load_lats_lons()
+    # Get the extent of the lats and lons
+    extent = udata.get_extent(lats=lats, lons=lons)
+    # Pad the extent
+    extent = pad_extent(extent, padding=0.1)
+
+    # Initialize lists of all the necessary files
+    emiss_files = []
+    chemra_files = []
+    insitu_files = []
+    era5_files = []
+
+    # Verify that all necessary data files exist
+    for year in years:
+        # Check for the emissions file
+        emiss_filepath = f"{data_sources['emissions_directory']}/{data_sources['emissions_file_prefix']}{year}{data_sources['emissions_file_postfix']}"
+        verify_path(emiss_filepath)
+        emiss_files.append(emiss_filepath)
+        # Check for the chemical reanalysis file
+        chemra_filepath = f"{data_sources['chemra_directory']}/{data_sources['chemra_file_prefix']}{year}{data_sources['chemra_file_postfix']}"
+        verify_path(chemra_filepath)
+        chemra_files.append(chemra_filepath)
+        # Check for the insitu file
+        insitu_filepath = f"{data_sources['insitu_directory']}/{data_sources['insitu_file_prefix']}{year}{data_sources['insitu_file_postfix']}"
+        verify_path(insitu_filepath)
+        insitu_files.append(insitu_filepath)
+        # Check for the ERA5 files
+        for era5_var in era5_vars_list:
+            era5_filepath = f"{data_sources['era5_directory']}/{data_sources['era5_file_prefix']}{year}{era5_var}{data_sources['era5_file_postfix']}"
+            verify_path(era5_filepath)
+            era5_files.append(era5_filepath)
+    
+    # Create a blank dictionary in which to store the datasets
+    ds_dictionary = {
+        'ds_emiss': emiss_files,
+        'ds_chemra': chemra_files,
+        # 'ds_insitu': insitu_files,
+        'ds_era5': era5_files,
+    }
+    # Create a blank dictionary in which to store the attributes
+    attr_dictionary = {
+        'ds_emiss': None,
+        'ds_chemra': None,
+        # 'ds_insitu': None,
+        'ds_era5': None,
+    }
+    # Load each dataset and add it to the dictionary
+    for key, files in ds_dictionary.items():
+        print(f"Loading {key}")
+        # Check whether the chemical reanalysis is from TCR-2
+        if 'TROPESS_reanalysis_2hr_no2_sfc_' in files[0]:
+            if len(files) != len(years):
+                raise ValueError(f"(make_input_file) Number of chemical reanalysis files does not match the number of years. \nNumber of files: {len(files)} \nNumber of years: {len(years)}")
+            # Make a list in which to store each year's chemra dataset
+            these_ds_chemra = []
+            for i in range(len(years)):
+                file = files[i]
+                year = years[i]
+                print(f"Processing {key} file {files}, year {year}")
+                # Load the chemical reanalysis dataset
+                this_ds_chemra = xr.open_dataset(chemra_filepath)
+                # Change longitude coordinate convention to match other data
+                # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
+                this_ds_chemra = shift_lon_arr(this_ds_chemra)
+                # Drop the `nv` dimension and the `bnds` variables
+                if 'nv' in this_ds_chemra.dims:
+                    this_ds_chemra = this_ds_chemra.isel(nv=0).drop_vars(['time_bnds', 'lon_bnds', 'lat_bnds'])
+                # For time, latitude, and longitude, drop the var+`_bnds` attributes
+                for coord in ['time', 'lat', 'lon']:
+                    if 'bounds' in this_ds_chemra[coord].attrs:
+                        this_ds_chemra[coord].attrs.pop('bounds')
+                # Trim the chemical reanalysis data to the extent of the lat/lon grid
+                this_ds_chemra = this_ds_chemra.where(
+                    (this_ds_chemra.lat >= extent[0]) &
+                    (this_ds_chemra.lat <= extent[1]) &
+                    (this_ds_chemra.lon >= extent[2]) &
+                    (this_ds_chemra.lon <= extent[3]),
+                    drop=True,
+                )
+                # Resample the time to days
+                this_ds_chemra = this_ds_chemra.resample(time='d').mean()
+                # Find the number of days in the year
+                ndays = len(this_ds_chemra.coords['time'])
+                # Save the time attributes
+                time_attrs = this_ds_chemra['time'].attrs
+                # For an unexplained reason, the year in all TCR-2 files is always 2005.
+                this_ds_chemra.coords['time'] = pd.date_range(f"{year}-01-01", periods=ndays)
+                # Reapply the time attributes
+                this_ds_chemra['time'].attrs = time_attrs
+                these_ds_chemra.append(this_ds_chemra)
+            # Add the result to the dictionary
+            ds_dictionary[key] = xr.concat(these_ds_chemra, dim='time')
+            # Add the chemical reanalysis data for the previous day (t-1)
+            if f"{chemra_var}_tm1" in x_vars:
+                ds_dictionary[key] = add_tm1_var(ds_dictionary[key], chemra_var)
+        else:
+            # Open a multi-file dataset
+            ds_dictionary[key] = xr.open_mfdataset(files)
+        # Rename the ERA5 latitude and longitude coordinates
+        if 'ERA5' in files[0]:
+            # Drop the `number` coordinate
+            ds_dictionary[key] = ds_dictionary[key].drop_vars('number')
+            # Rename coordinates to match the other datasets
+            ds_dictionary[key] = ds_dictionary[key].rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
+        # Interpolate to latitude and longitude grid, resample to daily mean, and fill NaNs
+        ds_dictionary[key] = ds_dictionary[key].interp(lat=lats, lon=lons).resample(time='d').mean().fillna(nan_fill)
+        # Save the attributes from that dataset
+        attr_dictionary[key] = ds_dictionary[key].attrs
+
+    # Merge all datasets
+    print("Merging datasets")
+    ds_input = ds_dictionary['ds_emiss']
+    for ds_type in ['chemra', 'era5']:
+        ds_input = ds_input.merge(ds_dictionary[f'ds_{ds_type}'], fill_value=nan_fill, combine_attrs='drop_conflicts')
+    
+    # Remove global attributes
+    ds_input.attrs = {}
+
+    # Add back in the attributes
+    for ds_type in ['emiss', 'chemra', 'era5']:
+        ds_input.attrs[f'attrs_{ds_type}'] = attr_dictionary[f'ds_{ds_type}']
+
+    return ds_input
+
+###############################################################
+# Can I delete what is below? Have all the functions been replaced by the above?
 
 def x_or_y_var(
     var,
@@ -428,7 +673,7 @@ def scale_xr_var(
 def add_tm1_var(
     xr_dataset,
     var,
-    year,
+    year=None,
 ):
     """ Add a (t-1) version of the given variable to the dataset.
     
