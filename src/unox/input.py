@@ -162,6 +162,7 @@ def make_input_file(
     met_files = []
 
     # Verify that all necessary data files exist
+    ## This assumes that the data has one file per year
     for year in years:
         # Check for the emissions file
         emiss_filepath = f"{data_sources['emissions_directory']}/{data_sources['emissions_file_prefix']}{year}{data_sources['emissions_file_postfix']}"
@@ -201,47 +202,17 @@ def make_input_file(
         print(f"Loading {key}")
         # Check whether the chemical reanalysis is from TCR-2
         if 'TROPESS_reanalysis_2hr_no2_sfc_' in files[0]:
-            if len(files) != len(years):
-                raise ValueError(f"(make_input_file) Number of chemical reanalysis files does not match the number of years. \nNumber of files: {len(files)} \nNumber of years: {len(years)}")
-            # Make a list in which to store each year's chemra dataset
-            these_ds_chemra = []
-            for i in range(len(years)):
-                file = files[i]
-                year = years[i]
-                print(f"Processing {key} file {files}, year {year}")
-                # Load the chemical reanalysis dataset
-                this_ds_chemra = xr.open_dataset(chemra_filepath)
-                # Change longitude coordinate convention to match other data
-                # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
-                this_ds_chemra = shift_lon_arr(this_ds_chemra)
-                # Drop the `nv` dimension and the `bnds` variables
-                if 'nv' in this_ds_chemra.dims:
-                    this_ds_chemra = this_ds_chemra.isel(nv=0).drop_vars(['time_bnds', 'lon_bnds', 'lat_bnds'])
-                # For time, latitude, and longitude, drop the var+`_bnds` attributes
-                for coord in ['time', 'lat', 'lon']:
-                    if 'bounds' in this_ds_chemra[coord].attrs:
-                        this_ds_chemra[coord].attrs.pop('bounds')
-                # Trim the chemical reanalysis data to the extent of the lat/lon grid
-                this_ds_chemra = this_ds_chemra.where(
-                    (this_ds_chemra.lat >= extent[0]) &
-                    (this_ds_chemra.lat <= extent[1]) &
-                    (this_ds_chemra.lon >= extent[2]) &
-                    (this_ds_chemra.lon <= extent[3]),
-                    drop=True,
-                )
-                # Resample the time to days
-                this_ds_chemra = this_ds_chemra.resample(time='d').mean()
-                # Find the number of days in the year
-                ndays = len(this_ds_chemra.coords['time'])
-                # Save the time attributes
-                time_attrs = this_ds_chemra['time'].attrs
-                # For an unexplained reason, the year in all TCR-2 files is always 2005.
-                this_ds_chemra.coords['time'] = pd.date_range(f"{year}-01-01", periods=ndays)
-                # Reapply the time attributes
-                this_ds_chemra['time'].attrs = time_attrs
-                these_ds_chemra.append(this_ds_chemra)
             # Add the result to the dictionary
-            ds_dictionary[key] = xr.concat(these_ds_chemra, dim='time')
+            ds_dictionary[key] = process_TROPESS_chemra(
+                key,
+                files,
+                years,
+                chemra_filepath,
+                extent,
+                lats,
+                lons,
+                nan_fill,
+            )
         else:
             # Open a multi-file dataset
             ds_dictionary[key] = xr.open_mfdataset(files)
@@ -306,6 +277,87 @@ def make_input_file(
 
     return ds_input
 
+@unox.time_this
+def process_TROPESS_chemra(
+    key,
+    files,
+    years,
+    chemra_filepath,
+    extent,
+    lats,
+    lons,
+    nan_fill,
+):
+    """ Process TROPESS chemical reanalysis files for input file creation.
+
+        For each TROPESS file, shift the longitude values to match the convention, trim the lat-lon extent, drop unnecessary variables and attributes, resample to daily mean, and concatenate all years together.
+
+        Parameters
+        ----------
+        key : `str`
+            The key in the dataset dictionary corresponding to the chemical reanalysis data (e.g. 'ds_chemra').
+        files : `list` of `str`
+            List of filepaths for the chemical reanalysis data.
+        years : `list` of `int`
+            List of years corresponding to the chemical reanalysis files.
+        chemra_filepath : `str`
+            Filepath for the chemical reanalysis data (used to load the dataset and attributes).
+        extent : `list` of `float`
+            List of latitude and longitude boundaries [lat_min, lat_max, lon_min, lon_max] for trimming the dataset.
+        lats : `np.ndarray`
+            Array of latitude values for the dataset.
+        lons : `np.ndarray`
+            Array of longitude values for the dataset.
+        nan_fill : `float`
+            Value to fill for NaNs in the dataset.
+        
+        Returns
+        -------
+        ds_chemra : `xarray.Dataset`
+            The processed chemical reanalysis dataset with shifted longitudes, trimmed extent, dropped unnecessary variables and attributes, resampled to daily mean, and concatenated across all years.
+    """
+    if len(files) != len(years):
+        raise ValueError(f"(make_input_file) Number of chemical reanalysis files does not match the number of years. \nNumber of files: {len(files)} \nNumber of years: {len(years)}")
+    # Make a list in which to store each year's chemra dataset
+    these_ds_chemra = []
+    for i in range(len(years)):
+        file = files[i]
+        year = years[i]
+        print(f"Processing {key} file {file}, year {year}")
+        # Load the chemical reanalysis dataset
+        this_ds_chemra = xr.open_dataset(chemra_filepath)
+        # Change longitude coordinate convention to match other data
+        # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
+        this_ds_chemra = shift_lon_arr(this_ds_chemra)
+        # Drop the `nv` dimension and the `bnds` variables
+        if 'nv' in this_ds_chemra.dims:
+            this_ds_chemra = this_ds_chemra.isel(nv=0).drop_vars(['time_bnds', 'lon_bnds', 'lat_bnds'])
+        # For time, latitude, and longitude, drop the var+`_bnds` attributes
+        for coord in ['time', 'lat', 'lon']:
+            if 'bounds' in this_ds_chemra[coord].attrs:
+                this_ds_chemra[coord].attrs.pop('bounds')
+        # Trim the chemical reanalysis data to the extent of the lat/lon grid
+        this_ds_chemra = this_ds_chemra.where(
+            (this_ds_chemra.lat >= extent[0]) &
+            (this_ds_chemra.lat <= extent[1]) &
+            (this_ds_chemra.lon >= extent[2]) &
+            (this_ds_chemra.lon <= extent[3]),
+            drop=True,
+        )
+        # Resample the time to days
+        this_ds_chemra = this_ds_chemra.resample(time='d').mean()
+        # Find the number of days in the year
+        ndays = len(this_ds_chemra.coords['time'])
+        # Save the time attributes
+        time_attrs = this_ds_chemra['time'].attrs
+        # For an unexplained reason, the year in all TCR-2 files is always 2005.
+        this_ds_chemra.coords['time'] = pd.date_range(f"{year}-01-01", periods=ndays)
+        # Reapply the time attributes
+        this_ds_chemra['time'].attrs = time_attrs
+        these_ds_chemra.append(this_ds_chemra)
+    # Concatenate the chemical reanalysis datasets for each year together
+    ds_chemra = xr.concat(these_ds_chemra, dim='time')
+    return ds_chemra
 def add_tm1_var(
     xr_dataset,
     var,
