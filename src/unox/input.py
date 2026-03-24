@@ -69,7 +69,7 @@ def make_input_file(
     stage_2=True,
     stage_2_cutoff=2013,
     nan_fill=0,
-    overwrite=True,
+    **kwargs,
 ):
     """ Make an input file for the Unet model.
 
@@ -99,9 +99,8 @@ def make_input_file(
         nan_fill : `float`, optional
             Value to fill NaNs in the dataset. 
             Default is `0`.
-        overwrite : `bool`, optional
-            Whether to overwrite existing files with the same name. 
-            Default is `True`.
+        **kwargs : `dict`, optional
+            Additional keyword arguments to be passed to the `write_input_netcdf` function.
     """
     # Verify argument types
     if not isinstance(name, str):
@@ -124,8 +123,6 @@ def make_input_file(
         raise TypeError(f"(make_input_file) `stage_2_cutoff` must be an integer. Got type: {type(stage_2_cutoff)}")
     if not isinstance(nan_fill, (int, float)):
         raise TypeError(f"(make_input_file) `nan_fill` must be a number. Got type: {type(nan_fill)}")
-    if not isinstance(overwrite, bool):
-        raise TypeError(f"(make_input_file) `overwrite` must be a boolean. Got type: {type(overwrite)}")
     
     # Verify that the target variable is in the `input_vars_dict`
     input_vars = input_vars_dict.keys()
@@ -267,9 +264,12 @@ def make_input_file(
     # Remove global attributes
     ds_input.attrs = {}
 
-    # Add back in the attributes
-    for ds_type in ['emiss', 'chemra', 'era5']:
-        ds_input.attrs[f'attrs_{ds_type}'] = attr_dictionary[f'ds_{ds_type}']
+    # Save out the netcdf file
+    ds_input = write_input_netcdf(
+        ds_input,
+        name,
+        **kwargs,
+    )
 
     return ds_input
 
@@ -555,7 +555,8 @@ def write_input_netcdf(
     input_netcdf_xr,
     output_filepath,
     g_attr_dict=None,
-    overwrite=True,
+    overwrite_file=True,
+    overwrite_data=True,
     sort=True,
     **kwargs,
 ):
@@ -569,7 +570,10 @@ def write_input_netcdf(
             Path to the output netcdf file.
         g_attr_dict : `dict`, optional
             Dictionary of global attributes to add to the dataset if creating a new file.
-        overwrite : `bool`, optional
+        overwrite_file : `bool`, optional
+            Whether to overwrite the existing netcdf file if it exists.
+            Default is True.
+        overwrite_data : `bool`, optional
             Whether to overwrite existing data in the netcdf file if there are overlapping times.
             Default is True.
         sort : `bool`, optional
@@ -582,7 +586,7 @@ def write_input_netcdf(
             The dataset that was written to the netcdf file.
     """
     # Check whether the netcdf file already exists
-    if os.path.exists(output_filepath):
+    if os.path.exists(output_filepath) and overwrite_file==False:
         # Load the existing netcdf file
         existing_ds = xr.load_dataset(output_filepath)
         # Verify the dataset
