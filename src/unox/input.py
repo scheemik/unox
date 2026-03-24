@@ -62,7 +62,7 @@ input_vars_dict = {
 }
 
 def make_input_file(
-    filename,
+    name,
     target_var='no2',
     start_date='2005-01-01',
     end_date='2020-12-31',
@@ -78,7 +78,7 @@ def make_input_file(
 
         Parameters
         ----------
-        filename : `str`
+        name : `str`
             The name of the input file to be created (without file extension).
         target_var : `str`, optional
             The target variable for which to create the input file. 
@@ -104,8 +104,8 @@ def make_input_file(
             Default is `True`.
     """
     # Verify argument types
-    if not isinstance(filename, str):
-        raise TypeError(f"(make_input_file) `filename` must be a string. Got type: {type(filename)}")
+    if not isinstance(name, str):
+        raise TypeError(f"(make_input_file) `name` must be a string. Got type: {type(name)}")
     if not isinstance(target_var, str):
         raise TypeError(f"(make_input_file) `target_var` must be a string. Got type: {type(target_var)}")
     if not isinstance(start_date, (np.datetime64, type(None))):
