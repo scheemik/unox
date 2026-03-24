@@ -13,10 +13,10 @@ from unox.HPC.data0.latlon import shift_lon_arr
 import unox.data as udata
 from unox.plot_format import pad_extent
 
-# emiss = Emissions (TCR-2 t106)
+# emiss  = Emissions (TCR-2 t106)
 # chemra = Chemical Reanalysis (TROPESS TCR-2)
 # insitu = Insitu data (USA EPA)
-# era5 = ERA5 reanalysis data
+# met    = Meteorological data (ERA5 reanalysis)
 
 # Define a dictionary of the variables to be used for each model variable
 era5_vars_list = ['u10', 'v10', 'blh', 'sp', 'skt', 't2m', 'ssrd', 'lsm']
@@ -24,6 +24,7 @@ input_vars_dict = {
     'no2': {
         'y_var': 'nox',
         'chemra_var': 'no2',
+        'met_vars': era5_vars_list,
         'x_vars': ['no2', 'no2_tm1'] + era5_vars_list,
         'data_sources': {
             'emissions_directory': '/data/high_res/emacdonald/unet/datafiles/t106',
@@ -35,14 +36,15 @@ input_vars_dict = {
             'insitu_directory': '/data/high_res/US_EPA/NO2/daily_NO2',
             'insitu_file_prefix': 'daily_42602_',
             'insitu_file_postfix': '.csv',
-            'era5_directory': '/data/high_res/ERA5concatenated',
-            'era5_file_prefix': '',
-            'era5_file_postfix': '.nc',
+            'met_directory': '/data/high_res/ERA5concatenated',
+            'met_file_prefix': '',
+            'met_file_postfix': '.nc',
         },
     },
     'co': {
         'y_var': 'EmisCO_Total',
         'chemra_var': 'SpeciesConcVV_CO',
+        'met_vars': era5_vars_list,
         'x_vars': ['SpeciesConcVV_CO', 'SpeciesConcVV_CO_tm1'] + era5_vars_list,
         'data_sources': {
             'emissions_directory': '',
@@ -54,9 +56,9 @@ input_vars_dict = {
             'insitu_directory': '/data/high_res/US_EPA/CO/daily_CO',
             'insitu_file_prefix': 'daily_42101_',
             'insitu_file_postfix': '.csv',
-            'era5_directory': '/data/high_res/ERA5concatenated',
-            'era5_file_prefix': '',
-            'era5_file_postfix': '.nc',
+            'met_directory': '/data/high_res/ERA5concatenated',
+            'met_file_prefix': '',
+            'met_file_postfix': '.nc',
         },
     }
 }
@@ -131,6 +133,7 @@ def make_input_file(
     # Get the parameters for the target variable
     y_var = input_vars_dict[target_var]['y_var']
     chemra_var = input_vars_dict[target_var]['chemra_var']
+    met_vars = input_vars_dict[target_var]['met_vars']
     x_vars = input_vars_dict[target_var]['x_vars']
     data_sources = input_vars_dict[target_var]['data_sources']
 
@@ -156,7 +159,7 @@ def make_input_file(
     emiss_files = []
     chemra_files = []
     insitu_files = []
-    era5_files = []
+    met_files = []
 
     # Verify that all necessary data files exist
     for year in years:
@@ -172,18 +175,18 @@ def make_input_file(
         insitu_filepath = f"{data_sources['insitu_directory']}/{data_sources['insitu_file_prefix']}{year}{data_sources['insitu_file_postfix']}"
         verify_path(insitu_filepath)
         insitu_files.append(insitu_filepath)
-        # Check for the ERA5 files
-        for era5_var in era5_vars_list:
-            era5_filepath = f"{data_sources['era5_directory']}/{data_sources['era5_file_prefix']}{year}{era5_var}{data_sources['era5_file_postfix']}"
-            verify_path(era5_filepath)
-            era5_files.append(era5_filepath)
+        # Check for the Meteorological files
+        for met_var in met_vars:
+            met_filepath = f"{data_sources['met_directory']}/{data_sources['met_file_prefix']}{year}{met_var}{data_sources['met_file_postfix']}"
+            verify_path(met_filepath)
+            met_files.append(met_filepath)
     
     # Create a blank dictionary in which to store the datasets
     ds_dictionary = {
         'ds_emiss': emiss_files,
         'ds_chemra': chemra_files,
         # 'ds_insitu': insitu_files,
-        'ds_era5': era5_files,
+        'ds_met': met_files,
     }
     # Create a blank dictionary in which to store the attributes
     # Note that these are strings rather than `None` type as `None` type is not valid in .json files
@@ -191,7 +194,7 @@ def make_input_file(
         'ds_emiss': None,
         'ds_chemra': None,
         # 'ds_insitu': None,
-        'ds_era5': None,
+        'ds_met': None,
     }
     # Load each dataset and add it to the dictionary
     for key, files in ds_dictionary.items():
@@ -256,7 +259,7 @@ def make_input_file(
     # Merge all datasets
     print("Merging datasets")
     ds_input = ds_dictionary['ds_emiss']
-    for ds_type in ['chemra', 'era5']:
+    for ds_type in ['chemra', 'met']:
         ds_input = ds_input.merge(ds_dictionary[f'ds_{ds_type}'], fill_value=nan_fill, combine_attrs='drop_conflicts')
     
     # Add the chemical reanalysis data for the previous day (t-1)
@@ -279,7 +282,7 @@ def make_input_file(
         'attrs_emiss': attr_dictionary['ds_emiss'],
         'attrs_chemra': attr_dictionary['ds_chemra'],
         # 'attrs_insitu': attr_dictionary['ds_insitu'],
-        'attrs_era5': attr_dictionary['ds_era5'],
+        'attrs_met': attr_dictionary['ds_met'],
     }
 
     # Set the global attributes
