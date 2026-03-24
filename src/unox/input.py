@@ -208,7 +208,6 @@ def make_input_file(
                 key,
                 files,
                 years,
-                chemra_filepath,
                 extent,
                 lats,
                 lons,
@@ -286,7 +285,6 @@ def process_TROPESS_chemra(
     key,
     files,
     years,
-    chemra_filepath,
     extent,
     lats,
     lons,
@@ -304,8 +302,6 @@ def process_TROPESS_chemra(
             List of filepaths for the chemical reanalysis data.
         years : `list` of `int`
             List of years corresponding to the chemical reanalysis files.
-        chemra_filepath : `str`
-            Filepath for the chemical reanalysis data (used to load the dataset and attributes).
         extent : `list` of `float`
             List of latitude and longitude boundaries [lat_min, lat_max, lon_min, lon_max] for trimming the dataset.
         lats : `np.ndarray`
@@ -329,9 +325,8 @@ def process_TROPESS_chemra(
         year = years[i]
         print(f"Processing {key} file {file}, year {year}")
         # Load the chemical reanalysis dataset
-        this_ds_chemra = xr.open_dataset(chemra_filepath)
+        this_ds_chemra = xr.open_dataset(file)
         # Change longitude coordinate convention to match other data
-        # chemra.coords['lon'] = (chemra.coords['lon'] + 180) % 360 - 180
         this_ds_chemra = shift_lon_arr(this_ds_chemra)
         # Drop the `nv` dimension and the `bnds` variables
         if 'nv' in this_ds_chemra.dims:
@@ -387,6 +382,7 @@ def process_ERA5_met(
     ds_met = ds_met.drop_vars('number')
     return ds_met
 
+@unox.time_this
 def add_tm1_var(
     xr_dataset,
     var,
@@ -457,6 +453,7 @@ def add_tm1_var(
         xr_dataset = set_var_attrs(xr_dataset, var_s2_tm1, var_s2_attrs)
     return xr_dataset
 
+@unox.time_this
 def write_input_netcdf(
     ds_input,
     name,
