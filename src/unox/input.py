@@ -239,9 +239,6 @@ def make_input_file(
                 these_ds_chemra.append(this_ds_chemra)
             # Add the result to the dictionary
             ds_dictionary[key] = xr.concat(these_ds_chemra, dim='time')
-            # Add the chemical reanalysis data for the previous day (t-1)
-            if f"{chemra_var}_tm1" in x_vars:
-                ds_dictionary[key] = add_tm1_var(ds_dictionary[key], chemra_var)
         else:
             # Open a multi-file dataset
             ds_dictionary[key] = xr.open_mfdataset(files)
@@ -261,6 +258,10 @@ def make_input_file(
     ds_input = ds_dictionary['ds_emiss']
     for ds_type in ['chemra', 'era5']:
         ds_input = ds_input.merge(ds_dictionary[f'ds_{ds_type}'], fill_value=nan_fill, combine_attrs='drop_conflicts')
+    
+    # Add the chemical reanalysis data for the previous day (t-1)
+    if f"{chemra_var}_tm1" in x_vars:
+        ds_input = add_tm1_var(ds_input, chemra_var)
     
     # Remove global attributes
     ds_input.attrs = {}
