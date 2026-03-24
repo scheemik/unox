@@ -186,6 +186,7 @@ def make_input_file(
         'ds_era5': era5_files,
     }
     # Create a blank dictionary in which to store the attributes
+    # Note that these are strings rather than `None` type as `None` type is not valid in .json files
     attr_dictionary = {
         'ds_emiss': None,
         'ds_chemra': None,
@@ -263,6 +264,25 @@ def make_input_file(
     
     # Remove global attributes
     ds_input.attrs = {}
+
+    # Create a dictionary of global attributes
+    g_attr_dict={
+        'name': name,
+        'y_var': y_var,
+        'x_vars': x_vars,
+        'start_date': str(start_date),
+        'end_date': str(end_date),
+        'stage_2': stage_2,
+        'stage_2_cutoff': stage_2_cutoff,
+        'nan_fill': nan_fill,
+        'attrs_emiss': attr_dictionary['ds_emiss'],
+        'attrs_chemra': attr_dictionary['ds_chemra'],
+        # 'attrs_insitu': attr_dictionary['ds_insitu'],
+        'attrs_era5': attr_dictionary['ds_era5'],
+    }
+
+    # Set the global attributes
+    ds_input = set_global_attrs(ds_input, g_attr_dict)
 
     # Save out the netcdf file
     ds_input = write_input_netcdf(
@@ -671,7 +691,23 @@ def set_global_attrs(
     if not isinstance(attr_dict, dict):
         raise TypeError(f"(set_global_attrs) `attr_dict` must be a dictionary. Got type: {type(attr_dict)}")
     # Add each attribute to the dataset
+    xr_dataset = xr_dataset.assign_attrs(attr_dict)
+    # Certain data types cannot be saved in netcdf files
+    # Convert the data types and save extra attributes to note the original types
     for key, value in attr_dict.items():
+        # Convert boolean types to integer
+        if isinstance(value, bool):
+            value = int(value)
+            xr_dataset.attrs[f'{key}_original_type'] = 'bool'
+        elif isinstance(value, type({})):
+            value = str(value)
+            xr_dataset.attrs[f'{key}_original_type'] = 'dict'
+        elif isinstance(value, type(None)):
+            value = 'None'
+            xr_dataset.attrs[f'{key}_original_type'] = 'NoneType'
+        elif isinstance(value, (np.datetime64, pd.Timestamp)):
+            value = str(value)
+            xr_dataset.attrs[f'{key}_original_type'] = 'datetime'
         xr_dataset.attrs[key] = value
     # Update the modification date
     xr_dataset.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
