@@ -273,6 +273,76 @@ def make_input_file(
 
     return ds_input
 
+def add_tm1_var(
+    xr_dataset,
+    var,
+    year=None,
+):
+    """ Add a (t-1) version of the given variable to the dataset.
+    
+        Add a version of the given variable which is shifted by one day (t-1) to the dataset, and drop January 1st from the time coordinate, if applicable.
+
+        Parameters
+        ----------
+        xr_dataset : `xarray.Dataset`
+            The dataset containing the variable to shifted.
+        var : `str`
+            The variable to be shifted.
+        year : `int`, `None`, optional
+            The year which xr_dataset covers (between 2005 and 2021).
+
+        Returns
+        -------
+        `xarray.Dataset`
+            The dataset with the shifted variable.
+    """
+    # Verify argument types
+    if not isinstance(xr_dataset, xr.Dataset):
+        raise TypeError(f"(add_tm1_var) `xr_dataset` must be a `xr.Dataset`. Got type: {type(xr_dataset)}")
+    if not isinstance(var, str):
+        raise TypeError(f"(add_tm1_var) `var` must be a string. Got type: {type(var)}")
+    if not isinstance(year, (int, type(None))):
+        raise TypeError(f"(add_tm1_var) `year` must be an integer or `None`. Got type: {type(year)}")
+
+    # Verify the dataset
+    xr_dataset = verify_dataset(xr_dataset)
+    # Verify `var` is in the dataset
+    verify_var(xr_dataset, var)
+
+    # Note the variable attributes
+    var_attrs = xr_dataset[var].attrs
+    # Create name for t-1 variable
+    var_tm1 = f'{var}_tm1'
+    # Create a t-1 shifted version of the variable
+    xr_dataset[var_tm1] = xr_dataset[var].shift(time=1)
+    # Add shifted_from to the attributes
+    var_attrs['shifted_from'] = var
+    # Add (t-1) to the name in the attributes
+    var_attrs['long_name'] = var_attrs.get('long_name', var) + ' (t-1)'
+    # Check for stage 2 variable
+    var_s2 = f'{var}_s2'
+    if var_s2 in xr_dataset.data_vars:
+        # Note the variable attributes
+        var_s2_attrs = xr_dataset[var_s2].attrs
+        # Create name for t-1 variable
+        var_s2_tm1 = f'{var_s2}_tm1'
+        # Create a t-1 shifted version of the variable
+        xr_dataset[var_s2_tm1] = xr_dataset[var_s2].shift(time=1)
+        # Add shifted_from to the attributes
+        var_s2_attrs['shifted_from'] = var_s2
+        # Add (t-1) to the name in the attributes
+        var_s2_attrs['long_name'] = var_s2_attrs.get('long_name', var_s2) + ' (t-1)'
+    # Drop January 1st, as the t-1 variable will have null values on that day
+    try:
+        xr_dataset = xr_dataset.drop_sel(time=f'{year}-01-01')
+    except:
+        print(f'\tJanuary 1st, {year} not present in xr_dataset')
+    # Reapply the variable attributes
+    xr_dataset = set_var_attrs(xr_dataset, var_tm1, var_attrs)
+    if var_s2 in xr_dataset.data_vars:
+        xr_dataset = set_var_attrs(xr_dataset, var_s2_tm1, var_s2_attrs)
+    return xr_dataset
+
 ###############################################################
 # Can I delete what is below? Have all the functions been replaced by the above?
 
@@ -668,67 +738,6 @@ def scale_xr_var(
     var_attrs['scaled_by'] = scale_factor
     # Reapply the variable attributes
     xr_dataset = set_var_attrs(xr_dataset, var, var_attrs)
-    return xr_dataset
-
-def add_tm1_var(
-    xr_dataset,
-    var,
-    year=None,
-):
-    """ Add a (t-1) version of the given variable to the dataset.
-    
-        Add a version of the given variable which is shifted by one day (t-1) to the dataset, and drop January 1st from the time coordinate.
-
-        Parameters
-        ----------
-        xr_dataset : `xarray.Dataset`
-            The dataset containing the variable to shifted.
-        var : `str`
-            The variable to be shifted.
-        year : `int`
-            The year which xr_dataset covers (between 2005 and 2021).
-
-        Returns
-        -------
-        `xarray.Dataset`
-            The dataset with the shifted variable.
-    """
-    # Verify the dataset
-    xr_dataset = verify_dataset(xr_dataset)
-    # Verify `var` is in the dataset
-    verify_var(xr_dataset, var)
-    # Note the variable attributes
-    var_attrs = xr_dataset[var].attrs
-    # Create name for t-1 variable
-    var_tm1 = f'{var}_tm1'
-    # Create a t-1 shifted version of the variable
-    xr_dataset[var_tm1] = xr_dataset[var].shift(time=1)
-    # Add shifted_from to the attributes
-    var_attrs['shifted_from'] = var
-    # Add (t-1) to the name in the attributes
-    var_attrs['long_name'] = var_attrs.get('long_name', var) + ' (t-1)'
-    # Check for stage 2 variable
-    var_s2 = f'{var}_s2'
-    if var_s2 in xr_dataset.data_vars:
-        # Note the variable attributes
-        var_s2_attrs = xr_dataset[var_s2].attrs
-        # Create name for t-1 variable
-        var_s2_tm1 = f'{var_s2}_tm1'
-        # Create a t-1 shifted version of the variable
-        xr_dataset[var_s2_tm1] = xr_dataset[var_s2].shift(time=1)
-        # Add shifted_from to the attributes
-        var_s2_attrs['shifted_from'] = var_s2
-        # Add (t-1) to the name in the attributes
-        var_s2_attrs['long_name'] = var_s2_attrs.get('long_name', var_s2) + ' (t-1)'
-    # Drop January 1st, as the t-1 variable will have null values on that day
-    try:
-        xr_dataset = xr_dataset.drop_sel(time=f'{year}-01-01')
-    except:
-        print(f'\tJanuary 1st, {year} not present in xr_dataset')
-    # Reapply the variable attributes
-    xr_dataset = set_var_attrs(xr_dataset, var_tm1, var_attrs)
-    if var_s2 in xr_dataset.data_vars:
-        xr_dataset = set_var_attrs(xr_dataset, var_s2_tm1, var_s2_attrs)
     return xr_dataset
 
 def make_x_input_file(
