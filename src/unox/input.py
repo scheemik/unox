@@ -290,6 +290,15 @@ def make_input_file(
         name,
         **kwargs,
     )
+    # Get the attributes from the dataset in a dictionary
+    attr_dict = ds_input.attrs
+    # Assemble the filepath for the metadata file
+    meta_filepath = f"inputfiles/{name}/{name}.json"
+    # Make sure that filepath exists
+    make_file_path(meta_filepath)
+    # Save the dictionary as a metadata .json file
+    with open(meta_filepath, 'w') as f:
+        json.dump(attr_dict, f, indent=4)
 
     return ds_input
 
