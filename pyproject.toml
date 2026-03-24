@@ -21,6 +21,7 @@ tensorflow = "2.17.0"
 setuptools = "<81"
 jupyter = "^1.1.1"
 matplotlib-inline = "<0.2.0"
+dask = "<2024.8.1"
 
 
 [tool.poetry.group.dev.dependencies]
