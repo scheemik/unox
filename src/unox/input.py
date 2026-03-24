@@ -223,7 +223,11 @@ def make_input_file(
                 ds_dictionary[key],
             )
         # Interpolate to latitude and longitude grid, resample to daily mean, and fill NaNs
+        # Time how long this interpolation takes to process
+        t1 = pd.Timestamp.now()
         ds_dictionary[key] = ds_dictionary[key].interp(lat=lats, lon=lons).resample(time='d').mean().fillna(nan_fill)
+        t2 = pd.Timestamp.now()
+        print(f"\tExecution time to interpolate {key}: {t2 - t1}")
         # Save the attributes from that dataset
         attr_dictionary[key] = ds_dictionary[key].attrs
 
