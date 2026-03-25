@@ -187,17 +187,30 @@ def make_input_file(
     ds_dictionary = {
         'ds_emiss': emiss_files,
         'ds_chemra': chemra_files,
-        # 'ds_insitu': insitu_files,
+        'ds_insitu': insitu_files,
         'ds_met': met_files,
     }
     # Create a blank dictionary in which to store the attributes
     # Note that these are strings rather than `None` type as `None` type is not valid in .json files
     attr_dictionary = {
         'ds_emiss': None,
+        'ds_insitu': None,
         'ds_chemra': None,
-        # 'ds_insitu': None,
         'ds_met': None,
     }
+    # Check whether the insitu files are `.csv`'s
+    if '.csv' in insitu_files[0]:
+        # Remove the insitu key from the dataset and attribute dictionaries
+        ds_dictionary.pop('ds_insitu')
+        attr_dictionary.pop('ds_insitu')
+        # Check whether to add stage 2 data
+        if stage_2 and end_year >= stage_2_cutoff:
+            # Make sure to fill the chemical reanalysis data with the insitu data
+            fill_with_insitu = True
+        else:
+            fill_with_insitu = False
+    else:
+        fill_with_insitu = False
     # Load each dataset and add it to the dictionary
     for key, files in ds_dictionary.items():
         print(f"Loading {key}")
@@ -206,13 +219,20 @@ def make_input_file(
             # Add the result to the dictionary
             ds_dictionary[key] = process_TROPESS_chemra(
                 key,
+                chemra_var,
                 files,
                 years,
                 extent,
                 lats,
                 lons,
                 nan_fill,
+                fill_with_insitu,
+                insitu_files,
             )
+            # Check the resulting dataset for an attribute called `attrs_insitu`
+            if 'attrs_insitu' in ds_dictionary[key].attrs:
+                # Add the insitu attributes to the attribute dictionary
+                attr_dictionary['ds_insitu'] = ds_dictionary[key].attrs['attrs_insitu']
         else:
             # Open a multi-file dataset
             ds_dictionary[key] = xr.open_mfdataset(files)
@@ -230,11 +250,16 @@ def make_input_file(
         # Save the attributes from that dataset
         attr_dictionary[key] = ds_dictionary[key].attrs
 
+    # Set the base dataset
+    base_ds = 'ds_emiss'
+    ds_input = ds_dictionary[base_ds]
+    # Get a list of datasets to merge into the base
+    list_of_ds_to_merge = list(ds_dictionary.keys())
+    list_of_ds_to_merge.remove(base_ds)
     # Merge all datasets
     print("Merging datasets")
-    ds_input = ds_dictionary['ds_emiss']
-    for ds_type in ['chemra', 'met']:
-        ds_input = ds_input.merge(ds_dictionary[f'ds_{ds_type}'], fill_value=nan_fill, combine_attrs='drop_conflicts')
+    for ds_type in list_of_ds_to_merge:
+        ds_input = ds_input.merge(ds_dictionary[ds_type], fill_value=nan_fill, combine_attrs='drop_conflicts')
     
     # Add the chemical reanalysis data for the previous day (t-1)
     if f"{chemra_var}_tm1" in x_vars:
@@ -255,7 +280,7 @@ def make_input_file(
         'nan_fill': nan_fill,
         'attrs_emiss': attr_dictionary['ds_emiss'],
         'attrs_chemra': attr_dictionary['ds_chemra'],
-        # 'attrs_insitu': attr_dictionary['ds_insitu'],
+        'attrs_insitu': attr_dictionary['ds_insitu'],
         'attrs_met': attr_dictionary['ds_met'],
     }
 
@@ -283,12 +308,15 @@ def make_input_file(
 @unox.time_this
 def process_TROPESS_chemra(
     key,
+    chemra_var,
     files,
     years,
     extent,
     lats,
     lons,
     nan_fill,
+    fill_with_insitu,
+    insitu_files,
 ):
     """ Process TROPESS chemical reanalysis files for input file creation.
 
@@ -353,6 +381,18 @@ def process_TROPESS_chemra(
         this_ds_chemra.coords['time'] = pd.date_range(f"{year}-01-01", periods=ndays)
         # Reapply the time attributes
         this_ds_chemra['time'].attrs = time_attrs
+        # Check whether to fill with insitu data
+        if fill_with_insitu:
+            print(f"\tFilling {key} with insitu data for year {year}")
+            # Get the insitu file for this year
+            insitu_file = insitu_files[i]
+            # Fill the chemical reanalysis data with the insitu data
+            this_ds_chemra = fill_insitu_data(
+                this_ds_chemra,
+                insitu_file,
+                var=chemra_var,
+            )
+        # Add this dataset to the list
         these_ds_chemra.append(this_ds_chemra)
     # Concatenate the chemical reanalysis datasets for each year together
     ds_chemra = xr.concat(these_ds_chemra, dim='time')
@@ -1024,7 +1064,7 @@ def make_x_input_file(
         # Verify the path
         epa_filepath = verify_path(epa_filepath)
         # Combine chemical reanalysis and insitu data
-        chemra = fill_w_insitu(chemra, epa_filepath)
+        chemra = fill_insitu_data(chemra, epa_filepath)
     else:
         stages=[1]
     
