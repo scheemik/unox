@@ -393,7 +393,7 @@ def process_TROPESS_chemra(
             this_ds_chemra = fill_insitu_data(
                 this_ds_chemra,
                 insitu_file,
-                var=chemra_var,
+                chemra_var,
             )
         # Add this dataset to the list
         these_ds_chemra.append(this_ds_chemra)
@@ -405,7 +405,7 @@ def process_TROPESS_chemra(
 def fill_insitu_data(
     xr_dataset,
     insitu_filepath, 
-    var='no2',
+    var,
 ):
     """ Add stage 2 for the variable in an xarray Dataset using available insitu data.
 
@@ -417,8 +417,8 @@ def fill_insitu_data(
             The dataset containing reanalysis data.
         insitu_filepath : `str`
             Path to the CSV file containing insitu data.
-        var : `str`, optional
-            The variable to replace in the dataset. Default is 'no2'.
+        var : `str`
+            The variable to replace in the dataset.
 
         Returns
         -------
