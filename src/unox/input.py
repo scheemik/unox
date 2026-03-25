@@ -1244,6 +1244,20 @@ def fill_insitu_data(
     in1 = xr_dataset[var_s2].where((xr_dataset.lat >= np.min(lats)), drop=True)
     in2 = in1.where((in1.lon <= np.max(lons)), drop=True)
 
+    ## Get the insitu global attributes from the EPA csv file
+    # List of columns to use for global attributes
+    global_attr_cols = ['Parameter Name', 'Sample Duration', 'Pollutant Standard']
+    insitu_global_attrs = pd.read_csv(insitu_filepath, usecols=global_attr_cols)
+    # Verify that there is only one unique value for each of the global attribute columns
+    for col in global_attr_cols:
+        unique_values = insitu_global_attrs[col].unique()
+        if len(unique_values) > 1:
+            warnings.warn(f"Multiple unique values found in column '{col}' of the insitu data: {unique_values}. Using the first value for the global attribute.")
+        insitu_global_attrs[col] = unique_values[0]
+    # Convert the global attributes to a dictionary    
+    insitu_global_attrs_dict = insitu_global_attrs.iloc[0].to_dict()
+    # Add more attributes
+    insitu_global_attrs_dict['source'] = 'US EPA Air Quality System (AQS) Data'
 
     ## Scale the insitu data to match the chemical reanalysis based on the units
     # Get the units of the insitu data from the values in the `Units of Measure` column
@@ -1289,6 +1303,8 @@ def fill_insitu_data(
     var_s2_attrs['insitu_filled_from'] = var
     # Reapply the variable attributes
     xr_dataset = set_var_attrs(xr_dataset, var_s2, var_s2_attrs)
+    # Add the insitu global attributes
+    xr_dataset.attrs['attrs_insitu'] = insitu_global_attrs_dict
     return xr_dataset
 
 def make_all_y_input_files(
