@@ -265,6 +265,9 @@ def make_input_file(
     if f"{chemra_var}_tm1" in x_vars:
         ds_input = add_tm1_var(ds_input, chemra_var)
     
+    # Trim the dataset to the specified date range
+    ds_input = ds_input.sel(time=slice(start_date, end_date))
+    
     # Remove global attributes
     ds_input.attrs = {}
 
