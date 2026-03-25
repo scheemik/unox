@@ -339,7 +339,7 @@ this_plot = plot_BaW(
 )
 ```
 
-This shows the spread in $R^2$ and root mean squared error (RMSE) for the ensemble run.
+This shows the spread in R² and root mean squared error (RMSE) for the ensemble run.
 Note that the box and whisker function will create a plot regardless of how many ensemble members there are.
 Use caution when analyzing box and whisker plots for ensembles with 3 or fewer members. 
 
@@ -408,6 +408,11 @@ I have implemented 4 different options for a regularizer to use:
 3. `L1L2`
 4. `None`
 
+For more information on regularizers, see the following papers:
+- [Mehta et al. 2019, "A high-bias, low-variance introduction to Machine Learning for physicists"](https://doi.org/10.48550/arXiv.1803.08823)
+    - In particular, Section VI.C
+- [Pereyra et al. 2017 "Regularizing neural networks by penalizing confident output distributions"](10.48550/arXiv.1701.06548)
+
 By running multiple ensemble members with and without specific regularizers, you can quantitatively assess:
 - Whether a regularizer reduces ensemble uncertainty.
 - If the regularizer improves spatial consistency of predictions.
@@ -451,7 +456,7 @@ For example:
 }
 ```
 
-**Configuration 1: With L1 regularizer and a factor of $1\times10^{-5}$** (`config_ens_reg1.json`):
+**Configuration 1: With L1 regularizer and a factor of 1×10⁻⁵** (`config_ens_reg1.json`):
 ```json
 {
     "input_set": "no2_2005-2020",
@@ -489,7 +494,7 @@ username@HPC: unox$ bash HPC_job_submit.sh -j ens_reg0 -i config_ens_reg0 -e 5
 username@HPC: unox$ bash HPC_job_submit.sh -j ens_reg1 -i config_ens_reg1 -e 5
 ```
 
-For this example, I submitted 5 more ensemble runs, each with 5 members, using regularizer factors each order of magnitude from $1\times10^{-6}$ to $1\times10^{-10}$.
+For this example, I submitted 5 more ensemble runs, each with 5 members, using regularizer factors each order of magnitude from 1×10⁻⁶ to 1×10⁻¹⁰.
 
 <a id='plot_reg_impact'></a>
 [back to top](#top)
@@ -530,7 +535,7 @@ var_plots = plot_run_analysis(
 )
 ```
 
-Here, we can see in the plot above that, with a regularizer factor of $1\times10^{-8}$, the model does a much better job at predicting the output.
+Here, we can see in the plot above that, with a regularizer factor of 1×10⁻⁸, the model does a much better job at predicting the output.
 
 To see the statistical spread of all these ensembles at once, we can make a box and whisker plot.
 Below, I have used the `label_with` attribute to specify that I want the labels of each ensemble run to be the activity regularizer used (`act_reg`) and the regularizer factor used in the activity regularizer (`act_reg_factor`).
@@ -552,7 +557,7 @@ this_plot = plot_BaW(
 )
 ```
 
-Here, we can see that using a factor of $1\times10^{-8}$ improves the model the most out of the factors used across the ensemble runs.
+Here, we can see that using a factor of 1×10⁻⁸ improves the model the most out of the factors used across the ensemble runs.
 
 We can also make the same plot, but restrict the latitude and longitude extent to be just over the continental United States.
 

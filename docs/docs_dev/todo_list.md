@@ -30,6 +30,15 @@ If a particular point becomes resolved, it should be deleted from this document 
         - How did I set up the way it auto updates?
         - Links between internal pages.
         - Auto API and why writing good docstrings is important.
+        - Formatting math
+            - Using the LaTeX formatting with dollar signs shows up in the Live Preview extension in VSCodium, but not in the preview you get by running `make html` and opening the `index.html` file in a browser
+                - Ex: $1\times10^{-8}$
+                - Literal text: `$1\times10^{-8}$`
+            - Look into [Math support in Sphinx](https://documentation.help/Sphinx/math.html) if you want to use LaTeX or similar formatting
+                - For now, I'll just avoid using that format
+                - See [Copy and Paste Symbols](https://www.copyandpastesymbols.net/superscript-letter.html) for characters of superscript letters, numbers, and symbols
+                    - Ex: 1×10⁻⁵
+            - Maybe add a note in the Troubleshooting document
     - Documentation of stuff I've figured out, kinda like some results?
         - Results of using a regularizer
         - Results from running ZFI across the different input variables
