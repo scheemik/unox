@@ -1231,10 +1231,10 @@ def fill_insitu_data(
     var_s2_attrs['long_name'] = var_s2_attrs.get('long_name', var_s2) + ' Stage 2'
     # Verify the insitu file path
     insitu_filepath = verify_path(insitu_filepath)
-    # Load the insitu data
-    ## Specific to the EPA csv format
+
+    ## Load the insitu data
+    # Specific to the EPA csv format
     insitu_data = pd.read_csv(insitu_filepath, parse_dates={'Date':['Date Local']}, index_col=['Date'], usecols=['Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'])
-    # insitu_data = csv_to_pd(insitu_filepath, is_US_EPA=True)
     # One group for each day of data in the insitu data file
     insitu_groups = insitu_data.groupby(['Date'])
     # Get the keys (dates) from the groups
@@ -1243,6 +1243,24 @@ def fill_insitu_data(
     lats, lons = unox.load_lats_lons()
     in1 = xr_dataset[var_s2].where((xr_dataset.lat >= np.min(lats)), drop=True)
     in2 = in1.where((in1.lon <= np.max(lons)), drop=True)
+
+
+    ## Scale the insitu data to match the chemical reanalysis based on the units
+    # Get the units of the insitu data from the values in the `Units of Measure` column
+    insitu_units = pd.read_csv(insitu_filepath, usecols=['Units of Measure'])
+    # Verify that all the values in the `Units of Measure` column are the same
+    unique_units = insitu_units['Units of Measure'].unique()
+    if len(unique_units) > 1:
+        raise ValueError(f"Multiple units of measure found in the insitu data: {unique_units}")
+    else:
+        insitu_units = unique_units[0]
+    # Get the units of the chemical reanalysis data from the attributes
+    chemra_units = xr_dataset[var].attrs.get('units', None)
+    # Determine the scale factor to convert the insitu data to the same units as the chemical
+    if insitu_units == 'Parts per billion' and chemra_units == 'ppt':
+        insitu_scale_factor = 1e3
+    else:
+        raise ValueError(f"(fill_insitu_data) Units of measure for insitu data ({insitu_units}) and chemical reanalysis data ({chemra_units}) not recognized or not currently supported for scaling.")
 
     # Loop through each day in the insitu data
     for i in range(len(insitu_keys)):
@@ -1256,6 +1274,8 @@ def fill_insitu_data(
         lt = group_array[0]
         ln = group_array[1]
         values = group_array[2]
+        # Scale the insitu values
+        values = values * insitu_scale_factor
         # Select the day in the chemical reanalysis dataset
         day = in2.sel(indexers={'time': insitu_keys[i]})
         # Loop through each latitude in the group
