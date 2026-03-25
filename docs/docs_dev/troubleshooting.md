@@ -308,6 +308,13 @@ make: *** [Makefile:19: clean] Error 1
 
 Fix: log out and log back in.
 
+## The `scale_factor` attribute in `xarray` is protected
+
+If you include an attribute called `scale_factor` on a variable in an `xarray` dataset, save that dataset to a netCDF file, then load that file back in as an `xarray` dataset, the value of `scale_factor` will automatically be multiplied on all values of that variable and the `scale_factor` attribute will not appear in the metadata of the `xarray` object.
+For this reason, I do not name any of the attributes in the files `scale_factor`.
+
+[link to xarray docs where `scale_factor` attribute is mentioned](https://docs.xarray.dev/en/stable/user-guide/io.html#scaling-and-type-conversions)
+
 ## Do you have more than one day in the data?
 
 Need to confirm whether this actually has to do with only having one day and therefore having xarray drop the time index.
