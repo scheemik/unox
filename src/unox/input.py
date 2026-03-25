@@ -354,7 +354,7 @@ def process_TROPESS_chemra(
     for i in range(len(years)):
         file = files[i]
         year = years[i]
-        print(f"Processing {key} file {file}, year {year}")
+        print(f"Processing {key} file {file}, year: {year}")
         # Load the chemical reanalysis dataset
         this_ds_chemra = xr.open_dataset(file)
         # Change longitude coordinate convention to match other data
@@ -386,9 +386,9 @@ def process_TROPESS_chemra(
         this_ds_chemra['time'].attrs = time_attrs
         # Check whether to fill with insitu data
         if fill_with_insitu:
-            print(f"\tFilling {key} with insitu data for year {year}")
             # Get the insitu file for this year
             insitu_file = insitu_files[i]
+            print(f"\tFilling {key} with insitu data from {insitu_file}, year: {year}")
             # Fill the chemical reanalysis data with the insitu data
             this_ds_chemra = fill_insitu_data(
                 this_ds_chemra,
