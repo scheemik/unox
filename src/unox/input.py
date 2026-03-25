@@ -70,7 +70,7 @@ def make_input_file(
     start_date='2005-01-01',
     end_date='2020-12-31',
     stage_2=True,
-    stage_2_cutoff=2013,
+    stage_2_cutoff=1900,
     nan_fill=0,
     **kwargs,
 ):
@@ -98,7 +98,7 @@ def make_input_file(
             Default is True.
         stage_2_cutoff : `int`, optional
             Year after which input files will also be generated for stage 2. 
-            Default is 2013.
+            Default is 1900, to ensure all years are included.
         nan_fill : `float`, optional
             Value to fill NaNs in the dataset. 
             Default is `0`.
