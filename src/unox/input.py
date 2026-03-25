@@ -402,6 +402,118 @@ def process_TROPESS_chemra(
     return ds_chemra
 
 @unox.time_this
+def fill_insitu_data(
+    xr_dataset,
+    insitu_filepath, 
+    var='no2',
+):
+    """ Add stage 2 for the variable in an xarray Dataset using available insitu data.
+
+        Given an xarray Dataset with reanalysis data, duplicate the specified variable and replace values of that duplicated variable when and where there is available insitu data in the provided filepath, to be used for stage 2 of training the unet.
+
+        Parameters
+        ----------
+        xr_dataset : `xarray.Dataset`
+            The dataset containing reanalysis data.
+        insitu_filepath : `str`
+            Path to the CSV file containing insitu data.
+        var : `str`, optional
+            The variable to replace in the dataset. Default is 'no2'.
+
+        Returns
+        -------
+        `xarray.Dataset`
+            The updated dataset with insitu data replacing the specified variable.
+    """
+    # Verify the dataset
+    xr_dataset = verify_dataset(xr_dataset)
+    # Make a new variable to store the stage 2 data, filled with insitu
+    var_s2 = f'{var}_s2'
+    # Make a deep copy so that changes to `var_s2` don't affect `var`
+    xr_dataset[var_s2]= xr_dataset[var].copy(deep=True)
+    # Save the variable attributes
+    var_s2_attrs = xr_dataset[var_s2].attrs
+    # Modify the long_name attribute to indicate stage 2
+    var_s2_attrs['long_name'] = var_s2_attrs.get('long_name', var_s2) + ' Stage 2'
+    # Verify the insitu file path
+    insitu_filepath = verify_path(insitu_filepath)
+
+    ## Load the insitu data
+    # Specific to the EPA csv format
+    insitu_data = pd.read_csv(insitu_filepath, parse_dates={'Date':['Date Local']}, index_col=['Date'], usecols=['Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'])
+    # One group for each day of data in the insitu data file
+    insitu_groups = insitu_data.groupby(['Date'])
+    # Get the keys (dates) from the groups
+    insitu_keys = [key for key in insitu_groups.groups.keys()]
+    # Narrow the domain to the selected latitude and longitude grid
+    lats, lons = unox.load_lats_lons()
+    in1 = xr_dataset[var_s2].where((xr_dataset.lat >= np.min(lats)), drop=True)
+    in2 = in1.where((in1.lon <= np.max(lons)), drop=True)
+
+    ## Get the insitu global attributes from the EPA csv file
+    # List of columns to use for global attributes
+    global_attr_cols = ['Parameter Name', 'Sample Duration', 'Pollutant Standard']
+    insitu_global_attrs = pd.read_csv(insitu_filepath, usecols=global_attr_cols)
+    # Verify that there is only one unique value for each of the global attribute columns
+    for col in global_attr_cols:
+        unique_values = insitu_global_attrs[col].unique()
+        if len(unique_values) > 1:
+            warnings.warn(f"Multiple unique values found in column '{col}' of the insitu data: {unique_values}. Using the first value for the global attribute.")
+        insitu_global_attrs[col] = unique_values[0]
+    # Convert the global attributes to a dictionary    
+    insitu_global_attrs_dict = insitu_global_attrs.iloc[0].to_dict()
+    # Add more attributes
+    insitu_global_attrs_dict['source'] = 'US EPA Air Quality System (AQS) Data'
+
+    ## Scale the insitu data to match the chemical reanalysis based on the units
+    # Get the units of the insitu data from the values in the `Units of Measure` column
+    insitu_units = pd.read_csv(insitu_filepath, usecols=['Units of Measure'])
+    # Verify that all the values in the `Units of Measure` column are the same
+    unique_units = insitu_units['Units of Measure'].unique()
+    if len(unique_units) > 1:
+        raise ValueError(f"Multiple units of measure found in the insitu data: {unique_units}")
+    else:
+        insitu_units = unique_units[0]
+    # Get the units of the chemical reanalysis data from the attributes
+    chemra_units = xr_dataset[var].attrs.get('units', None)
+    # Determine the scale factor to convert the insitu data to the same units as the chemical
+    if insitu_units == 'Parts per billion' and chemra_units == 'ppt':
+        insitu_scale_factor = 1e3
+    else:
+        raise ValueError(f"(fill_insitu_data) Units of measure for insitu data ({insitu_units}) and chemical reanalysis data ({chemra_units}) not recognized or not currently supported for scaling.")
+
+    # Loop through each day in the insitu data
+    for i in range(len(insitu_keys)):
+        # Get the group for the ith day
+        new_group = insitu_groups.get_group((insitu_keys[i]),)
+        # Convert the group to a numpy array
+        group_array = new_group.to_numpy()
+        # Swap axes to get the shape (lat, lon, no2) for this day
+        group_array = group_array.swapaxes(0, 1)
+        # Get the latitude, longitude, and var values of the group
+        lt = group_array[0]
+        ln = group_array[1]
+        values = group_array[2]
+        # Scale the insitu values
+        values = values * insitu_scale_factor
+        # Select the day in the chemical reanalysis dataset
+        day = in2.sel(indexers={'time': insitu_keys[i]})
+        # Loop through each latitude in the group
+        for j in range(len(lt)):
+            # Find the nearest point in the chemical reanalysis dataset
+            ## Tolerance is set to the grid cell size (1.125 degrees)
+            pt = day.sel({'lat': lt[j], 'lon': ln[j]}, method='nearest', tolerance=1.125)
+            # Replace the chemical reanalysis value with the insitu value
+            xr_dataset[var_s2].loc[{'time': insitu_keys[i], 'lon': pt.lon, 'lat': pt.lat}] = values[j]
+    # Add attribute to note which variable this is from
+    var_s2_attrs['insitu_filled_from'] = var
+    # Reapply the variable attributes
+    xr_dataset = set_var_attrs(xr_dataset, var_s2, var_s2_attrs)
+    # Add the insitu global attributes
+    xr_dataset.attrs['attrs_insitu'] = insitu_global_attrs_dict
+    return xr_dataset
+
+@unox.time_this
 def process_ERA5_met(
     ds_met,
 ):
@@ -1197,118 +1309,6 @@ def make_x_input_file(
                 print(f"Saved x input data to {output_filepath}")
                 return xr.load_dataset(output_filepath), g_attr_dict
     return input_netcdf_xr, g_attr_dict
-
-@unox.time_this
-def fill_insitu_data(
-    xr_dataset,
-    insitu_filepath, 
-    var='no2',
-):
-    """ Add stage 2 for the variable in an xarray Dataset using available insitu data.
-
-        Given an xarray Dataset with reanalysis data, duplicate the specified variable and replace values of that duplicated variable when and where there is available insitu data in the provided filepath, to be used for stage 2 of training the unet.
-
-        Parameters
-        ----------
-        xr_dataset : `xarray.Dataset`
-            The dataset containing reanalysis data.
-        insitu_filepath : `str`
-            Path to the CSV file containing insitu data.
-        var : `str`, optional
-            The variable to replace in the dataset. Default is 'no2'.
-
-        Returns
-        -------
-        `xarray.Dataset`
-            The updated dataset with insitu data replacing the specified variable.
-    """
-    # Verify the dataset
-    xr_dataset = verify_dataset(xr_dataset)
-    # Make a new variable to store the stage 2 data, filled with insitu
-    var_s2 = f'{var}_s2'
-    # Make a deep copy so that changes to `var_s2` don't affect `var`
-    xr_dataset[var_s2]= xr_dataset[var].copy(deep=True)
-    # Save the variable attributes
-    var_s2_attrs = xr_dataset[var_s2].attrs
-    # Modify the long_name attribute to indicate stage 2
-    var_s2_attrs['long_name'] = var_s2_attrs.get('long_name', var_s2) + ' Stage 2'
-    # Verify the insitu file path
-    insitu_filepath = verify_path(insitu_filepath)
-
-    ## Load the insitu data
-    # Specific to the EPA csv format
-    insitu_data = pd.read_csv(insitu_filepath, parse_dates={'Date':['Date Local']}, index_col=['Date'], usecols=['Date Local', 'Latitude', 'Longitude', 'Arithmetic Mean'])
-    # One group for each day of data in the insitu data file
-    insitu_groups = insitu_data.groupby(['Date'])
-    # Get the keys (dates) from the groups
-    insitu_keys = [key for key in insitu_groups.groups.keys()]
-    # Narrow the domain to the selected latitude and longitude grid
-    lats, lons = unox.load_lats_lons()
-    in1 = xr_dataset[var_s2].where((xr_dataset.lat >= np.min(lats)), drop=True)
-    in2 = in1.where((in1.lon <= np.max(lons)), drop=True)
-
-    ## Get the insitu global attributes from the EPA csv file
-    # List of columns to use for global attributes
-    global_attr_cols = ['Parameter Name', 'Sample Duration', 'Pollutant Standard']
-    insitu_global_attrs = pd.read_csv(insitu_filepath, usecols=global_attr_cols)
-    # Verify that there is only one unique value for each of the global attribute columns
-    for col in global_attr_cols:
-        unique_values = insitu_global_attrs[col].unique()
-        if len(unique_values) > 1:
-            warnings.warn(f"Multiple unique values found in column '{col}' of the insitu data: {unique_values}. Using the first value for the global attribute.")
-        insitu_global_attrs[col] = unique_values[0]
-    # Convert the global attributes to a dictionary    
-    insitu_global_attrs_dict = insitu_global_attrs.iloc[0].to_dict()
-    # Add more attributes
-    insitu_global_attrs_dict['source'] = 'US EPA Air Quality System (AQS) Data'
-
-    ## Scale the insitu data to match the chemical reanalysis based on the units
-    # Get the units of the insitu data from the values in the `Units of Measure` column
-    insitu_units = pd.read_csv(insitu_filepath, usecols=['Units of Measure'])
-    # Verify that all the values in the `Units of Measure` column are the same
-    unique_units = insitu_units['Units of Measure'].unique()
-    if len(unique_units) > 1:
-        raise ValueError(f"Multiple units of measure found in the insitu data: {unique_units}")
-    else:
-        insitu_units = unique_units[0]
-    # Get the units of the chemical reanalysis data from the attributes
-    chemra_units = xr_dataset[var].attrs.get('units', None)
-    # Determine the scale factor to convert the insitu data to the same units as the chemical
-    if insitu_units == 'Parts per billion' and chemra_units == 'ppt':
-        insitu_scale_factor = 1e3
-    else:
-        raise ValueError(f"(fill_insitu_data) Units of measure for insitu data ({insitu_units}) and chemical reanalysis data ({chemra_units}) not recognized or not currently supported for scaling.")
-
-    # Loop through each day in the insitu data
-    for i in range(len(insitu_keys)):
-        # Get the group for the ith day
-        new_group = insitu_groups.get_group((insitu_keys[i]),)
-        # Convert the group to a numpy array
-        group_array = new_group.to_numpy()
-        # Swap axes to get the shape (lat, lon, no2) for this day
-        group_array = group_array.swapaxes(0, 1)
-        # Get the latitude, longitude, and var values of the group
-        lt = group_array[0]
-        ln = group_array[1]
-        values = group_array[2]
-        # Scale the insitu values
-        values = values * insitu_scale_factor
-        # Select the day in the chemical reanalysis dataset
-        day = in2.sel(indexers={'time': insitu_keys[i]})
-        # Loop through each latitude in the group
-        for j in range(len(lt)):
-            # Find the nearest point in the chemical reanalysis dataset
-            ## Tolerance is set to the grid cell size (1.125 degrees)
-            pt = day.sel({'lat': lt[j], 'lon': ln[j]}, method='nearest', tolerance=1.125)
-            # Replace the chemical reanalysis value with the insitu value
-            xr_dataset[var_s2].loc[{'time': insitu_keys[i], 'lon': pt.lon, 'lat': pt.lat}] = values[j]
-    # Add attribute to note which variable this is from
-    var_s2_attrs['insitu_filled_from'] = var
-    # Reapply the variable attributes
-    xr_dataset = set_var_attrs(xr_dataset, var_s2, var_s2_attrs)
-    # Add the insitu global attributes
-    xr_dataset.attrs['attrs_insitu'] = insitu_global_attrs_dict
-    return xr_dataset
 
 def make_all_y_input_files(
     years=range(2005, 2021),
