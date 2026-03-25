@@ -596,6 +596,56 @@ def set_global_attrs(
     xr_dataset.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
     return xr_dataset
 
+def set_var_attrs(
+    xr_dataset,
+    var,
+    attr_dict,
+):
+    """ Add attributes to a variable in an xarray Dataset.
+
+        Parameters
+        ----------
+        xr_dataset : `xarray.Dataset`
+            The dataset containing the variable to which attributes will be added.
+        var : `str`
+            The variable to which attributes will be added.
+        attr_dict : `dict`
+            Dictionary of attributes to add to the variable.
+
+        Returns
+        -------
+        `xarray.Dataset`
+            The dataset with the variable having added attributes.
+        
+        Examples
+        --------
+        >>> ds = xr.Dataset(
+        ...     {'var1': (('time', 'lat', 'lon'), np.random.rand(10, 5, 5))},
+        ...     coords={
+        ...         'time': pd.date_range('2019-01-01', periods=10),
+        ...         'lat': np.linspace(-90, 90, 5),
+        ...         'lon': np.linspace(-180, 180, 5)
+        ...     },
+        ... )
+        >>> attr_dict = {'units': 'ppb', 'long_name': 'Variable 1'}
+        >>> ds = set_var_attrs(ds, 'var1', attr_dict)
+        >>> print(ds['var1'].attrs)
+        {'units': 'ppb', 'long_name': 'Variable 1'}
+    """
+    # Verify argument types
+    xr_dataset = verify_dataset(xr_dataset)
+    if not isinstance(var, str):
+        raise TypeError(f"(set_var_attrs) `var` must be a string. Got type: {type(var)}")
+    if not isinstance(attr_dict, dict):
+        raise TypeError(f"(set_var_attrs) `attr_dict` must be a dictionary. Got type: {type(attr_dict)}")
+
+    # Verify `var` is in the dataset
+    verify_var(xr_dataset, var)
+    # Add each attribute to the variable
+    for key, value in attr_dict.items():
+        xr_dataset[var].attrs[key] = value
+    return xr_dataset
+
 ###############################################################
 # Can I delete what is below? Have all the functions been replaced by the above?
 
@@ -803,39 +853,6 @@ def make_y_input_file(
                 print(f"Saved y input data to {output_filepath}")
                 return xr.load_dataset(output_filepath), g_attr_dict
     return input_netcdf_xr, g_attr_dict
-
-def set_var_attrs(
-    xr_dataset,
-    var,
-    attr_dict,
-):
-    """ Add attributes to a variable in an xarray Dataset.
-
-        Parameters
-        ----------
-        xr_dataset : `xarray.Dataset`
-            The dataset containing the variable to which attributes will be added.
-        var : `str`
-            The variable to which attributes will be added.
-        attr_dict : `dict`
-            Dictionary of attributes to add to the variable.
-
-        Returns
-        -------
-        `xarray.Dataset`
-            The dataset with the variable having added attributes.
-    """
-    # Verify the dataset
-    xr_dataset = verify_dataset(xr_dataset)
-    # Verify `var` is in the dataset
-    verify_var(xr_dataset, var)
-    # Verify the attribute dictionary
-    if not isinstance(attr_dict, dict):
-        raise TypeError(f"(set_var_attrs) `attr_dict` must be a dictionary. Got type: {type(attr_dict)}")
-    # Add each attribute to the variable
-    for key, value in attr_dict.items():
-        xr_dataset[var].attrs[key] = value
-    return xr_dataset
 
 def scale_xr_var(
     xr_dataset,
