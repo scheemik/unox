@@ -275,12 +275,20 @@ def apply_config(
             config_dict = json.load(file)
     else:
         raise TypeError(f"(apply_config) `model_config` must be a str or dict. Got type: {type(model_config)}")
+    
+    # Apply the scale factors to the variables, if applicable
+    if 'model_scale_factors' in config_dict:
+        scale_factors = config_dict['model_scale_factors']
+        for var in xr_dataset.data_vars:
+            if var in scale_factors:
+                this_scale_factor = scale_factors[var]
+                print(f"\tApplying scale factor of {this_scale_factor} to variable {var}.")
+                xr_dataset[var] = xr_dataset[var]*this_scale_factor
 
     # Trim the lat-lon extent of the dataset, if applicable
     if 'grid_size' in config_dict:
         # Find the grid size
         grid_size = config_dict['grid_size']
-        # print('grid_size:', grid_size)
         # Assumes there are two numbers: number of latitude cells, number of longitude cells
         if not len(grid_size) == 2:
             raise ValueError(f"(apply_config) Expected `grid_size` to have a length of 2. Got length of {len(grid_size)}: {grid_size}")
@@ -331,15 +339,6 @@ def apply_config(
             lon = slice(min_idx_lon, max_idx_lon),
             drop=True,
         )
-    
-    # Apply the scale factors to the variables, if applicable
-    if 'model_scale_factors' in config_dict:
-        scale_factors = config_dict['model_scale_factors']
-        for var in xr_dataset.data_vars:
-            if var in scale_factors:
-                this_scale_factor = scale_factors[var]
-                print(f"Applying scale factor of {this_scale_factor} to variable {var}.")
-                xr_dataset[var] = xr_dataset[var]*this_scale_factor
 
     return xr_dataset
 
