@@ -250,6 +250,16 @@ def apply_config(
             lon = slice(min_idx_lon, max_idx_lon),
             drop=True,
         )
+    
+    # Apply the scale factors to the variables, if applicable
+    if 'model_scale_factors' in config_dict:
+        scale_factors = config_dict['model_scale_factors']
+        for var in xr_dataset.data_vars:
+            if var in scale_factors:
+                this_scale_factor = scale_factors[var]
+                print(f"Applying scale factor of {this_scale_factor} to variable {var}.")
+                xr_dataset[var] = xr_dataset[var]*this_scale_factor
+
     return xr_dataset
 
 def apply_mask(

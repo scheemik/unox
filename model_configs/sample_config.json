@@ -11,6 +11,18 @@
         "t2m",
         "ssrd"
     ],
+    "model_scale_factors": {
+        "nox": 1e12,
+        "no2": 1e-3,
+        "no2_tm1": 1e-3,
+        "u10": 1,
+        "v10": 1,
+        "blh": 1e-3,
+        "sp": 1e-5,
+        "skt": 1,
+        "t2m": 1,
+        "ssrd": 1e-6
+    },
     "zfi_vars": [
     ],
     "lsm_vars": [

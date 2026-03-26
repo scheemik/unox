@@ -203,5 +203,13 @@ def make_predictions(
             pred_xarray.attrs[this_attr] = config_dict[this_attr]
         elif this_attr not in ['description', 'modification_date', 'y_var', 'x_vars', 'x1_vars', 'x2_vars']:
             pred_xarray.attrs[this_attr] = uarr.xr.attrs[this_attr]
+    # Undo the scaling of the variables, if applicable
+    if 'model_scale_factors' in config_dict:
+        scale_factors = config_dict['model_scale_factors']
+        for var in pred_xarray.data_vars:
+            if var in scale_factors:
+                this_scale_factor = scale_factors[var]
+                print(f"Undoing scale factor of {this_scale_factor} for variable {var}.")
+                pred_xarray[var] = pred_xarray[var]/this_scale_factor
 
     return pred_xarray, predictions_metadata
