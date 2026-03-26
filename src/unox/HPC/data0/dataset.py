@@ -96,7 +96,7 @@ class uarray():
                     self.is_predict = False
                     self.is_ensemble = False
                 elif is_predict:
-                    self.metadata_file = verify_path(f'HPC_runs/{dataset}/output_metadata.json')
+                    self.metadata_file = verify_path(f'HPC_runs/{dataset}/predictions_metadata.json')
                     self.is_input_set = False
                     self.is_predict = True
                 else:

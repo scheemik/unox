@@ -96,7 +96,7 @@ def make_predictions(
     unet,
     config_dict,
     config_path,
-    output_metadata,
+    predictions_metadata,
     stage = 1,
 ):
     """ Prepare the input data for the model.
@@ -114,7 +114,7 @@ def make_predictions(
             A dictionary containing the configuration.
         config_path : `str` 
             Path to the input configuration JSON file used to make `config_dict`.
-        output_metadata : `dict`
+        predictions_metadata : `dict`
             The dictionary of metadata describing the output of a model run.
         stage : `int`
             The stage of the data to plot (1 or 2).
@@ -125,15 +125,15 @@ def make_predictions(
             Concatenated training input features.
         ytrain : np.ndarray
             Concatenated training target variables.
-        output_metadata : dict
+        predictions_metadata : dict
             The dictionary of metadata describing the output of a model run with values added for `train_years` and `unet_build_shape`.
     """
     # Verify argument types
     uarr._verify()
     if not isinstance(config_dict, (str, type({}))):
         raise TypeError(f"(make_predictions) `config_dict` must be a str or dict. Got type: {type(config_dict)}.")
-    if not isinstance(output_metadata, type({})):
-        raise TypeError(f"(make_predictions) `output_metadata` must be a dict. Got type: {type(output_metadata)}.")
+    if not isinstance(predictions_metadata, type({})):
+        raise TypeError(f"(make_predictions) `predictions_metadata` must be a dict. Got type: {type(predictions_metadata)}.")
     if not isinstance(config_path, str):
         raise TypeError(f"(make_predictions) `config_path` must be a string. Got type: {type(config_path)}.")
     if stage not in [1, 2]:
@@ -161,7 +161,7 @@ def make_predictions(
         # Make the predictions
         pred = unet.predict(x_test)
         # Add year to the list of predictions in the metadata dictionary
-        output_metadata['pred_years'][f'stage{stage}'].append(year)
+        predictions_metadata['pred_years'][f'stage{stage}'].append(year)
 
         # Select the data for the specified year
         data_for_year = uarr._select_year(year)
@@ -204,4 +204,4 @@ def make_predictions(
         elif this_attr not in ['description', 'modification_date', 'y_var', 'x_vars', 'x1_vars', 'x2_vars']:
             pred_xarray.attrs[this_attr] = uarr.xr.attrs[this_attr]
 
-    return pred_xarray, output_metadata
+    return pred_xarray, predictions_metadata

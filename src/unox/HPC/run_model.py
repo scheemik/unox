@@ -31,7 +31,7 @@ inputfiles = config_dict['input_set']
 ##################################################################
 # Create output metadata dictionary
 
-output_metadata = rf.make_output_metadata_dict(
+predictions_metadata = rf.make_predictions_metadata_dict(
     savedir,
     config_path,
     config_dict,
@@ -48,7 +48,7 @@ uarr = uarray(inputfiles, is_input_set=True)
 # Get the years
 years = uarr._get_years()
 # Prepare the input files
-xtrain, ytrain, output_metadata = rf.prepare_input(uarr, config_path, output_metadata, config_dict['split_year'], stage=1)
+xtrain, ytrain, predictions_metadata = rf.prepare_input(uarr, config_path, predictions_metadata, config_dict['split_year'], stage=1)
 # Split into training and validation sets
 xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, config_dict['split_value'])
 print("After data split:")
@@ -58,7 +58,8 @@ print(f"\tShape of xvalid: {xvalid.shape}")
 print(f"\tShape of yvalid: {yvalid.shape}")
 
 print("Done loading data sets for stage 1")
-print(output_metadata['unet_build_shape'])
+print(predictions_metadata['unet_build_shape'])
+
 
 ##################################################################
 
@@ -79,8 +80,8 @@ from tensorflow.keras.optimizers import Adam
 
 unet = Unet()
 # The input shape for `build` should be [lat, lon, var]
-print(f"\tShape of model input layer to build: ({output_metadata['unet_build_shape']})")
-unet.build(output_metadata['unet_build_shape'], act_reg=config_dict['act_reg'], act_reg_factor=config_dict['act_reg_factor'])
+print(f"\tShape of model input layer to build: ({predictions_metadata['unet_build_shape']})")
+unet.build(predictions_metadata['unet_build_shape'], act_reg=config_dict['act_reg'], act_reg_factor=config_dict['act_reg_factor'])
 opt = Adam(learning_rate=1e-5) 
 
 unet.compile(optimizer=opt, loss=msenonzero, metrics=[r2_keras, msenonzero])
@@ -92,7 +93,7 @@ unet.summary()
 unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=config_dict['n_epochs'], save_format=model_fmt)
 
 # Generate predictions for evaluation
-pred_xarray, output_metadata = make_predictions(uarr, unet, config_dict, config_path, output_metadata, stage=1)
+pred_xarray, predictions_metadata = make_predictions(uarr, unet, config_dict, config_path, predictions_metadata, stage=1)
 # Save the xarray to a file
 pred_xarray.to_netcdf(f"{savedir}predictions.nc")
 
@@ -109,7 +110,7 @@ uarr = uarray(inputfiles, is_input_set=True)
 # Get the years
 years = uarr._get_years()
 # Prepare the input files
-xtrain, ytrain, output_metadata = rf.prepare_input(uarr, config_path, output_metadata, config_dict['split_year'], stage=2)
+xtrain, ytrain, predictions_metadata = rf.prepare_input(uarr, config_path, predictions_metadata, config_dict['split_year'], stage=2)
 # Split into training and validation sets
 xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, config_dict['split_value'])
 print("After data split:")
@@ -133,7 +134,7 @@ else:
 unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=config_dict['n_epochs'], save_format=model_fmt)
 
 # Generate predictions for evaluation
-pred_xarray_s2, output_metadata = make_predictions(uarr, unet, config_dict, config_path, output_metadata, stage=2)
+pred_xarray_s2, predictions_metadata = make_predictions(uarr, unet, config_dict, config_path, predictions_metadata, stage=2)
 
 # Create a new variable name and long name
 pred_var = f"{uarr.xr.attrs['y_var']}_pred_s2"
@@ -156,10 +157,10 @@ pred_xarray.to_netcdf(f"{savedir}predictions.nc")
 
 
 # Save the output metadata dictionary to file
-print('output_metadata:', output_metadata)
+print('predictions_metadata:', predictions_metadata)
 import json
-with open(f"{savedir}output_metadata.json", 'w') as file:
-    file.write(json.dumps(output_metadata, indent=4))
+with open(f"{savedir}predictions_metadata.json", 'w') as file:
+    file.write(json.dumps(predictions_metadata, indent=4))
 
 print("===== End run_model.py =====")
 print("")
