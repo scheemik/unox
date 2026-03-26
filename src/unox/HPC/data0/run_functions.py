@@ -257,14 +257,14 @@ def prepare_input(
     print(f"split_date: {split_date}, type: {type(split_date)}")
 
     # Get the data arrays
-    xtrain, in_lats, in_lons = get_npy_from_netcdf(
+    xtrain, in_lats, in_lons, in_time = get_npy_from_netcdf(
         uarr.xr, 
         model_config, 
         start_date=start_date, 
         end_date=split_date, 
         x_or_y=x_s,
     )
-    ytrain, in_lats, in_lons = get_npy_from_netcdf(
+    ytrain, in_lats, in_lons, in_time = get_npy_from_netcdf(
         uarr.xr, 
         model_config, 
         start_date=start_date, 

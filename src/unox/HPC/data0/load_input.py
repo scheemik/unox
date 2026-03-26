@@ -168,7 +168,7 @@ def get_npy_from_netcdf(
         list_of_var_arrs.append(var_array)
     # Stack the arrays together along a new axis in last place
     data_array = np.stack(tuple(list_of_var_arrs), axis=-1)
-    return data_array, xr_dataset['lat'].values, xr_dataset['lon'].values
+    return data_array, xr_dataset['lat'].values, xr_dataset['lon'].values, xr_array['time'].values
 # 
 #     if isinstance(var, type(None)):
 #         if x_or_y in ['x', 'x2']:
