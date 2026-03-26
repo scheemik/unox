@@ -211,8 +211,14 @@ def prepare_input(
     # Verify argument types
     uarr._verify()
     # Verify model_config
-    if not isinstance(model_config, (str, type({}))):
-        raise TypeError(f"(prepare_input) `model_config` must be a str or dict. Got type: {type(model_config)}.")
+    if not isinstance(model_config, type({})):
+        if isinstance(model_config, str):
+            try:
+                model_config = get_config(model_config)
+            except:
+                raise ValueError(f"(prepare_input) `model_config` string argument could not be found as a file. Got: {model_config}")
+        else:
+            raise TypeError(f"(prepare_input) `model_config` must be a str or dict. Got type: {type(model_config)}.")
     # Verify predictions_metadata
     if not isinstance(predictions_metadata, type({})):
         raise TypeError(f"(prepare_input) `predictions_metadata` must be a dict. Got type: {type(predictions_metadata)}.")
@@ -235,7 +241,8 @@ def prepare_input(
         x_s = 'x'
         meta_stage = 'stage1'
     elif stage == 2:
-        start_year = uarr.xr.attrs['stage_2_cutoff']+1
+        print(f'model_config[`stage_2_cutoff`]: {model_config["stage_2_cutoff"]}, type: {type(model_config["stage_2_cutoff"])}')
+        start_year = model_config['stage_2_cutoff']+1
         x_s = 'x2'
         meta_stage = 'stage2'
     else:
