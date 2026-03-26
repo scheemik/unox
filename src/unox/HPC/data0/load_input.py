@@ -188,7 +188,7 @@ def apply_config(
         # Verify the input config file path
         input_config_path = input_config
         if not os.path.isfile(input_config_path):
-            input_config_path = f"inputfiles/_input_configs/{input_config}.json"
+            model_config_path = f"inputfiles/_model_configs/{model_config}.json"
         # Load config file to a dictionary
         with open(input_config_path, 'r') as file:
             config_dict = json.load(file)

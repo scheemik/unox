@@ -68,13 +68,13 @@ else
 	echo "-i, Config files specified, using CONFIG_FILE=$CONFIG_FILE"
 fi
 # Check to see whether the configuration file exists
-if [ ! -f "inputfiles/_input_configs/$CONFIG_FILE.json" ]
+if [ ! -f "model_configs/$CONFIG_FILE.json" ]
 then
-	echo "    Configuration file inputfiles/_input_configs/$CONFIG_FILE.json does not exist."
+	echo "    Configuration file model_configs/$CONFIG_FILE.json does not exist."
 	echo "    Exiting..."
 	exit 1
 else
-	echo "    Configuration file inputfiles/_input_configs/$CONFIG_FILE.json found."
+	echo "    Configuration file model_configs/$CONFIG_FILE.json found."
 fi
 if [ -z "$TYPE" ]
 then
@@ -198,7 +198,7 @@ else
 			mkdir $ENS_DIR
 			# Make sure the configuration files are copied to the job directory
 			if [ ! -f "${ENS_DIR}/input_config.json" ]; then
-				cp inputfiles/_input_configs/$CONFIG_FILE.json $ENS_DIR/input_config.json
+				cp model_configs/$CONFIG_FILE.json $ENS_DIR/model_config.json
 			fi
 		done
 		# Create a file called ENSEMBLE_SIZE.txt that contains the ensemble size for reference
@@ -208,7 +208,7 @@ else
 	else
 		# Make sure the configuration files are copied to the job directory
 		if [ ! -f "HPC_runs/$JOBNAME/input_config.json" ]; then
-			cp inputfiles/_input_configs/$CONFIG_FILE.json HPC_runs/$JOBNAME/input_config.json
+			cp model_configs/$CONFIG_FILE.json HPC_runs/$JOBNAME/model_config.json
 		fi
 	fi
 fi

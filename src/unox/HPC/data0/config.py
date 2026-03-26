@@ -26,7 +26,7 @@ def get_config(
         try:
             config_path = verify_path(config_file)
         except:
-            config_path = f"inputfiles/_input_configs/{config_file}.json"
+            config_path = f"model_configs/{config_file}.json"
             try:
                 config_path = verify_path(config_path)
             except:

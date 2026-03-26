@@ -20,7 +20,7 @@ except:
     config_file = 'sample_config'
 print('\targv[2], config_file:', config_file)
 # Load config file to a dictionary
-with open(f"inputfiles/_input_configs/{config_file}.json", 'r') as file:
+with open(f"model_configs/{config_file}.json", 'r') as file:
     config_dict = json.load(file)
 
 # Load third input argument, if it exists: the type of set of runs to do

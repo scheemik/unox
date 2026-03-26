@@ -12,7 +12,7 @@ def process_cmd_args(
     cmd_args,
     verbose = True,
     default_savedir = 'HPC_runs/test_unet0',
-    default_config = 'input_config',
+    default_config = 'model_configs/sample_config.json',
     default_version = 1,
 ):
     """ Process command line arguments given to `run_model.py`.
@@ -33,7 +33,7 @@ def process_cmd_args(
             Default is 'HPC_runs/test_unet'.
         default_config : `str`, optional
             The default config file to use if none is found in `cmd_args`.
-            Default is 'input_config'.
+            Default is 'model_configs/sample_config.json'.
         default_version : `int`, optional
             The default version to use if none is found in `cmd_args`.
             Default is 1.
@@ -78,9 +78,7 @@ def process_cmd_args(
     try:
         config_dict = get_config(config_path)
     except:
-        # Default to `inputfiles/_input_configs/sample_config.json`
-        config_path = "inputfiles/_input_configs/sample_config.json"
-        config_dict = get_config(config_path)
+        config_dict = get_config(default_config)
     if verbose:
         print(f"\t     config_file: {config_path}")
     # If wasn't already present, write the config dictionary to a json file in `savedir``
