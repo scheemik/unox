@@ -71,7 +71,7 @@ def get_npy_from_netcdf(
     # Verify year is present in the dataset
     ds_years = get_years(xr_dataset)
     if year not in ds_years:
-        raise ValueError(f"(get_npy_from_netcdf) `year` must be a year present in `netcdf`. Available years: {ds_years}")
+        raise ValueError(f"(get_npy_from_netcdf) `year` must be a year present in `netcdf`. Got {year}. Available years: {ds_years}")
     # Verify the input config
     if isinstance(model_config, type({})):
         config_dict = model_config
