@@ -114,7 +114,7 @@ def process_cmd_args(
     
     return savedir, config_dict, config_path, version
 
-def make_output_metadata_dict(
+def make_predictions_metadata_dict(
     savedir,
     config_path,
     config_dict,
@@ -139,23 +139,23 @@ def make_output_metadata_dict(
 
         Returns
         -------
-        output_metadata : `dict`
+        predictions_metadata : `dict`
             The output metadata dictionary.
     """
     # Verify argument types
     if not isinstance(savedir, str):
-        raise TypeError(f"(make_output_metadata_dict) `savedir` must be a str. Got type: {type(savedir)}")
+        raise TypeError(f"(make_predictions_metadata_dict) `savedir` must be a str. Got type: {type(savedir)}")
     if not isinstance(config_path, str):
-        raise TypeError(f"(make_output_metadata_dict) `config_path` must be a str. Got type: {type(config_path)}")
+        raise TypeError(f"(make_predictions_metadata_dict) `config_path` must be a str. Got type: {type(config_path)}")
     if not isinstance(config_dict, (str, type({}))):
-        raise TypeError(f"(make_output_metadata_dict) `config_dict` must be a str or dict. Got type: {type(config_dict)}")
+        raise TypeError(f"(make_predictions_metadata_dict) `config_dict` must be a str or dict. Got type: {type(config_dict)}")
     if not isinstance(version, int):
-        raise TypeError(f"(make_output_metadata_dict) `version` must be an int. Got type: {type(version)}")
+        raise TypeError(f"(make_predictions_metadata_dict) `version` must be an int. Got type: {type(version)}")
     if not isinstance(model_fmt, str):
-        raise TypeError(f"(make_output_metadata_dict) `model_fmt` must be a str. Got type: {type(model_fmt)}")
+        raise TypeError(f"(make_predictions_metadata_dict) `model_fmt` must be a str. Got type: {type(model_fmt)}")
 
     # Create the metadata dictionary
-    output_metadata = {
+    predictions_metadata = {
         'savedir': savedir,
         'config_path': config_path,
         'config_dict': config_dict,
@@ -170,12 +170,12 @@ def make_output_metadata_dict(
             'stage2': [],
         },
     }
-    return output_metadata
+    return predictions_metadata
 
 def prepare_input(
     uarr,
     model_config,
-    output_metadata,
+    predictions_metadata,
     split_year = 2019,
     stage = 1,
 ):
@@ -189,7 +189,7 @@ def prepare_input(
             The dataset of the input NetCDF file.
         model_config : `str` or `dict`
             Path to the input configuration JSON file or a dictionary containing the configuration.
-        output_metadata : `dict`
+        predictions_metadata : `dict`
             The dictionary of metadata describing the output of a model run.
         split_year : `int`, optional
             The year at which to split the training and testing data.
@@ -203,7 +203,7 @@ def prepare_input(
             Concatenated training input features.
         ytrain : `np.ndarray`
             Concatenated training target variables.
-        output_metadata : `dict`
+        predictions_metadata : `dict`
             The dictionary of metadata describing the output of a model run with values added for `train_years` and `unet_build_shape`.
     """
     # Verify argument types
@@ -211,9 +211,9 @@ def prepare_input(
     # Verify model_config
     if not isinstance(model_config, (str, type({}))):
         raise TypeError(f"(prepare_input) `model_config` must be a str or dict. Got type: {type(model_config)}.")
-    # Verify output_metadata
-    if not isinstance(output_metadata, type({})):
-        raise TypeError(f"(prepare_input) `output_metadata` must be a dict. Got type: {type(output_metadata)}.")
+    # Verify predictions_metadata
+    if not isinstance(predictions_metadata, type({})):
+        raise TypeError(f"(prepare_input) `predictions_metadata` must be a dict. Got type: {type(predictions_metadata)}.")
     # Verify split_year
     if not verify_number(split_year):
         raise TypeError(f"(prepare_input) `split_year` must be a number. Got type: {type(split_year)}")
@@ -247,7 +247,7 @@ def prepare_input(
         xtrain_list.append(this_x_train_arr)
         this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, model_config, x_or_y='y')
         ytrain_list.append(this_y_train_arr)
-        output_metadata['train_years'][meta_stage].append(year)
+        predictions_metadata['train_years'][meta_stage].append(year)
     # Check the shapes of the input arrays
     print(f"\tShape of first xtrain file: {xtrain_list[0].shape}")
     print(f"\tShape of first ytrain file: {ytrain_list[0].shape}")
@@ -260,6 +260,6 @@ def prepare_input(
     # Add the shape for which to build the unet input layer
     ## Important to note this hear as the lat-lon grid of the data 
     ## may change after calling `get_npy_from_netcdf()`
-    output_metadata['unet_build_shape'] = xtrain.shape[1:]  # omit the first dimension (time)
-    return xtrain, ytrain, output_metadata
+    predictions_metadata['unet_build_shape'] = xtrain.shape[1:]  # omit the first dimension (time)
+    return xtrain, ytrain, predictions_metadata
 
