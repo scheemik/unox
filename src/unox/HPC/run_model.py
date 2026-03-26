@@ -48,7 +48,7 @@ uarr = uarray(inputfiles, is_input_set=True)
 # Get the years
 years = uarr._get_years()
 # Prepare the input files
-xtrain, ytrain, predictions_metadata = rf.prepare_input(uarr, config_path, predictions_metadata, config_dict['split_year'], stage=1)
+xtrain, ytrain, predictions_metadata = rf.prepare_input(uarr, config_path, predictions_metadata, stage=1)
 # Split into training and validation sets
 xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, config_dict['split_value'])
 print("After data split:")
@@ -110,7 +110,7 @@ uarr = uarray(inputfiles, is_input_set=True)
 # Get the years
 years = uarr._get_years()
 # Prepare the input files
-xtrain, ytrain, predictions_metadata = rf.prepare_input(uarr, config_path, predictions_metadata, config_dict['split_year'], stage=2)
+xtrain, ytrain, predictions_metadata = rf.prepare_input(uarr, config_path, predictions_metadata, stage=2)
 # Split into training and validation sets
 xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, config_dict['split_value'])
 print("After data split:")

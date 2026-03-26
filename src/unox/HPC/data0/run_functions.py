@@ -178,7 +178,6 @@ def prepare_input(
     uarr,
     model_config,
     predictions_metadata,
-    split_year = 2019,
     stage = 1,
 ):
     """ Prepare the input data for the model.
@@ -193,9 +192,6 @@ def prepare_input(
             Path to the input configuration JSON file or a dictionary containing the configuration.
         predictions_metadata : `dict`
             The dictionary of metadata describing the output of a model run.
-        split_year : `int`, optional
-            The year at which to split the training and testing data.
-            Defaults to 2019.
         stage : `int`
             The stage of the data to plot (1 or 2).
 
@@ -222,48 +218,102 @@ def prepare_input(
     # Verify predictions_metadata
     if not isinstance(predictions_metadata, type({})):
         raise TypeError(f"(prepare_input) `predictions_metadata` must be a dict. Got type: {type(predictions_metadata)}.")
-    # Verify split_year
-    if not verify_number(split_year):
-        raise TypeError(f"(prepare_input) `split_year` must be a number. Got type: {type(split_year)}")
-    # Verify split_year is present in the dataset
-    years = uarr._get_years()
-    if split_year not in years:
-        raise ValueError(f"(prepare_input) `split_year` must be a year present in `uarr`. Available years: {years}")
-    if stage not in [1, 2]:
-        raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}.")
+    # # Verify split_year
+    # if not verify_number(split_year):
+    #     raise TypeError(f"(prepare_input) `split_year` must be a number. Got type: {type(split_year)}")
+    # # Verify split_year is present in the dataset
+    # years = uarr._get_years()
+    # if split_year not in years:
+    #     raise ValueError(f"(prepare_input) `split_year` must be a year present in `uarr`. Available years: {years}")
+    # if stage not in [1, 2]:
+    #     raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}.")
+    # Check whether the model configuration has a start date
+    if 'start_date' in model_config:
+        start_date = model_config['start_date']
+    else:
+        # Set the start date to be the first day of the dataset
+        start_date = uarr.xr.time.values[0]
+        # Convert to string in the format 'YYYY-MM-DD'
+        start_date = np.datetime_as_string(start_date, unit='D')
+    # Get the verification split date from the model configuration
+    if 'verification_split_date' in model_config:
+        split_date = model_config['verification_split_date']
+    else:
+        raise ValueError(f"(prepare_input) `model_config` must have a `verification_split_date` key specifying the date on which to split the data between training / testing and verification.")
 
-    # Create blank lists to hold x and y training data
-    xtrain_list = []
-    ytrain_list = []
-    # Set parameters based on the stage
-    if stage == 1:
-        start_year = min(years)
-        x_s = 'x'
-        meta_stage = 'stage1'
-    elif stage == 2:
-        print(f'model_config[`stage_2_cutoff`]: {model_config["stage_2_cutoff"]}, type: {type(model_config["stage_2_cutoff"])}')
-        start_year = model_config['stage_2_cutoff']+1
+    # If stage 2, use the stage 2 cutoff date as the start date
+    if stage == 2:
+        if 'stage_2_cutoff_date' in model_config:
+            start_date = f"{model_config['stage_2_cutoff_date']}-12-31"
+        else:
+            raise ValueError(f"(prepare_input) For stage 2, `model_config` must have a `stage_2_cutoff` key specifying the last year of stage 1 data to use as the cutoff date for stage 2.")
         x_s = 'x2'
-        meta_stage = 'stage2'
+    elif stage == 1:
+        x_s = 'x'
     else:
         raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}")
-    # Check to make sure that `split_year` is larger than `start_year`
-    if split_year <= start_year:
-        raise ValueError(f"(prepare_input) `split_year` ({split_year}) must be greater than `start_year` ({start_year})")
-    # If before the split year, add x and y data to train lists
-    for year in range(start_year, split_year):
-        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, model_config, x_or_y=x_s)
-        xtrain_list.append(this_x_train_arr)
-        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, model_config, x_or_y='y')
-        ytrain_list.append(this_y_train_arr)
-        predictions_metadata['train_years'][meta_stage].append(year)
-    # Check the shapes of the input arrays
-    print(f"\tShape of first xtrain file: {xtrain_list[0].shape}")
-    print(f"\tShape of first ytrain file: {ytrain_list[0].shape}")
-    # Concatenate training data
-    xtrain = np.concatenate(xtrain_list, axis=0)
-    ytrain = np.concatenate(ytrain_list, axis=0)
-    print("After concatenation:")
+
+    print(f"start_date: {start_date}, type: {type(start_date)}")
+    print(f"split_date: {split_date}, type: {type(split_date)}")
+
+    # Get the data arrays
+    xtrain, in_lats, in_lons = get_npy_from_netcdf(
+        uarr.xr, 
+        model_config, 
+        start_date=start_date, 
+        end_date=split_date, 
+        x_or_y=x_s,
+    )
+    ytrain, in_lats, in_lons = get_npy_from_netcdf(
+        uarr.xr, 
+        model_config, 
+        start_date=start_date, 
+        end_date=split_date, 
+        x_or_y='y',
+    )
+
+    # # Create blank lists to hold x and y training data
+    # xtrain_list = []
+    # ytrain_list = []
+    # # Set parameters based on the stage
+    # if stage == 1:
+    #     start_year = min(years)
+    #     x_s = 'x'
+    #     meta_stage = 'stage1'
+    # elif stage == 2:
+    #     print(f'model_config[`stage_2_cutoff`]: {model_config["stage_2_cutoff"]}, type: {type(model_config["stage_2_cutoff"])}')
+    #     start_year = model_config['stage_2_cutoff']+1
+    #     x_s = 'x2'
+    #     meta_stage = 'stage2'
+    # else:
+    #     raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}")
+    # # Check to make sure that `split_year` is larger than `start_year`
+    # if split_year <= start_year:
+    #     raise ValueError(f"(prepare_input) `split_year` ({split_year}) must be greater than `start_year` ({start_year})")
+    # # If before the split year, add x and y data to train lists
+    # for year in range(start_year, split_year):
+    #     this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(
+    #         uarr.xr, 
+    #         model_config, 
+    #         start_date=f'{year}-01-01', 
+    #         end_date=f'{year}-12-31', 
+    #         x_or_y=x_s)
+    #     xtrain_list.append(this_x_train_arr)
+    #     this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(
+    #         uarr.xr, 
+    #         model_config, 
+    #         start_date=f'{year}-01-01', 
+    #         end_date=f'{year}-12-31', 
+    #         x_or_y='y')
+    #     ytrain_list.append(this_y_train_arr)
+    #     predictions_metadata['train_years'][meta_stage].append(year)
+    # # Check the shapes of the input arrays
+    # print(f"\tShape of first xtrain file: {xtrain_list[0].shape}")
+    # print(f"\tShape of first ytrain file: {ytrain_list[0].shape}")
+    # # Concatenate training data
+    # xtrain = np.concatenate(xtrain_list, axis=0)
+    # ytrain = np.concatenate(ytrain_list, axis=0)
+    # print("After concatenation:")
     print(f"\tShape of xtrain: {xtrain.shape}")
     print(f"\tShape of ytrain: {ytrain.shape}")
     # Add the shape for which to build the unet input layer

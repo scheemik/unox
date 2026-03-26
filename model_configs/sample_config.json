@@ -28,9 +28,9 @@
     "lsm_vars": [
     ],
     "stage_2": true,
-    "stage_2_cutoff": 2013,
+    "stage_2_cutoff_date": "2014-01-01",
     "n_epochs": 100,
-    "split_year": 2019,
+    "verification_split_date": "2019-01-01",
     "split_value": 0.9,
     "grid_size": [56, 120],
     "act_reg": "L1",
