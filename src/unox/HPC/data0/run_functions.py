@@ -10,10 +10,9 @@ from .load_input import get_npy_from_netcdf
 
 def process_cmd_args(
     cmd_args,
-    verbose = True,
-    default_savedir = 'HPC_runs/test_unet0',
     default_config = 'model_configs/sample_config.json',
     default_version = 1,
+    verbose = True,
 ):
     """ Process command line arguments given to `run_model.py`.
 
@@ -25,18 +24,15 @@ def process_cmd_args(
             - arg 0: script name (i.e., `run_model.py`)
             - arg 1: savedir, the directory in which to save model outputs
             - arg 2: version, the version of the packages to import (0 or 1)
-        verbose : `bool`, optional
-            Whether to print the processed command line arguments.
-            Default is True.
-        default_savedir : `str`, optional
-            The default save directory to use if none is found in `cmd_args`.
-            Default is 'HPC_runs/test_unet'.
         default_config : `str`, optional
             The default config file to use if none is found in `cmd_args`.
             Default is 'model_configs/sample_config.json'.
         default_version : `int`, optional
             The default version to use if none is found in `cmd_args`.
             Default is 1.
+        verbose : `bool`, optional
+            Whether to print the processed command line arguments.
+            Default is True.
 
         Returns
         -------
@@ -52,12 +48,18 @@ def process_cmd_args(
     # Verify argument types
     if not isinstance(cmd_args, list):
         raise TypeError(f"(process_cmd_args) `cmd_args` must be a list. Got type: {type(cmd_args)}")
+    if not isinstance(default_config, str):
+        raise TypeError(f"(process_cmd_args) `default_config` must be a string. Got type: {type(default_config)}")
+    if not isinstance(default_version, int):
+        raise TypeError(f"(process_cmd_args) `default_version` must be an int. Got type: {type(default_version)}")
+    if not isinstance(verbose, bool):
+        raise TypeError(f"(process_cmd_args) `verbose` must be a bool. Got type: {type(verbose)}")
     
     # Load the first input argument: the save directory
     try:
         savedir = cmd_args[1]
     except:
-        savedir = default_savedir
+        raise ValueError(f"(process_cmd_args) `cmd_args[1]` must be the save directory, but none was provided.")
     # Verify the savedir path
     if not isinstance(savedir, str):
         raise TypeError(f"(process_cmd_args) `savedir` (`cmd_args[1]`) must be a string. Got type: {type(savedir)}")
