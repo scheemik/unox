@@ -50,7 +50,7 @@ years = uarr._get_years()
 # Prepare the input files
 xtrain, ytrain, predictions_metadata = rf.prepare_input(uarr, config_path, predictions_metadata, stage=1)
 # Split into training and validation sets
-xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, config_dict['split_value'])
+xtrain, ytrain, xtest, ytest = data_split(xtrain, ytrain, config_dict['train_test_ratio'])
 print("After data split:")
 print(f"\tShape of xtrain: {xtrain.shape}")
 print(f"\tShape of ytrain: {ytrain.shape}")
@@ -112,7 +112,7 @@ years = uarr._get_years()
 # Prepare the input files
 xtrain, ytrain, predictions_metadata = rf.prepare_input(uarr, config_path, predictions_metadata, stage=2)
 # Split into training and validation sets
-xtrain, ytrain, xvalid, yvalid = data_split(xtrain, ytrain, config_dict['split_value'])
+xtrain, ytrain, xtest, ytest = data_split(xtrain, ytrain, config_dict['train_test_ratio'])
 print("After data split:")
 print(f"\tShape of xtrain: {xtrain.shape}")
 print(f"\tShape of ytrain: {ytrain.shape}")

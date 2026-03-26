@@ -31,7 +31,7 @@
     "stage_2_cutoff_date": "2014-01-01",
     "n_epochs": 100,
     "verification_split_date": "2019-01-01",
-    "split_value": 0.9,
+    "train_test_ratio": 0.9,
     "grid_size": [56, 120],
     "act_reg": "L1",
     "act_reg_factor": 1e-08
