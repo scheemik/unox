@@ -108,13 +108,21 @@ def get_npy_from_netcdf(
         if x_or_y in ['x', 'x2']:
             # Get the list of x variables from the `x_vars` attribute
             if x_or_y == 'x':
-                x_vars = xr_dataset.attrs.get('x1_vars')
+                x_vars = config_dict['x_vars']
             elif x_or_y == 'x2':
                 # Get the stage 2 cutoff
-                stage_2_cutoff = xr_dataset.attrs.get('stage_2_cutoff')
+                stage_2_cutoff = config_dict['stage_2_cutoff']
                 if stage_2_cutoff > year:
                     raise ValueError(f"(get_npy_from_netcdf) Stage 2 data not available for year {year} (cutoff is {stage_2_cutoff}).")
-                x_vars = xr_dataset.attrs.get('x2_vars')
+                # Get the stage 2 variables
+                x_vars = config_dict['x_vars']
+                # Look for variables in the xr_dataset that contain `_s2`
+                x_vars_s2 = [var for var in xr_dataset.data_vars if '_s2' in var]
+                # Replace the variables in `x_vars` with the stage 2 versions if they exist
+                for var_s2 in x_vars_s2:
+                    var_base = var_s2.replace('_s2', '')
+                    if var_base in x_vars:
+                        x_vars = [var_s2 if var == var_base else var for var in x_vars]
             # Grab just the x variables for the dataset
             data_for_year = data_for_year[x_vars]
             # Drop all nan values
@@ -129,7 +137,7 @@ def get_npy_from_netcdf(
                 # Get the numpy array for this variable
                 this_arr, in_lats, in_lons = get_npy_from_netcdf(data_for_year, year, config_dict, var=this_var)
                 list_of_x_arrs.append(this_arr)
-                # print(f'\tLoaded {this_var} for year {year} with shape {this_arr.shape}')
+                print(f'\tLoaded {this_var} for year {year} with shape {this_arr.shape}')
             # Stack the arrays together along a new axis in last place
             data_array = np.stack(tuple(list_of_x_arrs), axis=-1)
         elif x_or_y == 'y':
@@ -153,6 +161,7 @@ def get_npy_from_netcdf(
         data_for_year = data_for_year[var].dropna(dim='time', how='all')
         # Convert to numpy array
         data_array = data_for_year.to_numpy()
+        print(f'\tLoaded {var} for year {year} with shape {data_array.shape}')
     return data_array, data_for_year['lat'].values, data_for_year['lon'].values
 
 def apply_config(
