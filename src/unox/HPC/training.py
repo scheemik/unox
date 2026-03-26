@@ -98,6 +98,7 @@ def make_predictions(
     config_path,
     predictions_metadata,
     stage = 1,
+    end_date = None,
 ):
     """ Prepare the input data for the model.
 
@@ -138,56 +139,96 @@ def make_predictions(
         raise TypeError(f"(make_predictions) `config_path` must be a string. Got type: {type(config_path)}.")
     if stage not in [1, 2]:
         raise ValueError(f"(make_predictions) `stage` must be either 1 or 2. Got: {stage}.")
+    
+    # Get the verification split date from the model configuration
+    if 'verification_split_date' in config_dict:
+        split_date = config_dict['verification_split_date']
+    else:
+        raise ValueError(f"(make_predictions) `config_dict` must have a `verification_split_date` key specifying the date on which to split the data between training / testing and verification.")
+    # Get the end date
+    if isinstance(end_date, type(None)):
+        # Get the last date in the dataset
+        end_date = uarr.xr.time.values[-1]
+        # Convert to string in the format 'YYYY-MM-DD'
+        end_date = np.datetime_as_string(end_date, unit='D')
+    elif not isinstance(end_date, str):
+        raise TypeError(f"(make_predictions) `end_date` must be a string in the format 'YYYY-MM-DD' or None. Got type: {type(end_date)}.")
+    
+    # Get the data arrays
+    x_test, in_lats, in_lons = get_npy_from_netcdf(
+        uarr.xr,
+        config_dict,
+        start_date=split_date,
+        end_date=end_date,
+        x_or_y='x',
+    )
 
-    # Get the years
-    years = uarr._get_years()
-    # Get the long name and units of the y variable to put in the new xarray
-    y_var = uarr.xr.attrs['y_var']
-    y_var_name = uarr.xr[y_var].long_name
-    y_var_unit = uarr.xr[y_var].units
-    # Create a new variable name and long name
-    if stage == 1:
-        pred_var = f"{y_var}_pred"
-        pred_var_name = f"Predicted {y_var_name}"
-    elif stage == 2:
-        pred_var = f"{y_var}_pred_s2"
-        pred_var_name = f"Predicted {y_var_name} (stage 2)"
-    # Create a blank list to add predictions to
-    pred_xr_arr = []
-    # Make predictions based on x data for years >= split_year
-    for year in range(config_dict['split_year'], max(years)+1):
-        print(f"Generating predictions for year: {year}")
-        x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
-        # Make the predictions
-        pred = unet.predict(x_test)
-        # Add year to the list of predictions in the metadata dictionary
-        predictions_metadata['pred_years'][f'stage{stage}'].append(year)
+    # Make the predictions
+    pred = unet.predict(x_test)
+    # Put the predictions into an xarray Dataset
+    pred_xarray = xr.Dataset(
+        data_vars=dict(
+            # Squeeze the predictions array to reduce dimensions 
+            # from (364, n_lat, n_lon, 1) to (364, n_lat, n_lon)
+            pred_temp=(["time", "lat", "lon"], pred.squeeze())
+        ),
+        coords={
+            "time":uarr.xr.time,
+            "lat":in_lats, 
+            "lon":in_lons,
+        },
+    )
 
-        # Select the data for the specified year
-        data_for_year = uarr._select_year(year)
-        # Load the output to an xarray Dataset
-        this_year_pred_xr = xr.Dataset(
-            data_vars=dict(
-                # Squeeze the predictions array to reduce dimensions 
-                # from (364, n_lat, n_lon, 1) to (364, n_lat, n_lon)
-                pred_temp=(["time", "lat", "lon"], pred.squeeze())
-            ),
-            coords={
-                "time":data_for_year["time"],
-                "lat":in_lats, 
-                "lon":in_lons,
-            },
-        )
-        pred_xr_arr.append(this_year_pred_xr)
-    # Concatenate the new data with the existing dataset along the time dimension
-    pred_xarray = xr.concat(pred_xr_arr, dim='time')
+    #     # Get the years
+    #     years = uarr._get_years()
+    #     # Get the long name and units of the y variable to put in the new xarray
+    #     y_var = uarr.xr.attrs['y_var']
+    #     y_var_name = uarr.xr[y_var].long_name
+    #     y_var_unit = uarr.xr[y_var].units
+    #     # Create a new variable name and long name
+    #     if stage == 1:
+    #         pred_var = f"{y_var}_pred"
+    #         pred_var_name = f"Predicted {y_var_name}"
+    #     elif stage == 2:
+    #         pred_var = f"{y_var}_pred_s2"
+    #         pred_var_name = f"Predicted {y_var_name} (stage 2)"
+    #     # Create a blank list to add predictions to
+    #     pred_xr_arr = []
+    #     # Make predictions based on x data for years >= split_year
+    #     for year in range(config_dict['split_year'], max(years)+1):
+    #         print(f"Generating predictions for year: {year}")
+    #         x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
+    #         # Make the predictions
+    #         pred = unet.predict(x_test)
+    #         # Add year to the list of predictions in the metadata dictionary
+    #         predictions_metadata['pred_years'][f'stage{stage}'].append(year)
+    # 
+    #         # Select the data for the specified year
+    #         data_for_year = uarr._select_year(year)
+    #         # Load the output to an xarray Dataset
+    #         this_year_pred_xr = xr.Dataset(
+    #             data_vars=dict(
+    #                 # Squeeze the predictions array to reduce dimensions 
+    #                 # from (364, n_lat, n_lon, 1) to (364, n_lat, n_lon)
+    #                 pred_temp=(["time", "lat", "lon"], pred.squeeze())
+    #             ),
+    #             coords={
+    #                 "time":data_for_year["time"],
+    #                 "lat":in_lats, 
+    #                 "lon":in_lons,
+    #             },
+    #         )
+    #         pred_xr_arr.append(this_year_pred_xr)
+    #     # Concatenate the new data with the existing dataset along the time dimension
+    #     pred_xarray = xr.concat(pred_xr_arr, dim='time')
+    
     # Rename prediction variable and add attributes
     pred_xarray = pred_xarray.rename({'pred_temp': pred_var})
     pred_xarray[pred_var].attrs = {'long_name': pred_var_name, 'units': y_var_unit}
     # Copy over the attributes for the latitude and longitude
     for coord in ['lat', 'lon']:
-        for this_attr in data_for_year[coord].attrs.keys():
-            pred_xarray[coord].attrs[this_attr] = data_for_year[coord].attrs[this_attr]
+        for this_attr in uarr.xr[coord].attrs.keys():
+            pred_xarray[coord].attrs[this_attr] = uarr.xr[coord].attrs[this_attr]
     # Add global attributes for the prediction file
     pred_xarray.attrs['description'] = f"Predicted {y_var_name} using a U-net model"
     pred_xarray.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
