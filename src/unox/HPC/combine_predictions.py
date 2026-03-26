@@ -46,14 +46,14 @@ for i in range(1, ens_size + 1):
     # Verify the predictions file exists
     ens_dicts[i-1]['pred_file'] = verify_path(f"{ens_mem_dir}predictions.nc")
     # Verify the input configuration file exists
-    ens_dicts[i-1]['input_config'] = verify_path(f"{ens_mem_dir}input_config.json")
+    ens_dicts[i-1]['model_config'] = verify_path(f"{ens_mem_dir}model_config.json")
     # Verify the output metadata file exists
     ens_dicts[i-1]['predictions_metadata'] = verify_path(f"{ens_mem_dir}predictions_metadata.json")
 
 # Compare the input configuration and output metadata files across all ensemble members
 ## Load those files for the first ensemble member
-with open(ens_dicts[0]['input_config'], 'r') as file:
-    base_input_config = json.load(file)
+with open(ens_dicts[0]['model_config'], 'r') as file:
+    base_model_config = json.load(file)
 with open(ens_dicts[0]['predictions_metadata'], 'r') as file:
     base_predictions_metadata = json.load(file)
     # Get the name of the `savedir` entry
@@ -64,13 +64,13 @@ with open(ens_dicts[0]['predictions_metadata'], 'r') as file:
     # a 2-digit number and an underscore
     base_child_dir = os.path.basename(base_savedir.rstrip('/'))[3:]
     # Set `config_path` to parent directory to not be specific to one ensemble member
-    base_predictions_metadata['config_path'] = f"{base_predictions_metadata['savedir']}input_config.json"
+    base_predictions_metadata['config_path'] = f"{base_predictions_metadata['savedir']}model_config.json"
 for i in range(1, ens_size):
     # Load the input configuration file for this ensemble member
-    with open(ens_dicts[i]['input_config'], 'r') as file:
-        this_input_config = json.load(file)
+    with open(ens_dicts[i]['model_config'], 'r') as file:
+        this_model_config = json.load(file)
     # Compare to the base input configuration
-    if this_input_config != base_input_config:
+    if this_model_config != base_model_config:
         raise ValueError(f"Input configuration file for ensemble member {i+1} does not match that of member 1.")
     # Load the output metadata file for this ensemble member
     with open(ens_dicts[i]['predictions_metadata'], 'r') as file:
@@ -83,7 +83,7 @@ for i in range(1, ens_size):
         # a 2-digit number and an underscore
         this_child_dir = os.path.basename(this_savedir.rstrip('/'))[3:]
         # Set `config_path` to parent directory to not be specific to one ensemble member
-        this_predictions_metadata['config_path'] = f"{this_predictions_metadata['savedir']}input_config.json"
+        this_predictions_metadata['config_path'] = f"{this_predictions_metadata['savedir']}model_config.json"
     if this_predictions_metadata != base_predictions_metadata:
         raise ValueError(f"Output metadata file for ensemble member {i+1} does not match that of member 1.")
     # Compare the child directory names, skipping the first three characters as those will be 
@@ -91,10 +91,10 @@ for i in range(1, ens_size):
     if this_child_dir != base_child_dir:
         raise ValueError(f"The child directory in the `savedir` entry in output metadata file for ensemble member {i+1} does not match that of member 1.\n\tMember 1: {base_savedir}\n\tMember {i+1}: {this_savedir}")
 # Save the input configuration file from the first ensemble member to the base directory
-print(f"All `input_config.json` files match across the {ens_size} ensemble members.")
-print(f"\tSaving `input_config.json` to {savedir}")
-with open(f"{savedir}input_config.json", 'w') as file:
-    json.dump(base_input_config, file, indent=4)
+print(f"All `model_config.json` files match across the {ens_size} ensemble members.")
+print(f"\tSaving `model_config.json` to {savedir}")
+with open(f"{savedir}model_config.json", 'w') as file:
+    json.dump(base_model_config, file, indent=4)
 # Save the output metadata file from the first ensemble member to the base directory
 print(f"All `predictions_metadata.json` files match across the {ens_size} ensemble members.")
 print(f"\tSaving `predictions_metadata.json` to {savedir}")

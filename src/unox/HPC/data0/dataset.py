@@ -91,7 +91,10 @@ class uarray():
                 self.name = dataset
                 # Set input / prediction attributes
                 if is_input_set:
-                    self.metadata_file = verify_path(f'inputfiles/{dataset}/input_metadata.json')
+                    try:
+                        self.metadata_file = verify_path(f'inputfiles/{dataset}/input_metadata.json')
+                    except:
+                        self.metadata_file = verify_path(f'inputfiles/{dataset}/{dataset}.json')
                     self.is_input_set = True
                     self.is_predict = False
                     self.is_ensemble = False
