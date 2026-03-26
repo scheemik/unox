@@ -253,8 +253,9 @@ def prepare_input(
     else:
         raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}")
 
-    print(f"start_date: {start_date}, type: {type(start_date)}")
-    print(f"split_date: {split_date}, type: {type(split_date)}")
+    print(f"Preparing input data for stage {stage} of training.")
+    print(f"\tstart_date: {start_date}")
+    print(f"\tsplit_date: {split_date}")
 
     # Get the data arrays
     xtrain, in_lats, in_lons, in_time = get_npy_from_netcdf(
