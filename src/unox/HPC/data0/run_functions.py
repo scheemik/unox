@@ -73,7 +73,7 @@ def process_cmd_args(
         print(f"\targv[1], savedir: {savedir}")
 
     # Use the save directory to load the config file
-    config_path = f"{savedir}input_config.json"
+    config_path = f"{savedir}model_config.json"
     # Get the config dictionary (`get_config` verifies type of `config_path`)
     try:
         config_dict = get_config(config_path)
@@ -83,7 +83,7 @@ def process_cmd_args(
         print(f"\t     config_file: {config_path}")
     # If wasn't already present, write the config dictionary to a json file in `savedir``
     if not savedir in config_path:
-        with open(f"{savedir}input_config.json", 'w') as file:
+        with open(f"{savedir}model_config.json", 'w') as file:
             file.write(json.dumps(config_dict, indent=4))
 
     # Load the third input argument: the version of the packages to use
@@ -174,7 +174,7 @@ def make_output_metadata_dict(
 
 def prepare_input(
     uarr,
-    input_config,
+    model_config,
     output_metadata,
     split_year = 2019,
     stage = 1,
@@ -187,7 +187,7 @@ def prepare_input(
         ----------
         uarr : `unox.uarray`
             The dataset of the input NetCDF file.
-        input_config : `str` or `dict`
+        model_config : `str` or `dict`
             Path to the input configuration JSON file or a dictionary containing the configuration.
         output_metadata : `dict`
             The dictionary of metadata describing the output of a model run.
@@ -208,9 +208,9 @@ def prepare_input(
     """
     # Verify argument types
     uarr._verify()
-    # Verify input_config
-    if not isinstance(input_config, (str, type({}))):
-        raise TypeError(f"(prepare_input) `input_config` must be a str or dict. Got type: {type(input_config)}.")
+    # Verify model_config
+    if not isinstance(model_config, (str, type({}))):
+        raise TypeError(f"(prepare_input) `model_config` must be a str or dict. Got type: {type(model_config)}.")
     # Verify output_metadata
     if not isinstance(output_metadata, type({})):
         raise TypeError(f"(prepare_input) `output_metadata` must be a dict. Got type: {type(output_metadata)}.")
@@ -243,9 +243,9 @@ def prepare_input(
         raise ValueError(f"(prepare_input) `split_year` ({split_year}) must be greater than `start_year` ({start_year})")
     # If before the split year, add x and y data to train lists
     for year in range(start_year, split_year):
-        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, input_config, x_or_y=x_s)
+        this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, model_config, x_or_y=x_s)
         xtrain_list.append(this_x_train_arr)
-        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, input_config, x_or_y='y')
+        this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, model_config, x_or_y='y')
         ytrain_list.append(this_y_train_arr)
         output_metadata['train_years'][meta_stage].append(year)
     # Check the shapes of the input arrays

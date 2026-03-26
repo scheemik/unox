@@ -156,10 +156,10 @@ if [ "$TYPE" = "zfi_set" ]; then
 		# Check whether there is more than one ensemble member
 		if [ "$ENSEMBLE_SIZE" == 1 ]; then
 			# Make sure that `set_of_runs.py` copied the config file correctly
-			CONFIG_FILE="${SUBDIR}input_config.json"
+			CONFIG_FILE="${SUBDIR}model_config.json"
 			if [ ! -f "$CONFIG_FILE" ]; then
 				echo "No configuration file found in $SUBDIR."
-				echo "For set of runs jobs, please ensure that `set_of_runs.py` gives each sub directory in HPC_runs/_$JOBNAME an input_config.json file."
+				echo "For set of runs jobs, please ensure that `set_of_runs.py` gives each sub directory in HPC_runs/_$JOBNAME an model_config.json file."
 				echo "Exiting..."
 				exit 1
 			fi
@@ -176,7 +176,7 @@ if [ "$TYPE" = "zfi_set" ]; then
 				# Make the ensemble member subdirectory
 				mkdir $ENS_DIR
 				# Copy the configuration file ensemble member's directory
-				cp "$SUBDIR/input_config.json" $ENS_DIR/input_config.json
+				cp "$SUBDIR/model_config.json" $ENS_DIR/model_config.json
 			# Create a file called ENSEMBLE_SIZE.txt that contains the ensemble size for reference
 			echo "$ENSEMBLE_SIZE" > "HPC_runs/_${JOBNAME}/${SUBDIR_NAME}/ENSEMBLE_SIZE.txt"
 			done
@@ -197,7 +197,7 @@ else
 			# Make the ensemble member subdirectory
 			mkdir $ENS_DIR
 			# Make sure the configuration files are copied to the job directory
-			if [ ! -f "${ENS_DIR}/input_config.json" ]; then
+			if [ ! -f "${ENS_DIR}/model_config.json" ]; then
 				cp model_configs/$CONFIG_FILE.json $ENS_DIR/model_config.json
 			fi
 		done
@@ -207,7 +207,7 @@ else
 		echo "$ENSEMBLE_SIZE" > $ENS_SIZE_FILE
 	else
 		# Make sure the configuration files are copied to the job directory
-		if [ ! -f "HPC_runs/$JOBNAME/input_config.json" ]; then
+		if [ ! -f "HPC_runs/$JOBNAME/model_config.json" ]; then
 			cp model_configs/$CONFIG_FILE.json HPC_runs/$JOBNAME/model_config.json
 		fi
 	fi

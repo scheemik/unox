@@ -14,7 +14,7 @@ from .config import get_config
 def get_npy_from_netcdf(
     netcdf,
     year,
-    input_config,
+    model_config,
     x_or_y=None,
     var=None,
 ):
@@ -26,7 +26,7 @@ def get_npy_from_netcdf(
             Path to the netcdf file or an xarray Dataset.
         year : `int`
             The year for which to extract the data.
-        input_config : `str` or `dict`
+        model_config : `str` or `dict`
             Path to the input configuration JSON file or a dictionary containing the configuration.
         x_or_y : `str`, optional
             If 'x', return the stage 1 x variables, if 'x2', return the stage 2 x variables,
@@ -73,14 +73,14 @@ def get_npy_from_netcdf(
     if year not in ds_years:
         raise ValueError(f"(get_npy_from_netcdf) `year` must be a year present in `netcdf`. Available years: {ds_years}")
     # Verify the input config
-    if isinstance(input_config, type({})):
-        config_dict = input_config
-    elif isinstance(input_config, str):
+    if isinstance(model_config, type({})):
+        config_dict = model_config
+    elif isinstance(model_config, str):
         # Get the input config from file
         ## Note: `get_config` checks whether the file exists
-        config_dict = get_config(input_config)
+        config_dict = get_config(model_config)
     else:
-        raise TypeError(f"(get_npy_from_netcdf) `input_config` must be a str or dict. Got type: {type(input_config)}")
+        raise TypeError(f"(get_npy_from_netcdf) `model_config` must be a str or dict. Got type: {type(model_config)}")
     # Verify `x_or_y` and `var`
     if isinstance(x_or_y, type(None)) and isinstance(var, type(None)):
         raise ValueError(f"(get_npy_from_netcdf) Cannot have both `x_or_y` and `var` have a values of `None`.")
@@ -151,7 +151,7 @@ def get_npy_from_netcdf(
 
 def apply_config(
     input_netcdf,
-    input_config,
+    model_config,
 ):
     """ Apply the conditions in the config to the netcdf.
 
@@ -161,7 +161,7 @@ def apply_config(
         ----------
         input_netcdf : `str` or `xr.Dataset`
             Path to the netcdf file or an xarray Dataset.
-        input_config : `str` or `dict`
+        model_config : `str` or `dict`
             Path to the input configuration JSON file or a dictionary containing the configuration.
 
         Returns
@@ -182,18 +182,18 @@ def apply_config(
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
     # Verify the input config
-    if isinstance(input_config, type({})):
-        config_dict = input_config
-    elif isinstance(input_config, str):
+    if isinstance(model_config, type({})):
+        config_dict = model_config
+    elif isinstance(model_config, str):
         # Verify the input config file path
-        input_config_path = input_config
-        if not os.path.isfile(input_config_path):
+        model_config_path = model_config
+        if not os.path.isfile(model_config_path):
             model_config_path = f"inputfiles/_model_configs/{model_config}.json"
         # Load config file to a dictionary
-        with open(input_config_path, 'r') as file:
+        with open(model_config_path, 'r') as file:
             config_dict = json.load(file)
     else:
-        raise TypeError(f"(apply_config) `input_config` must be a str or dict. Got type: {type(input_config)}")
+        raise TypeError(f"(apply_config) `model_config` must be a str or dict. Got type: {type(model_config)}")
 
     # Trim the lat-lon extent of the dataset, if applicable
     if 'grid_size' in config_dict:
