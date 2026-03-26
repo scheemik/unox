@@ -93,8 +93,14 @@ def get_npy_from_netcdf(
 
     # Apply the input configuration file
     xr_dataset = apply_config(xr_dataset, config_dict)
+    # Get the year of the first time step in the dataset
+    first_year = xr_dataset['time'].dt.year.values[0]
     # Select the data for the specified year
-    data_for_year = xr_dataset.sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
+    if year == first_year:
+        # Remove January 1st from the dataset so the (t-1) variables align properly
+        data_for_year = xr_dataset.sel(time=slice(f'{year}-01-02', f'{year}-12-31'))
+    else:
+        data_for_year = xr_dataset.sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
     # Check whether any data remains
     if data_for_year.sizes['time'] == 0:
         raise ValueError(f"(get_npy_from_netcdf) No data available for year {year} in the dataset.")
