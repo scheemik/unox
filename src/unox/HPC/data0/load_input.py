@@ -13,8 +13,9 @@ from .config import get_config
 
 def get_npy_from_netcdf(
     netcdf,
-    year,
     model_config,
+    start_date=None,
+    end_date=None,
     x_or_y=None,
     var=None,
 ):
@@ -24,10 +25,16 @@ def get_npy_from_netcdf(
         ----------
         netcdf : `str` or `xr.Dataset`
             Path to the netcdf file or an xarray Dataset.
-        year : `int`
-            The year for which to extract the data.
         model_config : `str` or `dict`
             Path to the input configuration JSON file or a dictionary containing the configuration.
+        start_date : `str`, `None`, optional
+            First date and time to include in the numpy array.
+            If `None`, the start date will be the first date in the netcdf dataset.
+            Default is `None`.
+        end_date : `str`, `None`, optional
+            Last date and time to include in the numpy array.
+            If `None`, the end date will be the last date in the netcdf dataset.
+            Default is `None`.
         x_or_y : `str`, optional
             If 'x', return the stage 1 x variables, if 'x2', return the stage 2 x variables,
             if 'y', return the y variables. If None, return all variables.
@@ -65,13 +72,6 @@ def get_npy_from_netcdf(
         raise TypeError(f"(get_npy_from_netcdf) `netcdf` must be a file path (str) or an xarray.Dataset. Got type: {type(netcdf)}")
     # Verify the dataset
     xr_dataset = verify_dataset(xr_dataset)
-    # Verify the year
-    if not verify_number(year):
-        raise TypeError(f"(get_npy_from_netcdf) `year` must be a number. Got type: {type(year)}")
-    # Verify year is present in the dataset
-    ds_years = get_years(xr_dataset)
-    if year not in ds_years:
-        raise ValueError(f"(get_npy_from_netcdf) `year` must be a year present in `netcdf`. Got {year}. Available years: {ds_years}")
     # Verify the input config
     if isinstance(model_config, type({})):
         config_dict = model_config
@@ -81,6 +81,28 @@ def get_npy_from_netcdf(
         config_dict = get_config(model_config)
     else:
         raise TypeError(f"(get_npy_from_netcdf) `model_config` must be a str or dict. Got type: {type(model_config)}")
+    # Verify the start date is in the dataset
+    if isinstance(start_date, type(None)):
+        start_date = xr_dataset['time'].values[0]
+    elif isinstance(start_date, str):
+        try:
+            # Try selecting the start date to verify it is in the dataset
+            foo = xr_dataset.sel(time=start_date)
+        except KeyError:
+            raise ValueError(f"(get_npy_from_netcdf) `start_date` must be a date present in the dataset. Got {start_date}. Available date range: {xr_dataset['time'].values[0]} to {xr_dataset['time'].values[-1]}")
+    else:
+        raise TypeError(f"(get_npy_from_netcdf) `start_date` must be a string or `None`. Got type: {type(start_date)}")
+    # Verify the end date is in the dataset
+    if isinstance(end_date, type(None)):
+        end_date = xr_dataset['time'].values[-1]
+    elif isinstance(end_date, str):
+        try:
+            # Try selecting the end date to verify it is in the dataset
+            foo = xr_dataset.sel(time=end_date)
+        except KeyError:
+            raise ValueError(f"(get_npy_from_netcdf) `end_date` must be a date present in the dataset. Got {end_date}. Available date range: {xr_dataset['time'].values[0]} to {xr_dataset['time'].values[-1]}")
+    else:
+        raise TypeError(f"(get_npy_from_netcdf) `end_date` must be a string or `None`. Got type: {type(end_date)}")
     # Verify `x_or_y` and `var`
     if isinstance(x_or_y, type(None)) and isinstance(var, type(None)):
         raise ValueError(f"(get_npy_from_netcdf) Cannot have both `x_or_y` and `var` have a values of `None`.")
@@ -93,76 +115,120 @@ def get_npy_from_netcdf(
 
     # Apply the input configuration file
     xr_dataset = apply_config(xr_dataset, config_dict)
-    # Get the year of the first time step in the dataset
-    first_year = xr_dataset['time'].dt.year.values[0]
-    # Select the data for the specified year
-    if year == first_year:
-        # Remove January 1st from the dataset so the (t-1) variables align properly
-        data_for_year = xr_dataset.sel(time=slice(f'{year}-01-02', f'{year}-12-31'))
-    else:
-        data_for_year = xr_dataset.sel(time=slice(f'{year}-01-01', f'{year}-12-31'))
+    # Trim the dataset to the specified date range
+    xr_dataset = xr_dataset.sel(time=slice(start_date, end_date))
     # Check whether any data remains
-    if data_for_year.sizes['time'] == 0:
+    if xr_dataset.sizes['time'] == 0:
         raise ValueError(f"(get_npy_from_netcdf) No data available for year {year} in the dataset.")
-    if isinstance(var, type(None)):
-        if x_or_y in ['x', 'x2']:
-            # Get the list of x variables from the `x_vars` attribute
-            if x_or_y == 'x':
-                x_vars = config_dict['x_vars']
-            elif x_or_y == 'x2':
-                # Get the stage 2 cutoff
-                stage_2_cutoff = config_dict['stage_2_cutoff']
-                if stage_2_cutoff > year:
-                    raise ValueError(f"(get_npy_from_netcdf) Stage 2 data not available for year {year} (cutoff is {stage_2_cutoff}).")
-                # Get the stage 2 variables
-                x_vars = config_dict['x_vars']
-                # Look for variables in the xr_dataset that contain `_s2`
-                x_vars_s2 = [var for var in xr_dataset.data_vars if '_s2' in var]
-                # Replace the variables in `x_vars` with the stage 2 versions if they exist
-                for var_s2 in x_vars_s2:
-                    var_base = var_s2.replace('_s2', '')
-                    if var_base in x_vars:
-                        x_vars = [var_s2 if var == var_base else var for var in x_vars]
-            # Grab just the x variables for the dataset
-            data_for_year = data_for_year[x_vars]
-            # Drop all nan values
-            data_for_year = data_for_year.dropna(dim='time', how='all')
-            # Convert the entire dataset to a numpy array by looping over x_vars
-            list_of_x_arrs = []
-            for i in range(len(x_vars)):
-                this_var = x_vars[i]
-                # Skip the land-sea mask if applicable
-                if this_var == 'lsm':
-                    continue
-                # Get the numpy array for this variable
-                this_arr, in_lats, in_lons = get_npy_from_netcdf(data_for_year, year, config_dict, var=this_var)
-                list_of_x_arrs.append(this_arr)
-                print(f'\tLoaded {this_var} for year {year} with shape {this_arr.shape}')
-            # Stack the arrays together along a new axis in last place
-            data_array = np.stack(tuple(list_of_x_arrs), axis=-1)
-        elif x_or_y == 'y':
-            # Get the y variable from the `y_var` attribute
-            y_var = xr_dataset.attrs.get('y_var')
-            if y_var is None:
-                raise ValueError("(get_npy_from_netcdf) The dataset does not have a 'y_var' attribute.")
-            return get_npy_from_netcdf(data_for_year, year, config_dict, var=y_var)
-        else:
-            raise ValueError(f"(get_npy_from_netcdf) `x_or_y` must be 'x', 'y', or None. Got: {x_or_y}")
-    elif not isinstance(var, str):
-        raise TypeError(f"(get_npy_from_netcdf) `var` must be a string. Got type: {type(var)}")
-    else:
-        # Verify the variable is in the dataset
-        # udata.verify_var(data_for_year, var)
-        if var not in data_for_year.data_vars:
-            raise ValueError(f"(get_npy_from_netcdf) Variable '{var}' not found in dataset. Available variables: {list(data_for_year.data_vars)}")
-        # Apply a mask to the variable, if applicable
-        data_for_year[var] = apply_mask(data_for_year, var, config_dict, year)
+
+    # Get the list of variables to include in the numpy array
+    if not isinstance(var, type(None)):
+        vars_to_include = [var]
+    elif x_or_y in ['x', 'x2']:
+        x_vars = config_dict['x_vars']
+        if x_or_y == 'x2':
+            # Look for variables in the xr_dataset that contain `_s2`
+            x_vars_s2 = [var for var in xr_dataset.data_vars if '_s2' in var]
+            # Replace the variables in `x_vars` with the stage 2 versions if they exist
+            for var_s2 in x_vars_s2:
+                var_base = var_s2.replace('_s2', '')
+                if var_base in x_vars:
+                    x_vars = [var_s2 if var == var_base else var for var in x_vars]
+        vars_to_include = x_vars
+    elif x_or_y == 'y':
+        y_var = xr_dataset.attrs.get('y_var')
+        if y_var is None:
+            raise ValueError("(get_npy_from_netcdf) The dataset does not have a 'y_var' attribute.")
+        vars_to_include = [y_var]
+
+    # Check for variables with `_tm1` in the name
+    tm1_vars = [var for var in vars_to_include if '_tm1' in var]
+    # If any are present, remove January 1st of the first year from the dataset to ensure the (t-1) variables align properly
+    if len(tm1_vars) > 0:
+        first_year = xr_dataset['time'].dt.year.values[0]
+        xr_dataset = xr_dataset.sel(time=slice(f'{first_year}-01-02', None))
+
+    # Create a blank list to add the arrays of each variable to
+    list_of_var_arrs = []
+    # Loop across the variables to include
+    for var in vars_to_include:
+        # Verify that each variable to include is in the dataset
+        if var not in xr_dataset.data_vars:
+            raise ValueError(f"(get_npy_from_netcdf) Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+        # Keep only this variable
+        xr_array = xr_dataset[vars_to_include]
+        # Apply a mask to each variable, if applicable
+        xr_array = apply_mask(xr_array, var, config_dict)
         # Drop all nan values
-        data_for_year = data_for_year[var].dropna(dim='time', how='all')
+        xr_array = xr_array.dropna(dim='time', how='all')
         # Convert to numpy array
-        data_array = data_for_year.to_numpy()
-        print(f'\tLoaded {var} for year {year} with shape {data_array.shape}')
-    return data_array, data_for_year['lat'].values, data_for_year['lon'].values
+        var_array = xr_array.to_numpy()
+        print(f'\tLoaded {var} with shape {var_array.shape}')
+        # Add the array for this variable to the list of arrays
+        list_of_var_arrs.append(var_array)
+    # Stack the arrays together along a new axis in last place
+    data_array = np.stack(tuple(list_of_var_arrs), axis=-1)
+    return data_array, xr_dataset['lat'].values, xr_dataset['lon'].values
+# 
+#     if isinstance(var, type(None)):
+#         if x_or_y in ['x', 'x2']:
+#             # Get the list of x variables from the `x_vars` attribute
+#             if x_or_y == 'x':
+#                 x_vars = config_dict['x_vars']
+#             elif x_or_y == 'x2':
+#                 # Get the stage 2 cutoff
+#                 stage_2_cutoff = config_dict['stage_2_cutoff']
+#                 if stage_2_cutoff > year:
+#                     raise ValueError(f"(get_npy_from_netcdf) Stage 2 data not available for year {year} (cutoff is {stage_2_cutoff}).")
+#                 # Get the stage 2 variables
+#                 x_vars = config_dict['x_vars']
+#                 # Look for variables in the xr_dataset that contain `_s2`
+#                 x_vars_s2 = [var for var in xr_dataset.data_vars if '_s2' in var]
+#                 # Replace the variables in `x_vars` with the stage 2 versions if they exist
+#                 for var_s2 in x_vars_s2:
+#                     var_base = var_s2.replace('_s2', '')
+#                     if var_base in x_vars:
+#                         x_vars = [var_s2 if var == var_base else var for var in x_vars]
+#             # Grab just the x variables for the dataset
+#             xr_dataset = xr_dataset[x_vars]
+#             # Drop all nan values
+#             xr_dataset = xr_dataset.dropna(dim='time', how='all')
+#             # Convert the entire dataset to a numpy array by looping over x_vars
+#             list_of_x_arrs = []
+#             for i in range(len(x_vars)):
+#                 this_var = x_vars[i]
+#                 # Skip the land-sea mask if applicable
+#                 if this_var == 'lsm':
+#                     continue
+#                 # Get the numpy array for this variable
+#                 this_arr, in_lats, in_lons = get_npy_from_netcdf(xr_dataset, year, config_dict, var=this_var)
+#                 list_of_x_arrs.append(this_arr)
+#                 print(f'\tLoaded {this_var} for year {year} with shape {this_arr.shape}')
+#             # Stack the arrays together along a new axis in last place
+#             data_array = np.stack(tuple(list_of_x_arrs), axis=-1)
+#         elif x_or_y == 'y':
+#             # Get the y variable from the `y_var` attribute
+#             y_var = xr_dataset.attrs.get('y_var')
+#             if y_var is None:
+#                 raise ValueError("(get_npy_from_netcdf) The dataset does not have a 'y_var' attribute.")
+#             return get_npy_from_netcdf(xr_dataset, year, config_dict, var=y_var)
+#         else:
+#             raise ValueError(f"(get_npy_from_netcdf) `x_or_y` must be 'x', 'y', or None. Got: {x_or_y}")
+#     elif not isinstance(var, str):
+#         raise TypeError(f"(get_npy_from_netcdf) `var` must be a string. Got type: {type(var)}")
+#     else:
+#         # Verify the variable is in the dataset
+#         # udata.verify_var(data_for_year, var)
+#         if var not in xr_dataset.data_vars:
+#             raise ValueError(f"(get_npy_from_netcdf) Variable '{var}' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
+#         # Apply a mask to the variable, if applicable
+#         xr_dataset[var] = apply_mask(xr_dataset, var, config_dict, year)
+#         # Drop all nan values
+#         xr_dataset = xr_dataset[var].dropna(dim='time', how='all')
+#         # Convert to numpy array
+#         data_array = xr_dataset.to_numpy()
+#         print(f'\tLoaded {var} for year {year} with shape {data_array.shape}')
+#     return data_array, xr_dataset['lat'].values, xr_dataset['lon'].values
 
 def apply_config(
     input_netcdf,
@@ -281,7 +347,6 @@ def apply_mask(
     xr_dataset,
     var,
     config_dict,
-    year,
 ):
     """ Apply specified mask to the given variable.
 
@@ -326,7 +391,7 @@ def apply_mask(
             use_mask = 'zfi'
         elif zfi_vars == ['none']:
             use_mask = False
-            print(f"\t{year}: Not zeroing out {var}")
+            print(f"\tNot zeroing out {var}")
     # If no mask is to be applied, return the original variable
     if use_mask == False:
         return xr_dataset[var]
@@ -337,13 +402,13 @@ def apply_mask(
         if 'lsm' not in xr_dataset.data_vars:
             raise ValueError(f"(apply_mask) Variable 'lsm' not found in dataset. Available variables: {list(xr_dataset.data_vars)}")
         # Apply the land-sea mask
-        print(f'\t{year}: Applying land-sea mask to {var}')
+        print(f'\tApplying land-sea mask to {var}')
         return xr_dataset[var]*xr_dataset['lsm']
         # lsm_threshold = 1
         # return xr_dataset[var].where(xr_dataset['lsm'] >= lsm_threshold)
     # If zeroing the variable for ZFI (Zeroed Feature Importance)
     elif use_mask == 'zfi':
-        print(f'\t{year}: Zeroing out {var}')
+        print(f'\tZeroing out {var}')
         return xr_dataset[var]*0
     else:
         raise ValueError(f"(apply_mask) Unexpected value for `use_mask`: {use_mask}")
