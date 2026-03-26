@@ -8,7 +8,6 @@ import os
 import xarray as xr
 import json
 
-from data0.load_input import get_npy_from_netcdf
 from data0.dataset import uarray
 from data0.paths import verify_path
 from utils.data_split import data_split
@@ -54,8 +53,8 @@ xtrain, ytrain, xtest, ytest = data_split(xtrain, ytrain, config_dict['train_tes
 print("After data split:")
 print(f"\tShape of xtrain: {xtrain.shape}")
 print(f"\tShape of ytrain: {ytrain.shape}")
-print(f"\tShape of xvalid: {xvalid.shape}")
-print(f"\tShape of yvalid: {yvalid.shape}")
+print(f"\tShape of xtest: {xtest.shape}")
+print(f"\tShape of ytest: {ytest.shape}")
 
 print("Done loading data sets for stage 1")
 print(predictions_metadata['unet_build_shape'])
@@ -90,7 +89,7 @@ unet.summary()
 ##################################################################
 
 # Stage-1 training of the Unet
-unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=config_dict['n_epochs'], save_format=model_fmt)
+unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xtest=xtest, ytest=ytest, unet=unet, batch_size=30, n_epochs=config_dict['n_epochs'], save_format=model_fmt)
 
 # Generate predictions for evaluation
 pred_xarray, predictions_metadata = make_predictions(uarr, unet, config_dict, config_path, predictions_metadata, stage=1)
@@ -116,8 +115,8 @@ xtrain, ytrain, xtest, ytest = data_split(xtrain, ytrain, config_dict['train_tes
 print("After data split:")
 print(f"\tShape of xtrain: {xtrain.shape}")
 print(f"\tShape of ytrain: {ytrain.shape}")
-print(f"\tShape of xvalid: {xvalid.shape}")
-print(f"\tShape of yvalid: {yvalid.shape}")
+print(f"\tShape of xtest: {xtest.shape}")
+print(f"\tShape of ytest: {ytest.shape}")
 
 print('Done loading data sets for stage 2')
 
@@ -131,7 +130,7 @@ else:
 
 
 # Stage-2 training of the Unet
-unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xvalid=xvalid, yvalid=yvalid, unet=unet, batch_size=30, n_epochs=config_dict['n_epochs'], save_format=model_fmt)
+unet = begin_training(savedir, stage=2, xtrain=xtrain, ytrain=ytrain, xtest=xtest, ytest=ytest, unet=unet, batch_size=30, n_epochs=config_dict['n_epochs'], save_format=model_fmt)
 
 # Generate predictions for evaluation
 pred_xarray_s2, predictions_metadata = make_predictions(uarr, unet, config_dict, config_path, predictions_metadata, stage=2)

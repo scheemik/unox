@@ -12,8 +12,8 @@ def begin_training(
     stage,
     xtrain,
     ytrain,
-    xvalid,
-    yvalid,
+    xtest,
+    ytest,
     unet,
     batch_size=30,
     n_epochs=250,
@@ -31,10 +31,10 @@ def begin_training(
             Training input features.
         ytrain : `np.ndarray`
             Training target variables.
-        xvalid : `np.ndarray`
-            Validation input features.
-        yvalid : `np.ndarray`
-            Validation target variables.
+        xtest : `np.ndarray`
+            Testing input features.
+        ytest : `np.ndarray`
+            Testing target variables.
         unet : `Unet`
             The Unet model to be trained.
         batch_size : `int`, optional
@@ -58,10 +58,10 @@ def begin_training(
         raise TypeError(f"(begin_training) `xtrain` must be a numpy array. Got type: {type(xtrain)}")
     if not isinstance(ytrain, np.ndarray):
         raise TypeError(f"(begin_training) `ytrain` must be a numpy array. Got type: {type(ytrain)}")
-    if not isinstance(xvalid, np.ndarray):
-        raise TypeError(f"(begin_training) `xvalid` must be a numpy array. Got type: {type(xvalid)}")
-    if not isinstance(yvalid, np.ndarray):
-        raise TypeError(f"(begin_training) `yvalid` must be a numpy array. Got type: {type(yvalid)}")
+    if not isinstance(xtest, np.ndarray):
+        raise TypeError(f"(begin_training) `xtest` must be a numpy array. Got type: {type(xtest)}")
+    if not isinstance(ytest, np.ndarray):
+        raise TypeError(f"(begin_training) `ytest` must be a numpy array. Got type: {type(ytest)}")
     if not isinstance(unet, Unet):
         raise TypeError(f"(begin_training) `unet` must be a Unet. Got type: {type(unet)}")
     if not isinstance(batch_size, int):
@@ -82,7 +82,7 @@ def begin_training(
     checkpointer = ModelCheckpoint(f"{savedir}checkpts/unet_checkpt_{{val_loss:.2f}}_{{r2_keras:.2f}}_stage{stage}.keras", verbose=0, save_best_only=True)
     print("")
     print(f"#### Begin training stage {stage} ####")
-    unet.train(xtrain, ytrain, validation_data=(xvalid, yvalid), batch_size=batch_size, epochs=n_epochs, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
+    unet.train(xtrain, ytrain, validation_data=(xtest, ytest), batch_size=batch_size, epochs=n_epochs, callbacks=[earlystopper, checkpointer, csv_logger], shuffle=True)
     # Save model weights
     if save_format in ['h5', 'both']:
         unet.save_model(f"{savedir}unet_stage{stage}_model.h5")
