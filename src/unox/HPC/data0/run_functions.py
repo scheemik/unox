@@ -244,9 +244,9 @@ def prepare_input(
     # If stage 2, use the stage 2 cutoff date as the start date
     if stage == 2:
         if 'stage_2_cutoff_date' in model_config:
-            start_date = f"{model_config['stage_2_cutoff_date']}-12-31"
+            start_date = model_config['stage_2_cutoff_date']
         else:
-            raise ValueError(f"(prepare_input) For stage 2, `model_config` must have a `stage_2_cutoff` key specifying the last year of stage 1 data to use as the cutoff date for stage 2.")
+            raise ValueError(f"(prepare_input) For stage 2, `model_config` must have a `stage_2_cutoff_date` key specifying the last year of stage 1 data to use as the cutoff date for stage 2.")
         x_s = 'x2'
     elif stage == 1:
         x_s = 'x'
