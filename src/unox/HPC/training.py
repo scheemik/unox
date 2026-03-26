@@ -154,17 +154,21 @@ def make_predictions(
     elif not isinstance(end_date, str):
         raise TypeError(f"(make_predictions) `end_date` must be a string in the format 'YYYY-MM-DD' or None. Got type: {type(end_date)}.")
     
+    print(f"Making predictions for stage {stage} using data from {split_date} to {end_date}")
+    
     # Get the data arrays
-    x_test, in_lats, in_lons = get_npy_from_netcdf(
+    x_test, in_lats, in_lons, in_time = get_npy_from_netcdf(
         uarr.xr,
         config_dict,
         start_date=split_date,
         end_date=end_date,
         x_or_y='x',
     )
+    print(f"Shape of x_test: {x_test.shape}")
 
     # Make the predictions
     pred = unet.predict(x_test)
+    print(f"Shape of predictions: {pred.shape}")
     # Put the predictions into an xarray Dataset
     pred_xarray = xr.Dataset(
         data_vars=dict(
@@ -173,7 +177,8 @@ def make_predictions(
             pred_temp=(["time", "lat", "lon"], pred.squeeze())
         ),
         coords={
-            "time":uarr.xr.time,
+            # "time":uarr.xr.sel(time=slice(split_date, end_date)).time,
+            "time":in_time,
             "lat":in_lats, 
             "lon":in_lons,
         },
@@ -181,17 +186,17 @@ def make_predictions(
 
     #     # Get the years
     #     years = uarr._get_years()
-    #     # Get the long name and units of the y variable to put in the new xarray
-    #     y_var = uarr.xr.attrs['y_var']
-    #     y_var_name = uarr.xr[y_var].long_name
-    #     y_var_unit = uarr.xr[y_var].units
-    #     # Create a new variable name and long name
-    #     if stage == 1:
-    #         pred_var = f"{y_var}_pred"
-    #         pred_var_name = f"Predicted {y_var_name}"
-    #     elif stage == 2:
-    #         pred_var = f"{y_var}_pred_s2"
-    #         pred_var_name = f"Predicted {y_var_name} (stage 2)"
+    # Get the long name and units of the y variable to put in the new xarray
+    y_var = uarr.xr.attrs['y_var']
+    y_var_name = uarr.xr[y_var].long_name
+    y_var_unit = uarr.xr[y_var].units
+    # Create a new variable name and long name
+    if stage == 1:
+        pred_var = f"{y_var}_pred"
+        pred_var_name = f"Predicted {y_var_name}"
+    elif stage == 2:
+        pred_var = f"{y_var}_pred_s2"
+        pred_var_name = f"Predicted {y_var_name} (stage 2)"
     #     # Create a blank list to add predictions to
     #     pred_xr_arr = []
     #     # Make predictions based on x data for years >= split_year
@@ -240,7 +245,7 @@ def make_predictions(
     for this_attr in uarr.xr.attrs.keys():
         if this_attr in ['stages']:
             pred_xarray.attrs[this_attr] = [1]
-        elif this_attr in ['x_vars', 'stage_2_cutoff']:
+        elif this_attr in ['x_vars', 'stage_2_cutoff_date']:
             pred_xarray.attrs[this_attr] = config_dict[this_attr]
         elif this_attr not in ['description', 'modification_date', 'y_var', 'x_vars', 'x1_vars', 'x2_vars']:
             pred_xarray.attrs[this_attr] = uarr.xr.attrs[this_attr]
