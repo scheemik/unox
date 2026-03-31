@@ -7,7 +7,7 @@ import warnings
 # Necessary to use relative imports (starting with a dot) to avoid
 # errors when running on HPC as the `unox` package is not available
 from .paths import verify_path
-from .verify_dataset import verify_dataset
+from .verify_dataset import verify_dataset, verify_var
 from .latlon import shift_lon_arr
 
 # Note: Subclassing from xarray is not currently supported
@@ -92,14 +92,17 @@ class uarray():
                 # Set input / prediction attributes
                 if is_input_set:
                     try:
-                        self.metadata_file = verify_path(f'inputfiles/{dataset}/input_metadata.json')
-                    except:
                         self.metadata_file = verify_path(f'inputfiles/{dataset}/{dataset}.json')
+                    except:
+                        self.metadata_file = verify_path(f'inputfiles/{dataset}/input_metadata.json')
                     self.is_input_set = True
                     self.is_predict = False
                     self.is_ensemble = False
                 elif is_predict:
-                    self.metadata_file = verify_path(f'HPC_runs/{dataset}/predictions_metadata.json')
+                    try:
+                        self.metadata_file = verify_path(f'HPC_runs/{dataset}/predictions_metadata.json')
+                    except:
+                        self.metadata_file = verify_path(f'HPC_runs/{dataset}/output_metadata.json')
                     self.is_input_set = False
                     self.is_predict = True
                 else:
@@ -511,7 +514,8 @@ def get_epochs_logs(
         ValueError(f"(get_epochs_logs) `dataset` must be a prediction set to load epochs logs.")
 
     # Get the stages of this prediction set
-    stages = dataset.xr.attrs['stages']
+    # stages = dataset.xr.attrs['stages']
+    stages = [1,2]
     # Make a blank list to add each stage of epoch logs
     logs_per_stage = []
     # Loop across the stages
@@ -535,3 +539,161 @@ def get_epochs_logs(
     epochs_log_xr.coords['stage'] = stages
 
     return epochs_log_xr
+
+def calc_grid_areas(
+    dataset,
+    **kwargs,
+):
+    """ Calculate the area of each grid cell.
+
+        Create a new variable in the dataset called `area` that contains the area in m^2 of each grid cell.
+        The area is calculated using the `lat` and `lon` coordinates of the dataset.
+
+        Parameters
+        ----------
+        dataset : `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
+            The dataset to add an area variable to.
+        **kwargs : keyword arguments
+            Additonal keyword arguments to pass to `uarray()`.
+        
+        Returns
+        -------
+        dataset : `uarray`
+            The input dataset with an added variable called `area` that contains the area in m^2 of each grid cell.
+        
+        Examples
+        --------
+        >>> dataset = calc_grid_areas('inputfiles/no2_2019_JFM.nc')
+        >>> dataset['area']
+        <xarray.DataArray 'area' (lat: 160, lon: 320)>
+        array([[1.23456789e+10, 1.23456789e
+        ...,
+               [1.23456789e+10, 1.23456789e+10],
+               [1.23456789e+10, 1.23456789e+10]])
+        Coordinates:
+            * lat      (lat) float32 -89.375 -88.125 -86
+            * lon      (lon) float32 0.0 1.125 2.25 ... 357.75 358.875
+        Attributes:
+            description: Area of each grid cell in m^2
+    """
+    # Verify argument types
+    # Making `uarray` object verifies `dataset`
+    if not isinstance(dataset, uarray):
+        dataset = uarray(dataset, **kwargs)
+    else:
+        dataset._verify(**kwargs)
+    
+    # Get the latitude and longitude coordinates
+    lats = dataset.xr['lat']
+    lons = dataset.xr['lon']
+
+def spatial_stats(
+    dataset,
+    vars,
+    stats=['mean'],
+    restrict_lat_lon_to=None,
+    **kwargs,
+):
+    """ Calculate statistics over a spatial extent.
+
+        Calculate each specified statistic for each specified variable in the dataset across the spatial dimensions (latitude and longitude), optionally restricting the spatial extent to a specified area.
+        The resulting dataset will have the same time dimension as the input dataset, but the latitude and longitude dimensions will be removed, as each statistic for each variable will only have one value for each time step.
+
+        Parameters
+        ----------
+        dataset : `uarray`, `str`, `xarray.Dataset`, `xarray.DataArray`
+            The dataset for which to calculate spatial statistics.
+        vars : `str`, `list`
+            The name(s) of the variable(s) for which to calculate spatial statistics.
+        stats : `str`, `list`, optional
+            The name(s) of the spatial statistic(s) to calculate for each variable.
+            Supported statistics are: 'mean', 'sum'.
+            Default is `['mean']`.
+        restrict_lat_lon_to : `str`, `xr.DataArray`, `None`, optional
+            Path to a netCDF file to restrict the latitude and longitude range.
+            If `None`, the entire dataset is used.
+            Default is `None`.
+        **kwargs : keyword arguments
+
+        Returns
+        -------
+        stats_dataset : `xarray.Dataset`
+            A dataset containing the calculated spatial statistics for each variable.
+            The dataset will have the same time dimension as the input dataset, but no latitude or longitude dimensions.
+    """
+    # Verify argument types
+    # Making `uarray` object verifies `dataset`
+    u_arr = uarray(dataset, **kwargs)
+    if not isinstance(vars, list):
+        if isinstance(vars, str):
+            vars = [vars]
+        else:
+            raise TypeError(f"(spatial_stats) `vars` must be a list of variable names or a single variable name string. Got type: {type(vars)}")
+    else:
+        for var in vars:
+            if not isinstance(var, str):
+                raise TypeError(f"(spatial_stats) Each entry in `vars` must be a string. Got type: {type(var)}")
+    for var in vars:
+        # Verify that the variable is in the dataset
+        verify_var(u_arr.xr, var)
+    if len(vars) == 0:
+        raise ValueError("(spatial_stats) `vars` list cannot be empty.")
+    if not isinstance(stats, list):
+        if isinstance(stats, str):
+            stats = [stats]
+        else:
+            raise TypeError(f"(spatial_stats) `stats` must be a list of statistics names or a single statistic name string. Got type: {type(stats)}")
+    else:
+        for stat in stats:
+            if not isinstance(stat, str):
+                raise TypeError(f"(spatial_stats) Each entry in `stats` must be a string. Got type: {type(stat)}")
+            if stat not in ['mean', 'sum']:
+                raise ValueError(f"(spatial_stats) Unsupported statistic: {stat}. Supported statistics are: 'mean'.")
+    if not isinstance(restrict_lat_lon_to, (type(None), str, xr.DataArray)):
+        raise TypeError(f"(spatial_stats) `restrict_lat_lon_to` must be a string, `xr.DataArray`, or `None`. Got type: {type(restrict_lat_lon_to)}")
+
+    # Restrict the latitude and longitude range
+    if not isinstance(restrict_lat_lon_to, type(None)):
+        # Load the specified data set to restrict to
+        restrict_xr = uarray(restrict_lat_lon_to).xr
+        # Restrict the domain of the data to plot
+        u_arr.xr, _ = udata.match_domains(u_arr.xr, restrict_xr, require_equal=False)
+    
+    # Keep only the specified variables in the dataset
+    u_arr.xr = u_arr.xr[vars]
+
+    # Make a list for the dataset for each statistic
+    stats_ds_list = []
+    # Loop across the specified statistics
+    for stat in stats:
+        if stat == 'mean':
+            stats_dataset = u_arr.xr.mean(dim=['lat', 'lon'])
+            # Copy the variable attributes from the original dataset
+            for var in stats_dataset.data_vars:
+                stats_dataset[var].attrs = u_arr.xr[var].attrs
+            # Append 'mean' to each variable name in this new dataset
+            stats_dataset = stats_dataset.rename({var: f"{var}_mean" for var in stats_dataset.data_vars})
+        elif stat == 'sum':
+            stats_dataset = u_arr.xr.sum(dim=['lat', 'lon'])
+            # Copy the variable attributes from the original dataset
+            for var in stats_dataset.data_vars:
+                stats_dataset[var].attrs = u_arr.xr[var].attrs
+            # Append 'sum' to each variable name in this new dataset
+            stats_dataset = stats_dataset.rename({var: f"{var}_sum" for var in stats_dataset.data_vars})
+        else:
+            raise ValueError(f"(spatial_stats) Unsupported statistic: {stat}. Supported statistics are: 'mean'.")
+        # Add this dataset to the list
+        stats_ds_list.append(stats_dataset)
+    # Merge the datasets for each statistic into one dataset
+    stats_dataset = xr.merge(stats_ds_list)
+    
+    # Set the attributes of the new dataset
+    stats_dataset.attrs['source_name'] = u_arr.name
+    stats_dataset.attrs['source_metadata'] = u_arr.xr.attrs
+    stats_dataset.attrs['description'] = f"Spatial statistics of data from {u_arr.name}."
+    stats_dataset.attrs['vars'] = vars
+    stats_dataset.attrs['stats'] = stats
+    stats_dataset.attrs['restrict_lat_lon_to'] = restrict_lat_lon_to
+    stats_dataset.attrs['kwargs'] = kwargs
+
+    return stats_dataset

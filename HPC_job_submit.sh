@@ -231,7 +231,8 @@ fi
 if [ "$TYPE" = "test" ]; then
 	# Check whether there is more than one ensemble member
 	if [ "$ENSEMBLE_SIZE" == 1 ]; then
-		sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -t $TYPE -v $VERSION -c $CLUSTER
+		# sbatch --job-name=$JOBNAME $LAUNCHER -j $JOBNAME -t $TYPE -v $VERSION -c $CLUSTER
+		bash $LAUNCHER -j $JOBNAME -t $TYPE -v $VERSION -c $CLUSTER
 	else
 		for (( i=1; i<=$ENSEMBLE_SIZE; i++ ))
 		do

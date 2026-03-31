@@ -1,3 +1,4 @@
+import numpy as np
 import xarray as xr
 import pandas as pd
 import json
@@ -16,6 +17,16 @@ invalid_datasets = [
     12345,
     None,
 ]
+
+minimal_xr0 = xr.DataArray(
+    data=[[[1], [2]], [[3], [4]]],
+    coords={
+        "lat": [-90, 90],
+        "lon": [-180, 180],
+        "time": [np.datetime64("2019-01-01")],
+    },
+    dims=["lat", "lon", "time"]
+)
 
 def test_get_dataset():
     """Test the get_dataset function."""
@@ -245,3 +256,51 @@ def test_get_epochs_logs():
             this_stage = actual_logs.sel(stage=1)
             # Compare to the expected result
             assert this_stage == this_df.to_xarray(), f"For dataset '{case['dataset']}', epoch logs from `get_epochs_logs()` does not match the expected for stage {stage}."
+
+def test_calc_grid_areas():
+    """Test the calc_grid_areas function."""
+    
+    udata.calc_grid_areas(minimal_xr0)
+
+def test_spatial_stats():
+    """Test the spatial_stats function."""
+    # Define valid test cases
+    test_cases = [
+        {
+            'dataset': 'datafiles/sample_data/2019u10.nc',
+            'is_input_set': False,
+            'is_predict': False,
+            'vars': 'u10',
+            'stats': 'mean',
+            'restrict_lat_lon_to': None,
+        },
+        {
+            'dataset': 'no2_2019_JFM',
+            'is_input_set': True,
+            'is_predict': False,
+            'vars': ['nox', 'u10'],
+            'stats': ['mean', 'sum'],
+            'restrict_lat_lon_to': None,
+        },
+        {
+            'dataset': 'no2_example_run',
+            'is_input_set': False,
+            'is_predict': True,
+            'vars': ['nox_pred', 'nox_pred_s2'],
+            'stats': 'mean',
+            # 'restrict_lat_lon_to': 'datafiles/sample_data/nox_2019_t106_US.nc',
+        },
+    ]
+    # Test each case
+    for case in test_cases:
+        # Get the actual result
+        actual_stats = udata.spatial_stats(
+            case['dataset'], 
+            is_input_set=case['is_input_set'], 
+            is_predict=case['is_predict'], 
+            vars=case.get('vars', None), 
+            stats=case.get('stats', 'mean'), 
+            restrict_lat_lon_to=case.get('restrict_lat_lon_to', None)
+        )
+        # Compare to the expected result (this is just a placeholder, you would need to define the expected results based on your data)
+        assert isinstance(actual_stats, xr.Dataset), f"For dataset '{case['dataset']}', expected spatial_stats to return an xarray Dataset, but got {type(actual_stats)}"

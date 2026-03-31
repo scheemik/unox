@@ -218,108 +218,53 @@ def prepare_input(
     # Verify predictions_metadata
     if not isinstance(predictions_metadata, type({})):
         raise TypeError(f"(prepare_input) `predictions_metadata` must be a dict. Got type: {type(predictions_metadata)}.")
-    # # Verify split_year
-    # if not verify_number(split_year):
-    #     raise TypeError(f"(prepare_input) `split_year` must be a number. Got type: {type(split_year)}")
-    # # Verify split_year is present in the dataset
-    # years = uarr._get_years()
-    # if split_year not in years:
-    #     raise ValueError(f"(prepare_input) `split_year` must be a year present in `uarr`. Available years: {years}")
-    # if stage not in [1, 2]:
-    #     raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}.")
-    # Check whether the model configuration has a start date
-    if 'start_date' in model_config:
-        start_date = model_config['start_date']
-    else:
-        # Set the start date to be the first day of the dataset
-        start_date = uarr.xr.time.values[0]
-        # Convert to string in the format 'YYYY-MM-DD'
-        start_date = np.datetime_as_string(start_date, unit='D')
-    # Get the verification split date from the model configuration
-    if 'verification_split_date' in model_config:
-        split_date = model_config['verification_split_date']
-    else:
-        raise ValueError(f"(prepare_input) `model_config` must have a `verification_split_date` key specifying the date on which to split the data between training / testing and verification.")
-
-    # If stage 2, use the stage 2 cutoff date as the start date
-    if stage == 2:
-        if 'stage_2_cutoff_date' in model_config:
-            start_date = model_config['stage_2_cutoff_date']
-        else:
-            raise ValueError(f"(prepare_input) For stage 2, `model_config` must have a `stage_2_cutoff_date` key specifying the last year of stage 1 data to use as the cutoff date for stage 2.")
-        x_s = 'x2'
-    elif stage == 1:
+    if 'dates' not in model_config:
+        raise ValueError(f"(prepare_input) `model_config` must have a `dates` key containing the date information for preparing the input data.")
+    if not isinstance(model_config['dates'], type({})):
+        raise TypeError(f"(prepare_input) `model_config['dates']` must be a dict. Got type: {type(model_config['dates'])}.")
+    for date_key in ['train_test_start', 'train_test_end', 'verification_start', 'verification_end', 'stage_2_start', 'stage_2_end']:
+        if date_key not in model_config['dates']:
+            raise ValueError(f"(prepare_input) `model_config['dates']` must have a `{date_key}` key for preparing the input data.")
+        if not isinstance(model_config['dates'][date_key], str):
+            raise TypeError(f"(prepare_input) `model_config['dates']['{date_key}']` must be a string. Got type: {type(model_config['dates'][date_key])}.")
+    # Verify the stage and set the appropriate dates
+    if stage == 1:
         x_s = 'x'
+        start_date = model_config['dates']['train_test_start']
+        end_date = model_config['dates']['train_test_end']
+    elif stage == 2:
+        x_s = 'x2'
+        start_date = model_config['dates']['stage_2_start']
+        end_date = model_config['dates']['stage_2_end']
     else:
         raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}")
 
     print(f"Preparing input data for stage {stage} of training.")
     print(f"\tstart_date: {start_date}")
-    print(f"\tsplit_date: {split_date}")
+    print(f"\tend_date: {end_date}")
 
     # Get the data arrays
+    print(f"Getting array of x input data")
     xtrain, in_lats, in_lons, in_time = get_npy_from_netcdf(
         uarr.xr, 
         model_config, 
-        start_date=start_date, 
-        end_date=split_date, 
+        start_date, 
+        end_date, 
         x_or_y=x_s,
     )
+    print(f"Getting array of y input data")
     ytrain, in_lats, in_lons, in_time = get_npy_from_netcdf(
         uarr.xr, 
         model_config, 
-        start_date=start_date, 
-        end_date=split_date, 
+        start_date, 
+        end_date, 
         x_or_y='y',
     )
 
-    # # Create blank lists to hold x and y training data
-    # xtrain_list = []
-    # ytrain_list = []
-    # # Set parameters based on the stage
-    # if stage == 1:
-    #     start_year = min(years)
-    #     x_s = 'x'
-    #     meta_stage = 'stage1'
-    # elif stage == 2:
-    #     print(f'model_config[`stage_2_cutoff`]: {model_config["stage_2_cutoff"]}, type: {type(model_config["stage_2_cutoff"])}')
-    #     start_year = model_config['stage_2_cutoff']+1
-    #     x_s = 'x2'
-    #     meta_stage = 'stage2'
-    # else:
-    #     raise ValueError(f"(prepare_input) `stage` must be either 1 or 2. Got: {stage}")
-    # # Check to make sure that `split_year` is larger than `start_year`
-    # if split_year <= start_year:
-    #     raise ValueError(f"(prepare_input) `split_year` ({split_year}) must be greater than `start_year` ({start_year})")
-    # # If before the split year, add x and y data to train lists
-    # for year in range(start_year, split_year):
-    #     this_x_train_arr, in_lats, in_lons = get_npy_from_netcdf(
-    #         uarr.xr, 
-    #         model_config, 
-    #         start_date=f'{year}-01-01', 
-    #         end_date=f'{year}-12-31', 
-    #         x_or_y=x_s)
-    #     xtrain_list.append(this_x_train_arr)
-    #     this_y_train_arr, in_lats, in_lons = get_npy_from_netcdf(
-    #         uarr.xr, 
-    #         model_config, 
-    #         start_date=f'{year}-01-01', 
-    #         end_date=f'{year}-12-31', 
-    #         x_or_y='y')
-    #     ytrain_list.append(this_y_train_arr)
-    #     predictions_metadata['train_years'][meta_stage].append(year)
-    # # Check the shapes of the input arrays
-    # print(f"\tShape of first xtrain file: {xtrain_list[0].shape}")
-    # print(f"\tShape of first ytrain file: {ytrain_list[0].shape}")
-    # # Concatenate training data
-    # xtrain = np.concatenate(xtrain_list, axis=0)
-    # ytrain = np.concatenate(ytrain_list, axis=0)
-    # print("After concatenation:")
     print(f"\tShape of xtrain: {xtrain.shape}")
     print(f"\tShape of ytrain: {ytrain.shape}")
     # Add the shape for which to build the unet input layer
-    ## Important to note this hear as the lat-lon grid of the data 
-    ## may change after calling `get_npy_from_netcdf()`
+    ## Important to note this here as the lat-lon grid of the data may change after calling `get_npy_from_netcdf()`
     predictions_metadata['unet_build_shape'] = xtrain.shape[1:]  # omit the first dimension (time)
     return xtrain, ytrain, predictions_metadata
 

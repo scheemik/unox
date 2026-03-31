@@ -230,7 +230,7 @@ When running the U-net model, the input data are loaded from a netCDF input file
 These files are created to have a consistent structure, with data from all the above sources interpolated onto a common grid in space and time. 
 You will generally only need to create new input files when investigating a new geographic area, a different species, or adding new variables.
 The process of creating new input files can take some time. 
-However, the model run configuration files (discussed in the {doc}`Workflow <../docs_dev/workflow>` guide) can be used to specify exactly what data are pulled from the input netCDF files for a particular run. 
+However, the `.json` model run configuration files (discussed in the {doc}`Running the model <run_model>` guide) can be used to specify exactly what data are pulled from the input netCDF files for a particular run. 
 Therefore, after spending the time to create an input file, you should be able to try many different kinds of model runs by modifying the configuration file.
 
 <a id='input_file_structure'></a>
@@ -238,7 +238,7 @@ Therefore, after spending the time to create an input file, you should be able t
 
 ### Input file structure
 
-The input files are netCDFs. 
+The input files are netCDFs, each contained in a subdirectory of the `inputfiles/` directory.
 Using `xarray` you can look at the structure of such a file by opening it.
 Below is a text representation of the output. 
 However, if the below python commands are executed in a Jupyter Notebook cell **<ins>on Animus</ins>**, the structure becomes interactive, allowing for more exploration (see {doc}`Analysis <../analysis>`).
@@ -287,6 +287,47 @@ Attributes: (13/17)
     stages:             [1 2]
 ```
 
+<!-- New version -->
+```console
+<xarray.Dataset> Size: 51MB
+Dimensions:     (time: 90, lat: 56, lon: 120)
+Coordinates:
+  * lat         (lat) float32 224B 11.78 12.9 14.02 15.14 ... 71.21 72.34 73.46
+  * lon         (lon) float32 480B -174.4 -173.2 -172.1 ... -42.75 -41.62 -40.5
+  * time        (time) datetime64[ns] 720B 2019-01-01 2019-01-02 ... 2019-03-31
+Data variables: (12/13)
+    nox         (time, lat, lon) float32 2MB ...
+    no2         (time, lat, lon) float32 2MB ...
+    no2_s2      (time, lat, lon) float32 2MB ...
+    blh         (time, lat, lon) float64 5MB ...
+    lsm         (time, lat, lon) float64 5MB ...
+    skt         (time, lat, lon) float64 5MB ...
+    ...          ...
+    ssrd        (time, lat, lon) float64 5MB ...
+    t2m         (time, lat, lon) float64 5MB ...
+    u10         (time, lat, lon) float64 5MB ...
+    v10         (time, lat, lon) float64 5MB ...
+    no2_tm1     (time, lat, lon) float32 2MB ...
+    no2_s2_tm1  (time, lat, lon) float32 2MB ...
+Attributes: (12/19)
+    name:                        no2_2019_JFM
+    y_var:                       nox
+    x_vars:                      ['no2', 'no2_tm1', 'u10', 'v10', 'blh', 'sp'...
+    start_date:                  2019-01-01
+    end_date:                    2019-03-31
+    stage_2:                     1
+    ...                          ...
+    attrs_emiss_original_type:   dict
+    attrs_chemra_original_type:  dict
+    attrs_insitu_original_type:  dict
+    attrs_met_original_type:     dict
+    modification_date:           2026-03-25 19:08:34
+    description:                 Input data for the Unet model.
+```
+
+Explain that json files can only hold certain data types, hence why there are related attributes to hold what the original data type was (bool, dictionary, etc.).
+Explain that the `attrs_emiss` etc. attributes are the attributes from the original data files of each type.
+
 In the attributes, it is indicated which variables are "y" and which are "x".
 - "y" variable
     - The variable which the model is trying to emulate, the "target" variable.
@@ -315,15 +356,44 @@ The data in the input netCDF were originally stored as separate `.npy` files, ea
 These contained no metadata, and so it became difficult to document which input files covered which geographical regions and contained which variables.
 I reconfigured the files to be in netCDF format so that the metadata is readily accessible and easily readable by both human and machine. 
 
+The `input_metadata.json` file contains a dictionary that is build in the process of creating the input file which contains an overview of what the netCDF contains.
+If you are working with multiple different input files, the `input_metadata.json` files offer a quick way to check which file you might want to use, whether it might span a different set of years, contain a different set of variables, or use different data sources.
+
 <a id='make_input_files'></a>
 [back to top](#top)
 
 ### Creating input files
 
-To create an input netCDF, use the `make_all_input_files()` function from the `input` module.
-This function has no required arguments, however it is a good idea to pass in `output_dir`, the name of the subdirectory that will be created under the `inputfiles` directory where the netCDF and corresponding `input_metadata.json` file are stored. 
-The `input_metadata.json` file contains a dictionary that is build in the process of creating the input file which contains an overview of what the netCDF contains.
-If you are working with multiple different input files, the `input_metadata.json` files offer a quick way to check which file you might want to use, whether it might span a different set of years, contain a different set of variables, or use different data sources.
+To create an input netCDF, use the `make_input_file()` function from the `input` module.
+This function has only one required argument, the name, however it is a good idea to pass in `output_dir`, the name of the subdirectory that will be created under the `inputfiles` directory where the netCDF and corresponding `input_metadata.json` file are stored. 
+
+Parameters
+        ----------
+        name : `str`
+            The name of the input file to be created (without file extension).
+        target_var : `str`, optional
+            The target variable for which to create the input file. 
+            Must be a key in `input_vars_dict`.
+            Default is 'no2'.
+        start_date :  `str`, `np.datetime64`, `None`, optional
+            First date and time to include in the input file.
+            Default is `2005-01-01`.
+        end_date : `str`, `np.datetime64`, `None`, optional
+            Last date and time to include in the input file.
+            Default is `2020-12-31`.
+        stage_2 : `bool`, optional
+            Whether or not to make stage 2 in addition to stage 1 for the input.
+            Default is True.
+        stage_2_cutoff : `int`, optional
+            Year after which input files will also be generated for stage 2. 
+            Default is 1900, to ensure all years are included.
+        nan_fill : `float`, optional
+            Value to fill NaNs in the dataset. 
+            Default is `0`.
+        **kwargs : `dict`, optional
+            Additional keyword arguments to be passed to the `write_input_netcdf` function.
+
+
 
 By default, the `make_all_input_files()` function will add all the data from 2005 through 2020 from the data sources described above associated with NOₓ, including variables for Stage 2 training. 
 However, you can pass keyword arguments to change the behavior in many ways.
@@ -399,7 +469,33 @@ Completed making all input files.
 	Function 'make_all_input_files' execution time: 1:10:13.798157
 ```
 
+<!-- New version -->
+```python
+from unox.input import make_input_file 
+
+make_input_file(
+    name='no2_2005_2020',
+    target_var='no2',
+    start_date='2005-01-01',
+    end_date='2020-12-31',
+)
+```
+
+```console
+(uplt) mschee@animus-c:~/unox$ python test_input.py 
+Loading ds_emiss
+        Execution time to interpolate ds_emiss: 0 days 00:00:18.773509
+Loading ds_chemra
+Processing ds_chemra file /data/high_res/emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_2005.nc, year: 2005
+        Filling ds_chemra with insitu data from /data/high_res/US_EPA/NO2/daily_NO2/daily_42602_2005.csv, year: 2005
+        Function 'fill_insitu_data' execution time: 0:06:26.386133
+Processing ds_chemra file /data/high_res/emacdonald/unet/datafiles/TROPESS/TROPESS_reanalysis_2hr_no2_sfc_2006.nc, year: 2006
+        Filling ds_chemra with insitu data from /data/high_res/US_EPA/NO2/daily_NO2/daily_42602_2006.csv, year: 2006
+        Function 'fill_insitu_data' execution time: 0:06:25.145445
+...
+```
+
 Note that, in the process of making an input file, all instances of February 29th are dropped using the method `convert_calendar('noleap')`.
 This is to make the years all the same length.
 
-Once an input file has been created, you can now go through the {doc}`Workflow <../docs_dev/workflow>` of setting up a run on Animus, transferring that to Trillium, running the U-net model, and bringing the result back to Animus for analysis.
+Once an input file has been created, you can now go through the {doc}`Running the model <run_model>` guide which explains how to set up a run on Animus, transfer that to Trillium, run the U-net model, and bring the result back to Animus for analysis.

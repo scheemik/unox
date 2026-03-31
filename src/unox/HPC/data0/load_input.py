@@ -117,6 +117,9 @@ def get_npy_from_netcdf(
     xr_dataset = apply_config(xr_dataset, config_dict)
     # Trim the dataset to the specified date range
     xr_dataset = xr_dataset.sel(time=slice(start_date, end_date))
+    if True:
+        print(f"\tStart date: {start_date}. End date: {end_date}.")
+        print(f"\tTrimmed date range: {xr_dataset['time'].values[0]} to {xr_dataset['time'].values[-1]}")
     # Check whether any data remains
     if xr_dataset.sizes['time'] == 0:
         raise ValueError(f"(get_npy_from_netcdf) No data available for year {year} in the dataset.")
@@ -140,13 +143,6 @@ def get_npy_from_netcdf(
         if y_var is None:
             raise ValueError("(get_npy_from_netcdf) The dataset does not have a 'y_var' attribute.")
         vars_to_include = [y_var]
-
-    # Check for variables with `_tm1` in the name
-    tm1_vars = [var for var in vars_to_include if '_tm1' in var]
-    # If any are present, remove January 1st of the first year from the dataset to ensure the (t-1) variables align properly
-    if len(tm1_vars) > 0:
-        first_year = xr_dataset['time'].dt.year.values[0]
-        xr_dataset = xr_dataset.sel(time=slice(f'{first_year}-01-02', None))
 
     # Create a blank list to add the arrays of each variable to
     list_of_var_arrs = []

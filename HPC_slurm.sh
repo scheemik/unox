@@ -70,46 +70,46 @@ else
     echo "-c, Using cluster: $CLUSTER"
 fi
 
-echo ""
-# Load modules and activate virtual environment
-if [ "$CLUSTER" = "trillium" ]
-then
-	echo "Loading modules for Trillium HPC environment"
-	if [ "$VERSION" = 0 ]
-	then
-		echo "-v $VERSION, using original code"
-		module load StdEnv/2020 gcc/9.3.0 python/3.8.10 cuda/11.4
-		ENVNAME="unoxTrillium"
-		ENVDIR="/home/$HPC_USERNAME/.virtualenvs/$ENVNAME"
-	elif [ "$VERSION" = 1 ]
-	then
-		echo "-v $VERSION, using updated code"
-		module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
-		ENVNAME="unoxTrilliumNC"
-		ENVDIR="/home/$HPC_USERNAME/.virtualenvs/$ENVNAME"
-	else
-		echo "Version $VERSION not recognized, exiting"
-		exit 1
-	fi
-	echo "Activating virtualenv from $ENVDIR/bin/activate"
-	source $ENVDIR/bin/activate
-elif [ "$CLUSTER" = "mist" ]
-then
-	echo "Loading modules for Mist HPC environment"
-	if [ "$VERSION" = 0 ]
-	then
-		echo "-v $VERSION, using original code"
-		module load MistEnv/2021a anaconda3/2021.05 
-		source activate unetmist
-		module load cuda/11.4.4
-	else
-		echo "Version $VERSION not recognized, exiting"
-		exit 1
-	fi
-else
-	echo "Cluster $CLUSTER not recognized, exiting"
-	exit 1
-fi
+# echo ""
+# # Load modules and activate virtual environment
+# if [ "$CLUSTER" = "trillium" ]
+# then
+# 	echo "Loading modules for Trillium HPC environment"
+# 	if [ "$VERSION" = 0 ]
+# 	then
+# 		echo "-v $VERSION, using original code"
+# 		module load StdEnv/2020 gcc/9.3.0 python/3.8.10 cuda/11.4
+# 		ENVNAME="unoxTrillium"
+# 		ENVDIR="/home/$HPC_USERNAME/.virtualenvs/$ENVNAME"
+# 	elif [ "$VERSION" = 1 ]
+# 	then
+# 		echo "-v $VERSION, using updated code"
+# 		module load StdEnv/2023 gcc/12.3 python/3.12.4 cuda/12.6 hdf5/1.14.2 netcdf/4.9.2 mpi4py/4.0.0
+# 		ENVNAME="unoxTrilliumNC"
+# 		ENVDIR="/home/$HPC_USERNAME/.virtualenvs/$ENVNAME"
+# 	else
+# 		echo "Version $VERSION not recognized, exiting"
+# 		exit 1
+# 	fi
+# 	echo "Activating virtualenv from $ENVDIR/bin/activate"
+# 	source $ENVDIR/bin/activate
+# elif [ "$CLUSTER" = "mist" ]
+# then
+# 	echo "Loading modules for Mist HPC environment"
+# 	if [ "$VERSION" = 0 ]
+# 	then
+# 		echo "-v $VERSION, using original code"
+# 		module load MistEnv/2021a anaconda3/2021.05 
+# 		source activate unetmist
+# 		module load cuda/11.4.4
+# 	else
+# 		echo "Version $VERSION not recognized, exiting"
+# 		exit 1
+# 	fi
+# else
+# 	echo "Cluster $CLUSTER not recognized, exiting"
+# 	exit 1
+# fi
 echo ""
 
 # Check whether a directory exists for the job
@@ -121,16 +121,16 @@ else
 	echo "Directory for job $SAVEDIR already exists"
 fi
 
-export HDF5_USE_FILE_LOCKING=FALSE
+# export HDF5_USE_FILE_LOCKING=FALSE
 
 echo ""
 echo "Running $CODEFILE with savedir $SAVEDIR"
 echo ""
 python $CODEFILE $SAVEDIR $VERSION
 
-# Remove all but the most recent `checkpt` file
-CHKPT_DIR="$SAVEDIR/checkpts"
-VAR=$(keep_most_recent_checkpoint $CHKPT_DIR)
-echo "$VAR"
-
-deactivate
+# # Remove all but the most recent `checkpt` file
+# CHKPT_DIR="$SAVEDIR/checkpts"
+# VAR=$(keep_most_recent_checkpoint $CHKPT_DIR)
+# echo "$VAR"
+# 
+# deactivate

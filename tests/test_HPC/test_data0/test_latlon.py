@@ -39,3 +39,6 @@ def test_shift_lon():
         assert True, f"shift_lon raised an exception on invalid PM_centered argument: {e}"
     else:
         assert False, "shift_lon did not raise an exception on invalid PM_centered argument"
+
+def test_match_domains():
+    """Test the match_domains function."""

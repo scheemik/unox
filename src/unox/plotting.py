@@ -11,7 +11,7 @@ import json
 import os
 
 from unox import data as udata
-from unox.HPC.data0.dataset import uarray
+from unox.HPC.data0.dataset import uarray, spatial_stats
 from unox.HPC.data0.verify_dataset import verify_dataset, verify_var
 from unox.HPC.data0.verify_dtype import verify_number
 from unox.HPC.data0.paths import verify_path
@@ -886,7 +886,8 @@ def plot_comparison(
     else:
         a_xr_label = 'Array A'
     if isinstance(b_xr_arr, xr.DataArray):
-        b_xr_label = f"{b_xr_arr.attrs['long_name']} ({b_xr_arr.attrs['units']})"
+        # b_xr_label = f"{b_xr_arr.attrs['long_name']} ({b_xr_arr.attrs['units']})"
+        b_xr_label = f"placeholder (units)"
         b_xr_arr = b_xr_arr.values
     elif not isinstance(b_xr_arr, (xr.DataArray, np.ndarray)):
         raise TypeError(f"(plot_comparison) `b_xr_arr` must be an xarray DataArray or numpy array. Got type: {type(b_xr_arr)}")
@@ -1294,6 +1295,7 @@ def plot_epochs_logs(
 
     # Get the stages of this prediction set
     stages = dataset.xr.attrs['stages']
+    # stages = [1,2]
     # Loop across the variables
     for i in range(len(vars)):
         var = vars[i]
@@ -1560,6 +1562,12 @@ def compare_input_vars(
     if not isinstance(restrict_lat_lon_to, (type(None), str, xr.DataArray)):
         raise TypeError(f"(plot_run_analysis) `restrict_lat_lon_to` must be a string, `xr.DataArray`, or `None`. Got type: {type(restrict_lat_lon_to)}")
 
+    # Check whether both there are new and old versions being compared
+    if input_a_dict['version'] == 'old' and input_b_dict['version'] == 'new':
+        old_vs_new = True
+    else:
+        old_vs_new = False
+
     # Loop over the two input dictionaries and load the data
     for input_dict in [input_a_dict, input_b_dict]:
         # Load the input data as a uarray
@@ -1577,6 +1585,22 @@ def compare_input_vars(
         # If y_var, remove extra dimension
         if input_dict['var'] == input_dict['u_arr'].xr.attrs['y_var']:
             this_input = this_input.squeeze()
+        # If January 1st is present in the data, remove it
+        if input_dict['version'] == 'new' and old_vs_new:
+            if np.datetime64(f"{input_dict['year']}-01-01") in this_input.coords['time']:
+                # Remove just January 1st from the data array
+                this_input = this_input.drop_sel(time=str(input_dict['year'])+'-01-01')
+                # Scale the data array by 1e-3
+                if input_dict['var'] == 'nox':
+                    this_input = this_input * 1e12
+                elif input_dict['var'] in ['no2', 'no2_s2', 'no2_tm1', 'no2_s2_tm1']:
+                    this_input = this_input * 1e-3
+                elif input_dict['var'] == 'sp':
+                    this_input = this_input * 1e-5
+                elif input_dict['var'] == 'ssrd':
+                    this_input = this_input * 1e-6
+                elif input_dict['var'] == 'blh':
+                    this_input = this_input * 1e-3
         input_dict['data_array'] = this_input
         print(f"Shape of {input_dict['var']} from {input_dict['input_set']}: {this_input.shape}")
     # Check whether the data arrays are the same size
@@ -1594,9 +1618,14 @@ def compare_input_vars(
         # Plot the differences
 
         # Create an boolean variable to tell where the two arrays differ
-        input_a_dict['u_arr'].xr['ab_diff'] = input_a_dict['u_arr'].xr[input_a_dict['var']] != input_b_dict['u_arr'].xr[input_b_dict['var']]
-        # Put that variable into an array
-        ab_diff = np.array(input_a_dict['u_arr'].xr['ab_diff'].values).squeeze()
+        ab_diff = input_a_dict['data_array'].values != input_b_dict['data_array'].values
+        # Add that boolean array back into input_a_dict's xarray dataset as a new variable called 'ab_diff'
+        input_a_dict['u_arr'].xr['ab_diff'] = (('time', 'lat', 'lon'), ab_diff)
+        # Add the `this_input` array from input b into the input_a_dict's xarray dataset as a new variable called 'b_var'
+        input_a_dict['u_arr'].xr['b_var'] = (('time', 'lat', 'lon'), input_b_dict['data_array'].values)
+        # input_a_dict['u_arr'].xr['ab_diff'] = input_a_dict['u_arr'].xr[input_a_dict['var']] != input_b_dict['u_arr'].xr[input_b_dict['var']]
+        # # Put that variable into an array
+        # ab_diff = np.array(input_a_dict['u_arr'].xr['ab_diff'].values).squeeze()
         total_diffs = np.sum(ab_diff)
         # Find total number of entries
         total_entries = np.prod(ab_diff.shape)
@@ -1656,7 +1685,7 @@ def compare_input_vars(
 
         # Get arrays of the inputs where they differ
         a_where_differ = input_a_dict['u_arr'].xr[input_a_dict['var']].where(input_a_dict['u_arr'].xr['ab_diff']).values
-        b_where_differ = input_b_dict['u_arr'].xr[input_b_dict['var']].where(input_a_dict['u_arr'].xr['ab_diff']).values
+        b_where_differ = input_a_dict['u_arr'].xr['b_var'].where(input_a_dict['u_arr'].xr['ab_diff']).values
         # Flatten all three arrays and remove NaN values
         a_differ_flat = a_where_differ[~np.isnan(a_where_differ)].flatten()
         b_differ_flat = b_where_differ[~np.isnan(b_where_differ)].flatten()
@@ -2077,3 +2106,152 @@ def BaW_label(
         # Set the spacer for the next loop to be a comma and a space
         spacer=", "
     return box_label
+
+def time_series_ax(
+    xr_arr,
+    ax,
+    plt_title=None,
+    **kwargs,
+):
+    """ Plot a time series on a given axis.
+
+        Parameters
+        ----------
+        xr_arr : `xarray.DataArray`
+            The xarray DataArray containing the time series to plot.
+        ax : `matplotlib.axes.Axes`
+            The axes on which to plot the time series.
+        plt_title : `str`, optional
+            The title of the plot.
+            Default is `None`.
+        **kwargs : dict
+            Additional keyword arguments to pass to facilitate wrapper functions.
+
+        Returns
+        -------
+        ax : `matplotlib.axes.Axes`
+            The axes containing the time series plot.
+
+        Examples
+        --------
+        >>> data_arr = uarray('nox_2019_JFM', is_input_set=True).xr['no2']
+        >>> fig, ax = pplt.subplots()
+        >>> ax = time_series_ax(data_arr, ax=ax, plt_title='Time series of NO2 emissions')
+    """
+    # Verify argument types 
+    if not isinstance(xr_arr, xr.DataArray):
+        raise TypeError(f"(time_series_ax) `xr_arr` must be an xarray DataArray. Got type: {type(xr_arr)}")
+    if not isinstance(ax, pplt.axes.Axes):
+        raise TypeError(f"(time_series_ax) `ax` must be a proplot Axes object. Got type: {type(ax)}")
+    if not isinstance(plt_title, (type(None), str)):
+        raise TypeError(f"(time_series_ax) `plt_title` must be a string or None. Got type: {type(plt_title)}")
+
+    # Get the name and units for the y-axis label from the metadata of the xarray DataArray
+    y_label_name = xr_arr.attrs['long_name']
+    y_label_units = xr_arr.attrs['units']
+    y_label = f"{y_label_name} ({y_label_units})"
+
+    # Plot the time series
+    ax.plot(xr_arr['time'], xr_arr.values)
+    # Format the axes
+    ax.set_xlabel('Time')
+    ax.set_ylabel(y_label)
+    if not isinstance(plt_title, type(None)):
+        ax.set_title(plt_title)
+    
+    return ax
+
+def plot_time_series(
+    dataset,
+    vars,
+    stats,
+    restrict_lat_lon_to=None,
+    **kwargs,
+):
+    """ Plot time series of specified variables and statistics from a dataset.
+
+        Parameters
+        ----------
+        dataset : `str`, `uarray`, `xarray.Dataset`, `xarray.DataArray`
+            The dataset from which to get the data for the plot.
+        vars : `list`, `str`
+            The variable(s) to plot on the y-axis/axes.
+            Can be any variable in the dataset.
+        stats : `list`, `str`
+            The statistic(s) to compute for each variable before plotting.
+            Can be any statistic supported by `xarray` (e.g., `'mean'`, `'median'`, `'std'`).
+        restrict_lat_lon_to : `str`, `xr.DataArray`, `None`, optional
+            Path to a netCDF file to restrict the latitude and longitude range.
+            If `None`, the entire dataset is used.
+            Default is `None`.
+        **kwargs : dict
+            Additional keyword arguments to pass to facilitate wrapper functions.
+    """
+    # Verify argument types
+    # Making `uarray` object verifies `dataset`
+    u_arr = uarray(dataset, **kwargs)
+
+    # Create the figure
+    fig = pplt.figure(refwidth=10)
+    # n_rows, n_cols = uplt_fmt.set_fig_row_col(len(vars), **kwargs)
+    n_rows, n_cols = 1, 1
+    axs = fig.subplots(nrows=n_rows, ncols=n_cols)
+
+    # Get the spatial stats
+    stats_dataset = spatial_stats(
+        u_arr,
+        vars=vars,
+        stats=stats,
+        restrict_lat_lon_to=None,
+    )
+
+    # Convert cftime objects to datetime objects that matplotlib can plot
+    # Use xarray's decode_cf to convert cftime to datetime
+    # stats_dataset = xr.decode_cf(stats_dataset)
+    # import cftime
+    # time_values = cftime.date2index(stats_dataset['time'].values, calendar='noleap')
+
+    # Plot a line for each of the variables 
+    for var in stats_dataset.data_vars:
+        # Get the statistic to plot
+        this_stat = stats_dataset[var]
+        # Get the name and units for the y-axis label from the metadata of the xarray DataArray
+        y_label_name = this_stat.attrs['long_name']
+        y_label_units = this_stat.attrs['units']
+        y_label = f"{y_label_name} ({y_label_units})"
+        # Plot the time series
+        axs.plot(this_stat['time'], this_stat.values, label=var)
+        # Format the axes   
+        axs.set_xlabel('Time')
+        axs.set_ylabel(y_label)
+
+    # Restrict the latitude and longitude range
+    if not isinstance(restrict_lat_lon_to, type(None)):
+        # Make a separate copy of the `uarray` object
+        u_arr_restrict = uarray(dataset, **kwargs)
+        # Load the specified data set to restrict to
+        restrict_xr = uarray(restrict_lat_lon_to).xr
+        # Restrict the domain of the data to plot
+        u_arr_restrict.xr, _ = udata.match_domains(u_arr.xr, restrict_xr, require_equal=False)
+        # Get the spatial stats
+        stats_dataset_restrict = spatial_stats(
+            u_arr_restrict,
+            vars=vars,
+            stats=stats,
+            restrict_lat_lon_to=None,
+        )
+        # Plot a line for each of the variables 
+        for var in stats_dataset_restrict.data_vars:
+            # Get the statistic to plot
+            this_stat = stats_dataset_restrict[var]
+            # Plot the time series
+            axs.plot(this_stat['time'], this_stat.values, label=f'{var} restricted')
+
+    # Make the date locator
+    loc = mpl.dates.AutoDateLocator()
+    axs.xaxis.set_major_locator(loc)
+    axs.xaxis.set_major_formatter(mpl.dates.ConciseDateFormatter(loc))
+    # Add a legend
+    axs.legend()
+
+    return fig

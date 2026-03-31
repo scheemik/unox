@@ -83,6 +83,8 @@ def build_Unet(
     else:
         raise ValueError(f"(build_Unet) `act_reg` must be one of 'L1', 'L2', or 'L1L2'. Got: {act_reg}")
 
+    # Note: When "None" is listed as a dimension length, it is actually the length of the time dimension.
+
     ### Block 1
     # Conv2D(filters, kernel_size, **kwargs)
     ## filters is the dimension of the output space, the number of filters in the convolution
@@ -259,8 +261,8 @@ class Unet():
     def compile(self, optimizer, loss, **kwargs):
         self.model.compile(optimizer=optimizer, loss=loss, **kwargs)
 
-    def info(self):
-        self.model.summary()
+    # def info(self):
+    #     self.model.summary()
 
     def train(self, *args, **kwargs):
         self.model.fit( *args, **kwargs )

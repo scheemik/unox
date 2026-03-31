@@ -28,9 +28,15 @@
     "lsm_vars": [
     ],
     "stage_2": true,
-    "stage_2_cutoff_date": "2014-01-01",
+    "dates": {
+        "train_test_start": "2005-01-02",
+        "train_test_end": "2018-12-31",
+        "verification_start": "2019-01-01",
+        "verification_end": "2020-12-31",
+        "stage_2_start": "2014-01-01",
+        "stage_2_end": "2018-12-31"
+    },
     "n_epochs": 100,
-    "verification_split_date": "2019-01-01",
     "train_test_ratio": 0.9,
     "grid_size": [56, 120],
     "act_reg": "L1",

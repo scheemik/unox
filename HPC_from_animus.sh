@@ -42,7 +42,7 @@ else
 fi
 if [ "$INPUT_FILES" = i ]
 then
-	DIR_PREFIX="/inputfiles"
+	DIR_PREFIX="inputfiles"
 	echo "-i, Copying full input file directory for ${FILENAMES[*]} to $CLUSTER from Animus"
 else
 	DIR_PREFIX=""
@@ -77,11 +77,11 @@ fi
 for FILE in "${FILENAMES[@]}"; do
     if [ "$INPUT_FILES" = i ]; then
         # Check whether the corresponding directory exists on Animus
-        if [ ! -d ".$DIR_PREFIX/$FILE" ]; then
-            echo "Directory .$DIR_PREFIX/$FILE does not exist on Animus, aborting."
+        if [ ! -d "$DIR_PREFIX/$FILE" ]; then
+            echo "Directory $DIR_PREFIX/$FILE does not exist on Animus, aborting."
             exit 1
         fi
-        FILE=".$DIR_PREFIX/$FILE"
+        FILE="$DIR_PREFIX/$FILE/"
     fi
-    scp -r -i $IDENTITY_FILE "$FILE" $HPC_USERNAME@$REMOTE_SERVER:$PROJECT_DIR$DIR_PREFIX/$FILE
+    scp -r -i $IDENTITY_FILE "$FILE" $HPC_USERNAME@$REMOTE_SERVER:$PROJECT_DIR/$FILE
 done
