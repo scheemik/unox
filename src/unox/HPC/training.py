@@ -94,11 +94,10 @@ def begin_training(
 def make_predictions(
     uarr,
     unet,
-    config_dict,
+    model_config,
     config_path,
     predictions_metadata,
     stage = 1,
-    end_date = None,
 ):
     """ Prepare the input data for the model.
 
@@ -111,10 +110,10 @@ def make_predictions(
             The dataset of the input NetCDF file.
         unet : `Unet`
             The Unet model to be trained.
-        config_dict : `dict`
+        model_config : `dict`
             A dictionary containing the configuration.
         config_path : `str` 
-            Path to the input configuration JSON file used to make `config_dict`.
+            Path to the input configuration JSON file used to make `model_config`.
         predictions_metadata : `dict`
             The dictionary of metadata describing the output of a model run.
         stage : `int`
@@ -131,8 +130,8 @@ def make_predictions(
     """
     # Verify argument types
     uarr._verify()
-    if not isinstance(config_dict, (str, type({}))):
-        raise TypeError(f"(make_predictions) `config_dict` must be a str or dict. Got type: {type(config_dict)}.")
+    if not isinstance(model_config, (str, type({}))):
+        raise TypeError(f"(make_predictions) `model_config` must be a str or dict. Got type: {type(model_config)}.")
     if not isinstance(predictions_metadata, type({})):
         raise TypeError(f"(make_predictions) `predictions_metadata` must be a dict. Got type: {type(predictions_metadata)}.")
     if not isinstance(config_path, str):
@@ -140,28 +139,29 @@ def make_predictions(
     if stage not in [1, 2]:
         raise ValueError(f"(make_predictions) `stage` must be either 1 or 2. Got: {stage}.")
     
-    # Get the verification split date from the model configuration
-    if 'verification_split_date' in config_dict:
-        split_date = config_dict['verification_split_date']
-    else:
-        raise ValueError(f"(make_predictions) `config_dict` must have a `verification_split_date` key specifying the date on which to split the data between training / testing and verification.")
-    # Get the end date
-    if isinstance(end_date, type(None)):
-        # Get the last date in the dataset
-        end_date = uarr.xr.time.values[-1]
-        # Convert to string in the format 'YYYY-MM-DD'
-        end_date = np.datetime_as_string(end_date, unit='D')
-    elif not isinstance(end_date, str):
-        raise TypeError(f"(make_predictions) `end_date` must be a string in the format 'YYYY-MM-DD' or None. Got type: {type(end_date)}.")
+    # Get the verification dates from the model configuration
+    if 'dates' not in model_config:
+        raise ValueError(f"(prepare_input) `model_config` must have a `dates` key containing the date information for preparing the input data.")
+    if not isinstance(model_config['dates'], type({})):
+        raise TypeError(f"(prepare_input) `model_config['dates']` must be a dict. Got type: {type(model_config['dates'])}.")
+    for date_key in ['verification_start', 'verification_end']:
+        if date_key not in model_config['dates']:
+            raise ValueError(f"(prepare_input) `model_config['dates']` must have a `{date_key}` key for preparing the input data.")
+        if not isinstance(model_config['dates'][date_key], str):
+            raise TypeError(f"(prepare_input) `model_config['dates']['{date_key}']` must be a string. Got type: {type(model_config['dates'][date_key])}.")
+        
+    # Get the start and end dates for verification
+    start_date = model_config['dates']['verification_start']
+    end_date = model_config['dates']['verification_end']
     
-    print(f"Making predictions for stage {stage} using data from {split_date} to {end_date}")
+    print(f"Making predictions for stage {stage} using data from {start_date} to {end_date}")
     
     # Get the data arrays
     x_test, in_lats, in_lons, in_time = get_npy_from_netcdf(
         uarr.xr,
-        config_dict,
-        start_date=split_date,
-        end_date=end_date,
+        model_config,
+        start_date,
+        end_date,
         x_or_y='x',
     )
     print(f"Shape of x_test: {x_test.shape}")
@@ -177,12 +177,16 @@ def make_predictions(
             pred_temp=(["time", "lat", "lon"], pred.squeeze())
         ),
         coords={
-            # "time":uarr.xr.sel(time=slice(split_date, end_date)).time,
+            # "time":uarr.xr.sel(time=slice(start_date, end_date)).time,
             "time":in_time,
             "lat":in_lats, 
             "lon":in_lons,
         },
     )
+
+    print(f"Still making predictions for stage {stage} using data from {start_date} to {end_date}")
+    print('model_config:')
+    print(model_config)
 
     #     # Get the years
     #     years = uarr._get_years()
@@ -200,7 +204,7 @@ def make_predictions(
     #     # Create a blank list to add predictions to
     #     pred_xr_arr = []
     #     # Make predictions based on x data for years >= split_year
-    #     for year in range(config_dict['split_year'], max(years)+1):
+    #     for year in range(model_config['split_year'], max(years)+1):
     #         print(f"Generating predictions for year: {year}")
     #         x_test, in_lats, in_lons = get_npy_from_netcdf(uarr.xr, year, config_path, x_or_y='x')
     #         # Make the predictions
@@ -229,6 +233,16 @@ def make_predictions(
     
     # Rename prediction variable and add attributes
     pred_xarray = pred_xarray.rename({'pred_temp': pred_var})
+    # Undo the scaling of the variables, if applicable
+    if 'model_scale_factors' in model_config:
+        scale_factors = model_config['model_scale_factors']
+        for var in pred_xarray.data_vars:
+            this_scale_factor = scale_factors[y_var]
+            print(f"Undoing scale factor of {this_scale_factor} for variable {var}.")
+            pred_xarray[var] = pred_xarray[var]/this_scale_factor
+    else:
+        print(f"No `model_scale_factors` found in `model_config`. No scaling undone in the predictions.")
+    # Add in the attributes for the predicted variable
     pred_xarray[pred_var].attrs = {'long_name': pred_var_name, 'units': y_var_unit}
     # Copy over the attributes for the latitude and longitude
     for coord in ['lat', 'lon']:
@@ -240,22 +254,23 @@ def make_predictions(
     pred_xarray.attrs['y_var'] = f"{y_var}"
     pred_xarray.attrs['input_set'] = f"{uarr.name}"
     pred_xarray.attrs['config_path'] = f"{config_path}"
-    pred_xarray.attrs['config_dict'] = f"{config_dict}"
+    pred_xarray.attrs['model_config'] = f"{model_config}"
     # Copy over global attributes from the input xarray
     for this_attr in uarr.xr.attrs.keys():
+        print(f"Copying global attribute: {this_attr}, value: {uarr.xr.attrs[this_attr]}")
         if this_attr in ['stages']:
             pred_xarray.attrs[this_attr] = [1]
         elif this_attr in ['x_vars', 'stage_2_cutoff_date']:
-            pred_xarray.attrs[this_attr] = config_dict[this_attr]
+            pred_xarray.attrs[this_attr] = model_config[this_attr]
         elif this_attr not in ['description', 'modification_date', 'y_var', 'x_vars', 'x1_vars', 'x2_vars']:
             pred_xarray.attrs[this_attr] = uarr.xr.attrs[this_attr]
-    # Undo the scaling of the variables, if applicable
-    if 'model_scale_factors' in config_dict:
-        scale_factors = config_dict['model_scale_factors']
-        for var in pred_xarray.data_vars:
-            if var in scale_factors:
-                this_scale_factor = scale_factors[var]
-                print(f"Undoing scale factor of {this_scale_factor} for variable {var}.")
-                pred_xarray[var] = pred_xarray[var]/this_scale_factor
+        else:
+            print(f"Not copying global attribute: {this_attr}")
+    # Make sure there is a 'stages' attribute
+    if 'stages' in list(pred_xarray.attrs.keys()):
+        if stage not in pred_xarray.attrs['stages']:
+            pred_xarray.attrs['stages'] = pred_xarray.attrs['stages'].append(stage)
+    else:
+        pred_xarray.attrs['stages'] = [stage]
 
     return pred_xarray, predictions_metadata

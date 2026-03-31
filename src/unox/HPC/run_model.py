@@ -48,6 +48,9 @@ uarr = uarray(inputfiles, is_input_set=True)
 years = uarr._get_years()
 # Prepare the input files
 xtrain, ytrain, predictions_metadata = rf.prepare_input(uarr, config_path, predictions_metadata, stage=1)
+# Save these input arrays to file
+np.save(f"{savedir}xtrain_stage1.npy", xtrain)
+np.save(f"{savedir}ytrain_stage1.npy", ytrain)
 # Split into training and validation sets
 xtrain, ytrain, xtest, ytest = data_split(xtrain, ytrain, config_dict['train_test_ratio'])
 print("After data split:")
@@ -93,6 +96,8 @@ unet = begin_training(savedir, stage=1, xtrain=xtrain, ytrain=ytrain, xtest=xtes
 
 # Generate predictions for evaluation
 pred_xarray, predictions_metadata = make_predictions(uarr, unet, config_dict, config_path, predictions_metadata, stage=1)
+# Add a global attribute for the stage of the predictions
+pred_xarray.attrs['stages'] = [1]
 # Save the xarray to a file
 pred_xarray.to_netcdf(f"{savedir}predictions.nc")
 
@@ -110,6 +115,9 @@ uarr = uarray(inputfiles, is_input_set=True)
 years = uarr._get_years()
 # Prepare the input files
 xtrain, ytrain, predictions_metadata = rf.prepare_input(uarr, config_path, predictions_metadata, stage=2)
+# Save these input arrays to file
+np.save(f"{savedir}xtrain_stage2.npy", xtrain)
+np.save(f"{savedir}ytrain_stage2.npy", ytrain)
 # Split into training and validation sets
 xtrain, ytrain, xtest, ytest = data_split(xtrain, ytrain, config_dict['train_test_ratio'])
 print("After data split:")
@@ -147,10 +155,8 @@ pred_xarray[pred_var] = pred_xarray_s2[pred_var]
 #         pred_xarray[coord].attrs[this_attr] = data_for_year[coord].attrs[this_attr]
 # Add global attributes for the prediction file
 pred_xarray.attrs['modification_date'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
-# Copy over global attributes from the input xarray
-for this_attr in uarr.xr.attrs.keys():
-    if this_attr in ['stages']:
-        pred_xarray.attrs[this_attr] = [1,2]
+# Add a global attribute for the stage of the predictions
+pred_xarray.attrs['stages'] = [1,2]
 # Save the xarray to a file
 pred_xarray.to_netcdf(f"{savedir}predictions.nc")
 

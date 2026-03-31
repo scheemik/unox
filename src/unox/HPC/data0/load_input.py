@@ -114,6 +114,7 @@ def get_npy_from_netcdf(
             TypeError(f"(get_npy_from_netcdf) `var` must be a str. Got type: {type(var)}")
 
     # Apply the input configuration file
+    # This ends up applying all scaling factors to every variable, which is unnecessary, especially when only getting the y variable. This could definitely be optimized. 
     xr_dataset = apply_config(xr_dataset, config_dict)
     # Trim the dataset to the specified date range
     xr_dataset = xr_dataset.sel(time=slice(start_date, end_date))
