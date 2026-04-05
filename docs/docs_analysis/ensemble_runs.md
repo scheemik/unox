@@ -299,6 +299,8 @@ this_plt = plot_var_maps(
 )
 ```
 
+![Map of predicted surface NOx emissions for stage 1 and 2 from `no2_ens_test` run, ensemble member 1](ensemble_runs_images/no2_ens_test_01_nox_pred_maps.png)
+
 The ensemble member ID will be automatically added to the title.
 
 Similarly, the results of a model run can be quickly visualized using the `plot_run_analysis()` function for a particular ensemble member.
@@ -312,6 +314,8 @@ this_plt = plot_run_analysis(
     start_date='2019-01-01',
 )
 ```
+
+![Analysis of predicted surface NOx emissions for stage 1 and 2 from `no2_ens_test` run, ensemble member 1](ensemble_runs_images/no2_ens_test_01_nox_pred_analysis.png)
 
 ---
 
@@ -339,6 +343,8 @@ this_plot = plot_BaW(
 )
 ```
 
+![Box and whisker plots of R^2 and root mean squared error from the 5 ensemble members of the `no2_ens_test` run](ensemble_runs_images/no2_ens_test_BaW_R2_RMSE.png)
+
 This shows the spread in $R^2$ and root mean squared error (RMSE) for the ensemble run.
 Note that the box and whisker function will create a plot regardless of how many ensemble members there are.
 Use caution when analyzing box and whisker plots for ensembles with 3 or fewer members. 
@@ -361,6 +367,8 @@ this_plot = plot_BaW(
 )
 ```
 
+![Box and whisker plots of predicted surface NOx emissions for stage 1 and 2 from the 5 ensemble members of the `no2_ens_test` run](ensemble_runs_images/no2_example_run_BaW_nox_pred_nox_pred_s2.png)
+
 ```python
 from unox.plotting import plot_BaW 
 
@@ -376,6 +384,8 @@ this_plot = plot_BaW(
     ],
 )
 ```
+
+![Box and whisker plots of surface NOx emissions and the 10 metre U wind from the 5 ensemble members of the `no2_ens_test` run](ensemble_runs_images/no2_2019_JFM_BaW_nox_and_u10.png)
 
 ---
 <a id='regularizers'></a>
@@ -491,7 +501,6 @@ With both of these configuration files **<ins>on HPC</ins>** in `inputfiles/_inp
 
 ```console
 username@HPC: unox$ bash HPC_job_submit.sh -j ens_reg0 -i config_ens_reg0 -e 5
-
 username@HPC: unox$ bash HPC_job_submit.sh -j ens_reg1 -i config_ens_reg1 -e 5
 ```
 
@@ -514,16 +523,20 @@ var_plots = plot_run_analysis(
 )
 ```
 
+![Analysis of predicted surface NOx emissions for stage 1 and 2 from `ens_reg0` run, ensemble member 1](ensemble_runs_images/ens_reg0_01_nox_pred_analysis.png)
+
 Above, we can see that running with no regularizer results in artifacts in the predictions, notably non-zero values around the edges of the domain and over the ocean. 
 
 ```python
 from unox.plotting import plot_run_analysis
 
 var_plots = plot_run_analysis(
-    'ens_reg0',
+    'ens_reg1',
     ens_mem=1,
 )
 ```
+
+![Analysis of predicted surface NOx emissions for stage 1 and 2 from `ens_reg1` run, ensemble member 1](ensemble_runs_images/ens_reg1_01_nox_pred_analysis.png)
 
 In the above example, we can see that the regularizer factor was set too high and resulted in all the predictions being far too small across the entire domain.
 
@@ -536,10 +549,13 @@ var_plots = plot_run_analysis(
 )
 ```
 
+![Analysis of predicted surface NOx emissions for stage 1 and 2 from `ens_reg4` run, ensemble member 1](ensemble_runs_images/ens_reg4_01_nox_pred_analysis.png)
+
 Here, we can see in the plot above that, with a regularizer factor of $1\times10^{-8}$, the model does a much better job at predicting the output.
 
 To see the statistical spread of all these ensembles at once, we can make a box and whisker plot.
 Below, I have used the `label_with` attribute to specify that I want the labels of each ensemble run to be the activity regularizer used (`act_reg`) and the regularizer factor used in the activity regularizer (`act_reg_factor`).
+The `label_with` list can contain any key names from the configuration file. 
 
 ```python
 from unox.plotting import plot_BaW 
@@ -557,6 +573,8 @@ this_plot = plot_BaW(
     label_with=['act_reg', 'act_reg_factor']
 )
 ```
+
+![Box and whisker plots of R^2 and root mean squared error from 7 different ensemble runs, each with 5 members and each with a different regularization factor](ensemble_runs_images/ens_regX_BaW_R2_RMSE.png)
 
 Here, we can see that using a factor of $1\times10^{-8}$ improves the model the most out of the factors used across the ensemble runs.
 
@@ -573,11 +591,14 @@ this_plot = plot_BaW(
             'is_predict': True,
             'start_date': '2019-01-02',
             'interval': '1Y',
+            'restrict_lat_lon_to': 'datafiles/sample_data/nox_2019_t106_US.nc',
         },
     ],
     label_with=['act_reg', 'act_reg_factor']
 )
 ```
+
+![Box and whisker plots of R^2 and root mean squared error from 7 different ensemble runs, each with 5 members and each with a different regularization factor, all restricted to the continental United States](ensemble_runs_images/ens_regX_BaW_R2_RMSE_restricted.png)
 
 I have found similar results for using the `L2` function in the regularizer.
 
