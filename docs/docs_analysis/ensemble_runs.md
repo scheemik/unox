@@ -129,12 +129,12 @@ To see all your ensemble jobs in the queue, use the `mysq` alias created in the 
 
 ```console
 username@HPC: unox$ mysq
-  JOBID     USER      ACCOUNT                  NAME  ST  TIME_LEFT  PARTITION NODES  TRES_PER_NODE NODELIST (REASON)
- 199501  <username>    def-dylan  no2_ens_test/01_n   R      58:32    compute     1     gres/gpu:1 trig0001 (None)
- 199502  <username>    def-dylan  no2_ens_test/02_n   R      58:45    compute     1     gres/gpu:1 trig0002 (None)
- 199503  <username>    def-dylan  no2_ens_test/03_n  PD         --    compute     1     gres/gpu:1 (Dependency)
- 199504  <username>    def-dylan  no2_ens_test/04_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
- 199505  <username>    def-dylan  no2_ens_test/05_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
+  JOBID        USER    ACCOUNT               NAME  ST  TIME_LEFT  PARTITION NODES  TRES_PER_NODE NODELIST (REASON)
+ 199501  <username>  def-dylan  no2_ens_test/01_n   R      58:32    compute     1     gres/gpu:1 trig0001 (None)
+ 199502  <username>  def-dylan  no2_ens_test/02_n   R      58:45    compute     1     gres/gpu:1 trig0002 (None)
+ 199503  <username>  def-dylan  no2_ens_test/03_n  PD         --    compute     1     gres/gpu:1 (Dependency)
+ 199504  <username>  def-dylan  no2_ens_test/04_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
+ 199505  <username>  def-dylan  no2_ens_test/05_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
 ```
 
 Note that jobs may initially be in the `PD` (pending) state if there are queue limitations. 
@@ -145,11 +145,11 @@ Note that this will not show the column headings.
 
 ```console
 username@HPC: unox$ mysq | grep no2_ens_test
- 199501  <username>    def-dylan  no2_ens_test/01_n   R      58:32    compute     1     gres/gpu:1 trig0001 (None)
- 199502  <username>    def-dylan  no2_ens_test/02_n   R      58:45    compute     1     gres/gpu:1 trig0002 (None)
- 199503  <username>    def-dylan  no2_ens_test/03_n  PD         --    compute     1     gres/gpu:1 (Dependency)
- 199504  <username>    def-dylan  no2_ens_test/04_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
- 199505  <username>    def-dylan  no2_ens_test/05_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
+ 199501  <username>  def-dylan  no2_ens_test/01_n   R      58:32    compute     1     gres/gpu:1 trig0001 (None)
+ 199502  <username>  def-dylan  no2_ens_test/02_n   R      58:45    compute     1     gres/gpu:1 trig0002 (None)
+ 199503  <username>  def-dylan  no2_ens_test/03_n  PD         --    compute     1     gres/gpu:1 (Dependency)
+ 199504  <username>  def-dylan  no2_ens_test/04_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
+ 199505  <username>  def-dylan  no2_ens_test/05_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
 ```
 
 As discussed in the {doc}`Running the model <../docs_setup/run_model>` guide, you can also monitor the jobs by opening their individual log files and checking your email. 
