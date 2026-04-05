@@ -400,6 +400,8 @@ In the [Keras documentation of regularizers](https://keras.io/api/layers/regular
 > - `bias_regularizer`: Regularizer to apply a penalty on the layer's bias.
 > - `activity_regularizer`: Regularizer to apply a penalty on the layer's output.
 
+You can also look at the [`keras.regularizers` source code](https://github.com/keras-team/keras/blob/v3.13.2/keras/src/regularizers/regularizers.py#L213).
+
 As the goal is to prevent the output of the model to have erroneous non-zero values, I decided to use the activity regularizer.
 I applied this to all every `Conv2D`, `Conv2DTranspose`, and `LSTM` layer in the Unet, as can be seen in the `src/unox/HPC/model/core.py` file. 
 I have implemented 4 different options for a regularizer to use:
@@ -407,6 +409,10 @@ I have implemented 4 different options for a regularizer to use:
 2. `L2`
 3. `L1L2`
 4. `None`
+
+When using a regularizer, the chosen function takes in a `float` parameter which is the "regularization factor." 
+In examples, I see most often this is a value like `0.01` or `0.03`, but I've also seen up to `2.0`. 
+Below, I will examine the effect of choosing different values of this factor. 
 
 By running multiple ensemble members with and without specific regularizers, you can quantitatively assess:
 - Whether a regularizer reduces ensemble uncertainty.
