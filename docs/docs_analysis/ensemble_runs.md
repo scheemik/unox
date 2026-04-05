@@ -2,7 +2,7 @@
 # Running ensemble models
 
 The documentation below describes how to run the U-net model with multiple ensemble members, then aggregate and analyze their results.
-This guide assumes you have followed the instructions on the {doc}`Running the model <run_model>` to be familiar with submitting single model runs and, additionally, worked through the guide on {doc}`Analyzing model output <analysis>` for a familiarity on how to plot different variables.
+This guide assumes you have followed the instructions on the {doc}`Running the model <../docs_setup/run_model>` to be familiar with submitting single model runs and, additionally, worked through the guide on {doc}`Analyzing model output <../analysis>` for a familiarity on how to plot different variables.
 <!-- Note: for linking between documents, use the `doc` role defined in the [Sphinx documentation](https://docs.readthedocs.com/platform/stable/guides/cross-referencing-with-sphinx.html#the-doc-role). 
 TLDR: Create a link to a different document by typing `{doc}`, followed by the name of the file surrounded by backticks, excluding the extension. If you would like to change the rendered link text of the link, surround the desired link text in backticks, then add the name of the file in angle brackets, in the format: "{doc}`Click here <filename>`".  -->
 
@@ -35,7 +35,7 @@ If you were to run the model twice with slightly different input, it would be di
 To get an idea of what the spread of the stochastic variability is, we can run the U-net multiple times with the same configuration.
 This is called an ensemble run.
 
-For this project, each ensemble run is submitted as a separate job to HPC, equivalent to following the procedure in the guide to {doc}`Running the model <run_model>`.
+For this project, each ensemble run is submitted as a separate job to HPC, equivalent to following the procedure in the guide to {doc}`Running the model <../docs_setup/run_model>`.
 Below, we will work through an example of how to use the infrastructure in this code to [avoid needing to submit each ensemble member separately](#submit_ensemble). 
 Afterwards, I'll show how to use the plotting functions in this repository to [analyze ensemble run outputs](#analyze_ensemble), both using the functions shown in {doc}`Analyzing model output <analysis>` as well as functions specifically designed for plotting ensemble runs.
 Lastly, I'll detail how ensemble runs can be used to assess a particular aspect of the model, in particular [the regularizer function](#regularizers).
@@ -51,7 +51,7 @@ Lastly, I'll detail how ensemble runs can be used to assess a particular aspect 
 
 ### Preparing ensemble runs
 
-The preparation for ensemble runs is nearly identical to preparing a single model run, as described in the {doc}`Running the model <run_model>` guide.
+The preparation for ensemble runs is nearly identical to preparing a single model run, as described in the {doc}`Running the model <../docs_setup/run_model>` guide.
 The key difference is that you will use the `-e` flag on the `HPC_job_submit.sh` script to tell it to create and submit multiple ensemble members at once.
 
 Ensure that the input configuration file you want to use exists on HPC in `inputfiles/_input_configs/`. 
@@ -60,7 +60,7 @@ For this example, I'll use the default configuration file, `inputfiles/_input_co
 ```{literalinclude} ../../inputfiles/_input_configs/sample_config.json
 ```
 
-The attributes of this file are explained in {doc}`Running the model <run_model>`.
+The attributes of this file are explained in {doc}`Running the model <../docs_setup/run_model>`.
 Make sure your desired configuration file is **<ins>on HPC</ins>**.
 For the example that follows, I'll assume a custom configuration file called `my_new_config.json`.
 
@@ -125,7 +125,7 @@ Each subdirectory will accumulate output files (model, predictions, log files, e
 
 ### Monitoring ensemble jobs
 
-To see all your ensemble jobs in the queue, use the `mysq` alias created in the {doc}`Running the model <run_model>` guide (which amounts to `squeue -u <username>`) **<ins>on HPC</ins>**:
+To see all your ensemble jobs in the queue, use the `mysq` alias created in the {doc}`Running the model <../docs_setup/run_model>` guide (which amounts to `squeue -u <username>`) **<ins>on HPC</ins>**:
 
 ```console
 username@HPC: unox$ mysq
@@ -152,7 +152,7 @@ username@HPC: unox$ mysq | grep no2_ens_test
  199505  <username>    def-dylan  no2_ens_test/05_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
 ```
 
-As discussed in the {doc}`Running the model <run_model>` guide, you can also monitor the jobs by opening their individual log files and checking your email. 
+As discussed in the {doc}`Running the model <../docs_setup/run_model>` guide, you can also monitor the jobs by opening their individual log files and checking your email. 
 
 <a id='collect_results'></a>
 [back to top](#top)
