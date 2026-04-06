@@ -8,17 +8,20 @@ TLDR: Create a link to a different document by typing `{doc}`, followed by the n
 
 ## Contents
 
-- [Introduction](#intro)
+- [Preview documentation changes](#preview_changes)
+    - [Live Preview](#live_preview)
 - Managing the documentation
     - How did I set up the way it auto updates?
     - Links between internal pages
     - Auto API and why writing good docstrings is important
+- [The model diagram](#model_diagram)
+    - [Editing the diagram](#edit_diagram)
 
 ---
-<a id='intro'></a>
+<a id='preview_changes'></a>
 [back to top](#top)
 
-## Introduction
+## Preview documentation changes
 
 To generate a preview of the documentation before pushing to the GitHub repository, you can run `docs/Makefile` as shown below. Note: it is important to navigate to the `unox/docs/` directory before running the command.
 
@@ -273,7 +276,10 @@ Sometimes, a change you make to the docs will not be picked up when regenerating
 This can often be solved by running `make clean html` instead, which takes a bit longer as it does a complete rebuild. 
 If you are still having errors, see the troubleshooting guide. 
 
-#### Live Preview
+<a id='live_preview'></a>
+[back to top](#top)
+
+### Live Preview
 
 The `Live Preview` extension allows you to preview how `html` pages will look. 
 I find this particularly helpful when editing the documentation files you are viewing right now. 
@@ -281,6 +287,7 @@ If you want to edit the documentation, open the `unox/docs/_build/html/index.htm
 This will open a live preview in a split view. 
 I find it helpful to have this preview in a separate window. 
 You can also open this preview in your browser to see how it will render by copying the URL at the top of the preview window and pasting it into your browser.
+The URL will look something like `http://127.0.0.1:3000/docs/_build/html/docs_dev/write_docs.html`. 
 
 ---
 <a id='model_diagram'></a>
@@ -333,6 +340,9 @@ username@animus-c:~/unox$ conda activate env_name
 ```
 This will automatically generate a plot of a map of each variable contained in the `no2_JFM_2019` input file for 2019-01-01.
 If you need to make changes to the model diagram, I recommend copying the files inside the `model_diagram/` directory into an [Overleaf](https://www.overleaf.com/) project and making the required changes.
+
+<a id='edit_diagram'></a>
+[back to top](#top)
 
 ### Editing the diagram
 
