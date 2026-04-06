@@ -1,0 +1,598 @@
+
+\documentclass[border=8pt, multi, tikz]{standalone} 
+\usepackage{import}
+\subimport{layers/}{init}
+\usetikzlibrary{positioning}
+\usetikzlibrary{3d} %for including external image 
+
+\def\ConvColor{rgb:yellow,5;red,2.5;white,5}
+\def\ConvReluColor{rgb:yellow,5;red,5;white,5}
+\def\PoolColor{rgb:red,1;black,0.3}
+\def\UnpoolColor{rgb:blue,2;green,1;black,0.3}
+\def\FcColor{rgb:blue,5;red,2.5;white,5}
+\def\FcReluColor{rgb:blue,5;red,5;white,4}
+\def\SoftmaxColor{rgb:magenta,5;black,7}   
+\def\SumColor{rgb:blue,5;green,15}
+
+\newcommand{\copymidarrow}{\tikz \draw[-Stealth,line width=0.8mm,draw={rgb:blue,4;red,1;green,1;black,3}] (-0.3,0) -- ++(0.3,0);}
+
+\begin{document}
+\begin{tikzpicture}[font=\large]
+\tikzstyle{connection}=[ultra thick,every node/.style={sloped,allow upside down},draw=\edgecolor,opacity=0.7]
+\tikzstyle{copyconnection}=[ultra thick,every node/.style={sloped,allow upside down},draw={rgb:blue,4;red,1;green,1;black,3},opacity=0.7]
+
+% Label the input variables
+\pic[shift={ (-6,0,0) }] at (0,0,0) 
+    {Label_Box={
+        name=input,
+        caption=Input Variables,
+        fill=white, 
+        opacity=0,
+        height=45,
+        width=20,
+        depth=40
+        }
+    };
+
+% Add frames for the input variables
+\node[canvas is yz plane at x=0] (temp) at (-8,0,0) {\includegraphics[width=15cm,height=7cm,angle=270]{plots/no2_2019_JFM_u10_plot.png}};
+
+\node[canvas is yz plane at x=0] at (-7,0,0) {\includegraphics[width=15cm,height=7cm,angle=270]{plots/no2_2019_JFM_v10_plot.png}};
+
+\node[canvas is yz plane at x=0] (temp) at (-6,0,0) {\includegraphics[width=15cm,height=7cm,angle=270]{plots/no2_2019_JFM_blh_plot.png}};
+
+\node[canvas is yz plane at x=0] at (-5,0,0) {\includegraphics[width=15cm,height=7cm,angle=270]{plots/no2_2019_JFM_sp_plot.png}};
+
+\node[canvas is yz plane at x=0] (temp) at (-4,0,0) {\includegraphics[width=15cm,height=7cm,angle=270]{plots/no2_2019_JFM_skt_plot.png}};
+
+\node[canvas is yz plane at x=0] at (-3,0,0) {\includegraphics[width=15cm,height=7cm,angle=270]{plots/no2_2019_JFM_t2m_plot.png}};
+
+\node[canvas is yz plane at x=0] (temp) at (-2,0,0) {\includegraphics[width=15cm,height=7cm,angle=270]{plots/no2_2019_JFM_ssrd_plot.png}};
+
+\node[canvas is yz plane at x=0] at (-1,0,0) {\includegraphics[width=15cm,height=7cm,angle=270]{plots/no2_2019_JFM_no2_plot.png}};
+
+\node[canvas is yz plane at x=0] at (0,0,0) {\includegraphics[width=15cm,height=7cm,angle=270]{plots/no2_2019_JFM_nox_plot.png}};
+
+%%% Block 1
+%% Block1_Conv1
+\pic[shift={ (2,0,0) }] at (0,0,0) 
+    {RightBandedBox={
+        name=b1_conv1,
+        caption= $n$,
+        xlabel={{ 128, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=32,
+        width={{ 1 }},
+        depth=64
+        }
+    };
+%% Block1_Conv2
+\pic[shift={ (0.5,0,0) }] at (b1_conv1-east) 
+    {RightBandedBox={
+        name=b1_conv2,
+        caption= $2n$,
+        xlabel={{ 256, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=32,
+        width={{ 2 }},
+        depth=64
+        }
+    };
+%% Block1_MaxPool
+\pic[shift={ (0.5,0,0) }] at (b1_conv2-east) 
+    {Box={
+        name=b1_maxpool,
+        caption= ,
+        fill=\PoolColor,
+        opacity=0.5,
+        height=16,
+        width=2,
+        depth=32
+        }
+    };
+%%% Block 2
+%% Block2_Conv1
+\pic[shift={ (1,0,0) }] at (b1_maxpool-east) 
+    {RightBandedBox={
+        name=b2_conv1,
+        caption= $2n$,
+        xlabel={{ 256, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=16,
+        width={ 2 },
+        depth=32
+        }
+    };
+%% Block2_Conv2
+\pic[shift={ (0.4,0,0) }] at (b2_conv1-east) 
+    {RightBandedBox={
+        name=b2_conv2,
+        caption= $4n$,
+        xlabel={{ 512, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=16,
+        width={ 4 },
+        depth=32
+        }
+    };
+%% Block2_MaxPool
+\pic[shift={ (0.4,0,0) }] at (b2_conv2-east) 
+    {Box={
+        name=b2_maxpool,
+        caption= ,
+        fill=\PoolColor,
+        opacity=0.5,
+        height=8,
+        width=4,
+        depth=16
+        }
+    };
+
+\draw [connection]  (b1_maxpool-east)    -- node {\midarrow} (b2_conv1-west);
+
+% Label the convolution blocks
+\pic[shift={ (0,0,0) }] at (b1_conv1-west) 
+    {Label_Box={
+        name=conv_blocks_label,
+        caption=Convolution Blocks,
+        fill=white, 
+        opacity=0,
+        height=30,
+        width=80,
+        depth=40
+        }
+    };
+
+%%% Block 3
+%% Block3_Conv1
+\pic[shift={ (1,0,0) }] at (b2_maxpool-east) 
+    {RightBandedBox={
+        name=b3_conv1,
+        caption= $4n$,
+        xlabel={{ 512, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=8,
+        width={ 4 },
+        depth=16
+        }
+    };
+%% Block3_Conv2
+\pic[shift={ (0.3,0,0) }] at (b3_conv1-east) 
+    {RightBandedBox={
+        name=b3_conv2,
+        caption= $8n$,
+        xlabel={{ 1024, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=8,
+        width={ 8 },
+        depth=16
+        }
+    };
+%% Block3_MaxPool
+\pic[shift={ (0.3,0,0) }] at (b3_conv2-east) 
+    {Box={
+        name=b3_maxpool,
+        caption= ,
+        fill=\PoolColor,
+        opacity=0.5,
+        height=4,
+        width=8,
+        depth=8
+        }
+    };
+
+\draw [connection]  (b2_maxpool-east)    -- node {\midarrow} (b3_conv1-west);
+
+%%% Block 4
+%% Block4_Conv1
+\pic[shift={ (1,0,0) }] at (b3_maxpool-east) 
+    {RightBandedBox={
+        name=b4_conv1,
+        caption= $8n$,
+        xlabel={{ 1024, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=4,
+        width={ 8 },
+        depth=8
+        }
+    };
+%% Block4_Conv2
+\pic[shift={ (0.2,0,0) }] at (b4_conv1-east) 
+    {RightBandedBox={
+        name=b4_conv2,
+        caption= $8n$,
+        xlabel={{ 1024, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=4,
+        width={ 8 },
+        depth=8
+        }
+    };
+    
+\draw [connection]  (b3_maxpool-east)    -- node {\midarrow} (b4_conv1-west);
+
+\pic[shift={ (1,0,0) }] at (b4_conv2-east) 
+    {Label_Box={
+        name=LSTMbox,
+        caption= LSTM,
+        fill=white, 
+        opacity=0,
+        height=12,
+        width=16,
+        depth=10
+        }
+    };
+\pic[shift={ (0.5,0,0) }] at (LSTMbox-west) 
+    {Ball={
+        name=LSTM1,
+        caption= $8n$,
+        fill=\SumColor,
+        opacity=0.75,
+        radius=2.5,
+        logo=$\sim$
+        }
+    };
+
+\draw [connection]  (b4_conv2-east)    -- node {\midarrow} (LSTM1-west);
+
+\pic[shift={ (-1,0,0) }] at (LSTMbox-east) 
+    {Ball={
+        name=LSTM2,
+        caption= $8n$,
+        fill=\SumColor,
+        opacity=0.75,
+        radius=2.5,
+        logo=$\sim$
+        }
+    };
+
+\draw [connection]  (LSTM1-east)    -- node {\midarrow} (LSTM2-west);
+
+%%% Block 5
+%% Block5_UpConv
+\pic[shift={ (1,0,0) }] at (LSTMbox-east) 
+    {Box={
+        name=b5_upconv,
+        caption= ,
+        fill=\UnpoolColor,
+        opacity=0.2,
+        height=12,
+        width=19,
+        depth=18
+        }
+    };
+\draw [connection]  (LSTM2-east)    -- node {\midarrow} (b5_upconv-west);
+%% u5_cropped
+\pic[shift={ (0.2,0,0) }] at (b5_upconv-west) 
+    {Box={
+        name=b5_u5_cropped,
+        caption= $4n$,
+        xlabel={{512, }},
+        zlabel=,
+        fill=\ConvColor,
+        opacity=0.4,
+        height=8,
+        width=4,
+        depth=16
+        }
+    };
+%% c3
+\pic[shift={(0.1,0,0)}] at (b5_u5_cropped-east) 
+    {Box={
+        name=b5_c3,
+        caption= $8n$,
+        xlabel={{1024, }},
+        zlabel=,
+        fill=\ConvColor,
+        opacity=0.4,
+        height=8,
+        width=8,
+        depth=16
+        }
+    };
+%% c2_cropped
+\pic[shift={(0.1,0,0)}] at (b5_c3-east) 
+    {Box={
+        name=b5_c2_cropped,
+        caption= $4n$,
+        xlabel={{512, }},
+        zlabel=,
+        fill=\ConvColor,
+        height=8,
+        width=4,
+        depth=16
+        }
+    };
+
+% Label the up-convolution blocks
+\pic[shift={ (0,0,0) }] at (b5_upconv-west) 
+    {Label_Box={
+        name=upconv_blocks_label,
+        caption=Up-Convolution Blocks,
+        fill=white, 
+        opacity=0,
+        height=30,
+        width=60,
+        depth=40
+        }
+    };
+
+%% Residual Learning Connection
+% b3_conv2 to b5_c3
+\path (b3_conv2-south) -- (b3_conv2-north) coordinate[pos=1.75] (b3_conv2-top) ;
+\path (b5_c3-south)  -- (b5_c3-north)  coordinate[pos=1.75] (b5_c3-top) ;
+\draw [copyconnection]  (b3_conv2-north)  
+-- node {\copymidarrow}(b3_conv2-top)
+-- node {\copymidarrow}(b5_c3-top)
+-- node {\copymidarrow} (b5_c3-north);
+
+%% Residual Learning Connection
+% b2_conv2 to b5_c2_cropped
+\path (b2_conv2-south) -- (b2_conv2-north) coordinate[pos=1.5] (b2_conv2-top) ;
+\path (b5_c2_cropped-south)  -- (b5_c2_cropped-north)  coordinate[pos=2.5] (b5_c2_cropped-top) ;
+\draw [copyconnection]  (b2_conv2-north)  
+-- node {\copymidarrow}(b2_conv2-top)
+-- node {\copymidarrow}(b5_c2_cropped-top)
+-- node {\copymidarrow} (b5_c2_cropped-north);
+
+%% Block5_Conv1
+\pic[shift={ (0.5,0,0) }] at (b5_upconv-east) 
+    {RightBandedBox={
+        name=b5_conv1,
+        caption= $2n$,
+        xlabel={{ 256, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=8,
+        width=2,
+        depth=16
+        }
+    };
+%% Block5_Conv2
+\pic[shift={ (0.3,0,0) }] at (b5_conv1-east) 
+    {RightBandedBox={
+        name=b5_conv2,
+        caption= $2n$,
+        xlabel={{ 256, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=8,
+        width={ 2 },
+        depth=16
+        }
+    };
+
+%%% Block 6
+%% Block6_UpConv
+\pic[shift={ (2,0,0) }] at (b5_conv2-east) 
+    {Box={
+        name=b6_upconv,
+        caption= ,
+        fill=\UnpoolColor,
+        opacity=0.2,
+        height=20,
+        width=14,
+        depth=34
+        }
+    };
+\draw [connection]  (b5_conv2-east)    -- node {\midarrow} (b6_upconv-west);
+%% u6_cropped
+\pic[shift={ (0.2,0,0) }] at (b6_upconv-west) 
+    {Box={
+        name=b6_u5_cropped,
+        caption= $2n$,
+        xlabel={{256, }},
+        zlabel=,
+        fill=\ConvColor,
+        opacity=0.4,
+        height=16,
+        width=2,
+        depth=32
+        }
+    };
+%% c2
+\pic[shift={(0.1,0,0)}] at (b6_u5_cropped-east) 
+    {Box={
+        name=b6_c2,
+        caption= $4n$,
+        xlabel={{512, }},
+        zlabel=,
+        fill=\ConvColor,
+        opacity=0.4,
+        height=16,
+        width=4,
+        depth=32
+        }
+    };
+%% c1_cropped
+\pic[shift={(0.1,0,0)}] at (b6_c2-east) 
+    {Box={
+        name=b6_c1_cropped,
+        caption= $2n$,
+        xlabel={{256, }},
+        zlabel=,
+        fill=\ConvColor,
+        height=16,
+        width=2,
+        depth=32
+        }
+    };
+
+%% Residual Learning Connection
+% b2_conv2 to b6_c2
+\path (b2_conv2-south) -- (b2_conv2-north) coordinate[pos=1.5] (b2_conv2-top) ;
+\path (b6_c2-south)  -- (b6_c2-north)  coordinate[pos=1.5] (b6_c2-top) ;
+\draw [copyconnection]  (b2_conv2-north)  
+-- node {\copymidarrow}(b2_conv2-top)
+-- node {\copymidarrow}(b6_c2-top)
+-- node {\copymidarrow} (b6_c2-north);
+
+%% Residual Learning Connection
+% b1_conv2 to b6_c1_cropped
+\path (b1_conv2-south) -- (b1_conv2-north) coordinate[pos=1.25] (b1_conv2-top) ;
+\path (b6_c1_cropped-south)  -- (b6_c1_cropped-north)  coordinate[pos=2.] (b6_c1_cropped-top) ;
+\draw [copyconnection]  (b1_conv2-north)  
+-- node {\copymidarrow}(b1_conv2-top)
+-- node {\copymidarrow}(b6_c1_cropped-top)
+-- node {\copymidarrow} (b6_c1_cropped-north);
+
+%% Block6_Conv1
+\pic[shift={ (0.5,0,0) }] at (b6_upconv-east) 
+    {RightBandedBox={
+        name=b6_conv1,
+        caption= $n$,
+        xlabel={{ 128, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=16,
+        width=1,
+        depth=32
+        }
+    };
+%% Block6_Conv2
+\pic[shift={ (0.5,0,0) }] at (b6_conv1-east) 
+    {RightBandedBox={
+        name=b6_conv2,
+        caption= $n$,
+        xlabel={{ 128, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.75,
+        height=16,
+        width={ 1 },
+        depth=32
+        }
+    };
+
+%%% Block 7
+%% Block7_UpConv
+\pic[shift={ (2.5,0,0) }] at (b6_conv2-east) 
+    {Box={
+        name=b7_upconv,
+        caption= ,
+        fill=\UnpoolColor,
+        opacity=0.2,
+        height=36,
+        width=8,
+        depth=68
+        }
+    };
+\draw [connection]  (b6_conv2-east)    -- node {\midarrow} (b7_upconv-west);
+%% u7_cropped
+\pic[shift={ (0.1,0,0) }] at (b7_upconv-west) 
+    {Box={
+        name=b7_u7_cropped,
+        caption= $n$,
+        xlabel={{ 128, }},
+        zlabel=,
+        fill=\ConvColor,
+        opacity=0.4,
+        height=32,
+        width=1,
+        depth=64
+        }
+    };
+%% c1
+\pic[shift={(0.5,0,0)}] at (b7_u7_cropped-east) 
+    {Box={
+        name=b7_c1,
+        caption= $2n$,
+        xlabel={{256, }},
+        zlabel=,
+        fill=\ConvColor,
+        opacity=0.4,
+        height=32,
+        width=2,
+        depth=64
+        }
+    };
+
+%% Block7_Conv1
+\pic[shift={ (1,0,0) }] at (b7_c1-east) 
+    {RightBandedBox={
+        name=b7_conv1,
+        caption= $\frac{n}{2}$,
+        xlabel={{ 64, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.5,
+        height=32,
+        width=1,
+        depth=64
+        }
+    };
+%% Block7_Conv2
+\pic[shift={(0.3,0,0)}] at (b7_conv1-east) 
+    {RightBandedBox={
+        name=b7_conv2,
+        caption= $\frac{n}{2}$,
+        xlabel={{64, }},
+        zlabel=,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        opacity=0.5,
+        height=32,
+        width=1,
+        depth=64
+        }
+    };
+
+%% Residual Learning Connection
+% b1_conv2 to b7_c1
+\path (b1_conv2-south) -- (b1_conv2-north) coordinate[pos=1.25] (b1_conv2-top) ;
+\path (b7_c1-south)  -- (b7_c1-north)  coordinate[pos=1.25] (b7_c1-top) ;
+\draw [copyconnection]  (b1_conv2-north)  
+-- node {\copymidarrow}(b1_conv2-top)
+-- node {\copymidarrow}(b7_c1-top)
+-- node {\copymidarrow} (b7_c1-north);
+
+\node[canvas is yz plane at x=2] at (b7_conv2-east) {\includegraphics[width=15cm,height=7cm,angle=270]{plots/no2_2019_JFM_no2_plot.png}};
+
+\pic[shift={ (2,0,0) }] at (b7_conv2-east) 
+    {Label_Box={
+        name=output,
+        caption=Output,
+        xlabel={{ 1, }},
+        zlabel=,
+        fill=, opacity=0,
+        height=40,
+        width=1,
+        depth=40,
+        }
+    };
+
+\end{tikzpicture}
+\end{document}
+
