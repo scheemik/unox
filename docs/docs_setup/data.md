@@ -134,8 +134,8 @@ Running the `era5_concatenate.py` script will find all the downloaded ERA5 files
 As this process takes a long time, I recommend launching a `tmux` session before starting so that any network interruption between your local machine and Animus won't stop the script from running. Be sure to activate the `conda` environment **<ins>on Animus</ins>** _after_ lauching `tmux`.
 ```console
 username@animus-c:~/unox$ tmux
-username@animus-c:~/unox$ conda activate uplt
-(uplt) username@animus-c:~/unox$ python datafiles/era5_concatenate.py
+username@animus-c:~/unox$ conda activate env_name
+(env_name) username@animus-c:~/unox$ python datafiles/era5_concatenate.py
 Creating directory: /home/mschee/unox/datafiles/ERA5concatenated
 era5_dirs: ['2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020']
 Processing year directory: 2005

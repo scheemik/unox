@@ -267,6 +267,8 @@ def plot_var_maps(
     ens_mem=None,
     avg_over=True,
     sum_over=False,
+    add_title=True,
+    add_clrbar=True,
     **kwargs,
 ):
     """ Plot maps for one or more variables in a dataset.
@@ -296,6 +298,12 @@ def plot_var_maps(
             Whether to sum over all time steps.
             Cannot be `True` at the same time as `avg_over`.
             Default is `False`.
+        add_title : `bool`, optional
+            Whether to add a title to the figure.
+            Default is `True`.
+        add_clrbar : `bool`, optional
+            Whether to add a colorbar to each subplot.
+            Default is `True`.
         **kwargs : keyword arguments
             Additional keyword arguments to pass to `uarray`, `select_time()`, `set_fig_row_col()`, and `map_ax()`.
 
@@ -392,9 +400,11 @@ def plot_var_maps(
             **kwargs,
         )
         # Add a colorbar
-        axs[i].colorbar(this_var, loc='b', label=clrbar_label)
+        if add_clrbar:
+            axs[i].colorbar(this_var, loc='b', label=clrbar_label)
     # Add an overall title
-    fig.suptitle(f"{u_arr.name}{title_ens_ID} {title_segment}", fontsize=title_font_size)
+    if add_title:
+        fig.suptitle(f"{u_arr.name}{title_ens_ID} {title_segment}", fontsize=title_font_size)
     # Return the figure
     return fig
 

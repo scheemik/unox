@@ -2,7 +2,7 @@
 # Running ensemble models
 
 The documentation below describes how to run the U-net model with multiple ensemble members, then aggregate and analyze their results.
-This guide assumes you have followed the instructions on the {doc}`Running the model <run_model>` to be familiar with submitting single model runs and, additionally, worked through the guide on {doc}`Analyzing model output <analysis>` for a familiarity on how to plot different variables.
+This guide assumes you have followed the instructions on the {doc}`Running the model <../docs_setup/run_model>` to be familiar with submitting single model runs and, additionally, worked through the guide on {doc}`Analyzing model output <../analysis>` for a familiarity on how to plot different variables.
 <!-- Note: for linking between documents, use the `doc` role defined in the [Sphinx documentation](https://docs.readthedocs.com/platform/stable/guides/cross-referencing-with-sphinx.html#the-doc-role). 
 TLDR: Create a link to a different document by typing `{doc}`, followed by the name of the file surrounded by backticks, excluding the extension. If you would like to change the rendered link text of the link, surround the desired link text in backticks, then add the name of the file in angle brackets, in the format: "{doc}`Click here <filename>`".  -->
 
@@ -35,7 +35,7 @@ If you were to run the model twice with slightly different input, it would be di
 To get an idea of what the spread of the stochastic variability is, we can run the U-net multiple times with the same configuration.
 This is called an ensemble run.
 
-For this project, each ensemble run is submitted as a separate job to HPC, equivalent to following the procedure in the guide to {doc}`Running the model <run_model>`.
+For this project, each ensemble run is submitted as a separate job to HPC, equivalent to following the procedure in the guide to {doc}`Running the model <../docs_setup/run_model>`.
 Below, we will work through an example of how to use the infrastructure in this code to [avoid needing to submit each ensemble member separately](#submit_ensemble). 
 Afterwards, I'll show how to use the plotting functions in this repository to [analyze ensemble run outputs](#analyze_ensemble), both using the functions shown in {doc}`Analyzing model output <analysis>` as well as functions specifically designed for plotting ensemble runs.
 Lastly, I'll detail how ensemble runs can be used to assess a particular aspect of the model, in particular [the regularizer function](#regularizers).
@@ -51,7 +51,7 @@ Lastly, I'll detail how ensemble runs can be used to assess a particular aspect 
 
 ### Preparing ensemble runs
 
-The preparation for ensemble runs is nearly identical to preparing a single model run, as described in the {doc}`Running the model <run_model>` guide.
+The preparation for ensemble runs is nearly identical to preparing a single model run, as described in the {doc}`Running the model <../docs_setup/run_model>` guide.
 The key difference is that you will use the `-e` flag on the `HPC_job_submit.sh` script to tell it to create and submit multiple ensemble members at once.
 
 Ensure that the input configuration file you want to use exists on HPC in `inputfiles/_input_configs/`. 
@@ -60,7 +60,7 @@ For this example, I'll use the default configuration file, `inputfiles/_input_co
 ```{literalinclude} ../../inputfiles/_input_configs/sample_config.json
 ```
 
-The attributes of this file are explained in {doc}`Running the model <run_model>`.
+The attributes of this file are explained in {doc}`Running the model <../docs_setup/run_model>`.
 Make sure your desired configuration file is **<ins>on HPC</ins>**.
 For the example that follows, I'll assume a custom configuration file called `my_new_config.json`.
 
@@ -125,16 +125,16 @@ Each subdirectory will accumulate output files (model, predictions, log files, e
 
 ### Monitoring ensemble jobs
 
-To see all your ensemble jobs in the queue, use the `mysq` alias created in the {doc}`Running the model <run_model>` guide (which amounts to `squeue -u <username>`) **<ins>on HPC</ins>**:
+To see all your ensemble jobs in the queue, use the `mysq` alias created in the {doc}`Running the model <../docs_setup/run_model>` guide (which amounts to `squeue -u <username>`) **<ins>on HPC</ins>**:
 
 ```console
 username@HPC: unox$ mysq
-  JOBID     USER      ACCOUNT                  NAME  ST  TIME_LEFT  PARTITION NODES  TRES_PER_NODE NODELIST (REASON)
- 199501  <username>    def-dylan  no2_ens_test/01_n   R      58:32    compute     1     gres/gpu:1 trig0001 (None)
- 199502  <username>    def-dylan  no2_ens_test/02_n   R      58:45    compute     1     gres/gpu:1 trig0002 (None)
- 199503  <username>    def-dylan  no2_ens_test/03_n  PD         --    compute     1     gres/gpu:1 (Dependency)
- 199504  <username>    def-dylan  no2_ens_test/04_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
- 199505  <username>    def-dylan  no2_ens_test/05_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
+  JOBID        USER    ACCOUNT               NAME  ST  TIME_LEFT  PARTITION NODES  TRES_PER_NODE NODELIST (REASON)
+ 199501  <username>  def-dylan  no2_ens_test/01_n   R      58:32    compute     1     gres/gpu:1 trig0001 (None)
+ 199502  <username>  def-dylan  no2_ens_test/02_n   R      58:45    compute     1     gres/gpu:1 trig0002 (None)
+ 199503  <username>  def-dylan  no2_ens_test/03_n  PD         --    compute     1     gres/gpu:1 (Dependency)
+ 199504  <username>  def-dylan  no2_ens_test/04_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
+ 199505  <username>  def-dylan  no2_ens_test/05_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
 ```
 
 Note that jobs may initially be in the `PD` (pending) state if there are queue limitations. 
@@ -145,14 +145,14 @@ Note that this will not show the column headings.
 
 ```console
 username@HPC: unox$ mysq | grep no2_ens_test
- 199501  <username>    def-dylan  no2_ens_test/01_n   R      58:32    compute     1     gres/gpu:1 trig0001 (None)
- 199502  <username>    def-dylan  no2_ens_test/02_n   R      58:45    compute     1     gres/gpu:1 trig0002 (None)
- 199503  <username>    def-dylan  no2_ens_test/03_n  PD         --    compute     1     gres/gpu:1 (Dependency)
- 199504  <username>    def-dylan  no2_ens_test/04_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
- 199505  <username>    def-dylan  no2_ens_test/05_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
+ 199501  <username>  def-dylan  no2_ens_test/01_n   R      58:32    compute     1     gres/gpu:1 trig0001 (None)
+ 199502  <username>  def-dylan  no2_ens_test/02_n   R      58:45    compute     1     gres/gpu:1 trig0002 (None)
+ 199503  <username>  def-dylan  no2_ens_test/03_n  PD         --    compute     1     gres/gpu:1 (Dependency)
+ 199504  <username>  def-dylan  no2_ens_test/04_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
+ 199505  <username>  def-dylan  no2_ens_test/05_n  PD         --    compute     1     gres/gpu:1 (QOSMaxJobsPerUserLimit)
 ```
 
-As discussed in the {doc}`Running the model <run_model>` guide, you can also monitor the jobs by opening their individual log files and checking your email. 
+As discussed in the {doc}`Running the model <../docs_setup/run_model>` guide, you can also monitor the jobs by opening their individual log files and checking your email. 
 
 <a id='collect_results'></a>
 [back to top](#top)
@@ -162,7 +162,7 @@ As discussed in the {doc}`Running the model <run_model>` guide, you can also mon
 Once all ensemble jobs have completed, transfer the entire ensemble output directory back to Animus by running the following command **<ins>on Animus</ins>**:
 
 ```console
-(uplt) username@animus-c:~/unox$ bash HPC_to_animus.sh -j -f no2_ens_test
+(env_name) username@animus-c:~/unox$ bash HPC_to_animus.sh -j -f no2_ens_test
 -c, No cluster specified, defaulting to trillium
 -j, Copying full HPC job directory for no2_ens_test from trillium to Animus
 Directory ./HPC_runs/no2_ens_test does not exist, creating it.
@@ -299,6 +299,8 @@ this_plt = plot_var_maps(
 )
 ```
 
+![Map of predicted surface NOx emissions for stage 1 and 2 from `no2_ens_test` run, ensemble member 1](ensemble_runs_images/no2_ens_test_01_nox_pred_maps.png)
+
 The ensemble member ID will be automatically added to the title.
 
 Similarly, the results of a model run can be quickly visualized using the `plot_run_analysis()` function for a particular ensemble member.
@@ -312,6 +314,8 @@ this_plt = plot_run_analysis(
     start_date='2019-01-01',
 )
 ```
+
+![Analysis of predicted surface NOx emissions for stage 1 and 2 from `no2_ens_test` run, ensemble member 1](ensemble_runs_images/no2_ens_test_01_nox_pred_analysis.png)
 
 ---
 
@@ -339,6 +343,8 @@ this_plot = plot_BaW(
 )
 ```
 
+![Box and whisker plots of R^2 and root mean squared error from the 5 ensemble members of the `no2_ens_test` run](ensemble_runs_images/no2_ens_test_BaW_R2_RMSE.png)
+
 This shows the spread in $R^2$ and root mean squared error (RMSE) for the ensemble run.
 Note that the box and whisker function will create a plot regardless of how many ensemble members there are.
 Use caution when analyzing box and whisker plots for ensembles with 3 or fewer members. 
@@ -361,6 +367,8 @@ this_plot = plot_BaW(
 )
 ```
 
+![Box and whisker plots of predicted surface NOx emissions for stage 1 and 2 from the 5 ensemble members of the `no2_ens_test` run](ensemble_runs_images/no2_example_run_BaW_nox_pred_nox_pred_s2.png)
+
 ```python
 from unox.plotting import plot_BaW 
 
@@ -376,6 +384,8 @@ this_plot = plot_BaW(
     ],
 )
 ```
+
+![Box and whisker plots of surface NOx emissions and the 10 metre U wind from the 5 ensemble members of the `no2_ens_test` run](ensemble_runs_images/no2_2019_JFM_BaW_nox_and_u10.png)
 
 ---
 <a id='regularizers'></a>
@@ -400,6 +410,8 @@ In the [Keras documentation of regularizers](https://keras.io/api/layers/regular
 > - `bias_regularizer`: Regularizer to apply a penalty on the layer's bias.
 > - `activity_regularizer`: Regularizer to apply a penalty on the layer's output.
 
+You can also look at the [`keras.regularizers` source code](https://github.com/keras-team/keras/blob/v3.13.2/keras/src/regularizers/regularizers.py#L213).
+
 As the goal is to prevent the output of the model to have erroneous non-zero values, I decided to use the activity regularizer.
 I applied this to all every `Conv2D`, `Conv2DTranspose`, and `LSTM` layer in the Unet, as can be seen in the `src/unox/HPC/model/core.py` file. 
 I have implemented 4 different options for a regularizer to use:
@@ -407,6 +419,10 @@ I have implemented 4 different options for a regularizer to use:
 2. `L2`
 3. `L1L2`
 4. `None`
+
+When using a regularizer, the chosen function takes in a `float` parameter which is the "regularization factor." 
+In examples, I see most often this is a value like `0.01` or `0.03`, but I've also seen up to `2.0`. 
+Below, I will examine the effect of choosing different values of this factor. 
 
 By running multiple ensemble members with and without specific regularizers, you can quantitatively assess:
 - Whether a regularizer reduces ensemble uncertainty.
@@ -485,7 +501,6 @@ With both of these configuration files **<ins>on HPC</ins>** in `inputfiles/_inp
 
 ```console
 username@HPC: unox$ bash HPC_job_submit.sh -j ens_reg0 -i config_ens_reg0 -e 5
-
 username@HPC: unox$ bash HPC_job_submit.sh -j ens_reg1 -i config_ens_reg1 -e 5
 ```
 
@@ -508,16 +523,20 @@ var_plots = plot_run_analysis(
 )
 ```
 
+![Analysis of predicted surface NOx emissions for stage 1 and 2 from `ens_reg0` run, ensemble member 1](ensemble_runs_images/ens_reg0_01_nox_pred_analysis.png)
+
 Above, we can see that running with no regularizer results in artifacts in the predictions, notably non-zero values around the edges of the domain and over the ocean. 
 
 ```python
 from unox.plotting import plot_run_analysis
 
 var_plots = plot_run_analysis(
-    'ens_reg0',
+    'ens_reg1',
     ens_mem=1,
 )
 ```
+
+![Analysis of predicted surface NOx emissions for stage 1 and 2 from `ens_reg1` run, ensemble member 1](ensemble_runs_images/ens_reg1_01_nox_pred_analysis.png)
 
 In the above example, we can see that the regularizer factor was set too high and resulted in all the predictions being far too small across the entire domain.
 
@@ -530,10 +549,13 @@ var_plots = plot_run_analysis(
 )
 ```
 
+![Analysis of predicted surface NOx emissions for stage 1 and 2 from `ens_reg4` run, ensemble member 1](ensemble_runs_images/ens_reg4_01_nox_pred_analysis.png)
+
 Here, we can see in the plot above that, with a regularizer factor of $1\times10^{-8}$, the model does a much better job at predicting the output.
 
 To see the statistical spread of all these ensembles at once, we can make a box and whisker plot.
 Below, I have used the `label_with` attribute to specify that I want the labels of each ensemble run to be the activity regularizer used (`act_reg`) and the regularizer factor used in the activity regularizer (`act_reg_factor`).
+The `label_with` list can contain any key names from the configuration file. 
 
 ```python
 from unox.plotting import plot_BaW 
@@ -551,6 +573,8 @@ this_plot = plot_BaW(
     label_with=['act_reg', 'act_reg_factor']
 )
 ```
+
+![Box and whisker plots of R^2 and root mean squared error from 7 different ensemble runs, each with 5 members and each with a different regularization factor](ensemble_runs_images/ens_regX_BaW_R2_RMSE.png)
 
 Here, we can see that using a factor of $1\times10^{-8}$ improves the model the most out of the factors used across the ensemble runs.
 
@@ -567,11 +591,14 @@ this_plot = plot_BaW(
             'is_predict': True,
             'start_date': '2019-01-02',
             'interval': '1Y',
+            'restrict_lat_lon_to': 'datafiles/sample_data/nox_2019_t106_US.nc',
         },
     ],
     label_with=['act_reg', 'act_reg_factor']
 )
 ```
+
+![Box and whisker plots of R^2 and root mean squared error from 7 different ensemble runs, each with 5 members and each with a different regularization factor, all restricted to the continental United States](ensemble_runs_images/ens_regX_BaW_R2_RMSE_restricted.png)
 
 I have found similar results for using the `L2` function in the regularizer.
 

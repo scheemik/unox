@@ -67,7 +67,7 @@ The script `HPC_from_animus.sh` is set up to facilitate the transfer so you do n
 Below is an example of transferring the `no2_2005-2020` input file from Animus to Trillium. Note: this must be run **<ins>on Animus</ins>**.
 
 ```console
-(uplt) username@animus-c:~/unox$ bash HPC_from_animus.sh -f no2_2005-2020 -i 
+(env_name) username@animus-c:~/unox$ bash HPC_from_animus.sh -f no2_2005-2020 -i 
 -c, No cluster specified, defaulting to trillium
 -i, Copying full input file directory for no2_2005-2020 to trillium from Animus
 Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
@@ -125,7 +125,7 @@ When preparing for a model run, make sure the configuration file you wish to use
 This can be accomplished by creating a configuration file on Animus, then using the `HPC_from_animus.sh` script to transfer it. 
 
 ```console
-(uplt) username@animus-c:~/unox$ bash HPC_from_animus.sh -f inputfiles/_input_configs/my_new_config.json 
+(env_name) username@animus-c:~/unox$ bash HPC_from_animus.sh -f inputfiles/_input_configs/my_new_config.json 
 -c, No cluster specified, defaulting to trillium
 Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
 (<username>@trillium.alliancecan.ca) Duo two-factor login for <username>
@@ -605,7 +605,7 @@ It works by taking in the following arguments:
 Below is an example of transferring the `no2_example_run` model run from Animus to Trillium. Note: this must be run **<ins>on Animus</ins>**.
 
 ```console
-(uplt) username@animus-c:~/unox$ bash HPC_to_animus.sh -f no2_example_run -j 
+(env_name) username@animus-c:~/unox$ bash HPC_to_animus.sh -f no2_example_run -j 
 -c, No cluster specified, defaulting to trillium
 -j, Copying full HPC job directory for no2_example_run from trillium to Animus
 Enter passphrase for key '/home/<username>/.ssh/<GH_id>': 
