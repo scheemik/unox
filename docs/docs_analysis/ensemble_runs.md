@@ -162,7 +162,7 @@ As discussed in the {doc}`Running the model <../docs_setup/run_model>` guide, yo
 Once all ensemble jobs have completed, transfer the entire ensemble output directory back to Animus by running the following command **<ins>on Animus</ins>**:
 
 ```console
-(uplt) username@animus-c:~/unox$ bash HPC_to_animus.sh -j -f no2_ens_test
+(env_name) username@animus-c:~/unox$ bash HPC_to_animus.sh -j -f no2_ens_test
 -c, No cluster specified, defaulting to trillium
 -j, Copying full HPC job directory for no2_ens_test from trillium to Animus
 Directory ./HPC_runs/no2_ens_test does not exist, creating it.
