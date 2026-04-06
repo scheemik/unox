@@ -50,6 +50,7 @@ The `unox` package was created by Mikhail Schee. It is licensed under the terms 
 - The U-net model is based on [Tailong He's repository for Chinese NOₓ emissions](https://github.com/tailonghe/Unet_Chinese_NOx)[^1].
 - Initial transition from China region to North America by Evelyn MacDonald.
 - Initial adaptation to make estimates for CO by Daniel Sequeira.
+- Documentation, converting `.npy` to `.nc` files, and ensemble runs by Mikhail Schee.
 - The `unox` package was based off the `py-pkgs-cookiecutter` [template](https://github.com/py-pkgs/py-pkgs-cookiecutter) using [`cookiecutter`](https://cookiecutter.readthedocs.io/en/latest/).
 - Package structure, documentation, and continuous integration based on the [Python Packages](https://py-pkgs.org/welcome) open source book by [Tomas Beuzen](https://www.tomasbeuzen.com/) & [Tiffany Timbers](http://tiffanytimbers.com/)
 
