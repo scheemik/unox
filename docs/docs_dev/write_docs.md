@@ -8,6 +8,7 @@ TLDR: Create a link to a different document by typing `{doc}`, followed by the n
 
 ## Contents
 
+- [Introduction](#intro)
 - [Preview documentation changes](#preview_changes)
     - [Live Preview](#live_preview)
 - Managing the documentation
@@ -18,12 +19,58 @@ TLDR: Create a link to a different document by typing `{doc}`, followed by the n
     - [Editing the diagram](#edit_diagram)
 
 ---
+<a id='intro'></a>
+[back to top](#top)
+
+## Introduction
+
+The documentation for this project is contained within the `docs/` directory. 
+When you need to make a change to the documentation, you will generally edit the Markdown files, with the extension `.md`. 
+Any time you push a commit to the remote repository, these Markdown files will be used to generate `html` to display on the [Read the Docs page](https://unox.readthedocs.io/en/latest/index.html).
+That automatic process, as well as the structure of the documentation, was set up following [Chapter 6 of the Py-Pkgs guide](https://py-pkgs.org/06-documentation).
+Below are a few notes of differences between what is described in that guide and what you will find in this repository.
+- Typical locations of standard documentation files.
+    - I have moved the following files from their typical location in the root directory to the `docs/docs_ref` directory.
+        - Code of Conduct, in the `CONDUCT.md` file.
+        - Contributing Guidelines, in the `CONTRIBUTING.md` file.
+    - The `CHANGELOG.md`, `LICENSE`, and `README.md` files are kept in the root directory.
+        - This is to allow GitHub to automatically use their content to fill parts of the repository's page. If these files are not in the root directory, that functionality will break.
+        - I have created the `changelog.md` and `license.md` files in the `docs/docs_ref/` directory which simply contain statements to include the content of the files in the root directory. This is so that the Read the Docs pages for those files will be populated with the content without needing to make copies.
+    - In contrast to the file structure shown in [Section 6.2 of the Py-Pkgs guide](https://py-pkgs.org/06-documentation#writing-documentation), below is the structure of this repositories documentation.
+        ```
+        unox
+        ├── ...
+        ├── docs
+        │   ├── ...
+        │   ├── docs_ref      
+        │   │   ├── changelog.md       <- Links to CHANGELOG.md
+        │   │   ├── CONDUCT.md         <--------
+        │   │   ├── CONTRIBUTING.md    <--------
+        │   │   └── license.md         <- Links to LICENSE
+        │   └── ...
+        ├── ...
+        ├── src
+        │   └── ...
+        ├── tests
+        │   └── ...
+        ├── .readthedocs.yml
+        ├── CHANGELOG.md               <--------
+        ├── LICENSE                    <--------
+        ├── ...
+        ├── README.md                  <--------
+        ├── ...
+        └── pyproject.toml
+        ```
+
+---
 <a id='preview_changes'></a>
 [back to top](#top)
 
 ## Preview documentation changes
 
-To generate a preview of the documentation before pushing to the GitHub repository, you can run `docs/Makefile` as shown below. Note: it is important to navigate to the `unox/docs/` directory before running the command.
+To generate a preview of the documentation before pushing to the GitHub repository, you can run the `docs/Makefile` script as shown below. 
+For more detail on this process, see [Section 6.3 of the Py-Pkgs guide](https://py-pkgs.org/06-documentation#building-documentation).
+Note: it is important to **<ins>navigate to the `unox/docs/` directory</ins>** before running the "make" command.
 
 ```console
 (env_name) username@animus-c:~unox$ cd docs/
