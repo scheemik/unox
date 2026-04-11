@@ -1,6 +1,6 @@
 {
     "savedir": "HPC_runs/no2_example_run/",
-    "config_path": "inputfiles/_input_configs/sample_config.json",
+    "config_path": "HPC_runs/no2_example_run/input_config.json",
     "config_dict": {
         "input_set": "no2_2005-2020",
         "x_vars": [
@@ -14,20 +14,22 @@
             "t2m",
             "ssrd"
         ],
+        "zfi_vars": [],
+        "lsm_vars": [],
         "stage_2": true,
         "stage_2_cutoff": 2013,
-        "lsm_vars": [],
+        "n_epochs": 250,
+        "split_year": 2019,
+        "split_value": 0.9,
         "grid_size": [
             56,
             120
-        ]
+        ],
+        "act_reg": "L1",
+        "act_reg_factor": 1e-08
     },
     "version": 1,
-    "n_epochs": 250,
     "model_fmt": "keras",
-    "input_fmt": "nc",
-    "split_year": 2019,
-    "split_value": 0.9,
     "train_years": {
         "stage1": [
             2005,
