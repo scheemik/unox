@@ -526,6 +526,7 @@ var_plots = plot_run_analysis(
 ![Analysis of predicted surface NOx emissions for stage 1 and 2 from `ens_reg0` run, ensemble member 1](ensemble_runs_images/ens_reg0_01_nox_pred_analysis.png)
 
 Above, we can see that running with no regularizer results in artifacts in the predictions, notably non-zero values around the edges of the domain and over the ocean. 
+This is very similar to the result when using a regularizer with a factor that is too small, in this case $1\times 10^{-10}$.
 
 ```python
 from unox.plotting import plot_run_analysis
@@ -538,7 +539,7 @@ var_plots = plot_run_analysis(
 
 ![Analysis of predicted surface NOx emissions for stage 1 and 2 from `ens_reg1` run, ensemble member 1](ensemble_runs_images/ens_reg1_01_nox_pred_analysis.png)
 
-In the above example, we can see that the regularizer factor was set too high and resulted in all the predictions being far too small across the entire domain.
+In the above example, we can see that the regularizer factor was set too high at $1\times 10^{-5}$ and resulted in all the predictions being far too small across the entire domain.
 
 ```python
 from unox.plotting import plot_run_analysis
