@@ -21,6 +21,21 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
 ]
+myst_enable_extensions = [
+    "dollarmath", 
+    "amsmath"
+]
+myst_url_schemes = {
+    "http": None,
+    "https": None,
+    "wiki": "https://en.wikipedia.org/wiki/{{path}}#{{fragment}}",
+    "doi": "https://doi.org/{{path}}",
+    "gh-issue": {
+        "url": "https://github.com/executablebooks/MyST-Parser/issue/{{path}}#{{fragment}}",
+        "title": "Issue #{{path}}",
+        "classes": ["github"],
+    },
+}
 autoapi_dirs = ["../src"]
 
 # List of patterns, relative to source directory, that match files and

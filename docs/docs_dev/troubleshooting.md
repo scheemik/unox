@@ -1,6 +1,30 @@
 <a id='top'></a>
 # Troubleshooting common errors
 
+Here, I've collected the output messages of some of the common errors I run into while using the code.
+I've included the solutions where I've found them, along with more details about what caused the error.
+If you encounter an error, try searching for parts of the error message in this document to see if it here.
+
+## Contents
+
+- [Cannot connect to host in VSCodium](#cannot_connect_to_host_in_vscodium)
+- [Is the virtual environment activated?](#is_the_virtual_environment_activated)
+- [Order of the imports matters on Trillium](#order_of_the_imports_matters_on_trillium)
+- [Directory not empty](#directory_not_empty)
+- [Errors running tests from VSCodium](#errors_running_tests_from_vscodium)
+- [NaN values](#nan_values)
+- [Matplotlib has no attribute `__version_info__`](#matplotlib_has_no_attribute___version_info__)
+- [Disk quota exceeded](#disk_quota_exceeded)
+- [Importing packages in the wrong order on Trillium](#importing_packages_in_the_wrong_order_on_trillium)
+- [Cannot `make clean html` docs](#cannot_make_clean_html_docs)
+- [Do you have more than one day in the data?](#do_you_have_more_than_one_day_in_the_data)
+- [Some variables aren't defined all the way to the end of 2020](#some_variables_arent_defined_all_the_way_to_the_end_of_2020)
+- [Unable to install `tensorflow` locally](#unable_to_install_tensorflow_locally)
+
+---
+<a id='cannot_connect_to_host_in_vscodium'></a>
+[back to top](#top)
+
 ## Cannot connect to host in VSCodium
 
 Sometimes the VSCodium server on a remove machine will get corrupted, causing you to be unable to connect to the remote via VSCodium, but you will still be able to log in via terminal just fine.
@@ -26,17 +50,25 @@ username@<remote_machine>:~/$ rm -rf .vscodium-server_old/
 
 Be sure to reinstall all your extensions on this new version of the remote VSCodium server.
 
-### Is the virtual environment activated?
+---
+<a id='is_the_virtual_environment_activated'></a>
+[back to top](#top)
+
+## Is the virtual environment activated?
 
 When trying to regenerate the documentation `html` files, you may encounter this error:
 
 ```console
 username@animus-c:~/$ make clean html
-/home/mschee/miniconda3/bin/python: No module named sphinx
+/home/<username>/miniconda3/bin/python: No module named sphinx
 make: *** [Makefile:19: clean] Error 1
 ```
 
 To fix this, activate the `conda` environment.
+
+---
+<a id='order_of_the_imports_matters_on_trillium'></a>
+[back to top](#top)
 
 ## Order of the imports matters on Trillium
 
@@ -52,7 +84,9 @@ To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 FMA, 
 
 This happens when you try to import `tensorflow` or `keras` before using `xarray` to load the data that will be used by the model.
 
-<!-- see GPBS log 19, Monday 2025/10/20 -->
+---
+<a id='directory_not_empty'></a>
+[back to top](#top)
 
 ## Directory not empty
 
@@ -90,6 +124,10 @@ this_output = copy_input_files(
 this_output.xr
 ```
 
+---
+<a id='errors_running_tests_from_vscodium'></a>
+[back to top](#top)
+
 ## Errors running tests from VSCodium
 
 <!-- See GPBS_Log_20 on Tuesday 2026-01-20 -->
@@ -99,15 +137,15 @@ Error when running a test using the GUI in VSCodium, clicking on the "run" butto
 Test result not found for: ./tests/test_input.py::test_make_input_metadata_file
 ```
 
-<!-- I found a way to get useful output in `GPBS_Log_19`, on Tuesday 2025/11/25:
-
-> I started trying to reorganize the modules and ran into some issues trying to set up corresponding test directories. I found a useful command `pytest --collect-only` which can just go through and try to find all the tests. It gave some helpful error outputs to figure out what was going on. -->
-
 After running `pytest --collect-only`, I got the output 
 ```console
 E   ValueError: conflicting sizes for dimension 'time': length 192 on 'time' and length 30 on {'time': 'no2', 'lat': 'no2', 'lon': 'no2'}
 ```
 which told me that I'd incorrectly set the length of the time dimension on a new example dataset.
+
+---
+<a id='nan_values'></a>
+[back to top](#top)
 
 ## `NaN` values
 
@@ -116,6 +154,10 @@ For the `nox` variable, all values past 2020-04-24 are `NaN`, therefore, correla
 ```console
 ValueError: autodetected range of [nan, nan] is not finite
 ```
+
+---
+<a id='matplotlib_has_no_attribute___version_info__'></a>
+[back to top](#top)
 
 ## Matplotlib has no attribute `__version_info__`
 
@@ -217,10 +259,14 @@ It happens the first time `matplotlib` is imported.
 Harshil also encountered the same error when he tried creating the input files as the `input` module imported `matplotlib.pyplot`. 
 I've since removed the import of `matplotlib` from the `input` module because it is not needed, but it is still an issue.
 
+---
+<a id='disk_quota_exceeded'></a>
+[back to top](#top)
+
 ## Disk quota exceeded
 
 ```console
-[mschee@trig-login01 unox]$ git pull
+[username@trig-login01 unox]$ git pull
 error: cannot open '.git/FETCH_HEAD': Disk quota exceeded
 ```
 
@@ -235,6 +281,10 @@ To check how much space is being used, try the following "disk usage" command, s
 4.1G    HPC_runs/_test_ens_zfi3
 ```
 
+---
+<a id='importing_packages_in_the_wrong_order_on_trillium'></a>
+[back to top](#top)
+
 ## Importing packages in the wrong order on Trillium
 
 I have found that the order in which I import Python packages on Trillium matters. Basically, I need to load `xarray` and use it to import from a file before I load the `keras` / `tensorflow` modules.
@@ -243,70 +293,78 @@ On 2026-02-09, I hit this particular error which was caused by me trying to impo
 
 ```console
 Traceback (most recent call last):
-  File "/scratch/mschee/Postdoc/unox/src/unox/HPC/run_model.py", line 61, in <module>
+  File "/scratch/<username>/Postdoc/unox/src/unox/HPC/run_model.py", line 61, in <module>
     uarr = uarray(inputfiles, is_input_set=True)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/mschee/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 50, in __init__
+  File "/scratch/<username>/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 50, in __init__
     self.xr = get_dataset(
               ^^^^^^^^^^^^
-  File "/scratch/mschee/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 150, in get_dataset
+  File "/scratch/<username>/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 150, in get_dataset
     xr_dataset = load_dataset(file_path, **kwargs)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/mschee/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 188, in load_dataset
+  File "/scratch/<username>/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 188, in load_dataset
     xr_dataset = xr.open_dataset(file_path)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/mschee/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/api.py", line 573, in open_dataset
+  File "/home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/api.py", line 573, in open_dataset
     backend_ds = backend.open_dataset(
                  ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/mschee/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/netCDF4_.py", line 646, in open_dataset
+  File "/home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/netCDF4_.py", line 646, in open_dataset
     store = NetCDF4DataStore.open(
             ^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/mschee/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/netCDF4_.py", line 376, in open
+  File "/home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/netCDF4_.py", line 376, in open
     import netCDF4
-  File "/home/mschee/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/netCDF4/__init__.py", line 3, in <module>
+  File "/home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/netCDF4/__init__.py", line 3, in <module>
     from ._netCDF4 import *
 ImportError: /cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/MPI/gcc12/openmpi4/netcdf-mpi/4.9.2/lib64/libnetcdf.so.19: undefined symbol: H5Pset_coll_metadata_write
 ```
 
 I remember running into this sometime in 2025. I want to look back through my logs to see if I can find if that was the same error message that earlier time. 
 
+---
+<a id='cannot_make_clean_html_docs'></a>
+[back to top](#top)
+
 ## Cannot `make clean html` docs
 
 ```console
-(uplt) mschee@animus-c:~/unox/docs$ make clean html
+(uplt) username@animus-c:~/unox/docs$ make clean html
 Removing everything under '_build'...
 Traceback (most recent call last):
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/runpy.py", line 197, in _run_module_as_main
     return _run_code(code, main_globals, None,
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/runpy.py", line 87, in _run_code
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/runpy.py", line 87, in _run_code
     exec(code, run_globals)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/__main__.py", line 7, in <module>
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/__main__.py", line 7, in <module>
     raise SystemExit(main(sys.argv[1:]))
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/build.py", line 382, in main
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/build.py", line 382, in main
     return make_main(argv)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/build.py", line 217, in make_main
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/build.py", line 217, in make_main
     return make_mode.run_make_mode(argv[1:])
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/make_mode.py", line 175, in run_make_mode
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/make_mode.py", line 175, in run_make_mode
     return getattr(make, run_method)()
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/make_mode.py", line 85, in build_clean
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/make_mode.py", line 85, in build_clean
     rmtree(self.builddir_join(item))
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/util/osutil.py", line 256, in rmtree
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/util/osutil.py", line 256, in rmtree
     shutil.rmtree(path)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 734, in rmtree
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 734, in rmtree
     _rmtree_safe_fd(fd, path, onerror)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 667, in _rmtree_safe_fd
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 667, in _rmtree_safe_fd
     _rmtree_safe_fd(dirfd, fullname, onerror)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 667, in _rmtree_safe_fd
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 667, in _rmtree_safe_fd
     _rmtree_safe_fd(dirfd, fullname, onerror)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 690, in _rmtree_safe_fd
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 690, in _rmtree_safe_fd
     onerror(os.unlink, fullname, sys.exc_info())
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 688, in _rmtree_safe_fd
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 688, in _rmtree_safe_fd
     os.unlink(entry.name, dir_fd=topfd)
 OSError: [Errno 16] Device or resource busy: '.nfs0000000d003d06560000001b'
 make: *** [Makefile:19: clean] Error 1
 ```
 
 Fix: log out and log back in.
+
+---
+<a id='do_you_have_more_than_one_day_in_the_data'></a>
+[back to top](#top)
 
 ## Do you have more than one day in the data?
 
@@ -441,6 +499,10 @@ File ~/miniconda3/envs/uplt/lib/python3.9/site-packages/xarray/core/common.py:28
 AttributeError: 'DataArray' object has no attribute 'dt'
 ```
 
+---
+<a id='some_variables_arent_defined_all_the_way_to_the_end_of_2020'></a>
+[back to top](#top)
+
 ## Some variables aren't defined all the way to the end of 2020
 
 I was trying to just make a correlation plot of data from an ensemble run, but got an error:
@@ -560,6 +622,10 @@ The issue is, when trying to pull the `truth` variable (which is `nox` in this c
 
 This error doesn't occur when plotting with `plot_run_analysis` because that by default only includes data for 1 year using `interval='1Y'`.
 
+---
+<a id='unable_to_install_tensorflow_locally'></a>  
+[back to top](#top)
+
 ## Unable to install `tensorflow` locally
 
 When trying to create a conda environment on my mac:
@@ -605,8 +671,7 @@ I found the answer on a GitHub issue [TensorFlow 2.17 for macOS x86_64 is not on
 > "Mac x86 users: Mac x86 builds are being deprecated and will no longer be
 released as a Pip package from TF 2.17 onwards."
 
-So, version 2.17 just isn't available for my local computer any more. Good to know. I should add this to the troubleshooting guide.
-
+So, version 2.17 just isn't available for my local computer any more. Good to know.
 I'm just gonna try doing a `pip install tensorflow==2.16.2` and hope that works well enough for things I want to test locally.
 
 ```console

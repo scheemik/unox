@@ -11,11 +11,16 @@
         "t2m",
         "ssrd"
     ],
+    "zfi_vars": [
+    ],
+    "lsm_vars": [
+    ],
     "stage_2": true,
     "stage_2_cutoff": 2013,
-    "lsm_vars": [],
-    "grid_size": [
-        56,
-        120
-    ]
+    "n_epochs": 250,
+    "split_year": 2019,
+    "split_value": 0.9,
+    "grid_size": [56, 120],
+    "act_reg": "L1",
+    "act_reg_factor": 1e-08
 }

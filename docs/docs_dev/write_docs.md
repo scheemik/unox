@@ -2,20 +2,65 @@
 # Writing Documentation
 
 This guide describes how to make updates to the documentation while developing the code base.
-This guide assumes you have read through the {doc}`Workflow <workflow>` page.
+<!-- This guide assumes you have read through the {doc}`Workflow <workflow>` page. -->
 <!-- Note: for linking between documents, use the `doc` role defined in the [Sphinx documentation](https://docs.readthedocs.com/platform/stable/guides/cross-referencing-with-sphinx.html#the-doc-role). 
 TLDR: Create a link to a different document by typing `{doc}`, followed by the name of the file surrounded by backticks, excluding the extension. If you would like to change the rendered text of the link, surround the desired link text in backticks, then add the name of the file in angle brackets, in the format: "{doc}`Click here <filename>`".  -->
 
 ## Contents
 
+- [Introduction](#intro)
 - [Preview documentation changes](#preview_changes)
     - [Live Preview](#live_preview)
-- Managing the documentation
-    - How did I set up the way it auto updates?
-    - Links between internal pages
-    - Auto API and why writing good docstrings is important
+- [Managing the documentation](#managing_docs)
+    - [Hosting documentation](#hosting_docs)
+    - [Links between internal pages](#internal_links)
+    - [Auto API and why writing good docstrings is important](#auto_api)
 - [The model diagram](#model_diagram)
     - [Editing the diagram](#edit_diagram)
+
+---
+<a id='intro'></a>
+[back to top](#top)
+
+## Introduction
+
+The documentation for this project is contained within the `docs/` directory. 
+When you need to make a change to the documentation, you will generally edit the Markdown files, with the extension `.md`. 
+Any time you push a commit to the remote repository, these Markdown files will be used to generate `html` to display on the [Read the Docs page](https://unox.readthedocs.io/en/latest/index.html).
+That automatic process, as well as the structure of the documentation, was set up following [Chapter 6 of the Py-Pkgs guide](https://py-pkgs.org/06-documentation).
+Below are a few notes of differences between what is described in that guide and what you will find in this repository.
+- Typical locations of standard documentation files.
+    - I have moved the following files from their typical location in the root directory to the `docs/docs_ref` directory.
+        - Code of Conduct, in the `CONDUCT.md` file.
+        - Contributing Guidelines, in the `CONTRIBUTING.md` file.
+    - The `CHANGELOG.md`, `LICENSE`, and `README.md` files are kept in the root directory.
+        - This is to allow GitHub to automatically use their content to fill parts of the repository's page. If these files are not in the root directory, that functionality will break.
+        - I have created the `changelog.md` and `license.md` files in the `docs/docs_ref/` directory which simply contain statements to include the content of the files in the root directory. This is so that the Read the Docs pages for those files will be populated with the content without needing to make copies.
+    - In contrast to the file structure shown in [Section 6.2 of the Py-Pkgs guide](https://py-pkgs.org/06-documentation#writing-documentation), below is the structure of this repositories documentation.
+        ```
+        unox
+        ├── ...
+        ├── docs
+        │   ├── ...
+        │   ├── docs_ref      
+        │   │   ├── changelog.md       <- Links to CHANGELOG.md
+        │   │   ├── CONDUCT.md         <--------
+        │   │   ├── CONTRIBUTING.md    <--------
+        │   │   └── license.md         <- Links to LICENSE
+        │   └── ...
+        ├── ...
+        ├── src
+        │   └── ...
+        ├── tests
+        │   └── ...
+        ├── .readthedocs.yml
+        ├── CHANGELOG.md               <--------
+        ├── LICENSE                    <--------
+        ├── ...
+        ├── README.md                  <--------
+        ├── ...
+        └── pyproject.toml
+        ```
 
 ---
 <a id='preview_changes'></a>
@@ -23,7 +68,9 @@ TLDR: Create a link to a different document by typing `{doc}`, followed by the n
 
 ## Preview documentation changes
 
-To generate a preview of the documentation before pushing to the GitHub repository, you can run `docs/Makefile` as shown below. Note: it is important to navigate to the `unox/docs/` directory before running the command.
+To generate a preview of the documentation before pushing to the GitHub repository, you can run the `docs/Makefile` script as shown below. 
+For more detail on this process, see [Section 6.3 of the Py-Pkgs guide](https://py-pkgs.org/06-documentation#building-documentation).
+Note: it is important to **<ins>navigate to the `unox/docs/` directory</ins>** before running the "make" command.
 
 ```console
 (env_name) username@animus-c:~unox$ cd docs/
@@ -304,6 +351,114 @@ This will open a live preview in a split view.
 I find it helpful to have this preview in a separate window. 
 You can also open this preview in your browser to see how it will render by copying the URL at the top of the preview window and pasting it into your browser.
 The URL will look something like `http://127.0.0.1:3000/docs/_build/html/docs_dev/write_docs.html`. 
+
+---
+<a id='managing_docs'></a>
+[back to top](#top)
+
+## Managing the documentation
+
+<a id='hosting_docs'></a>
+[back to top](#top)
+
+### Hosting the documentation
+
+The documentation for this project has been set up to automatically build and host on Read the Docs.
+This was done following section [3.8.5. Hosting documentation online](https://py-pkgs.org/03-how-to-package-a-python#hosting-documentation-online) of the [Python Packaging User Guide](https://py-pkgs.org/).
+The main components of this setup are:
+- `.readthedocs.yaml`
+    - This file contains the configuration for Read the Docs to build the documentation correctly. 
+    - It specifies the Python version, the dependencies to install, and the command to build the documentation.
+    - This file was auto-generated by using `cookiecutter`, as described in the [Python Packaging User Guide](https://py-pkgs.org/03-how-to-package-a-python#hosting-documentation-online).
+- Signing up for a "Read the Docs" account
+    - I used my GitHub account for this, which allowed me to directly link the repository to Read the Docs.
+    - If I sign in to Read the Docs with my GitHub account, I can see a history of every time the documentation was built, which is helpful for troubleshooting when I make changes to the docs and they don't show up on the Read the Docs page.
+
+<a id='internal_links'></a>
+[back to top](#top)
+
+### Links between internal pages
+
+When writing these docs, I have been using `myst` cross-references to link between different pages. 
+This allows me to use the [Live Preview](#live_preview) to see how the links will work in the rendered `html` pages.
+If I simply used URL links, clicking on one in the live preview would take me to the live, hosted page on Read the Docs, which would not show any changes I was trying to preview. 
+
+The syntax for these [MyST-Parser cross-references](https://myst-parser.readthedocs.io/en/latest/syntax/cross-referencing.html#reference-roles) is as follows:
+```markdown
+Check out the {doc}`Installation <../docs_setup/installation>` to get started.
+```
+Which renders as:  
+> Check out the {doc}`Installation <../docs_setup/installation>` to get started.
+
+The `{doc}` role indicates that you are going to reference a document. 
+The text before the angle brackets is what will be displayed as the link text.
+The text inside the angle brackets is the path to the document you want to link to, relative to the current file.
+In this case, the current file has a project-level path of `docs/docs_dev/write_docs.md` and the document I want to link to has a project-level path of `docs/docs_setup/installation.md`, so the relative path from the current file to the target file is `../docs_setup/installation`.
+
+If you move the documentation files around, you will need to update the paths in these cross-references.
+
+<a id='auto_api_and_why_writing_good_docstrings_is_important'></a>
+[back to top](#top)
+
+### AutoAPI and why writing good docstrings is important
+
+The `sphinx-autoapi` package is used to automatically generate documentation from the docstrings in the code.
+This is a great way to ensure that the documentation is always up to date with the code, as long as the docstrings are well-written and informative. 
+If the docstrings are not well-written, then the generated documentation will not be very helpful. 
+This is why it is important to write clear and comprehensive docstrings for your code.
+
+When writing new functions, copy the docstring format from existing functions in the codebase to maintain a consistent style.
+This style is roughly as follows:
+```python
+def function_name(
+    arg1,
+    arg2=1,
+    arg3="default",
+    arg4=None,
+    **kwargs,
+):
+    """ Short description of what the function does.
+
+        Longer description of what the function does, including any important details about the function's behavior, assumptions, or limitations.
+
+        Parameters
+        ----------
+        arg1 : type
+            Description of arg1.
+        arg2 : `int`, optional
+            Description of arg2.
+        arg3 : `str`, optional
+            Description of arg3.
+        arg4 : `None`, optional
+            Description of arg4.
+        **kwargs
+            Description of where the keyword arguments will be passed.
+        
+        Returns
+        -------
+        output : type
+            Description of the output of the function.
+        
+        Examples
+        --------
+        >>> function_name(arg1=1, arg2=2, arg3="example", arg4=None)
+        Example output of the function.
+    """
+    # Function implementation goes here
+    ...
+```
+
+Some features of this format:
+- Indentation to allow convenient collapsing.
+    - The argument list is indented but the trailing paraenthesis is not indented so that just the argument list can be collapsed in the editor.
+    - The entire docstring between the triple quotes is indented so that it can be collapsed in the editor.
+- A short description of what the function does at the beginning, followed by a longer description if necessary.
+- A "Parameters" section that lists each argument, its type, and a description of it.
+- A "Returns" section that describes the output of the function.
+- An "Examples" section that shows how to use the function, which is helpful for users who are not familiar with the codebase or the particular function. 
+    - This section is also helpful for reminding yourself how to use the function when you come back to it after a long time.
+
+With this format, the `sphinx-autoapi` package will be able to generate clear and informative documentation for the functions in the codebase on Read the Docs every time you push changes to the repository.
 
 ---
 <a id='model_diagram'></a>

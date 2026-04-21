@@ -37,7 +37,7 @@ This is called an ensemble run.
 
 For this project, each ensemble run is submitted as a separate job to HPC, equivalent to following the procedure in the guide to {doc}`Running the model <../docs_setup/run_model>`.
 Below, we will work through an example of how to use the infrastructure in this code to [avoid needing to submit each ensemble member separately](#submit_ensemble). 
-Afterwards, I'll show how to use the plotting functions in this repository to [analyze ensemble run outputs](#analyze_ensemble), both using the functions shown in {doc}`Analyzing model output <analysis>` as well as functions specifically designed for plotting ensemble runs.
+Afterwards, I'll show how to use the plotting functions in this repository to [analyze ensemble run outputs](#analyze_ensemble), both using the functions shown in {doc}`Analyzing model output <../analysis>` as well as functions specifically designed for plotting ensemble runs.
 Lastly, I'll detail how ensemble runs can be used to assess a particular aspect of the model, in particular [the regularizer function](#regularizers).
 
 ---
@@ -221,7 +221,7 @@ This will save on the storage space required on Animus.
 ## Analyzing ensemble output
 
 With ensemble outputs on Animus, you can visualize and compare predictions across members to understand uncertainty and robustness.
-This section demonstrates how to use the plotting functions provided in this repository to analyze ensemble run outputs, following similar approaches as described in the {doc}`Analyzing model output <analysis>` guide.
+This section demonstrates how to use the plotting functions provided in this repository to analyze ensemble run outputs, following similar approaches as described in the {doc}`Analyzing model output <../analysis>` guide.
 
 <a id='explore_ensemble'></a>
 [back to top](#top)
@@ -526,6 +526,7 @@ var_plots = plot_run_analysis(
 ![Analysis of predicted surface NOx emissions for stage 1 and 2 from `ens_reg0` run, ensemble member 1](ensemble_runs_images/ens_reg0_01_nox_pred_analysis.png)
 
 Above, we can see that running with no regularizer results in artifacts in the predictions, notably non-zero values around the edges of the domain and over the ocean. 
+This is very similar to the result when using a regularizer with a factor that is too small, in this case $1\times 10^{-10}$.
 
 ```python
 from unox.plotting import plot_run_analysis
@@ -538,7 +539,7 @@ var_plots = plot_run_analysis(
 
 ![Analysis of predicted surface NOx emissions for stage 1 and 2 from `ens_reg1` run, ensemble member 1](ensemble_runs_images/ens_reg1_01_nox_pred_analysis.png)
 
-In the above example, we can see that the regularizer factor was set too high and resulted in all the predictions being far too small across the entire domain.
+In the above example, we can see that the regularizer factor was set too high at $1\times 10^{-5}$ and resulted in all the predictions being far too small across the entire domain.
 
 ```python
 from unox.plotting import plot_run_analysis
