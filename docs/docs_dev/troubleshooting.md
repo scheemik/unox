@@ -60,7 +60,7 @@ When trying to regenerate the documentation `html` files, you may encounter this
 
 ```console
 username@animus-c:~/$ make clean html
-/home/mschee/miniconda3/bin/python: No module named sphinx
+/home/<username>/miniconda3/bin/python: No module named sphinx
 make: *** [Makefile:19: clean] Error 1
 ```
 
@@ -266,7 +266,7 @@ I've since removed the import of `matplotlib` from the `input` module because it
 ## Disk quota exceeded
 
 ```console
-[mschee@trig-login01 unox]$ git pull
+[username@trig-login01 unox]$ git pull
 error: cannot open '.git/FETCH_HEAD': Disk quota exceeded
 ```
 
@@ -293,27 +293,27 @@ On 2026-02-09, I hit this particular error which was caused by me trying to impo
 
 ```console
 Traceback (most recent call last):
-  File "/scratch/mschee/Postdoc/unox/src/unox/HPC/run_model.py", line 61, in <module>
+  File "/scratch/<username>/Postdoc/unox/src/unox/HPC/run_model.py", line 61, in <module>
     uarr = uarray(inputfiles, is_input_set=True)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/mschee/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 50, in __init__
+  File "/scratch/<username>/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 50, in __init__
     self.xr = get_dataset(
               ^^^^^^^^^^^^
-  File "/scratch/mschee/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 150, in get_dataset
+  File "/scratch/<username>/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 150, in get_dataset
     xr_dataset = load_dataset(file_path, **kwargs)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/mschee/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 188, in load_dataset
+  File "/scratch/<username>/Postdoc/unox/src/unox/HPC/data0/dataset.py", line 188, in load_dataset
     xr_dataset = xr.open_dataset(file_path)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/mschee/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/api.py", line 573, in open_dataset
+  File "/home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/api.py", line 573, in open_dataset
     backend_ds = backend.open_dataset(
                  ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/mschee/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/netCDF4_.py", line 646, in open_dataset
+  File "/home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/netCDF4_.py", line 646, in open_dataset
     store = NetCDF4DataStore.open(
             ^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/mschee/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/netCDF4_.py", line 376, in open
+  File "/home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/xarray/backends/netCDF4_.py", line 376, in open
     import netCDF4
-  File "/home/mschee/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/netCDF4/__init__.py", line 3, in <module>
+  File "/home/<username>/.virtualenvs/unoxTrilliumNC/lib/python3.12/site-packages/netCDF4/__init__.py", line 3, in <module>
     from ._netCDF4 import *
 ImportError: /cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/MPI/gcc12/openmpi4/netcdf-mpi/4.9.2/lib64/libnetcdf.so.19: undefined symbol: H5Pset_coll_metadata_write
 ```
@@ -327,34 +327,34 @@ I remember running into this sometime in 2025. I want to look back through my lo
 ## Cannot `make clean html` docs
 
 ```console
-(uplt) mschee@animus-c:~/unox/docs$ make clean html
+(uplt) username@animus-c:~/unox/docs$ make clean html
 Removing everything under '_build'...
 Traceback (most recent call last):
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/runpy.py", line 197, in _run_module_as_main
     return _run_code(code, main_globals, None,
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/runpy.py", line 87, in _run_code
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/runpy.py", line 87, in _run_code
     exec(code, run_globals)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/__main__.py", line 7, in <module>
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/__main__.py", line 7, in <module>
     raise SystemExit(main(sys.argv[1:]))
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/build.py", line 382, in main
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/build.py", line 382, in main
     return make_main(argv)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/build.py", line 217, in make_main
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/build.py", line 217, in make_main
     return make_mode.run_make_mode(argv[1:])
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/make_mode.py", line 175, in run_make_mode
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/make_mode.py", line 175, in run_make_mode
     return getattr(make, run_method)()
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/make_mode.py", line 85, in build_clean
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/cmd/make_mode.py", line 85, in build_clean
     rmtree(self.builddir_join(item))
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/util/osutil.py", line 256, in rmtree
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/site-packages/sphinx/util/osutil.py", line 256, in rmtree
     shutil.rmtree(path)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 734, in rmtree
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 734, in rmtree
     _rmtree_safe_fd(fd, path, onerror)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 667, in _rmtree_safe_fd
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 667, in _rmtree_safe_fd
     _rmtree_safe_fd(dirfd, fullname, onerror)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 667, in _rmtree_safe_fd
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 667, in _rmtree_safe_fd
     _rmtree_safe_fd(dirfd, fullname, onerror)
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 690, in _rmtree_safe_fd
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 690, in _rmtree_safe_fd
     onerror(os.unlink, fullname, sys.exc_info())
-  File "/home/mschee/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 688, in _rmtree_safe_fd
+  File "/home/<username>/miniconda3/envs/uplt/lib/python3.9/shutil.py", line 688, in _rmtree_safe_fd
     os.unlink(entry.name, dir_fd=topfd)
 OSError: [Errno 16] Device or resource busy: '.nfs0000000d003d06560000001b'
 make: *** [Makefile:19: clean] Error 1
