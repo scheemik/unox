@@ -37,7 +37,7 @@ This is called an ensemble run.
 
 For this project, each ensemble run is submitted as a separate job to HPC, equivalent to following the procedure in the guide to {doc}`Running the model <../docs_setup/run_model>`.
 Below, we will work through an example of how to use the infrastructure in this code to [avoid needing to submit each ensemble member separately](#submit_ensemble). 
-Afterwards, I'll show how to use the plotting functions in this repository to [analyze ensemble run outputs](#analyze_ensemble), both using the functions shown in {doc}`Analyzing model output <analysis>` as well as functions specifically designed for plotting ensemble runs.
+Afterwards, I'll show how to use the plotting functions in this repository to [analyze ensemble run outputs](#analyze_ensemble), both using the functions shown in {doc}`Analyzing model output <../analysis>` as well as functions specifically designed for plotting ensemble runs.
 Lastly, I'll detail how ensemble runs can be used to assess a particular aspect of the model, in particular [the regularizer function](#regularizers).
 
 ---
@@ -221,7 +221,7 @@ This will save on the storage space required on Animus.
 ## Analyzing ensemble output
 
 With ensemble outputs on Animus, you can visualize and compare predictions across members to understand uncertainty and robustness.
-This section demonstrates how to use the plotting functions provided in this repository to analyze ensemble run outputs, following similar approaches as described in the {doc}`Analyzing model output <analysis>` guide.
+This section demonstrates how to use the plotting functions provided in this repository to analyze ensemble run outputs, following similar approaches as described in the {doc}`Analyzing model output <../analysis>` guide.
 
 <a id='explore_ensemble'></a>
 [back to top](#top)
