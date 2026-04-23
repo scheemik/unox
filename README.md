@@ -13,12 +13,15 @@ Setup guides, example usage, and API reference are available on [Read the Docs](
 
 ## Installation
 
-This package is not currently available for installation with `pip`. 
-<!-- ```bash
-$ pip install unox
-``` -->
+This package is available for installation with `pip`. 
+It is recommended to install `unox` in a virtual environment, such as one created with [`venv`](https://docs.python.org/3/library/venv.html) or [`conda`](https://docs.conda.io/en/latest/).
+```bash
+(venv_name) $ pip install unox
+```
 
-See the [installation](https://unox.readthedocs.io/en/latest/docs_setup/installation.html) guide for instructions on how to get set up developing the code.
+Currently, the version of Python required for `unox` depends on what you want to do. 
+The analysis and plotting functionality is written for Python 3.9.21, while the GPU functionality to run the model is written for Python 3.12.4.
+See the [installation](https://unox.readthedocs.io/en/latest/docs_setup/installation.html) guide for details and instructions on how to get set up developing the code.
 <!-- See {doc}`installation`  -->
 
 ## Requirements
