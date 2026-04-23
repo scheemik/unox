@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "unox"
-version = "0.1.1"
+version = "0.1.2"
 description = "Use machine learning to make NOX predictions"
 authors = ["Mikhail Schee"]
 license = "MIT"
