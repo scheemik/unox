@@ -59,8 +59,8 @@ The `unox` package was created by Mikhail Schee. It is licensed under the terms 
 
 ### Source of data
 
-- Training stage 1 involves TCR-2 surface NO$_2$ concentrations and NOₓ emissions. Both could be found from [the JPL TCR-2 website](https://tes.jpl.nasa.gov/tes/chemical-reanalysis/products/monthly-mean). Last access was on 12 March 2025. 
-- Training stage 2 involves *in situ* daily NO$_2$ measurements from the [United States Environmental Protection Agency (EPA)](https://aqs.epa.gov/aqsweb/airdata/download_files.html). Canadian data is planned to be added in the future. 
+- Training stage 1 involves TCR-2 surface NO₂ concentrations and NOₓ emissions. Both could be found from [the JPL TCR-2 website](https://tes.jpl.nasa.gov/tes/chemical-reanalysis/products/monthly-mean). Last access was on 12 March 2025. 
+- Training stage 2 involves *in situ* daily NO₂ measurements from the [United States Environmental Protection Agency (EPA)](https://aqs.epa.gov/aqsweb/airdata/download_files.html). Canadian data is planned to be added in the future. 
 - Both stages require meteorological fields from ERA5 on [single levels](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=overview) and on [pressure levels](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-pressure-levels?tab=overview).
 - Scripts for downloading ERA5 data and creating Unet input files and more information about the input file format are in the `datafiles/` directory. Data are currently stored on animus-c.
 
