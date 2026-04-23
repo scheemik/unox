@@ -13,7 +13,7 @@ Setup guides, example usage, and API reference are available on [Read the Docs](
 
 ## Installation
 
-This package is available for installation with `pip`. 
+This package is available for installation with [`pip`](https://pypi.org/project/unox/). 
 It is recommended to install `unox` in a virtual environment, such as one created with [`venv`](https://docs.python.org/3/library/venv.html) or [`conda`](https://docs.conda.io/en/latest/).
 ```bash
 (venv_name) $ pip install unox
